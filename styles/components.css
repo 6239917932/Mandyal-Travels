@@ -1,0 +1,136 @@
+.ui-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-5);
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.ui-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ui-button:focus-visible,
+.ui-input:focus-visible {
+  outline: 3px solid rgb(69 143 206 / 35%);
+  outline-offset: 2px;
+}
+
+.ui-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ui-button--primary {
+  background: var(--color-brand-700);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-button--primary:hover:not(:disabled) {
+  background: var(--color-brand-800);
+  box-shadow: var(--shadow-md);
+}
+
+.ui-button--secondary {
+  background: var(--color-white);
+  border-color: var(--color-brand-600);
+  color: var(--color-brand-700);
+}
+
+.ui-button--secondary:hover:not(:disabled) {
+  background: var(--color-brand-50);
+}
+
+.ui-button--accent {
+  background: var(--color-accent-600);
+  color: var(--color-white);
+}
+
+.ui-button--accent:hover:not(:disabled) {
+  background: var(--color-accent-700);
+}
+
+.ui-button--ghost {
+  background: transparent;
+  color: var(--color-brand-700);
+}
+
+.ui-button--small {
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  font-size: 0.875rem;
+}
+
+.ui-button--large {
+  min-height: 3.25rem;
+  padding: 0 var(--space-6);
+  font-size: 1rem;
+}
+
+.ui-button--full-width {
+  width: 100%;
+}
+
+.ui-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-card--padded {
+  padding: var(--space-6);
+}
+
+.ui-card--elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.ui-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ui-field__label {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.ui-input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  padding: 0 var(--space-3);
+}
+
+.ui-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.ui-input:hover {
+  border-color: var(--color-brand-500);
+}
+
+.ui-input--error {
+  border-color: var(--color-danger);
+}
+
+.ui-field__error {
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+}
