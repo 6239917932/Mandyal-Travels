@@ -93,9 +93,14 @@ export default function PartnerAmendmentsPage() {
             <p className="hotel-page__eyebrow">Partner operations</p>
             <h1>Amendment requests</h1>
           </div>
-          <Link className="ui-button ui-button--secondary" href="/partner/bookings">
-            Booking dashboard
-          </Link>
+          <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner/bookings">
+              Bookings
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/partner/inventory">
+              Inventory
+            </Link>
+          </div>
         </div>
         <p className="booking-page__intro">
           Review guest date-change requests. Approval rechecks inventory and recalculates the total

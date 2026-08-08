@@ -74,9 +74,14 @@ export default function PartnerBookingsPage() {
               Monitor hotel reservations, payment state, stay dates, and room allocation.
             </p>
           </div>
-          <Link className="ui-button ui-button--secondary" href="/partner/amendments">
-            Amendment queue
-          </Link>
+          <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner/inventory">
+              Inventory
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/partner/amendments">
+              Amendments
+            </Link>
+          </div>
         </div>
         <Card>
           <form className="booking-page__guest-form" onSubmit={loadBookings}>

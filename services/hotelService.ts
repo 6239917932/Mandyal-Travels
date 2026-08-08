@@ -1,4 +1,12 @@
 import { InMemoryHotelRepository } from '@/repositories/hotelRepository';
+import {
+  availabilityLockRepository,
+  type AvailabilityLockRepository,
+} from '@/repositories/availabilityLockRepository';
+import {
+  inventoryOverrideRepository,
+  type InventoryOverrideRepository,
+} from '@/repositories/inventoryOverrideRepository';
 import type {
   Hotel,
   HotelRatePlan,
@@ -56,10 +64,18 @@ function calculateTotalStayPrice(ratePlan: HotelRatePlan, nights: number, rooms:
 }
 
 export class HotelService {
-  constructor(private readonly hotelRepository: HotelRepository = new InMemoryHotelRepository()) {}
+  constructor(
+    private readonly hotelRepository: HotelRepository = new InMemoryHotelRepository(),
+    private readonly locks: AvailabilityLockRepository = availabilityLockRepository,
+    private readonly inventoryOverrides: InventoryOverrideRepository = inventoryOverrideRepository,
+  ) {}
 
   async getHotelBySlug(slug: string): Promise<Hotel | undefined> {
     return this.hotelRepository.findBySlug(slug);
+  }
+
+  async getHotels(): Promise<Hotel[]> {
+    return this.hotelRepository.findAll();
   }
 
   async searchHotels(criteria: HotelSearchCriteria): Promise<HotelSearchResult[]> {
@@ -71,16 +87,46 @@ export class HotelService {
 
     const hotels = await this.hotelRepository.findAll();
 
-    return hotels
-      .filter((hotel) => matchesDestination(hotel, criteria.destination))
-      .map((hotel) => {
+    const matchingHotels = hotels.filter((hotel) =>
+      matchesDestination(hotel, criteria.destination),
+    );
+
+    const results = await Promise.all(
+      matchingHotels.map(async (hotel) => {
+        const availability = await Promise.all(
+          hotel.rooms.map(async (room) => {
+            if (
+              !room.isAvailable ||
+              room.occupancy.maximumAdults * criteria.rooms < criteria.adults ||
+              room.occupancy.maximumChildren * criteria.rooms < criteria.children ||
+              room.occupancy.maximumGuests * criteria.rooms < criteria.adults + criteria.children
+            ) {
+              return false;
+            }
+
+            const [reservedLocks, overrideLimit] = await Promise.all([
+              this.locks.findReservedByRoomType(
+                room.roomTypeId,
+                criteria.checkInDate,
+                criteria.checkOutDate,
+              ),
+              this.inventoryOverrides.findLimitForStay(
+                room.roomTypeId,
+                criteria.checkInDate,
+                criteria.checkOutDate,
+              ),
+            ]);
+            const reservedRooms = reservedLocks.reduce((total, lock) => total + lock.quantity, 0);
+            const effectiveInventory = Math.min(
+              room.inventoryCount,
+              overrideLimit ?? room.inventoryCount,
+            );
+            return effectiveInventory - reservedRooms >= criteria.rooms;
+          }),
+        );
+
         const availableRatePlans = hotel.rooms
-          .filter(
-            (room) =>
-              room.isAvailable &&
-              room.inventoryCount >= criteria.rooms &&
-              room.occupancy.maximumAdults >= criteria.adults,
-          )
+          .filter((_room, index) => availability[index])
           .flatMap((room) => room.ratePlans);
 
         const lowestRatePlan = findLowestRatePlan(availableRatePlans);
@@ -96,7 +142,10 @@ export class HotelService {
           nights,
           totalStayPrice: calculateTotalStayPrice(lowestRatePlan, nights, criteria.rooms),
         };
-      })
+      }),
+    );
+
+    return results
       .filter((result): result is HotelSearchResult => result !== undefined)
       .sort((firstResult, secondResult) => {
         return firstResult.minimumNightlyRate.amount - secondResult.minimumNightlyRate.amount;

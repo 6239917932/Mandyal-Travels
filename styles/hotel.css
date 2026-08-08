@@ -862,6 +862,74 @@
   color: var(--color-danger);
 }
 
+.partner-inventory__list {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.partner-inventory__override-card {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  border-top: 3px solid var(--color-accent-600);
+}
+
+.partner-inventory__override-card h2,
+.partner-inventory__override-card p {
+  margin: 0;
+}
+
+.partner-inventory__override-card p {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-secondary);
+}
+
+.partner-inventory__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+}
+
+.partner-inventory__metrics div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.partner-inventory__metrics span,
+.partner-inventory__room small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.partner-inventory__metrics strong {
+  font-size: 1.25rem;
+}
+
+.partner-inventory__available {
+  color: var(--color-success);
+}
+
+.partner-inventory__sold-out {
+  color: var(--color-danger);
+}
+
+.partner-inventory__utilization {
+  height: 0.5rem;
+  margin-bottom: var(--space-2);
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-brand-100);
+}
+
+.partner-inventory__utilization span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-brand-600);
+}
+
 @media (max-width: 700px) {
   .partner-page__heading {
     align-items: flex-start;
@@ -870,6 +938,10 @@
 
   .partner-bookings__summary {
     grid-template-columns: 1fr;
+  }
+
+  .partner-inventory__metrics {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

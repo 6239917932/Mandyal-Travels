@@ -93,6 +93,19 @@ export interface PartnerBookingRecord {
   totalAmount: number;
 }
 
+export interface PartnerInventoryRecord {
+  activeHolds: number;
+  allocatedRooms: number;
+  baseInventory: number;
+  effectiveInventory: number;
+  hotelName: string;
+  inventorySource: string;
+  overrideApplied: boolean;
+  remainingRooms: number;
+  roomName: string;
+  roomTypeId: string;
+}
+
 export interface HotelBookingRecord {
   availabilityLockId: string;
   confirmationCode: string;

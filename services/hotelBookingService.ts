@@ -8,6 +8,10 @@ import { hotelService, type HotelService } from '@/services/hotelService';
 import { bookingRepository, type BookingRepository } from '@/repositories/bookingRepository';
 import { quoteRepository, type QuoteRepository } from '@/repositories/quoteRepository';
 import { amendmentRepository, type AmendmentRepository } from '@/repositories/amendmentRepository';
+import {
+  inventoryOverrideRepository,
+  type InventoryOverrideRepository,
+} from '@/repositories/inventoryOverrideRepository';
 import type {
   BookingAmendmentRecord,
   CreateHotelBookingRequest,
@@ -19,6 +23,7 @@ import type {
   PriceComponent,
   PartnerAmendmentRecord,
   PartnerBookingRecord,
+  PartnerInventoryRecord,
 } from '@/types/commerce';
 
 const availabilityLockTtlMilliseconds = 10 * 60 * 1000;
@@ -72,6 +77,7 @@ export class HotelBookingService {
     private readonly quotes: QuoteRepository = quoteRepository,
     private readonly bookings: BookingRepository = bookingRepository,
     private readonly amendments: AmendmentRepository = amendmentRepository,
+    private readonly inventoryOverrides: InventoryOverrideRepository = inventoryOverrideRepository,
   ) {}
 
   async createQuote(request: HotelQuoteRequest): Promise<HotelQuote> {
@@ -126,7 +132,13 @@ export class HotelBookingService {
       request.checkOutDate,
     );
     const lockedInventory = reservedLocks.reduce((total, lock) => total + lock.quantity, 0);
-    if (room.inventoryCount - lockedInventory < request.rooms) {
+    const overrideLimit = await this.inventoryOverrides.findLimitForStay(
+      room.roomTypeId,
+      request.checkInDate,
+      request.checkOutDate,
+    );
+    const effectiveInventory = Math.min(room.inventoryCount, overrideLimit ?? room.inventoryCount);
+    if (effectiveInventory - lockedInventory < request.rooms) {
       throw new HotelBookingRuleError(
         'INVENTORY_NOT_AVAILABLE',
         'The requested room quantity is no longer available.',
@@ -428,6 +440,96 @@ export class HotelBookingService {
     return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
   }
 
+  async getPartnerInventory(
+    checkInDate: string,
+    checkOutDate: string,
+  ): Promise<PartnerInventoryRecord[]> {
+    const nights = calculateNights(checkInDate, checkOutDate);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Number.isFinite(nights) || nights < 1 || checkInDate < today) {
+      throw new HotelBookingRuleError(
+        'INVALID_INVENTORY_DATES',
+        'Choose a future date range of at least one night.',
+      );
+    }
+
+    const hotels = await this.hotels.getHotels();
+    const records = await Promise.all(
+      hotels.flatMap((hotel) =>
+        hotel.rooms.map(async (room) => {
+          const reservedLocks = await this.locks.findReservedByRoomType(
+            room.roomTypeId,
+            checkInDate,
+            checkOutDate,
+          );
+          const activeHolds = reservedLocks
+            .filter((lock) => lock.status === 'active')
+            .reduce((total, lock) => total + lock.quantity, 0);
+          const allocatedRooms = reservedLocks
+            .filter((lock) => lock.status === 'converted')
+            .reduce((total, lock) => total + lock.quantity, 0);
+          const overrideLimit = await this.inventoryOverrides.findLimitForStay(
+            room.roomTypeId,
+            checkInDate,
+            checkOutDate,
+          );
+          const effectiveInventory = Math.min(
+            room.inventoryCount,
+            overrideLimit ?? room.inventoryCount,
+          );
+          return {
+            activeHolds,
+            allocatedRooms,
+            baseInventory: room.inventoryCount,
+            effectiveInventory,
+            hotelName: hotel.name,
+            inventorySource: hotel.inventory.source,
+            overrideApplied: overrideLimit !== undefined,
+            remainingRooms: Math.max(0, effectiveInventory - activeHolds - allocatedRooms),
+            roomName: room.name,
+            roomTypeId: room.roomTypeId,
+          } satisfies PartnerInventoryRecord;
+        }),
+      ),
+    );
+    return records;
+  }
+
+  async setPartnerInventoryOverride(input: {
+    availableRooms: number;
+    checkInDate: string;
+    checkOutDate: string;
+    note: string;
+    roomTypeId: string;
+  }): Promise<PartnerInventoryRecord[]> {
+    const nights = calculateNights(input.checkInDate, input.checkOutDate);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Number.isFinite(nights) || nights < 1 || input.checkInDate < today) {
+      throw new HotelBookingRuleError(
+        'INVALID_INVENTORY_DATES',
+        'Choose a future date range of at least one night.',
+      );
+    }
+    const hotels = await this.hotels.getHotels();
+    const room = hotels
+      .flatMap((hotel) => hotel.rooms)
+      .find((candidate) => candidate.roomTypeId === input.roomTypeId);
+    if (!room)
+      throw new HotelBookingRuleError('ROOM_NOT_FOUND', 'The room type could not be found.');
+    if (
+      !Number.isInteger(input.availableRooms) ||
+      input.availableRooms < 0 ||
+      input.availableRooms > room.inventoryCount
+    ) {
+      throw new HotelBookingRuleError(
+        'INVALID_INVENTORY_LIMIT',
+        `Available rooms must be between 0 and ${room.inventoryCount}.`,
+      );
+    }
+    await this.inventoryOverrides.setRange(input);
+    return this.getPartnerInventory(input.checkInDate, input.checkOutDate);
+  }
+
   async reviewAmendment(
     id: string,
     decision: 'approved' | 'declined',
@@ -477,7 +579,13 @@ export class HotelBookingService {
     const otherReservedRooms = reservedLocks
       .filter((lock) => lock.id !== booking.availabilityLockId)
       .reduce((total, lock) => total + lock.quantity, 0);
-    if (room.inventoryCount - otherReservedRooms < quote.rooms) {
+    const overrideLimit = await this.inventoryOverrides.findLimitForStay(
+      room.roomTypeId,
+      pending.requestedCheckInDate,
+      pending.requestedCheckOutDate,
+    );
+    const effectiveInventory = Math.min(room.inventoryCount, overrideLimit ?? room.inventoryCount);
+    if (effectiveInventory - otherReservedRooms < quote.rooms) {
       throw new HotelBookingRuleError(
         'INVENTORY_NOT_AVAILABLE',
         'The requested dates no longer have sufficient inventory.',

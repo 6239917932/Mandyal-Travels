@@ -109,3 +109,15 @@ model PaymentTransaction {
   createdAt   DateTime @default(now())
   booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
+
+model RoomInventoryOverride {
+  id             String   @id
+  roomTypeId     String
+  stayDate       String
+  availableRooms Int
+  note           String
+  updatedAt      DateTime @updatedAt
+
+  @@unique([roomTypeId, stayDate])
+  @@index([roomTypeId, stayDate])
+}
