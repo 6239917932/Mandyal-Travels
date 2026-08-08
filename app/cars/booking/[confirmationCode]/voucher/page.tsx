@@ -1,0 +1,101 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { PrintDocumentButton } from '@/components/booking/PrintDocumentButton';
+import { carService } from '@/services/carService';
+import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
+export const metadata: Metadata = { title: 'Car rental voucher' };
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+const money = (n: number) =>
+  new Intl.NumberFormat('en-IN', {
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(n);
+export default async function CarVoucherPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ confirmationCode: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { confirmationCode } = await params;
+  const queryParams = await searchParams,
+    criteria = createCarSearchCriteria(queryParams),
+    offerId = first(queryParams.offerId),
+    offer = offerId ? await carService.revalidateOffer(offerId, criteria) : undefined;
+  if (!offer)
+    return (
+      <div className="car-booking-page">
+        <p>Rental voucher unavailable.</p>
+      </div>
+    );
+  return (
+    <div className="booking-document-page">
+      <div className="booking-document-actions">
+        <Link href="/cars">← Back to cars</Link>
+        <PrintDocumentButton label="Print voucher" />
+      </div>
+      <article className="booking-document car-voucher">
+        <header className="booking-document__header">
+          <div>
+            <p className="booking-document__brand">Mandyal Travels</p>
+            <h1>Car rental voucher</h1>
+          </div>
+          <p className="booking-document__status">
+            <span>Booking status</span>
+            <strong>CONFIRMED</strong>
+          </p>
+        </header>
+        <div className="booking-document__reference">
+          <span>Booking reference</span>
+          <strong>{confirmationCode}</strong>
+        </div>
+        <section className="booking-document__section">
+          <h2>Rental details</h2>
+          <dl className="booking-document__grid">
+            <div>
+              <dt>Provider</dt>
+              <dd>{offer.providerName}</dd>
+            </div>
+            <div>
+              <dt>Vehicle</dt>
+              <dd>{offer.vehicleName}</dd>
+            </div>
+            <div>
+              <dt>Pickup</dt>
+              <dd>
+                {criteria.pickupLocation} · {criteria.pickupDate}
+              </dd>
+            </div>
+            <div>
+              <dt>Drop-off</dt>
+              <dd>
+                {criteria.dropoffLocation} · {criteria.dropoffDate}
+              </dd>
+            </div>
+            <div>
+              <dt>Transmission</dt>
+              <dd>{offer.transmission}</dd>
+            </div>
+            <div>
+              <dt>Fuel policy</dt>
+              <dd>{offer.fuelPolicy}</dd>
+            </div>
+            <div>
+              <dt>Mileage</dt>
+              <dd>{offer.mileagePolicy}</dd>
+            </div>
+          </dl>
+        </section>
+        <div className="booking-document__total">
+          <span>Amount paid</span>
+          <strong>{money(offer.totalPrice)}</strong>
+        </div>
+        <footer className="booking-document__footer">
+          Present this voucher, the primary driver&apos;s original licence, payment card, and
+          government-issued identification at pickup. This is a prototype voucher.
+        </footer>
+      </article>
+    </div>
+  );
+}
