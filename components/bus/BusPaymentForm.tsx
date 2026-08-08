@@ -5,44 +5,33 @@ import { useRouter } from 'next/navigation';
 
 import { Input } from '@/components/ui/Input';
 
-type FormErrors = Record<string, string>;
-
-interface FlightPaymentFormProps {
-  bookingSummary: {
-    airlineName: string;
-    departureAirport: string;
-    departureDate: string;
-    destinationAirport: string;
-    flightNumber: string;
-    total: number;
-  };
+interface BusPaymentFormProps {
+  bookingSummary: Record<string, string | number>;
   nextQuery: Record<string, string>;
 }
 
-export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFormProps) {
+export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProps) {
   const router = useRouter();
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [paid, setPaid] = useState(false);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const nextErrors: FormErrors = {};
     const cardholder = String(form.get('cardholder') ?? '').trim();
     const cardNumber = String(form.get('cardNumber') ?? '').replace(/\D/g, '');
     const expiry = String(form.get('expiry') ?? '').trim();
     const cvv = String(form.get('cvv') ?? '').replace(/\D/g, '');
-
+    const nextErrors: Record<string, string> = {};
     if (cardholder.length < 3) nextErrors.cardholder = 'Enter the cardholder name.';
     if (cardNumber.length < 12 || cardNumber.length > 19)
       nextErrors.cardNumber = 'Enter 12 to 19 demonstration digits.';
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) nextErrors.expiry = 'Use MM/YY format.';
     if (cvv.length < 3 || cvv.length > 4) nextErrors.cvv = 'Enter 3 or 4 digits.';
-
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    const passengerDraft = sessionStorage.getItem('mandyal-flight-passengers');
+    const passengerDraft = sessionStorage.getItem('mandyal-bus-passengers');
     if (!passengerDraft) {
       setErrors({ payment: 'Passenger details are missing. Please return and enter them again.' });
       return;
@@ -57,9 +46,9 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     }
 
     setPaid(true);
-    const confirmationCode = `MF${Date.now().toString().slice(-8)}`;
+    const confirmationCode = `MB${Date.now().toString().slice(-8)}`;
     sessionStorage.setItem(
-      'mandyal-flight-booking',
+      'mandyal-bus-booking',
       JSON.stringify({
         ...bookingSummary,
         confirmationCode,
@@ -67,9 +56,8 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         paymentStatus: 'captured',
       }),
     );
-    event.currentTarget.reset();
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
-    router.push(`/flights/booking/confirmation?${query.toString()}`);
+    router.push(`/buses/booking/confirmation?${query.toString()}`);
   }
 
   return (
@@ -78,14 +66,8 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         <strong>Protected demonstration payment</strong>
         <span>Do not enter a real card number. These fields are never stored or submitted.</span>
       </div>
+      <Input error={errors.cardholder} label="Name on card" name="cardholder" />
       <Input
-        autoComplete="cc-name"
-        error={errors.cardholder}
-        label="Name on card"
-        name="cardholder"
-      />
-      <Input
-        autoComplete="cc-number"
         error={errors.cardNumber}
         inputMode="numeric"
         label="Card number"
@@ -93,21 +75,8 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         placeholder="4242 4242 4242 4242"
       />
       <div className="flight-payment-form__row">
-        <Input
-          autoComplete="cc-exp"
-          error={errors.expiry}
-          label="Expiry"
-          name="expiry"
-          placeholder="MM/YY"
-        />
-        <Input
-          autoComplete="cc-csc"
-          error={errors.cvv}
-          inputMode="numeric"
-          label="CVV"
-          name="cvv"
-          type="password"
-        />
+        <Input error={errors.expiry} label="Expiry" name="expiry" placeholder="MM/YY" />
+        <Input error={errors.cvv} inputMode="numeric" label="CVV" name="cvv" type="password" />
       </div>
       <button
         className="ui-button ui-button--accent ui-button--full-width"

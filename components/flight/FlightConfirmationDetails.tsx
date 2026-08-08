@@ -30,8 +30,9 @@ export function FlightConfirmationDetails({
       return undefined;
     }
   });
-  const passenger = booking?.passengerDraft?.passengers[0];
-  const email = booking?.passengerDraft?.contact.email;
+  const matchingBooking = booking?.confirmationCode === confirmationCode ? booking : undefined;
+  const passenger = matchingBooking?.passengerDraft?.passengers[0];
+  const email = matchingBooking?.passengerDraft?.contact.email;
 
   return (
     <>

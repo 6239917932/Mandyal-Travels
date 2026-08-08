@@ -804,6 +804,288 @@
     display: none;
   }
 }
+.bus-page {
+  min-height: 70vh;
+}
+.bus-page__container {
+  width: min(calc(100% - 2rem), var(--container-max-width));
+  margin: 0 auto;
+}
+.bus-page__hero {
+  padding: var(--space-12) 0;
+  background: linear-gradient(135deg, #08213d, #23618b);
+  color: white;
+}
+.bus-page__hero h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  letter-spacing: -0.04em;
+}
+.bus-page__hero p:last-child {
+  max-width: 46rem;
+  color: #d8ebf7;
+  line-height: 1.7;
+}
+.bus-page__content {
+  padding: var(--space-10) 0;
+}
+.bus-search-form {
+  display: grid;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: white;
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+.bus-search-form__button {
+  align-self: end;
+}
+.bus-page__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+}
+.bus-page__heading h2 {
+  margin: 0;
+  color: var(--color-brand-900);
+  font-size: 1.875rem;
+}
+.bus-page__heading > p {
+  color: var(--color-text-secondary);
+}
+.bus-offer-list {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+.bus-offer-card {
+  display: grid;
+  gap: var(--space-5);
+}
+.bus-offer-card__operator strong,
+.bus-offer-card__operator span,
+.bus-offer-card__operator small {
+  display: block;
+}
+.bus-offer-card__operator strong {
+  color: var(--color-brand-900);
+  font-size: 1.1rem;
+}
+.bus-offer-card__operator span,
+.bus-offer-card__operator small {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+.bus-offer-card__operator small {
+  color: #8a6300;
+  font-weight: 800;
+}
+.bus-offer-card__route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+}
+.bus-offer-card__route strong,
+.bus-offer-card__route span {
+  display: block;
+}
+.bus-offer-card__route strong {
+  color: var(--color-brand-900);
+  font-size: 1.3rem;
+}
+.bus-offer-card__route span {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+.bus-offer-card__details > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.bus-offer-card__details span {
+  border-radius: 999px;
+  background: var(--color-brand-50);
+  padding: 0.35rem 0.65rem;
+  color: var(--color-brand-800);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.bus-offer-card__details p,
+.bus-offer-card__details small {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.bus-offer-card__price {
+  display: grid;
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+.bus-offer-card__price strong {
+  color: var(--color-brand-900);
+  font-size: 1.45rem;
+}
+@media (min-width: 800px) {
+  .bus-search-form {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+  .bus-search-form__button {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1000px) {
+  .bus-offer-card {
+    grid-template-columns: 13rem minmax(18rem, 1fr) minmax(15rem, 0.9fr) 10rem;
+    align-items: center;
+  }
+  .bus-offer-card__price {
+    border-top: 0;
+    border-left: 1px solid var(--color-border);
+    padding: 0 0 0 var(--space-5);
+  }
+}
+.bus-booking-page {
+  min-height: 72vh;
+  padding: var(--space-12) 0;
+}
+.bus-booking-page__container {
+  width: min(calc(100% - 2rem), 64rem);
+  margin: 0 auto;
+}
+.bus-booking-page h1 {
+  margin: 0;
+  color: var(--color-brand-900);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+.bus-booking-page__grid {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+.bus-seat-selector {
+  display: grid;
+  gap: var(--space-5);
+}
+.bus-seat-selector__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+.bus-seat-selector__legend span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.bus-seat-selector__vehicle {
+  width: min(100%, 24rem);
+  margin: 0 auto;
+  border: 2px solid var(--color-border);
+  border-radius: 2rem 2rem var(--radius-md) var(--radius-md);
+  padding: var(--space-5);
+}
+.bus-seat-selector__driver {
+  margin: 0 0 var(--space-5) auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  padding: 0.5rem;
+  width: fit-content;
+  font-size: 0.7rem;
+}
+.bus-seat-selector__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 3rem);
+  justify-content: center;
+  gap: var(--space-3);
+}
+.bus-seat {
+  min-height: 3rem;
+  border: 2px solid var(--color-brand-300);
+  border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
+  background: white;
+  color: var(--color-brand-800);
+  font-weight: 800;
+  cursor: pointer;
+}
+.bus-seat--aisle {
+  margin-left: var(--space-4);
+}
+.bus-seat--selected {
+  border-color: var(--color-success);
+  background: #dff5e6;
+  color: var(--color-success);
+}
+.bus-seat--blocked {
+  border-color: #c9d0d8;
+  background: #e9edf1;
+  color: #87909a;
+  cursor: not-allowed;
+}
+.bus-seat--sample {
+  display: inline-block;
+  width: 1.4rem;
+  min-height: 1.4rem;
+}
+.bus-seat-selector__selection {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-50);
+  padding: var(--space-4);
+}
+.bus-seat-selector__selection span,
+.bus-seat-selector__selection strong {
+  display: block;
+}
+.bus-seat-selector__selection span {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.bus-seat-selector__selection strong {
+  margin-top: var(--space-1);
+  color: var(--color-brand-900);
+}
+.bus-seat-selector__hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+.bus-booking-page__summary h2 {
+  color: var(--color-brand-900);
+}
+.bus-booking-page__summary > p:not(.hotel-page__eyebrow):not(.flight-booking-page__revalidation) {
+  color: var(--color-text-secondary);
+}
+.bus-booking-page__summary dl {
+  display: grid;
+  gap: var(--space-4);
+}
+.bus-booking-page__summary dt {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.bus-booking-page__summary dd {
+  margin: var(--space-1) 0 0;
+  color: var(--color-brand-900);
+  font-weight: 800;
+}
+@media (min-width: 900px) {
+  .bus-booking-page__grid {
+    grid-template-columns: minmax(0, 1fr) 23rem;
+    align-items: start;
+  }
+}
 .flight-passenger-page__summary h2 {
   color: var(--color-brand-900);
 }
@@ -1680,7 +1962,15 @@
     padding: 0;
   }
 
+  .booking-document,
+  .booking-document * {
+    visibility: visible;
+  }
+
   .booking-document {
+    position: absolute;
+    inset: 0;
+    width: 100%;
     border: 0;
     border-radius: 0;
     padding: 0;
