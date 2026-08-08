@@ -2,7 +2,8 @@ import { Card } from '@/components/ui/Card';
 
 const travelOptions = [
   {
-    description: 'Find verified stays with transparent pricing, room choices, and flexible policies.',
+    description:
+      'Find verified stays with transparent pricing, room choices, and flexible policies.',
     name: 'Hotels',
   },
   {
@@ -21,11 +22,13 @@ const travelOptions = [
 
 const benefits = [
   {
-    description: 'Clear pricing, secure payments, and complete booking documents from confirmation to invoice.',
+    description:
+      'Clear pricing, secure payments, and complete booking documents from confirmation to invoice.',
     title: 'Travel with clarity',
   },
   {
-    description: 'One platform for stays, transport, partner services, and future travel experiences.',
+    description:
+      'One platform for stays, transport, partner services, and future travel experiences.',
     title: 'Everything connected',
   },
   {
