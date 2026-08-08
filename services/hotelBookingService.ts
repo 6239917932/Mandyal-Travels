@@ -1,0 +1,514 @@
+import { createHash, createHmac } from 'node:crypto';
+
+import {
+  availabilityLockRepository,
+  type AvailabilityLockRepository,
+} from '@/repositories/availabilityLockRepository';
+import { hotelService, type HotelService } from '@/services/hotelService';
+import { bookingRepository, type BookingRepository } from '@/repositories/bookingRepository';
+import { quoteRepository, type QuoteRepository } from '@/repositories/quoteRepository';
+import { amendmentRepository, type AmendmentRepository } from '@/repositories/amendmentRepository';
+import type {
+  BookingAmendmentRecord,
+  CreateHotelBookingRequest,
+  CreatedHotelBooking,
+  HotelBookingRecord,
+  ManagedHotelBooking,
+  HotelQuote,
+  HotelQuoteRequest,
+  PriceComponent,
+  PartnerAmendmentRecord,
+  PartnerBookingRecord,
+} from '@/types/commerce';
+
+const availabilityLockTtlMilliseconds = 10 * 60 * 1000;
+
+function hashBookingAccessToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function createBookingAccessToken(idempotencyKey: string): string {
+  const secret = process.env.BOOKING_TOKEN_SECRET;
+  if (!secret) {
+    throw new Error('BOOKING_TOKEN_SECRET is not configured.');
+  }
+
+  return createHmac('sha256', secret).update(idempotencyKey).digest('hex');
+}
+
+export class HotelBookingRuleError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'HotelBookingRuleError';
+  }
+}
+
+function calculateNights(checkInDate: string, checkOutDate: string): number {
+  const checkIn = new Date(`${checkInDate}T00:00:00Z`);
+  const checkOut = new Date(`${checkOutDate}T00:00:00Z`);
+  return Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000);
+}
+
+function isRefundEligible(
+  checkInDate: string | undefined,
+  refundable: boolean,
+  cutoffHours: number | undefined,
+): boolean {
+  if (!refundable || !checkInDate || cutoffHours === undefined) {
+    return false;
+  }
+
+  const checkIn = new Date(`${checkInDate}T00:00:00Z`).getTime();
+  return Number.isFinite(checkIn) && Date.now() < checkIn - cutoffHours * 60 * 60 * 1000;
+}
+
+export class HotelBookingService {
+  constructor(
+    private readonly hotels: HotelService = hotelService,
+    private readonly locks: AvailabilityLockRepository = availabilityLockRepository,
+    private readonly quotes: QuoteRepository = quoteRepository,
+    private readonly bookings: BookingRepository = bookingRepository,
+    private readonly amendments: AmendmentRepository = amendmentRepository,
+  ) {}
+
+  async createQuote(request: HotelQuoteRequest): Promise<HotelQuote> {
+    const nights = calculateNights(request.checkInDate, request.checkOutDate);
+
+    if (!Number.isFinite(nights) || nights < 1) {
+      throw new HotelBookingRuleError(
+        'INVALID_STAY_DATES',
+        'Check-out date must be later than check-in date.',
+      );
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (request.checkInDate < today) {
+      throw new HotelBookingRuleError('PAST_CHECK_IN', 'Check-in date cannot be in the past.');
+    }
+
+    if (request.rooms < 1 || request.adults < 1 || request.children < 0) {
+      throw new HotelBookingRuleError(
+        'INVALID_OCCUPANCY',
+        'Rooms and adults must be at least one, and children cannot be negative.',
+      );
+    }
+
+    const hotel = await this.hotels.getHotelBySlug(request.hotelSlug);
+    if (!hotel) {
+      throw new HotelBookingRuleError('HOTEL_NOT_FOUND', 'The selected hotel is unavailable.');
+    }
+
+    const room = hotel.rooms.find((candidate) => candidate.roomTypeId === request.roomTypeId);
+    if (!room || !room.isAvailable) {
+      throw new HotelBookingRuleError('ROOM_UNAVAILABLE', 'The selected room is unavailable.');
+    }
+
+    const maximumAdults = room.occupancy.maximumAdults * request.rooms;
+    const maximumChildren = room.occupancy.maximumChildren * request.rooms;
+    const maximumGuests = room.occupancy.maximumGuests * request.rooms;
+    if (
+      request.adults > maximumAdults ||
+      request.children > maximumChildren ||
+      request.adults + request.children > maximumGuests
+    ) {
+      throw new HotelBookingRuleError(
+        'OCCUPANCY_EXCEEDED',
+        'The selected room allocation cannot accommodate all guests.',
+      );
+    }
+
+    const reservedLocks = await this.locks.findReservedByRoomType(
+      room.roomTypeId,
+      request.checkInDate,
+      request.checkOutDate,
+    );
+    const lockedInventory = reservedLocks.reduce((total, lock) => total + lock.quantity, 0);
+    if (room.inventoryCount - lockedInventory < request.rooms) {
+      throw new HotelBookingRuleError(
+        'INVENTORY_NOT_AVAILABLE',
+        'The requested room quantity is no longer available.',
+      );
+    }
+
+    const ratePlan = room.ratePlans.find((candidate) => candidate.id === request.ratePlanId);
+    if (!ratePlan) {
+      throw new HotelBookingRuleError('RATE_PLAN_NOT_FOUND', 'The selected rate is unavailable.');
+    }
+
+    const roomChargeAmount = ratePlan.nightlyRate.amount * nights * request.rooms;
+    const taxAndFeeAmount = ratePlan.taxesAndFees.amount * nights * request.rooms;
+    const components: PriceComponent[] = [
+      {
+        amount: roomChargeAmount,
+        currency: ratePlan.nightlyRate.currency,
+        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
+        type: 'room-charge',
+      },
+      {
+        amount: taxAndFeeAmount,
+        currency: ratePlan.taxesAndFees.currency,
+        label: 'Taxes and fees',
+        type: 'tax-and-fee',
+      },
+    ];
+
+    const availabilityLock = await this.locks.create({
+      checkInDate: request.checkInDate,
+      checkOutDate: request.checkOutDate,
+      inventorySource: hotel.inventory.source,
+      quantity: request.rooms,
+      roomTypeId: room.roomTypeId,
+      ttlMilliseconds: availabilityLockTtlMilliseconds,
+    });
+    const quotedAt = new Date().toISOString();
+
+    const quote: HotelQuote = {
+      availabilityLock,
+      checkInDate: request.checkInDate,
+      checkOutDate: request.checkOutDate,
+      components,
+      currency: ratePlan.nightlyRate.currency,
+      expiresAt: availabilityLock.expiresAt,
+      hotelSlug: request.hotelSlug,
+      id: crypto.randomUUID(),
+      nights,
+      quotedAt,
+      ratePlanId: request.ratePlanId,
+      rooms: request.rooms,
+      totalAmount: roomChargeAmount + taxAndFeeAmount,
+    };
+
+    await this.quotes.save(quote);
+    return quote;
+  }
+
+  async confirmBooking(
+    request: CreateHotelBookingRequest,
+    idempotencyKey: string,
+  ): Promise<CreatedHotelBooking> {
+    const existingBooking = await this.bookings.findByIdempotencyKey(idempotencyKey);
+    if (existingBooking) {
+      return {
+        accessToken: createBookingAccessToken(idempotencyKey),
+        booking: existingBooking,
+      };
+    }
+
+    const quote = await this.quotes.findById(request.quoteId);
+    if (!quote || quote.availabilityLock.id !== request.availabilityLockId) {
+      throw new HotelBookingRuleError('QUOTE_NOT_FOUND', 'The booking quote is unavailable.');
+    }
+
+    if (quote.hotelSlug !== request.hotelSlug) {
+      throw new HotelBookingRuleError(
+        'QUOTE_HOTEL_MISMATCH',
+        'The selected hotel does not match the server-validated quote.',
+      );
+    }
+
+    if (new Date(quote.expiresAt).getTime() <= Date.now()) {
+      throw new HotelBookingRuleError(
+        'QUOTE_EXPIRED',
+        'The room hold has expired. Please select the room again.',
+      );
+    }
+
+    const lock = await this.locks.findById(request.availabilityLockId);
+    if (!lock || lock.status !== 'active') {
+      throw new HotelBookingRuleError(
+        'LOCK_NOT_ACTIVE',
+        'The room is no longer held. Please select it again.',
+      );
+    }
+
+    const convertedLock = await this.locks.convert(lock.id);
+    if (!convertedLock) {
+      throw new HotelBookingRuleError(
+        'LOCK_CONVERSION_FAILED',
+        'The room hold could not be confirmed.',
+      );
+    }
+
+    const booking: HotelBookingRecord = {
+      availabilityLockId: convertedLock.id,
+      confirmationCode: `MT${Date.now().toString().slice(-8)}`,
+      createdAt: new Date().toISOString(),
+      currency: quote.currency,
+      guest: request.guest,
+      hotelSlug: request.hotelSlug,
+      id: crypto.randomUUID(),
+      paymentStatus: 'captured',
+      quoteId: quote.id,
+      status: 'confirmed',
+      totalAmount: quote.totalAmount,
+    };
+
+    const accessToken = createBookingAccessToken(idempotencyKey);
+    const accessTokenHash = hashBookingAccessToken(accessToken);
+    await this.bookings.save(booking, idempotencyKey, accessTokenHash);
+    return { accessToken, booking };
+  }
+
+  async getBookingByConfirmationCode(
+    code: string,
+    accessToken: string,
+  ): Promise<HotelBookingRecord | undefined> {
+    return this.bookings.findByConfirmationCode(code, hashBookingAccessToken(accessToken));
+  }
+
+  async getManagedBooking(
+    code: string,
+    accessToken: string,
+  ): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.getBookingByConfirmationCode(code, accessToken);
+    if (!booking) {
+      return undefined;
+    }
+
+    const [hotel, quote, latestAmendment] = await Promise.all([
+      this.hotels.getHotelBySlug(booking.hotelSlug),
+      this.quotes.findById(booking.quoteId),
+      this.amendments.findLatestByBookingId(booking.id),
+    ]);
+    const room = hotel?.rooms.find(
+      (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
+    );
+    const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
+    const refundable = isRefundEligible(
+      quote?.checkInDate,
+      ratePlan?.cancellationPolicy.refundable ?? false,
+      ratePlan?.cancellationPolicy.freeCancellationUntilHoursBeforeCheckIn,
+    );
+    return {
+      ...booking,
+      cancellationPolicy: ratePlan?.cancellationPolicy.description,
+      checkInDate: quote?.checkInDate || undefined,
+      checkOutDate: quote?.checkOutDate || undefined,
+      hotelName: hotel?.name ?? booking.hotelSlug,
+      latestAmendment,
+      priceComponents: quote?.components,
+      ratePlanName: ratePlan?.name,
+      refundable,
+      roomName: room?.name,
+      rooms: quote?.rooms,
+    };
+  }
+
+  async cancelBooking(code: string, accessToken: string): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.getManagedBooking(code, accessToken);
+    if (!booking) {
+      return undefined;
+    }
+
+    if (booking.status === 'cancelled') {
+      return booking;
+    }
+
+    await this.bookings.cancel(booking.id, booking.refundable === true);
+    return this.getManagedBooking(code, accessToken);
+  }
+
+  async requestAmendment(
+    code: string,
+    accessToken: string,
+    request: { reason: string; requestedCheckInDate: string; requestedCheckOutDate: string },
+  ): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.getManagedBooking(code, accessToken);
+    if (!booking) {
+      return undefined;
+    }
+
+    if (booking.status !== 'confirmed') {
+      throw new HotelBookingRuleError(
+        'BOOKING_NOT_AMENDABLE',
+        'Only confirmed bookings can be amended.',
+      );
+    }
+
+    const nights = calculateNights(request.requestedCheckInDate, request.requestedCheckOutDate);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Number.isFinite(nights) || nights < 1 || request.requestedCheckInDate < today) {
+      throw new HotelBookingRuleError(
+        'INVALID_AMENDMENT_DATES',
+        'Requested dates must describe a future stay of at least one night.',
+      );
+    }
+
+    if (
+      request.requestedCheckInDate === booking.checkInDate &&
+      request.requestedCheckOutDate === booking.checkOutDate
+    ) {
+      throw new HotelBookingRuleError(
+        'AMENDMENT_UNCHANGED',
+        'Choose dates that are different from the current stay.',
+      );
+    }
+
+    if (booking.latestAmendment?.status === 'pending') {
+      throw new HotelBookingRuleError(
+        'AMENDMENT_ALREADY_PENDING',
+        'An amendment request is already pending for this booking.',
+      );
+    }
+
+    await this.amendments.create({ bookingId: booking.id, ...request });
+    return this.getManagedBooking(code, accessToken);
+  }
+
+  async listPendingAmendments(): Promise<PartnerAmendmentRecord[]> {
+    const pending = await this.amendments.findPending();
+    const results = await Promise.all(
+      pending.map(async (amendment) => {
+        const { bookingId, ...publicAmendment } = amendment;
+        const booking = await this.bookings.findById(bookingId);
+        if (!booking) return undefined;
+        const [hotel, quote] = await Promise.all([
+          this.hotels.getHotelBySlug(booking.hotelSlug),
+          this.quotes.findById(booking.quoteId),
+        ]);
+        const room = hotel?.rooms.find(
+          (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
+        );
+        const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
+        if (!hotel || !quote || !room || !ratePlan) return undefined;
+        return {
+          ...publicAmendment,
+          booking: {
+            confirmationCode: booking.confirmationCode,
+            currency: booking.currency,
+            currentCheckInDate: quote.checkInDate,
+            currentCheckOutDate: quote.checkOutDate,
+            currentTotalAmount: booking.totalAmount,
+            guestName: `${booking.guest.firstName} ${booking.guest.lastName}`,
+            hotelName: hotel.name,
+            ratePlanName: ratePlan.name,
+            roomName: room.name,
+            rooms: quote.rooms,
+          },
+        } satisfies PartnerAmendmentRecord;
+      }),
+    );
+    return results.filter((item): item is PartnerAmendmentRecord => item !== undefined);
+  }
+
+  async listPartnerBookings(): Promise<PartnerBookingRecord[]> {
+    const bookings = await this.bookings.findAll();
+    const results = await Promise.all(
+      bookings.map(async (booking) => {
+        const [hotel, quote] = await Promise.all([
+          this.hotels.getHotelBySlug(booking.hotelSlug),
+          this.quotes.findById(booking.quoteId),
+        ]);
+        const room = hotel?.rooms.find(
+          (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
+        );
+        const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
+        if (!hotel || !quote || !room || !ratePlan) return undefined;
+        return {
+          checkInDate: quote.checkInDate,
+          checkOutDate: quote.checkOutDate,
+          confirmationCode: booking.confirmationCode,
+          createdAt: booking.createdAt,
+          currency: booking.currency,
+          guestEmail: booking.guest.email,
+          guestName: `${booking.guest.firstName} ${booking.guest.lastName}`,
+          hotelName: hotel.name,
+          paymentStatus: booking.paymentStatus,
+          ratePlanName: ratePlan.name,
+          roomName: room.name,
+          rooms: quote.rooms,
+          status: booking.status,
+          totalAmount: booking.totalAmount,
+        } satisfies PartnerBookingRecord;
+      }),
+    );
+    return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
+  }
+
+  async reviewAmendment(
+    id: string,
+    decision: 'approved' | 'declined',
+    reviewNote: string,
+  ): Promise<BookingAmendmentRecord | undefined> {
+    const pending = (await this.amendments.findPending()).find((item) => item.id === id);
+    if (!pending) return undefined;
+    if (decision === 'declined') {
+      return this.amendments.decline(id, reviewNote);
+    }
+
+    const booking = await this.bookings.findById(pending.bookingId);
+    if (!booking || booking.status !== 'confirmed') {
+      throw new HotelBookingRuleError(
+        'BOOKING_NOT_AMENDABLE',
+        'The booking is no longer amendable.',
+      );
+    }
+    const nights = calculateNights(pending.requestedCheckInDate, pending.requestedCheckOutDate);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!Number.isFinite(nights) || nights < 1 || pending.requestedCheckInDate < today) {
+      throw new HotelBookingRuleError(
+        'INVALID_AMENDMENT_DATES',
+        'The requested stay dates are no longer valid.',
+      );
+    }
+    const [hotel, quote] = await Promise.all([
+      this.hotels.getHotelBySlug(booking.hotelSlug),
+      this.quotes.findById(booking.quoteId),
+    ]);
+    const room = hotel?.rooms.find(
+      (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
+    );
+    const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
+    if (!hotel || !quote || !room || !ratePlan) {
+      throw new HotelBookingRuleError(
+        'RATE_UNAVAILABLE',
+        'The original room or rate is unavailable.',
+      );
+    }
+
+    const reservedLocks = await this.locks.findReservedByRoomType(
+      room.roomTypeId,
+      pending.requestedCheckInDate,
+      pending.requestedCheckOutDate,
+    );
+    const otherReservedRooms = reservedLocks
+      .filter((lock) => lock.id !== booking.availabilityLockId)
+      .reduce((total, lock) => total + lock.quantity, 0);
+    if (room.inventoryCount - otherReservedRooms < quote.rooms) {
+      throw new HotelBookingRuleError(
+        'INVENTORY_NOT_AVAILABLE',
+        'The requested dates no longer have sufficient inventory.',
+      );
+    }
+
+    const roomChargeAmount = ratePlan.nightlyRate.amount * nights * quote.rooms;
+    const taxAndFeeAmount = ratePlan.taxesAndFees.amount * nights * quote.rooms;
+    const priceComponents: PriceComponent[] = [
+      {
+        amount: roomChargeAmount,
+        currency: ratePlan.nightlyRate.currency,
+        label: `${quote.rooms} room${quote.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
+        type: 'room-charge',
+      },
+      {
+        amount: taxAndFeeAmount,
+        currency: ratePlan.taxesAndFees.currency,
+        label: 'Taxes and fees',
+        type: 'tax-and-fee',
+      },
+    ];
+    return this.amendments.approve(id, {
+      checkInDate: pending.requestedCheckInDate,
+      checkOutDate: pending.requestedCheckOutDate,
+      nights,
+      priceComponents,
+      reviewNote,
+      totalAmount: roomChargeAmount + taxAndFeeAmount,
+    });
+  }
+}
+
+export const hotelBookingService = new HotelBookingService();

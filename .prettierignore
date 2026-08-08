@@ -1,0 +1,3 @@
+generated/
+.npm-cache/
+prisma/dev.db

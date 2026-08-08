@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { BookingProvider } from '@/context/BookingContext';
 
 import './globals.css';
 
@@ -32,9 +33,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <BookingProvider>
+          <SiteHeader />
+          <main>{children}</main>
+          <SiteFooter />
+        </BookingProvider>
       </body>
     </html>
   );

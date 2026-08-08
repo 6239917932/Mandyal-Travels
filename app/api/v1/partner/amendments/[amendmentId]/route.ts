@@ -1,0 +1,50 @@
+import { isValidPartnerKey } from '@/lib/partnerAuth';
+import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
+import type { ApiErrorResponse } from '@/types/commerce';
+
+interface ReviewContext {
+  params: Promise<{ amendmentId: string }>;
+}
+
+function errorResponse(code: string, message: string, status: number): Response {
+  return Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
+}
+
+export async function PATCH(request: Request, context: ReviewContext): Promise<Response> {
+  if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
+    return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
+  }
+  if (!body || typeof body !== 'object') {
+    return errorResponse('INVALID_REVIEW', 'A review decision is required.', 400);
+  }
+  const values = body as Record<string, unknown>;
+  if (
+    !['approved', 'declined'].includes(String(values.decision)) ||
+    typeof values.reviewNote !== 'string' ||
+    values.reviewNote.trim().length < 3 ||
+    values.reviewNote.trim().length > 500
+  ) {
+    return errorResponse('INVALID_REVIEW', 'Choose a decision and enter a short review note.', 400);
+  }
+  const { amendmentId } = await context.params;
+  try {
+    const amendment = await hotelBookingService.reviewAmendment(
+      amendmentId,
+      values.decision as 'approved' | 'declined',
+      values.reviewNote.trim(),
+    );
+    return amendment
+      ? Response.json({ data: amendment })
+      : errorResponse('AMENDMENT_NOT_FOUND', 'The pending amendment was not found.', 404);
+  } catch (error) {
+    return error instanceof HotelBookingRuleError
+      ? errorResponse(error.code, error.message, 409)
+      : errorResponse('AMENDMENT_REVIEW_FAILED', 'The amendment could not be reviewed.', 500);
+  }
+}

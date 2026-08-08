@@ -9,6 +9,7 @@ export const siteConfig = {
   navigation: [
     { href: '/', label: 'Home' },
     { href: '/hotels', label: 'Hotels' },
+    { href: '/manage-booking', label: 'Manage booking' },
     { href: '/flights', label: 'Flights' },
     { href: '/buses', label: 'Buses' },
     { href: '/cars', label: 'Cars' },
