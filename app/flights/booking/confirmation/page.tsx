@@ -1,0 +1,97 @@
+import type { Metadata } from 'next';
+
+import { FlightConfirmationDetails } from '@/components/flight/FlightConfirmationDetails';
+import { Card } from '@/components/ui/Card';
+import { flightService } from '@/services/flightService';
+import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+
+export const metadata: Metadata = { title: 'Flight confirmed' };
+const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+const money = (amount: number) =>
+  new Intl.NumberFormat('en-IN', {
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(amount);
+
+export default async function FlightConfirmationPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const criteria = createFlightSearchCriteria(params);
+  const offerId = first(params.offerId);
+  const confirmationCode = first(params.confirmationCode);
+  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
+  if (!offer || !confirmationCode)
+    return (
+      <div className="flight-booking-page">
+        <Card className="flight-booking-page__empty">
+          <h1>Confirmation unavailable</h1>
+          <p>Please start a new flight search.</p>
+        </Card>
+      </div>
+    );
+  const segment = offer.segments[0];
+  const itineraryQuery: Record<string, string> = {
+    adults: String(criteria.adults),
+    cabinClass: criteria.cabinClass,
+    departureDate: criteria.departureDate,
+    destination: criteria.destination,
+    offerId: offer.id,
+    origin: criteria.origin,
+    tripType: criteria.tripType,
+  };
+  if (criteria.returnDate) itineraryQuery.returnDate = criteria.returnDate;
+
+  return (
+    <div className="flight-confirmation-page">
+      <div className="flight-confirmation-page__container">
+        <div className="flight-confirmation-page__check">✓</div>
+        <p className="hotel-page__eyebrow">Flight confirmed</p>
+        <h1>You’re ready to fly.</h1>
+        <Card className="flight-confirmation-page__card">
+          <div className="flight-confirmation-page__reference">
+            <span>Mandyal Travels booking reference</span>
+            <strong>{confirmationCode}</strong>
+          </div>
+          <dl className="flight-confirmation-page__flight">
+            <div>
+              <dt>Airline</dt>
+              <dd>{segment.airlineName}</dd>
+            </div>
+            <div>
+              <dt>Flight</dt>
+              <dd>{segment.flightNumber}</dd>
+            </div>
+            <div>
+              <dt>Route</dt>
+              <dd>
+                {segment.departureAirport} → {segment.arrivalAirport}
+              </dd>
+            </div>
+            <div>
+              <dt>Departure</dt>
+              <dd>{criteria.departureDate}</dd>
+            </div>
+            <div>
+              <dt>Travelers</dt>
+              <dd>
+                {criteria.adults} adult{criteria.adults === 1 ? '' : 's'}
+              </dd>
+            </div>
+            <div>
+              <dt>Amount paid</dt>
+              <dd>{money(offer.totalPrice)}</dd>
+            </div>
+          </dl>
+          <FlightConfirmationDetails
+            confirmationCode={confirmationCode}
+            itineraryQuery={itineraryQuery}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+}

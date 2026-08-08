@@ -1,0 +1,114 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+
+import { FlightPaymentForm } from '@/components/flight/FlightPaymentForm';
+import { Card } from '@/components/ui/Card';
+import { flightService } from '@/services/flightService';
+import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+
+export const metadata: Metadata = { title: 'Flight payment' };
+
+const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+const money = (amount: number) =>
+  new Intl.NumberFormat('en-IN', {
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(amount);
+
+export default async function FlightPaymentPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const criteria = createFlightSearchCriteria(params);
+  const offerId = first(params.offerId);
+  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
+
+  if (!offer) {
+    return (
+      <div className="flight-booking-page">
+        <Card className="flight-booking-page__empty">
+          <p className="hotel-page__eyebrow">Fare unavailable</p>
+          <h1>Please choose your flight again.</h1>
+          <p>The selected offer could not be revalidated before payment.</p>
+          <Link className="ui-button ui-button--primary" href="/flights">
+            Return to flight search
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  const segment = offer.segments[0];
+  const backQuery: Record<string, string> = {
+    adults: String(criteria.adults),
+    cabinClass: criteria.cabinClass,
+    departureDate: criteria.departureDate,
+    destination: criteria.destination,
+    offerId: offer.id,
+    origin: criteria.origin,
+    tripType: criteria.tripType,
+  };
+  if (criteria.returnDate) backQuery.returnDate = criteria.returnDate;
+
+  return (
+    <div className="flight-booking-page flight-payment-page">
+      <div className="flight-booking-page__container">
+        <p className="hotel-page__eyebrow">Secure payment</p>
+        <h1>Complete your flight booking</h1>
+        <p className="flight-booking-page__intro">
+          Review the total and use the demonstration payment form below.
+        </p>
+        <div className="flight-payment-page__grid">
+          <Card>
+            <FlightPaymentForm
+              bookingSummary={{
+                airlineName: segment.airlineName,
+                departureAirport: segment.departureAirport,
+                departureDate: criteria.departureDate,
+                destinationAirport: segment.arrivalAirport,
+                flightNumber: segment.flightNumber,
+                total: offer.totalPrice,
+              }}
+              nextQuery={backQuery}
+            />
+          </Card>
+          <Card className="flight-passenger-page__summary">
+            <p className="hotel-page__eyebrow">Final booking summary</p>
+            <h2>
+              {segment.departureAirport} → {segment.arrivalAirport}
+            </h2>
+            <p>
+              {segment.airlineName} · {segment.flightNumber}
+            </p>
+            <dl>
+              <div>
+                <dt>Departure</dt>
+                <dd>{criteria.departureDate}</dd>
+              </div>
+              <div>
+                <dt>Travelers</dt>
+                <dd>
+                  {criteria.adults} adult{criteria.adults === 1 ? '' : 's'}
+                </dd>
+              </div>
+              <div className="flight-booking-page__total">
+                <dt>Total</dt>
+                <dd>{money(offer.totalPrice)}</dd>
+              </div>
+            </dl>
+            <p className="flight-booking-page__revalidation">Fare revalidated before payment.</p>
+            <Link
+              className="flight-booking-page__change"
+              href={{ pathname: '/flights/booking/passengers', query: backQuery }}
+            >
+              Back to passenger details
+            </Link>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
