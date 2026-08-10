@@ -85,7 +85,7 @@ export default async function BusPaymentPage({
                 <dd>{seats.join(', ')}</dd>
               </div>
               <div className="flight-booking-page__total">
-                <dt>Total</dt>
+                <dt>Fare before offers</dt>
                 <dd>{money(offer.totalPrice)}</dd>
               </div>
             </dl>
