@@ -27,6 +27,13 @@ const offers = [
     href: '/buses',
     action: 'Explore buses',
   },
+  {
+    code: 'ROADTRIP',
+    title: 'Car rental savings',
+    description: 'Use ROADTRIP for 8% off eligible car rentals of ₹1,000 or more, up to ₹400.',
+    href: '/cars',
+    action: 'Explore cars',
+  },
 ] as const;
 
 export default function OffersPage() {
@@ -64,7 +71,7 @@ export default function OffersPage() {
           </div>
           <p className="home-hero__description">
             FLYSMART, STAYMORE, and ROADTRIP are validated during their respective checkout flows.
-            Car promotions remain a preview. All promotions are demonstrations.
+            All promotions are demonstrations.
           </p>
         </div>
       </section>
