@@ -142,6 +142,7 @@ export interface CreateHotelBookingRequest {
   availabilityLockId: string;
   guest: HotelBookingRecord['guest'];
   hotelSlug: string;
+  promotionCode?: string;
   quoteId: string;
 }
 
