@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 interface StoredFlightBooking {
   confirmationCode?: string;
@@ -19,28 +19,33 @@ const money = (amount: number) =>
     style: 'currency',
   }).format(amount);
 
+const subscribe = () => () => undefined;
+
 export function FlightPaidAmount({
   confirmationCode,
   fallbackTotal,
 }: FlightPaidAmountProps) {
-  const [amountPaid, setAmountPaid] = useState(fallbackTotal);
+  const amountPaid = useSyncExternalStore(
+    subscribe,
+    () => {
+      const value = sessionStorage.getItem('mandyal-flight-booking');
+      if (!value) return fallbackTotal;
 
-  useEffect(() => {
-    const value = sessionStorage.getItem('mandyal-flight-booking');
-    if (!value) return;
-
-    try {
-      const booking = JSON.parse(value) as StoredFlightBooking;
-      if (
-        booking.confirmationCode === confirmationCode &&
-        typeof booking.total === 'number'
-      ) {
-        setAmountPaid(booking.total);
+      try {
+        const booking = JSON.parse(value) as StoredFlightBooking;
+        if (
+          booking.confirmationCode === confirmationCode &&
+          typeof booking.total === 'number'
+        ) {
+          return booking.total;
+        }
+      } catch {
+        // Keep the revalidated supplier fare when local booking data is unavailable.
       }
-    } catch {
-      // Keep the revalidated supplier fare when local booking data is unavailable.
-    }
-  }, [confirmationCode]);
+      return fallbackTotal;
+    },
+    () => fallbackTotal,
+  );
 
   return <dd>{money(amountPaid)}</dd>;
 }
