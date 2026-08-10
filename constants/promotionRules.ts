@@ -43,7 +43,7 @@ export const promotionRules: readonly PromotionRule[] = [
     maxDiscount: 400,
     minimumSubtotal: 1000,
     percentOff: 8,
-    products: ['BUS'],
+    products: ['BUS', 'CAR'],
     version: 1,
   },
 ];
