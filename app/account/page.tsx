@@ -112,6 +112,13 @@ export default async function AccountPage() {
     })),
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+  const confirmedTrips = trips.filter(
+    (trip) => trip.status.toUpperCase() === 'CONFIRMED',
+  ).length;
+  const bookedValue = trips
+    .filter((trip) => trip.currency === 'INR')
+    .reduce((total, trip) => total + trip.totalAmount, 0);
+
   return (
     <section className="account-page">
       <div className="auth-page__intro">
@@ -127,6 +134,30 @@ export default async function AccountPage() {
           <button className="ui-button ui-button--secondary" type="submit">Sign out</button>
         </form>
       </div>
+
+      <section className="account-trips" aria-labelledby="travel-summary-heading">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Account reporting</p>
+          <h2 id="travel-summary-heading">Travel summary</h2>
+        </div>
+        <div className="account-trip ui-card ui-card--padded">
+          <dl>
+            <div>
+              <dt>Total bookings</dt>
+              <dd>{trips.length}</dd>
+            </div>
+            <div>
+              <dt>Confirmed journeys</dt>
+              <dd>{confirmedTrips}</dd>
+            </div>
+            <div>
+              <dt>Booked value</dt>
+              <dd>{formatCurrency(bookedValue, 'INR')}</dd>
+            </div>
+          </dl>
+          <p>Summary values are calculated from bookings connected to this customer account.</p>
+        </div>
+      </section>
 
       <NotificationPreferences email={user.email} />
 
