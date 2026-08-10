@@ -1,17 +1,12 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { CarConfirmationDetails } from '@/components/car/CarConfirmationDetails';
+import { CarPaidAmount } from '@/components/car/CarPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
 export const metadata: Metadata = { title: 'Car rental confirmed' };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-const money = (n: number) =>
-  new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(n);
 export default async function CarConfirmationPage({
   searchParams,
 }: {
@@ -71,7 +66,10 @@ export default async function CarConfirmationPage({
             </div>
             <div>
               <dt>Amount paid</dt>
-              <dd>{money(offer.totalPrice)}</dd>
+              <CarPaidAmount
+                confirmationCode={confirmationCode}
+                fallbackTotal={offer.totalPrice}
+              />
             </div>
             <div>
               <dt>Payment status</dt>
