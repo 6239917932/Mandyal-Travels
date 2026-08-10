@@ -7,7 +7,7 @@ import type { BookingGuest, HotelBookingDraft } from '@/types/booking';
 interface BookingContextValue {
   booking: HotelBookingDraft | null;
   clearBooking: () => void;
-  confirmBooking: (confirmationCode: string, bookingId: string) => void;
+  confirmBooking: (confirmationCode: string, bookingId: string, totalAmount: number) => void;
   setBooking: (booking: HotelBookingDraft) => void;
   updateGuest: (guest: BookingGuest) => void;
 }
@@ -21,7 +21,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     () => ({
       booking,
       clearBooking: () => setBooking(null),
-      confirmBooking: (confirmationCode: string, bookingId: string) =>
+      confirmBooking: (confirmationCode: string, bookingId: string, totalAmount: number) =>
         setBooking((currentBooking) =>
           currentBooking
             ? {
@@ -29,6 +29,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
                 bookingId,
                 confirmationCode,
                 paymentStatus: 'captured',
+                pricing: {
+                  ...currentBooking.pricing,
+                  total: { ...currentBooking.pricing.total, amount: totalAmount },
+                },
                 status: 'confirmed',
               }
             : currentBooking,
