@@ -52,7 +52,7 @@ export class InMemoryBookingRepository implements BookingRepository {
     code: string,
     email: string,
   ): Promise<HotelBookingRecord | undefined> {
-    return this.bookings.find(
+    return [...this.bookingsByIdempotencyKey.values()].find(
       (booking) =>
         booking.confirmationCode === code &&
         normalizeEmail(booking.guest.email) === normalizeEmail(email),
