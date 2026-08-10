@@ -67,7 +67,7 @@ export default async function CarPaymentPage({
                 </dd>
               </div>
               <div>
-                <dt>Total</dt>
+                <dt>Fare before offers</dt>
                 <dd>{money(offer.totalPrice)}</dd>
               </div>
             </dl>
