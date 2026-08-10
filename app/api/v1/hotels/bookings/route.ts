@@ -19,6 +19,7 @@ function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequ
   return (
     typeof request.availabilityLockId === 'string' &&
     typeof request.hotelSlug === 'string' &&
+    (request.promotionCode === undefined || typeof request.promotionCode === 'string') &&
     typeof request.quoteId === 'string' &&
     Boolean(guest) &&
     typeof guest === 'object' &&
