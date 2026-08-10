@@ -7,6 +7,19 @@ import { Input } from '@/components/ui/Input';
 
 type FormErrors = Record<string, string>;
 
+interface AppliedPromotion {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  percentOff: number;
+  ruleVersion: number;
+}
+
+interface PromotionResponse {
+  data?: AppliedPromotion;
+  error?: { message?: string };
+}
+
 interface FlightPaymentFormProps {
   bookingSummary: {
     airlineName: string;
@@ -23,6 +36,56 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
   const router = useRouter();
   const [errors, setErrors] = useState<FormErrors>({});
   const [paid, setPaid] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promotion, setPromotion] = useState<AppliedPromotion>();
+  const [validatingPromotion, setValidatingPromotion] = useState(false);
+
+  const money = (amount: number) =>
+    new Intl.NumberFormat('en-IN', {
+      currency: 'INR',
+      maximumFractionDigits: 0,
+      style: 'currency',
+    }).format(amount);
+
+  async function applyPromotion() {
+    setValidatingPromotion(true);
+    setPromotion(undefined);
+    setErrors((current) => {
+      const { promotion: _promotionError, ...remaining } = current;
+      return remaining;
+    });
+
+    try {
+      const response = await fetch('/api/v1/promotions/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: promoCode,
+          productType: 'FLIGHT',
+          subtotal: bookingSummary.total,
+        }),
+      });
+      const payload = (await response.json()) as PromotionResponse;
+
+      if (!response.ok || !payload.data) {
+        setErrors((current) => ({
+          ...current,
+          promotion: payload.error?.message ?? 'The promotion could not be validated.',
+        }));
+        return;
+      }
+
+      setPromoCode(payload.data.code);
+      setPromotion(payload.data);
+    } catch {
+      setErrors((current) => ({
+        ...current,
+        promotion: 'The promotion service is temporarily unavailable.',
+      }));
+    } finally {
+      setValidatingPromotion(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,8 +122,14 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
 
     setPaid(true);
     const confirmationCode = `MF${Date.now().toString().slice(-8)}`;
+    const finalTotal = promotion?.finalTotal ?? bookingSummary.total;
     const completedBooking = {
       ...bookingSummary,
+      subtotal: bookingSummary.total,
+      discountAmount: promotion?.discountAmount ?? 0,
+      promotionCode: promotion?.code,
+      promotionRuleVersion: promotion?.ruleVersion,
+      total: finalTotal,
       confirmationCode,
       passengerDraft: parsedPassengerDraft,
       paymentStatus: 'captured',
@@ -81,7 +150,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
           subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
           startDate: bookingSummary.departureDate,
-          totalAmount: bookingSummary.total,
+          totalAmount: finalTotal,
           details: completedBooking,
         }),
       });
@@ -99,6 +168,37 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         <strong>Protected demonstration payment</strong>
         <span>Do not enter a real card number. These fields are never stored or submitted.</span>
       </div>
+      <div className="flight-payment-form__row">
+        <Input
+          autoComplete="off"
+          error={errors.promotion}
+          label="Promotion code"
+          name="promoCode"
+          onChange={(event) => {
+            setPromoCode(event.target.value.toUpperCase());
+            setPromotion(undefined);
+          }}
+          placeholder="FLYSMART"
+          value={promoCode}
+        />
+        <div className="ui-field">
+          <span className="ui-field__label">Offer validation</span>
+          <button
+            className="ui-button ui-button--secondary"
+            disabled={validatingPromotion || promoCode.trim().length === 0}
+            onClick={applyPromotion}
+            type="button"
+          >
+            {validatingPromotion ? 'Checking…' : 'Apply code'}
+          </button>
+        </div>
+      </div>
+      {promotion ? (
+        <p className="flight-booking-page__revalidation" role="status">
+          {promotion.code} applied: save {money(promotion.discountAmount)} and pay{' '}
+          {money(promotion.finalTotal)}.
+        </p>
+      ) : null}
       <Input
         autoComplete="cc-name"
         error={errors.cardholder}
