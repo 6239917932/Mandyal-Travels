@@ -10,10 +10,74 @@ interface BusPaymentFormProps {
   nextQuery: Record<string, string>;
 }
 
+interface AppliedPromotion {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  ruleVersion: number;
+}
+
+interface PromotionResponse {
+  data?: AppliedPromotion;
+  error?: { message?: string };
+}
+
 export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProps) {
   const router = useRouter();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paid, setPaid] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promotion, setPromotion] = useState<AppliedPromotion>();
+  const [validatingPromotion, setValidatingPromotion] = useState(false);
+  const subtotal = Number(bookingSummary.total);
+
+  const money = (amount: number) =>
+    new Intl.NumberFormat('en-IN', {
+      currency: 'INR',
+      maximumFractionDigits: 0,
+      style: 'currency',
+    }).format(amount);
+
+  async function applyPromotion() {
+    setValidatingPromotion(true);
+    setPromotion(undefined);
+    setErrors((current) => {
+      const remaining = { ...current };
+      delete remaining.promotion;
+      return remaining;
+    });
+
+    try {
+      const response = await fetch('/api/v1/promotions/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: promoCode,
+          productType: 'BUS',
+          subtotal,
+        }),
+      });
+      const payload = (await response.json()) as PromotionResponse;
+
+      if (!response.ok || !payload.data) {
+        setErrors((current) => ({
+          ...current,
+          promotion: payload.error?.message ?? 'The promotion could not be validated.',
+        }));
+        return;
+      }
+
+      setPromoCode(payload.data.code);
+      setPromotion(payload.data);
+    } catch {
+      setErrors((current) => ({
+        ...current,
+        promotion: 'The promotion service is temporarily unavailable.',
+      }));
+    } finally {
+      setValidatingPromotion(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,8 +111,14 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
 
     setPaid(true);
     const confirmationCode = `MB${Date.now().toString().slice(-8)}`;
+    const finalTotal = promotion?.finalTotal ?? subtotal;
     const completedBooking = {
       ...bookingSummary,
+      subtotal,
+      discountAmount: promotion?.discountAmount ?? 0,
+      promotionCode: promotion?.code,
+      promotionRuleVersion: promotion?.ruleVersion,
+      total: finalTotal,
       confirmationCode,
       passengerDraft: parsedPassengerDraft,
       paymentStatus: 'captured',
@@ -69,7 +139,7 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
           title: `${bookingSummary.origin} → ${bookingSummary.destination}`,
           subtitle: bookingSummary.operatorName,
           startDate: bookingSummary.travelDate,
-          totalAmount: bookingSummary.total,
+          totalAmount: finalTotal,
           details: completedBooking,
         }),
       });
@@ -86,6 +156,37 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
         <strong>Protected demonstration payment</strong>
         <span>Do not enter a real card number. These fields are never stored or submitted.</span>
       </div>
+      <div className="flight-payment-form__row">
+        <Input
+          autoComplete="off"
+          error={errors.promotion}
+          label="Promotion code"
+          name="promoCode"
+          onChange={(event) => {
+            setPromoCode(event.target.value.toUpperCase());
+            setPromotion(undefined);
+          }}
+          placeholder="ROADTRIP"
+          value={promoCode}
+        />
+        <div className="ui-field">
+          <span className="ui-field__label">Offer validation</span>
+          <button
+            className="ui-button ui-button--secondary"
+            disabled={validatingPromotion || promoCode.trim().length === 0}
+            onClick={applyPromotion}
+            type="button"
+          >
+            {validatingPromotion ? 'Checking…' : 'Apply code'}
+          </button>
+        </div>
+      </div>
+      {promotion ? (
+        <p className="flight-booking-page__revalidation" role="status">
+          {promotion.code} applied: save {money(promotion.discountAmount)} and pay{' '}
+          {money(promotion.finalTotal)}.
+        </p>
+      ) : null}
       <Input error={errors.cardholder} label="Name on card" name="cardholder" />
       <Input
         error={errors.cardNumber}
