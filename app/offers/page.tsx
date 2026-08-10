@@ -22,8 +22,8 @@ const offers = [
   },
   {
     code: 'ROADTRIP',
-    title: 'Bus and car travel',
-    description: 'Plan ground travel with bus seats and car rental choices available across the portal.',
+    title: 'Bus travel savings',
+    description: 'Use ROADTRIP for 8% off eligible bus bookings of ₹1,000 or more, up to ₹400.',
     href: '/buses',
     action: 'Explore buses',
   },
@@ -63,8 +63,8 @@ export default function OffersPage() {
             ))}
           </div>
           <p className="home-hero__description">
-            FLYSMART and STAYMORE are validated during their respective checkout flows. ROADTRIP
-            remains a preview until its product rules are connected. All promotions are demonstrations.
+            FLYSMART, STAYMORE, and ROADTRIP are validated during their respective checkout flows.
+            Car promotions remain a preview. All promotions are demonstrations.
           </p>
         </div>
       </section>
