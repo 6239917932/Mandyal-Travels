@@ -159,3 +159,123 @@
   color: var(--color-text-secondary);
   line-height: 1.7;
 }
+
+.auth-page {
+  width: min(100% - 2rem, 46rem);
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: var(--space-12) 0;
+}
+
+.auth-page__intro { margin-bottom: var(--space-6); }
+.auth-page__intro h1 { margin: var(--space-2) 0; color: var(--color-brand-900); font-size: clamp(2rem, 6vw, 3rem); }
+.auth-page__intro > p:last-child { color: var(--color-text-secondary); }
+.auth-form { display: grid; gap: var(--space-5); }
+.auth-form__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.auth-form small, .auth-form__alternate { color: var(--color-text-secondary); }
+.auth-form__checkbox { display: flex; align-items: flex-start; gap: var(--space-2); color: var(--color-text-secondary); }
+.auth-form__error { margin: 0; border-radius: var(--radius-md); background: #fff0f0; color: var(--color-danger); padding: var(--space-3); }
+.auth-form__alternate { margin: 0; text-align: center; }
+.auth-form__alternate a { color: var(--color-brand-700); font-weight: 700; }
+.account-card { display: grid; gap: var(--space-5); }
+.account-card > div { display: grid; gap: var(--space-1); }
+.account-card span { color: var(--color-text-muted); font-size: 0.8125rem; }
+
+.account-page {
+  width: min(100% - 2rem, 62rem);
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: var(--space-12) 0;
+}
+
+.account-trips {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-10);
+}
+
+.account-trips__heading h2,
+.account-trip h3,
+.account-trip p,
+.account-trips__empty p {
+  margin: 0;
+}
+
+.account-trips__list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.account-trips__empty {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.account-trip {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.account-trip__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-trip__type {
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.account-trip__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 1.4fr);
+  gap: var(--space-6);
+}
+
+.account-trip__body > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.account-trip__body p,
+.account-trips__empty p {
+  color: var(--color-text-muted);
+}
+
+.account-trip dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.account-trip dl > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.account-trip dt {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.account-trip dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (max-width: 36rem) {
+  .auth-form__row { grid-template-columns: 1fr; }
+
+  .account-trip__body,
+  .account-trip dl {
+    grid-template-columns: 1fr;
+  }
+}

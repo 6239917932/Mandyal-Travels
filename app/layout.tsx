@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { BookingProvider } from '@/context/BookingContext';
+import { getCurrentUser } from '@/lib/auth/session';
 
 import './globals.css';
 
@@ -25,16 +26,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <BookingProvider>
-          <SiteHeader />
+          <SiteHeader user={user ? { firstName: user.firstName } : null} />
           <main>{children}</main>
           <SiteFooter />
         </BookingProvider>

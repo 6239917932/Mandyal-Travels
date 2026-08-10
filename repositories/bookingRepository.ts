@@ -1,4 +1,5 @@
 import type { HotelBookingRecord } from '@/types/commerce';
+import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 
 export interface BookingRepository {
@@ -6,6 +7,10 @@ export interface BookingRepository {
   findByConfirmationCode(
     code: string,
     accessTokenHash: string,
+  ): Promise<HotelBookingRecord | undefined>;
+  findByConfirmationCodeAndGuestEmail(
+    code: string,
+    email: string,
   ): Promise<HotelBookingRecord | undefined>;
   findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined>;
   findById(id: string): Promise<HotelBookingRecord | undefined>;
@@ -40,6 +45,17 @@ export class InMemoryBookingRepository implements BookingRepository {
 
     return [...this.bookingsByIdempotencyKey.values()].find(
       (booking) => booking.confirmationCode === code,
+    );
+  }
+
+  async findByConfirmationCodeAndGuestEmail(
+    code: string,
+    email: string,
+  ): Promise<HotelBookingRecord | undefined> {
+    return this.bookings.find(
+      (booking) =>
+        booking.confirmationCode === code &&
+        normalizeEmail(booking.guest.email) === normalizeEmail(email),
     );
   }
 
@@ -132,6 +148,25 @@ export class PrismaBookingRepository implements BookingRepository {
       where: { confirmationCode: code, accessTokenHash },
     });
     return booking ? mapBooking(booking) : undefined;
+  }
+
+  async findByConfirmationCodeAndGuestEmail(
+    code: string,
+    email: string,
+  ): Promise<HotelBookingRecord | undefined> {
+    const booking = await prisma.booking.findUnique({
+      include: { guest: true, payment: true },
+      where: { confirmationCode: code },
+    });
+
+    if (
+      !booking?.guest ||
+      normalizeEmail(booking.guest.email) !== normalizeEmail(email)
+    ) {
+      return undefined;
+    }
+
+    return mapBooking(booking);
   }
 
   async findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined> {

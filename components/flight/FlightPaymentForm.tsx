@@ -24,7 +24,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
   const [errors, setErrors] = useState<FormErrors>({});
   const [paid, setPaid] = useState(false);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const nextErrors: FormErrors = {};
@@ -58,15 +58,35 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
 
     setPaid(true);
     const confirmationCode = `MF${Date.now().toString().slice(-8)}`;
+    const completedBooking = {
+      ...bookingSummary,
+      confirmationCode,
+      passengerDraft: parsedPassengerDraft,
+      paymentStatus: 'captured',
+      documentQuery: new URLSearchParams(nextQuery).toString(),
+    };
     sessionStorage.setItem(
       'mandyal-flight-booking',
-      JSON.stringify({
-        ...bookingSummary,
-        confirmationCode,
-        passengerDraft: parsedPassengerDraft,
-        paymentStatus: 'captured',
-      }),
+      JSON.stringify(completedBooking),
     );
+    try {
+      await fetch('/api/v1/account/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productType: 'FLIGHT',
+          confirmationCode,
+          status: 'CONFIRMED',
+          title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
+          subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
+          startDate: bookingSummary.departureDate,
+          totalAmount: bookingSummary.total,
+          details: completedBooking,
+        }),
+      });
+    } catch {
+      // Account trip history is optional and must not interrupt checkout.
+    }
     event.currentTarget.reset();
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/flights/booking/confirmation?${query.toString()}`);

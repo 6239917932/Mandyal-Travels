@@ -5,7 +5,9 @@ import { useState } from 'react';
 
 import { siteConfig } from '@/config/site';
 
-export function SiteHeader() {
+type SiteHeaderProps = { user: { firstName: string } | null };
+
+export function SiteHeader({ user }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const closeMenu = () => {
@@ -49,8 +51,8 @@ export function SiteHeader() {
             </Link>
           ))}
 
-          <Link className="site-navigation__cta" href="/login" onClick={closeMenu}>
-            Sign in
+          <Link className="site-navigation__cta" href={user ? '/account' : '/login'} onClick={closeMenu}>
+            {user ? `Hi, ${user.firstName}` : 'Sign in'}
           </Link>
         </nav>
       </div>

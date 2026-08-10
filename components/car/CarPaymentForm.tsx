@@ -12,7 +12,7 @@ export function CarPaymentForm({
   const router = useRouter();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paid, setPaid] = useState(false);
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget),
       name = String(form.get('cardholder') ?? '').trim(),
@@ -38,10 +38,36 @@ export function CarPaymentForm({
     }
     setPaid(true);
     const confirmationCode = `MC${Date.now().toString().slice(-8)}`;
+    const completedBooking = {
+      ...bookingSummary,
+      confirmationCode,
+      driver,
+      paymentStatus: 'captured',
+      documentQuery: new URLSearchParams(nextQuery).toString(),
+    };
     sessionStorage.setItem(
       'mandyal-car-booking',
-      JSON.stringify({ ...bookingSummary, confirmationCode, driver, paymentStatus: 'captured' }),
+      JSON.stringify(completedBooking),
     );
+    try {
+      await fetch('/api/v1/account/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productType: 'CAR',
+          confirmationCode,
+          status: 'CONFIRMED',
+          title: bookingSummary.vehicleName,
+          subtitle: bookingSummary.providerName,
+          startDate: bookingSummary.pickupDate,
+          endDate: bookingSummary.dropoffDate,
+          totalAmount: bookingSummary.total,
+          details: completedBooking,
+        }),
+      });
+    } catch {
+      // Account trip history is optional and must not interrupt checkout.
+    }
     router.push(
       `/cars/booking/confirmation?${new URLSearchParams({ ...nextQuery, confirmationCode })}`,
     );

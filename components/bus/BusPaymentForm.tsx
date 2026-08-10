@@ -15,7 +15,7 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paid, setPaid] = useState(false);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const cardholder = String(form.get('cardholder') ?? '').trim();
@@ -47,15 +47,35 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
 
     setPaid(true);
     const confirmationCode = `MB${Date.now().toString().slice(-8)}`;
+    const completedBooking = {
+      ...bookingSummary,
+      confirmationCode,
+      passengerDraft: parsedPassengerDraft,
+      paymentStatus: 'captured',
+      documentQuery: new URLSearchParams(nextQuery).toString(),
+    };
     sessionStorage.setItem(
       'mandyal-bus-booking',
-      JSON.stringify({
-        ...bookingSummary,
-        confirmationCode,
-        passengerDraft: parsedPassengerDraft,
-        paymentStatus: 'captured',
-      }),
+      JSON.stringify(completedBooking),
     );
+    try {
+      await fetch('/api/v1/account/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productType: 'BUS',
+          confirmationCode,
+          status: 'CONFIRMED',
+          title: `${bookingSummary.origin} → ${bookingSummary.destination}`,
+          subtitle: bookingSummary.operatorName,
+          startDate: bookingSummary.travelDate,
+          totalAmount: bookingSummary.total,
+          details: completedBooking,
+        }),
+      });
+    } catch {
+      // Account trip history is optional and must not interrupt checkout.
+    }
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/buses/booking/confirmation?${query.toString()}`);
   }

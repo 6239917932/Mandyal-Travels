@@ -280,6 +280,25 @@ export class HotelBookingService {
       return undefined;
     }
 
+    return this.enrichManagedBooking(booking);
+  }
+
+  async getManagedBookingForGuest(
+    code: string,
+    email: string,
+  ): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.bookings.findByConfirmationCodeAndGuestEmail(code, email);
+    if (!booking) {
+      return undefined;
+    }
+
+    return this.enrichManagedBooking(booking);
+  }
+
+  private async enrichManagedBooking(
+    booking: HotelBookingRecord,
+  ): Promise<ManagedHotelBooking> {
+
     const [hotel, quote, latestAmendment] = await Promise.all([
       this.hotels.getHotelBySlug(booking.hotelSlug),
       this.quotes.findById(booking.quoteId),

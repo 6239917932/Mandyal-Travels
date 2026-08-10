@@ -4,19 +4,19 @@ import { redirect } from 'next/navigation';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { getCurrentUser } from '@/lib/auth/session';
 
-export const metadata: Metadata = { title: 'Sign in' };
+export const metadata: Metadata = { title: 'Create account' };
 
-export default async function LoginPage() {
+export default async function RegisterPage() {
   if (await getCurrentUser()) redirect('/account');
 
   return (
     <section className="auth-page">
       <div className="auth-page__intro">
-        <p className="hotel-page__eyebrow">Account access</p>
-        <h1>Welcome back.</h1>
-        <p>Sign in to manage your Mandyal Travels account securely.</p>
+        <p className="hotel-page__eyebrow">Join Mandyal Travels</p>
+        <h1>Create your account.</h1>
+        <p>Keep your contact details and future trips together in one secure place.</p>
       </div>
-      <AuthForm mode="login" />
+      <AuthForm mode="register" />
     </section>
   );
 }
