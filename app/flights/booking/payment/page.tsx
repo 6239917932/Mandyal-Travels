@@ -95,7 +95,7 @@ export default async function FlightPaymentPage({
                 </dd>
               </div>
               <div className="flight-booking-page__total">
-                <dt>Total</dt>
+                <dt>Fare before offers</dt>
                 <dd>{money(offer.totalPrice)}</dd>
               </div>
             </dl>
