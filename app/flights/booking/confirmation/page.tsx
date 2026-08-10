@@ -1,18 +1,13 @@
 import type { Metadata } from 'next';
 
 import { FlightConfirmationDetails } from '@/components/flight/FlightConfirmationDetails';
+import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Flight confirmed' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-const money = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(amount);
 
 export default async function FlightConfirmationPage({
   searchParams,
@@ -83,7 +78,10 @@ export default async function FlightConfirmationPage({
             </div>
             <div>
               <dt>Amount paid</dt>
-              <dd>{money(offer.totalPrice)}</dd>
+              <FlightPaidAmount
+                confirmationCode={confirmationCode}
+                fallbackTotal={offer.totalPrice}
+              />
             </div>
           </dl>
           <FlightConfirmationDetails
