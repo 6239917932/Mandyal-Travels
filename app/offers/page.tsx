@@ -58,7 +58,7 @@ export default function OffersPage() {
           </div>
           <div className="travel-options-grid">
             {offers.map((offer, index) => (
-              <Card className="travel-option" key={offer.code}>
+              <Card className="travel-option" key={`${offer.code}-${offer.href}`}>
                 <span className="travel-option__number">0{index + 1}</span>
                 <p className="home-section__eyebrow">{offer.code}</p>
                 <h3>{offer.title}</h3>
