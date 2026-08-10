@@ -26,7 +26,8 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const nextErrors: FormErrors = {};
     const cardholder = String(form.get('cardholder') ?? '').trim();
     const cardNumber = String(form.get('cardNumber') ?? '').replace(/\D/g, '');
@@ -87,7 +88,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     } catch {
       // Account trip history is optional and must not interrupt checkout.
     }
-    event.currentTarget.reset();
+    formElement.reset();
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/flights/booking/confirmation?${query.toString()}`);
   }
