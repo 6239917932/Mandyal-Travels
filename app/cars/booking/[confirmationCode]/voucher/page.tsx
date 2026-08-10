@@ -1,16 +1,11 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PrintDocumentButton } from '@/components/booking/PrintDocumentButton';
+import { CarPaidAmount } from '@/components/car/CarPaidAmount';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
 export const metadata: Metadata = { title: 'Car rental voucher' };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-const money = (n: number) =>
-  new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(n);
 export default async function CarVoucherPage({
   params,
   searchParams,
@@ -89,7 +84,11 @@ export default async function CarVoucherPage({
         </section>
         <div className="booking-document__total">
           <span>Amount paid</span>
-          <strong>{money(offer.totalPrice)}</strong>
+          <CarPaidAmount
+            confirmationCode={confirmationCode}
+            fallbackTotal={offer.totalPrice}
+            inline
+          />
         </div>
         <footer className="booking-document__footer">
           Present this voucher, the primary driver&apos;s original licence, payment card, and
