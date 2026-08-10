@@ -16,7 +16,7 @@ const offers = [
   {
     code: 'FLYSMART',
     title: 'Flight booking offers',
-    description: 'Compare available flight options before choosing the fare that works for your journey.',
+    description: 'Use FLYSMART for 10% off eligible flight bookings of ₹4,000 or more, up to ₹1,000.',
     href: '/flights',
     action: 'Search flights',
   },
@@ -63,8 +63,8 @@ export default function OffersPage() {
             ))}
           </div>
           <p className="home-hero__description">
-            These are demonstration promotions. No discount is applied until a promotion engine
-            validates dates, inventory, traveller eligibility, and booking terms.
+            FLYSMART is validated during flight checkout. Other displayed codes remain previews
+            until their product rules are connected. All promotions are demonstrations.
           </p>
         </div>
       </section>
