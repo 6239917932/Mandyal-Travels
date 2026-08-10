@@ -13,6 +13,8 @@ export const siteConfig = {
     { href: '/flights', label: 'Flights' },
     { href: '/buses', label: 'Buses' },
     { href: '/cars', label: 'Cars' },
+    { href: '/business', label: 'Business' },
+    { href: '/partners', label: 'Partners' },
   ] satisfies NavigationItem[],
   supportEmail: 'support@mandyaltravels.com',
 } as const;
