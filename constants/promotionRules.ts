@@ -10,6 +10,14 @@ export interface PromotionRule {
   version: number;
 }
 
+export interface PromotionApplication {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+  percentOff: number;
+  ruleVersion: number;
+}
+
 export const promotionRules: readonly PromotionRule[] = [
   {
     active: true,
@@ -20,4 +28,44 @@ export const promotionRules: readonly PromotionRule[] = [
     products: ['FLIGHT'],
     version: 1,
   },
+  {
+    active: true,
+    code: 'STAYMORE',
+    maxDiscount: 1500,
+    minimumSubtotal: 8000,
+    percentOff: 12,
+    products: ['HOTEL'],
+    version: 1,
+  },
 ];
+
+export function findPromotionRule(
+  code: string,
+  productType: PromotionProduct,
+): PromotionRule | undefined {
+  const normalizedCode = code.trim().toUpperCase();
+  return promotionRules.find(
+    (rule) =>
+      rule.active &&
+      rule.code === normalizedCode &&
+      rule.products.includes(productType),
+  );
+}
+
+export function calculatePromotion(
+  rule: PromotionRule,
+  subtotal: number,
+): PromotionApplication {
+  const discountAmount = Math.min(
+    Math.floor((subtotal * rule.percentOff) / 100),
+    rule.maxDiscount,
+  );
+
+  return {
+    code: rule.code,
+    discountAmount,
+    finalTotal: subtotal - discountAmount,
+    percentOff: rule.percentOff,
+    ruleVersion: rule.version,
+  };
+}
