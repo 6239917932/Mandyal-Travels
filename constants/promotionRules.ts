@@ -37,6 +37,15 @@ export const promotionRules: readonly PromotionRule[] = [
     products: ['HOTEL'],
     version: 1,
   },
+  {
+    active: true,
+    code: 'ROADTRIP',
+    maxDiscount: 400,
+    minimumSubtotal: 1000,
+    percentOff: 8,
+    products: ['BUS'],
+    version: 1,
+  },
 ];
 
 export function findPromotionRule(
