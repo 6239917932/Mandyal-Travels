@@ -51,7 +51,8 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     setValidatingPromotion(true);
     setPromotion(undefined);
     setErrors((current) => {
-      const { promotion: _promotionError, ...remaining } = current;
+      const remaining = { ...current };
+      delete remaining.promotion;
       return remaining;
     });
 
