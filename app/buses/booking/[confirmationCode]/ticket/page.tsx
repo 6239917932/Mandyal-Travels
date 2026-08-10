@@ -2,18 +2,13 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { PrintDocumentButton } from '@/components/booking/PrintDocumentButton';
+import { BusPaidAmount } from '@/components/bus/BusPaidAmount';
 import { BusTicketPassengerDetails } from '@/components/bus/BusTicketPassengerDetails';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
 
 export const metadata: Metadata = { title: 'Bus ticket' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-const money = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(amount);
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat('en-IN', {
     dateStyle: 'medium',
@@ -111,7 +106,11 @@ export default async function BusTicketPage({
         <BusTicketPassengerDetails confirmationCode={confirmationCode} />
         <div className="booking-document__total">
           <span>Amount paid</span>
-          <strong>{money(offer.totalPrice)}</strong>
+          <BusPaidAmount
+            confirmationCode={confirmationCode}
+            fallbackTotal={offer.totalPrice}
+            inline
+          />
         </div>
         <footer className="booking-document__footer">
           Please arrive at the boarding point at least 20 minutes before departure and carry valid
