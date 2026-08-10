@@ -9,7 +9,7 @@ const offers = [
   {
     code: 'STAYMORE',
     title: 'Hotel stay savings',
-    description: 'Explore demonstration hotel offers for selected destinations and eligible stay dates.',
+    description: 'Use STAYMORE for 12% off eligible hotel bookings of ₹8,000 or more, up to ₹1,500.',
     href: '/hotels',
     action: 'Search hotels',
   },
@@ -63,8 +63,8 @@ export default function OffersPage() {
             ))}
           </div>
           <p className="home-hero__description">
-            FLYSMART is validated during flight checkout. Other displayed codes remain previews
-            until their product rules are connected. All promotions are demonstrations.
+            FLYSMART and STAYMORE are validated during their respective checkout flows. ROADTRIP
+            remains a preview until its product rules are connected. All promotions are demonstrations.
           </p>
         </div>
       </section>
