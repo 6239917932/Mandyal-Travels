@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { promotionRules, type PromotionProduct } from '@/constants/promotionRules';
+import {
+  calculatePromotion,
+  findPromotionRule,
+  type PromotionProduct,
+} from '@/constants/promotionRules';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'HOTEL', 'BUS', 'CAR']);
 
@@ -31,9 +35,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const rule = promotionRules.find((candidate) => candidate.active && candidate.code === code);
+  const rule = findPromotionRule(code, productType);
 
-  if (!rule || !rule.products.includes(productType)) {
+  if (!rule) {
     return NextResponse.json(
       { error: { code: 'PROMOTION_NOT_AVAILABLE', message: 'This code is not available for this booking.' } },
       { status: 404 },
@@ -52,19 +56,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const discountAmount = Math.min(
-    Math.floor(((subtotal as number) * rule.percentOff) / 100),
-    rule.maxDiscount,
-  );
-  const finalTotal = (subtotal as number) - discountAmount;
-
   return NextResponse.json({
-    data: {
-      code: rule.code,
-      discountAmount,
-      finalTotal,
-      percentOff: rule.percentOff,
-      ruleVersion: rule.version,
-    },
+    data: calculatePromotion(rule, subtotal as number),
   });
 }
