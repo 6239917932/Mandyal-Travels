@@ -18,11 +18,26 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
+interface AppliedPromotion {
+  code: string;
+  discountAmount: number;
+  finalTotal: number;
+}
+
+interface PromotionResponse {
+  data?: AppliedPromotion;
+  error?: { message?: string };
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const { booking, confirmBooking } = useBookingContext();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string>();
+  const [promoCode, setPromoCode] = useState('');
+  const [promotion, setPromotion] = useState<AppliedPromotion>();
+  const [promotionError, setPromotionError] = useState<string>();
+  const [isValidatingPromotion, setIsValidatingPromotion] = useState(false);
 
   if (!booking || !booking.guest) {
     return (
@@ -43,6 +58,39 @@ export default function PaymentPage() {
 
   const bookingDraft = booking;
   const bookingSlug = bookingDraft.hotel.slug;
+  const originalTotal = bookingDraft.pricing.total.amount;
+  const finalTotal = promotion?.finalTotal ?? originalTotal;
+
+  async function applyPromotion() {
+    setPromotion(undefined);
+    setPromotionError(undefined);
+    setIsValidatingPromotion(true);
+
+    try {
+      const response = await fetch('/api/v1/promotions/validate', {
+        body: JSON.stringify({
+          code: promoCode,
+          productType: 'HOTEL',
+          subtotal: originalTotal,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const result = (await response.json()) as PromotionResponse;
+
+      if (!response.ok || !result.data) {
+        setPromotionError(result.error?.message ?? 'The promotion could not be validated.');
+        return;
+      }
+
+      setPromoCode(result.data.code);
+      setPromotion(result.data);
+    } catch {
+      setPromotionError('The promotion service is temporarily unavailable.');
+    } finally {
+      setIsValidatingPromotion(false);
+    }
+  }
 
   async function submitPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,6 +102,7 @@ export default function PaymentPage() {
         availabilityLockId: bookingDraft.availabilityLock.id,
         guest: bookingDraft.guest,
         hotelSlug: bookingDraft.hotel.slug,
+        promotionCode: promotion?.code,
         quoteId: bookingDraft.quoteId,
       }),
       headers: {
@@ -71,7 +120,7 @@ export default function PaymentPage() {
     }
 
     const { data: createdBooking } = (await response.json()) as { data: HotelBookingRecord };
-    confirmBooking(createdBooking.confirmationCode, createdBooking.id);
+    confirmBooking(createdBooking.confirmationCode, createdBooking.id, createdBooking.totalAmount);
     router.push(`/hotels/${bookingSlug}/booking/confirmation`);
   }
 
@@ -92,6 +141,45 @@ export default function PaymentPage() {
             </div>
 
             <form className="booking-page__guest-form" onSubmit={submitPayment}>
+              <div className="booking-page__payment-fields">
+                <Input
+                  autoComplete="off"
+                  label="Promotion code"
+                  name="promoCode"
+                  onChange={(event) => {
+                    setPromoCode(event.target.value.toUpperCase());
+                    setPromotion(undefined);
+                  }}
+                  placeholder="STAYMORE"
+                  value={promoCode}
+                />
+                <div className="ui-field">
+                  <span className="ui-field__label">Offer validation</span>
+                  <Button
+                    disabled={promoCode.trim().length === 0}
+                    isLoading={isValidatingPromotion}
+                    onClick={applyPromotion}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Apply code
+                  </Button>
+                </div>
+              </div>
+              {promotionError ? (
+                <p className="booking-page__payment-error" role="alert">
+                  {promotionError}
+                </p>
+              ) : null}
+              {promotion ? (
+                <div className="booking-page__secure-banner" role="status">
+                  <strong>{promotion.code} applied</strong>
+                  <span>
+                    Save {formatCurrency(promotion.discountAmount, bookingDraft.pricing.total.currency)}
+                    {' '}and pay {formatCurrency(promotion.finalTotal, bookingDraft.pricing.total.currency)}.
+                  </span>
+                </div>
+              ) : null}
               <Input autoComplete="cc-name" label="Name on card" name="cardholderName" required />
               <Input
                 autoComplete="cc-number"
@@ -125,7 +213,7 @@ export default function PaymentPage() {
                 />
               </div>
               <Button fullWidth isLoading={isProcessing} type="submit" variant="accent">
-                Pay {formatCurrency(booking.pricing.total.amount, booking.pricing.total.currency)}
+                Pay {formatCurrency(finalTotal, booking.pricing.total.currency)}
               </Button>
               {paymentError ? (
                 <p className="booking-page__payment-error" role="alert">
@@ -153,11 +241,25 @@ export default function PaymentPage() {
                 </dd>
               </div>
               <div className="booking-page__total">
-                <dt>Total</dt>
+                <dt>{promotion ? 'Fare before offers' : 'Total'}</dt>
                 <dd>
-                  {formatCurrency(booking.pricing.total.amount, booking.pricing.total.currency)}
+                  {formatCurrency(originalTotal, booking.pricing.total.currency)}
                 </dd>
               </div>
+              {promotion ? (
+                <>
+                  <div>
+                    <dt>Offer savings</dt>
+                    <dd>
+                      -{formatCurrency(promotion.discountAmount, booking.pricing.total.currency)}
+                    </dd>
+                  </div>
+                  <div className="booking-page__total">
+                    <dt>Amount to pay</dt>
+                    <dd>{formatCurrency(finalTotal, booking.pricing.total.currency)}</dd>
+                  </div>
+                </>
+              ) : null}
             </dl>
             <p>{booking.ratePlan.cancellationPolicy.description}</p>
           </Card>
