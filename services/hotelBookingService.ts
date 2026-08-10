@@ -1,5 +1,7 @@
 import { createHash, createHmac } from 'node:crypto';
 
+import { calculatePromotion, findPromotionRule } from '@/constants/promotionRules';
+
 import {
   availabilityLockRepository,
   type AvailabilityLockRepository,
@@ -244,6 +246,24 @@ export class HotelBookingService {
       );
     }
 
+    let totalAmount = quote.totalAmount;
+    if (request.promotionCode) {
+      const promotionRule = findPromotionRule(request.promotionCode, 'HOTEL');
+      if (!promotionRule) {
+        throw new HotelBookingRuleError(
+          'PROMOTION_NOT_AVAILABLE',
+          'This promotion is not available for this hotel booking.',
+        );
+      }
+      if (quote.totalAmount < promotionRule.minimumSubtotal) {
+        throw new HotelBookingRuleError(
+          'MINIMUM_SUBTOTAL_NOT_MET',
+          `This offer requires a minimum booking value of ₹${promotionRule.minimumSubtotal.toLocaleString('en-IN')}.`,
+        );
+      }
+      totalAmount = calculatePromotion(promotionRule, quote.totalAmount).finalTotal;
+    }
+
     const booking: HotelBookingRecord = {
       availabilityLockId: convertedLock.id,
       confirmationCode: `MT${Date.now().toString().slice(-8)}`,
@@ -255,7 +275,7 @@ export class HotelBookingService {
       paymentStatus: 'captured',
       quoteId: quote.id,
       status: 'confirmed',
-      totalAmount: quote.totalAmount,
+      totalAmount,
     };
 
     const accessToken = createBookingAccessToken(idempotencyKey);
