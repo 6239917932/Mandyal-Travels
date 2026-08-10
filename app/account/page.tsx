@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { NotificationPreferences } from '@/components/account/NotificationPreferences';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
@@ -126,6 +127,8 @@ export default async function AccountPage() {
           <button className="ui-button ui-button--secondary" type="submit">Sign out</button>
         </form>
       </div>
+
+      <NotificationPreferences email={user.email} />
 
       <div className="account-trips">
         <div className="account-trips__heading">
