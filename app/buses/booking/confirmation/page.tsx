@@ -1,18 +1,13 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+import { BusPaidAmount } from '@/components/bus/BusPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
 
 export const metadata: Metadata = { title: 'Bus confirmed' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-const money = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(amount);
 
 export default async function BusConfirmationPage({
   searchParams,
@@ -80,7 +75,10 @@ export default async function BusConfirmationPage({
             </div>
             <div>
               <dt>Amount paid</dt>
-              <dd>{money(offer.totalPrice)}</dd>
+              <BusPaidAmount
+                confirmationCode={confirmationCode}
+                fallbackTotal={offer.totalPrice}
+              />
             </div>
             <div>
               <dt>Payment status</dt>
