@@ -1,5 +1,6 @@
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { exportLimitExceededResponse, MAX_EXPORT_ROWS } from '@/lib/reporting/exportLimit';
 import { createCsv } from '@/utils/csv';
 
 export async function GET() {
@@ -20,11 +21,17 @@ export async function GET() {
         requester: { select: { email: true, firstName: true, lastName: true } },
       },
       orderBy: { bookedAt: 'desc' },
+      take: MAX_EXPORT_ROWS + 1,
       where: { organizationId: access.membership.organizationId, status: 'BOOKED' },
     }),
   ]);
   if (!organization) {
     return Response.json({ error: 'The organization was not found.' }, { status: 404 });
+  }
+  if (requests.length > MAX_EXPORT_ROWS) {
+    return exportLimitExceededResponse(
+      `This booking export contains more than ${MAX_EXPORT_ROWS.toLocaleString('en-IN')} rows. Use the company report filters to export a smaller date range.`,
+    );
   }
 
   const header = [

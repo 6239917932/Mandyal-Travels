@@ -1,5 +1,6 @@
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { exportLimitExceededResponse, MAX_EXPORT_ROWS } from '@/lib/reporting/exportLimit';
 import {
   buildBusinessReportWhere,
   parseBusinessReportFilters,
@@ -27,11 +28,17 @@ export async function GET(request: Request) {
         reviewedBy: { select: { firstName: true, lastName: true } },
       },
       orderBy: { createdAt: 'desc' },
+      take: MAX_EXPORT_ROWS + 1,
       where: buildBusinessReportWhere(access.membership.organizationId, filters),
     }),
   ]);
   if (!organization) {
     return Response.json({ error: 'The organization was not found.' }, { status: 404 });
+  }
+  if (requests.length > MAX_EXPORT_ROWS) {
+    return exportLimitExceededResponse(
+      `This report contains more than ${MAX_EXPORT_ROWS.toLocaleString('en-IN')} rows. Narrow the date, product, status, or search filters and export again.`,
+    );
   }
 
   const header = [
