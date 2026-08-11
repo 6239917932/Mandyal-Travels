@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
+import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = { title: 'Supply partners' };
 
@@ -40,11 +41,14 @@ export default function PartnersPage() {
             documents, reporting, and settlement visibility.
           </p>
           <div className="home-hero__actions">
-            <Link className="home-link-button home-link-button--primary" href="/register">
-              Start partner onboarding
-            </Link>
-            <Link className="home-link-button home-link-button--secondary" href="/login">
-              Partner sign in
+            <a
+              className="home-link-button home-link-button--primary"
+              href={`mailto:${siteConfig.supportEmail}?subject=Partner%20onboarding%20request`}
+            >
+              Request partner onboarding
+            </a>
+            <Link className="home-link-button home-link-button--secondary" href="/partner/bookings">
+              Open partner operations
             </Link>
           </div>
         </div>
@@ -64,6 +68,47 @@ export default function PartnersPage() {
                 <p>{option.description}</p>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section home-section--alt">
+        <div className="home-container">
+          <div className="home-section__heading">
+            <p className="home-section__eyebrow">Existing partners</p>
+            <h2 className="home-section__title">Run day-to-day supply operations.</h2>
+            <p className="home-section__description">
+              Operational access is separate from customer and business accounts. Use the partner
+              access key issued by the Mandyal Travels platform administrator.
+            </p>
+          </div>
+          <div className="travel-options-grid">
+            <Card className="travel-option">
+              <span className="travel-option__number">01</span>
+              <h3>Bookings</h3>
+              <p>Monitor hotel reservations, stay dates, payment state, and room allocation.</p>
+              <Link className="home-card__link" href="/partner/bookings">
+                Open bookings
+              </Link>
+            </Card>
+            <Card className="travel-option">
+              <span className="travel-option__number">02</span>
+              <h3>Inventory</h3>
+              <p>
+                Review sellable rooms, active holds, confirmed allocations, and stop-sell limits.
+              </p>
+              <Link className="home-card__link" href="/partner/inventory">
+                Open inventory
+              </Link>
+            </Card>
+            <Card className="travel-option">
+              <span className="travel-option__number">03</span>
+              <h3>Amendments</h3>
+              <p>Review requested hotel date changes with availability and repricing checks.</p>
+              <Link className="home-card__link" href="/partner/amendments">
+                Open amendments
+              </Link>
+            </Card>
           </div>
         </div>
       </section>

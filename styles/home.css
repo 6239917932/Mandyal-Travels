@@ -231,6 +231,18 @@
   line-height: 1.65;
 }
 
+.home-card__link {
+  display: inline-flex;
+  margin-top: var(--space-4);
+  color: var(--color-brand-700);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-card__link:hover {
+  text-decoration: underline;
+}
+
 .home-benefit {
   background: var(--color-brand-50);
 }
