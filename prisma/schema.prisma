@@ -205,6 +205,18 @@ model UserSession {
   @@index([expiresAt])
 }
 
+model RequestRateLimit {
+  id              String    @id @default(cuid())
+  keyHash         String    @unique
+  action          String
+  attempts        Int
+  windowStartedAt DateTime
+  blockedUntil    DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  @@index([action, updatedAt])
+}
+
 model AvailabilityLock {
   id              String      @id
   roomTypeId      String

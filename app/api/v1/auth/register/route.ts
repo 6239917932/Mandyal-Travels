@@ -3,10 +3,18 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { getSafeReturnTo } from '@/lib/auth/redirect';
+import {
+  clearRateLimit,
+  consumeRateLimit,
+  getRequestRateLimitIdentifier,
+} from '@/lib/auth/rateLimit';
 import { createSession } from '@/lib/auth/session';
 import { EMAIL_PATTERN, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
+
+const REGISTRATION_ATTEMPT_LIMIT = 5;
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
   const body = await readJsonObject(request);
@@ -21,6 +29,19 @@ export async function POST(request: Request) {
   const accountType = body.accountType === 'business' ? 'business' : 'customer';
   const organizationName =
     typeof body.organizationName === 'string' ? body.organizationName.trim() : '';
+  const rateLimitIdentifier = getRequestRateLimitIdentifier(request, email || 'unknown');
+  const rateLimit = await consumeRateLimit({
+    action: 'REGISTER',
+    identifier: rateLimitIdentifier,
+    limit: REGISTRATION_ATTEMPT_LIMIT,
+    windowMs: REGISTRATION_WINDOW_MS,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many account creation attempts. Please wait before trying again.' },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
 
   if (!firstName || !lastName || !EMAIL_PATTERN.test(email) || !isValidPassword(password)) {
     return NextResponse.json(
@@ -98,6 +119,7 @@ export async function POST(request: Request) {
     );
   }
 
+  await clearRateLimit('REGISTER', rateLimitIdentifier);
   await createSession(user.id);
   return NextResponse.json(
     {
