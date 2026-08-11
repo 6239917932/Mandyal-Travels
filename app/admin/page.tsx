@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AdminCustomerSupportAction } from '@/components/admin/AdminCustomerSupportAction';
@@ -180,6 +181,30 @@ export default async function AdminPage() {
           <span>Recorded confirmed value</span>
           <strong>{formatCurrency(recordedValue)}</strong>
         </Card>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Account servicing</p>
+          <h2>Platform directories</h2>
+          <p>Search authorized account and organization records without direct database access.</p>
+        </div>
+        <div className="partner-bookings__summary">
+          <Card>
+            <span>User accounts</span>
+            <strong>{userCount}</strong>
+            <Link className="ui-button ui-button--secondary" href="/admin/users">
+              Open user directory
+            </Link>
+          </Card>
+          <Card>
+            <span>Business organizations</span>
+            <strong>{organizationCount}</strong>
+            <Link className="ui-button ui-button--secondary" href="/admin/organizations">
+              Open organization directory
+            </Link>
+          </Card>
+        </div>
       </div>
 
       <div className="account-trips">

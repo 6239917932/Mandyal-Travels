@@ -19,6 +19,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking-linked customer support cases with personal status tracking and operations resolution
 - Bounded personal JSON archive for profile, preferences, bookings, company requests, and support
   history without passwords, session tokens, or card data
+- Platform-admin user and organization directories with bounded search and pagination for servicing
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 
