@@ -49,3 +49,4 @@ possible data loss, choose **No** and have the warning reviewed before continuin
   can reach its database.
 - Apply reviewed Prisma schema changes before starting an updated deployment, and back up the
   database before approving any command that warns about data loss.
+- Production deployments should apply source-controlled migrations with `npm run db:deploy`.
