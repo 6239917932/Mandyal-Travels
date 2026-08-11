@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Card } from '@/components/ui/Card';
 
 const travelOptions = [
@@ -86,7 +88,7 @@ export default function Home() {
 
           <div className="home-search-preview">
             <Card className="home-search-preview__card" elevated>
-              <p className="home-search-preview__label">Coming in the Hotel Module</p>
+              <p className="home-search-preview__label">Hotel booking now available</p>
               <h2 className="home-search-preview__title">Find your perfect stay</h2>
 
               <div className="home-search-preview__fields">
@@ -110,6 +112,12 @@ export default function Home() {
                   <strong>Personalized recommendations</strong>
                 </div>
               </div>
+
+              <div className="home-hero__actions">
+                <Link className="home-link-button home-link-button--primary" href="/hotels">
+                  Search hotels
+                </Link>
+              </div>
             </Card>
           </div>
         </div>
@@ -121,7 +129,7 @@ export default function Home() {
             <p className="home-section__eyebrow">Travel, simplified</p>
             <h2 className="home-section__title">Everything you need to move with confidence.</h2>
             <p className="home-section__description">
-              Each product will use the same dependable booking, payment, notification, and support
+              Each product uses the same dependable booking, payment, notification, and support
               foundation.
             </p>
           </div>
