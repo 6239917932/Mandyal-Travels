@@ -38,6 +38,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Pagination and bounded query sizes for operational lists
 - Health/readiness endpoint at `/api/v1/health`
 - Safe Windows start and update helpers with automatic pre-update database backups
+- Automated clean-database migration and foreign-key integrity verification in the release quality
+  gate
 
 ### Security and reliability controls
 
