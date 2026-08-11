@@ -15,15 +15,23 @@ import {
 
 export const metadata: Metadata = { title: 'Company travel report' };
 
+const PAGE_SIZE = 50;
+
 type BusinessReportsPageProps = {
   searchParams: Promise<{
     from?: string | string[];
+    page?: string | string[];
     product?: string | string[];
     search?: string | string[];
     status?: string | string[];
     to?: string | string[];
   }>;
 };
+
+function readPage(value: string | string[] | undefined) {
+  const parsed = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
 
 function formatCurrency(amount: number, currency = 'INR') {
   return new Intl.NumberFormat('en-IN', {
@@ -37,32 +45,45 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
   const access = await getBusinessAdminMembership();
   if (!access) redirect('/business');
 
-  const filters = parseBusinessReportFilters(await searchParams);
-  const [organization, requests] = await Promise.all([
-    prisma.organization.findUnique({
-      select: { name: true },
-      where: { id: access.membership.organizationId },
-    }),
-    prisma.businessTravelRequest.findMany({
-      include: {
-        customerTrip: { select: { confirmationCode: true } },
-        hotelBooking: { select: { confirmationCode: true } },
-        requester: { select: { email: true, firstName: true, lastName: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      where: buildBusinessReportWhere(access.membership.organizationId, filters),
-    }),
-  ]);
+  const values = await searchParams;
+  const filters = parseBusinessReportFilters(values);
+  const where = buildBusinessReportWhere(access.membership.organizationId, filters);
+  const [organization, totalRequests, pendingCount, bookedCount, bookedValueResult] =
+    await Promise.all([
+      prisma.organization.findUnique({
+        select: { name: true },
+        where: { id: access.membership.organizationId },
+      }),
+      prisma.businessTravelRequest.count({ where }),
+      prisma.businessTravelRequest.count({ where: { AND: [where, { status: 'PENDING' }] } }),
+      prisma.businessTravelRequest.count({ where: { AND: [where, { status: 'BOOKED' }] } }),
+      prisma.businessTravelRequest.aggregate({
+        _sum: { bookingTotalAmount: true },
+        where: { AND: [where, { currency: 'INR', status: 'BOOKED' }] },
+      }),
+    ]);
   if (!organization) redirect('/business');
 
-  const pendingCount = requests.filter((request) => request.status === 'PENDING').length;
-  const bookedRequests = requests.filter((request) => request.status === 'BOOKED');
-  const bookedValue = bookedRequests.reduce(
-    (total, request) =>
-      total + (request.currency === 'INR' ? (request.bookingTotalAmount ?? 0) : 0),
-    0,
-  );
-  const exportQuery = businessReportSearchParams(filters).toString();
+  const totalPages = Math.max(1, Math.ceil(totalRequests / PAGE_SIZE));
+  const page = Math.min(readPage(values.page), totalPages);
+  const requests = await prisma.businessTravelRequest.findMany({
+    include: {
+      customerTrip: { select: { confirmationCode: true } },
+      hotelBooking: { select: { confirmationCode: true } },
+      requester: { select: { email: true, firstName: true, lastName: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    where,
+  });
+  const filterParams = businessReportSearchParams(filters);
+  const exportQuery = filterParams.toString();
+  const pageHref = (target: number) => {
+    const params = new URLSearchParams(filterParams);
+    params.set('page', String(target));
+    return `/business/reports?${params.toString()}`;
+  };
 
   return (
     <section className="account-page business-report">
@@ -141,7 +162,7 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
       <div className="partner-bookings__summary">
         <Card>
           <span>Matching requests</span>
-          <strong>{requests.length}</strong>
+          <strong>{totalRequests}</strong>
         </Card>
         <Card>
           <span>Pending approvals</span>
@@ -149,11 +170,11 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
         </Card>
         <Card>
           <span>Confirmed journeys</span>
-          <strong>{bookedRequests.length}</strong>
+          <strong>{bookedCount}</strong>
         </Card>
         <Card>
           <span>Booked value (INR)</span>
-          <strong>{formatCurrency(bookedValue)}</strong>
+          <strong>{formatCurrency(bookedValueResult._sum.bookingTotalAmount ?? 0)}</strong>
         </Card>
       </div>
 
@@ -216,6 +237,7 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
                         {request.status === 'BOOKED' ? (
                           <Link href={`/business/statements/${request.id}`}>View statement</Link>
                         ) : null}
+                        <Link href={`/business/requests/${request.id}`}>View request record</Link>
                       </td>
                     </tr>
                   );
@@ -225,6 +247,28 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
           </div>
         </Card>
       )}
+
+      {totalPages > 1 ? (
+        <nav aria-label="Company travel report pages" className="business-audit-pagination">
+          {page > 1 ? (
+            <Link className="ui-button ui-button--secondary" href={pageHref(page - 1)}>
+              Previous page
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link className="ui-button ui-button--secondary" href={pageHref(page + 1)}>
+              Next page
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </section>
   );
 }
