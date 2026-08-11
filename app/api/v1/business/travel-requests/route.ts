@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getOrganizationMembershipForCurrentUser } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
   BUSINESS_TRAVEL_PRODUCTS,
   evaluateBusinessTravelRequest,
@@ -10,6 +11,8 @@ import {
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const IDEMPOTENCY_KEY_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function readText(value: unknown, maximumLength: number) {
   if (typeof value !== 'string') return '';
@@ -23,6 +26,28 @@ function isValidIsoDate(value: string) {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+type RequestIdentity = {
+  endDate: string | null;
+  estimatedAmount: number;
+  organizationId: string;
+  productType: string;
+  requesterId: string;
+  startDate: string;
+  title: string;
+};
+
+function matchesRequest(existing: RequestIdentity, requested: RequestIdentity) {
+  return (
+    existing.organizationId === requested.organizationId &&
+    existing.requesterId === requested.requesterId &&
+    existing.productType === requested.productType &&
+    existing.title === requested.title &&
+    existing.startDate === requested.startDate &&
+    existing.endDate === requested.endDate &&
+    existing.estimatedAmount === requested.estimatedAmount
+  );
+}
+
 export async function POST(request: Request) {
   const access = await getOrganizationMembershipForCurrentUser();
   if (!access) {
@@ -30,6 +55,11 @@ export async function POST(request: Request) {
       { error: 'An active organization membership is required.' },
       { status: 403 },
     );
+  }
+
+  const idempotencyKey = request.headers.get('Idempotency-Key')?.trim() ?? '';
+  if (!IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+    return NextResponse.json({ error: 'A valid request identifier is required.' }, { status: 400 });
   }
 
   const body = await readJsonObject(request);
@@ -86,7 +116,42 @@ export async function POST(request: Request) {
     );
   }
 
+  const requestIdentity: RequestIdentity = {
+    endDate,
+    estimatedAmount,
+    organizationId: access.membership.organization.id,
+    productType,
+    requesterId: access.user.id,
+    startDate,
+    title,
+  };
+
   try {
+    const existingRequest = await prisma.businessTravelRequest.findUnique({
+      select: {
+        endDate: true,
+        estimatedAmount: true,
+        organizationId: true,
+        policyReason: true,
+        productType: true,
+        requesterId: true,
+        startDate: true,
+        status: true,
+        title: true,
+        id: true,
+      },
+      where: { idempotencyKey },
+    });
+    if (existingRequest) {
+      if (!matchesRequest(existingRequest, requestIdentity)) {
+        return NextResponse.json(
+          { error: 'This request identifier has already been used.' },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ data: existingRequest });
+    }
+
     const travelRequest = await prisma.$transaction(async (transaction) => {
       const policy = await transaction.organization.findUnique({
         select: {
@@ -110,6 +175,7 @@ export async function POST(request: Request) {
           currency: 'INR',
           endDate,
           estimatedAmount,
+          idempotencyKey,
           organizationId: policy.id,
           policyReason: decision.policyReason,
           policySnapshotJson: JSON.stringify({
@@ -150,6 +216,30 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Error && error.message === 'ORGANIZATION_NOT_FOUND') {
       return NextResponse.json({ error: 'The organization was not found.' }, { status: 404 });
+    }
+    if (hasPrismaErrorCode(error, 'P2002')) {
+      const existingRequest = await prisma.businessTravelRequest.findUnique({
+        select: {
+          endDate: true,
+          estimatedAmount: true,
+          organizationId: true,
+          policyReason: true,
+          productType: true,
+          requesterId: true,
+          startDate: true,
+          status: true,
+          title: true,
+          id: true,
+        },
+        where: { idempotencyKey },
+      });
+      if (existingRequest && matchesRequest(existingRequest, requestIdentity)) {
+        return NextResponse.json({ data: existingRequest });
+      }
+      return NextResponse.json(
+        { error: 'This request identifier has already been used.' },
+        { status: 409 },
+      );
     }
     console.error('Business travel request creation failed.', error);
     return NextResponse.json(

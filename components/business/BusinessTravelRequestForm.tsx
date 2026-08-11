@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -28,6 +28,7 @@ export function BusinessTravelRequestForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [productType, setProductType] = useState<BusinessTravelProduct>('FLIGHT');
+  const idempotencyKey = useRef<string | null>(null);
 
   async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +39,7 @@ export function BusinessTravelRequestForm({
     setIsSubmitting(true);
 
     try {
+      idempotencyKey.current ??= crypto.randomUUID();
       const response = await fetch('/api/v1/business/travel-requests', {
         body: JSON.stringify({
           endDate: data.get('endDate') || null,
@@ -46,7 +48,10 @@ export function BusinessTravelRequestForm({
           startDate: data.get('startDate'),
           title: data.get('title'),
         }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey.current,
+        },
         method: 'POST',
       });
       const result =
@@ -58,6 +63,7 @@ export function BusinessTravelRequestForm({
       }
 
       form.reset();
+      idempotencyKey.current = null;
       setMessage(
         result.data?.status === 'PENDING'
           ? 'Request sent to the business administrator for approval.'

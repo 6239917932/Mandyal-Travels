@@ -137,6 +137,7 @@ model OrganizationMember {
 
 model BusinessTravelRequest {
   id                 String                     @id @default(cuid())
+  idempotencyKey     String?                    @unique
   organizationId     String
   requesterId        String
   policyVersionId    String?
