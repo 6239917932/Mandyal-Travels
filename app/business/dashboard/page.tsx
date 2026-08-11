@@ -163,6 +163,7 @@ export default async function BusinessDashboardPage() {
           members={membership.organization.members.map((member) => ({
             email: member.user.email,
             id: member.id,
+            isCurrentUser: member.userId === user.id,
             name: `${member.user.firstName} ${member.user.lastName}`,
             role: member.role,
           }))}

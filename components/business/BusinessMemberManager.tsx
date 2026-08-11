@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 type BusinessMember = {
   email: string;
   id: string;
+  isCurrentUser: boolean;
   name: string;
   role: string;
 };
@@ -31,6 +32,7 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
   const [invitationUrl, setInvitationUrl] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [message, setMessage] = useState('');
+  const [roleChangingId, setRoleChangingId] = useState<string>();
   const [removingId, setRemovingId] = useState<string>();
   const [revokingId, setRevokingId] = useState<string>();
 
@@ -127,6 +129,43 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
     }
 
     router.refresh();
+  }
+
+  async function updateMemberRole(member: BusinessMember, role: 'ADMIN' | 'TRAVELLER') {
+    const action =
+      role === 'ADMIN' ? 'promote to organization administrator' : 'change to traveller';
+    if (!window.confirm(`${action.charAt(0).toUpperCase()}${action.slice(1)}: ${member.name}?`)) {
+      return;
+    }
+
+    setError('');
+    setMessage('');
+    setRoleChangingId(member.id);
+
+    try {
+      const response = await fetch(`/api/v1/business/members/${encodeURIComponent(member.id)}`, {
+        body: JSON.stringify({ role }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const responseText = await response.text();
+      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
+      if (!response.ok) {
+        setError(result.error ?? 'The member access could not be changed.');
+        return;
+      }
+
+      setMessage(
+        role === 'ADMIN'
+          ? `${member.name} is now an organization administrator.`
+          : `${member.name} now has traveller access.`,
+      );
+      router.refresh();
+    } catch {
+      setError('The organization access service could not be reached. Please try again.');
+    } finally {
+      setRoleChangingId(undefined);
+    }
   }
 
   return (
@@ -226,11 +265,28 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
               {member.role === 'TRAVELLER' ? (
                 <div className="account-trip__actions">
                   <Button
+                    isLoading={roleChangingId === member.id}
+                    onClick={() => updateMemberRole(member, 'ADMIN')}
+                    variant="primary"
+                  >
+                    Promote to administrator
+                  </Button>
+                  <Button
                     isLoading={removingId === member.id}
                     onClick={() => removeTraveller(member)}
                     variant="secondary"
                   >
                     Remove traveller
+                  </Button>
+                </div>
+              ) : !member.isCurrentUser ? (
+                <div className="account-trip__actions">
+                  <Button
+                    isLoading={roleChangingId === member.id}
+                    onClick={() => updateMemberRole(member, 'TRAVELLER')}
+                    variant="secondary"
+                  >
+                    Change to traveller
                   </Button>
                 </div>
               ) : null}
