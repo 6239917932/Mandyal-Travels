@@ -6,6 +6,7 @@ import {
   legacyBookingAccessCookieName,
 } from '@/lib/bookingAccess';
 import { getCurrentUser } from '@/lib/auth/session';
+import { readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
@@ -49,10 +50,8 @@ export async function POST(request: Request): Promise<Response> {
     return errorResponse('IDEMPOTENCY_KEY_REQUIRED', 'An Idempotency-Key header is required.', 400);
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
   }
 

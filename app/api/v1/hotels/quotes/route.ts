@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/api/request';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse, HotelQuoteRequest } from '@/types/commerce';
 
@@ -25,11 +26,8 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export async function POST(request: Request): Promise<Response> {
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
   }
 

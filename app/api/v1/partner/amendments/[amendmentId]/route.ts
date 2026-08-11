@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/api/request';
 import { isValidPartnerKey } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -14,16 +15,11 @@ export async function PATCH(request: Request, context: ReviewContext): Promise<R
   if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
   }
-  if (!body || typeof body !== 'object') {
-    return errorResponse('INVALID_REVIEW', 'A review decision is required.', 400);
-  }
-  const values = body as Record<string, unknown>;
+  const values = body;
   if (
     !['approved', 'declined'].includes(String(values.decision)) ||
     typeof values.reviewNote !== 'string' ||

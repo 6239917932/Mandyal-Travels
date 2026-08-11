@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 
+import { readJsonObject } from '@/lib/api/request';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -24,17 +25,11 @@ export async function POST(
     return errorResponse('BOOKING_ACCESS_TOKEN_REQUIRED', 'Booking access is required.', 401);
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
   }
-
-  if (!body || typeof body !== 'object') {
-    return errorResponse('INVALID_AMENDMENT_REQUEST', 'Amendment details are required.', 400);
-  }
-  const values = body as Record<string, unknown>;
+  const values = body;
   if (
     typeof values.reason !== 'string' ||
     typeof values.requestedCheckInDate !== 'string' ||

@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/api/request';
 import { isValidPartnerKey } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -28,20 +29,11 @@ export async function POST(request: Request): Promise<Response> {
   if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
   }
-  if (!body || typeof body !== 'object') {
-    return errorResponse(
-      'INVALID_INVENTORY_OVERRIDE',
-      'Inventory override details are required.',
-      400,
-    );
-  }
-  const values = body as Record<string, unknown>;
+  const values = body;
   if (
     typeof values.roomTypeId !== 'string' ||
     typeof values.checkInDate !== 'string' ||

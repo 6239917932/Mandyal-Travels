@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
@@ -27,10 +28,8 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return errorResponse('AUTH_REQUIRED', 'Sign in to save this trip.', 401);
 
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return errorResponse('INVALID_JSON', 'The request body is invalid.', 400);
   }
 

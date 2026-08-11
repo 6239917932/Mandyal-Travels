@@ -5,6 +5,7 @@ import {
   findPromotionRule,
   type PromotionProduct,
 } from '@/constants/promotionRules';
+import { readJsonObject } from '@/lib/api/request';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'HOTEL', 'BUS', 'CAR']);
 
@@ -13,10 +14,8 @@ function isPromotionProduct(value: string): value is PromotionProduct {
 }
 
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return NextResponse.json(
       { error: { code: 'INVALID_JSON', message: 'The promotion request is invalid.' } },
       { status: 400 },
@@ -28,7 +27,12 @@ export async function POST(request: Request) {
     typeof body.productType === 'string' ? body.productType.trim().toUpperCase() : '';
   const subtotal = body.subtotal;
 
-  if (!code || !isPromotionProduct(productType) || !Number.isInteger(subtotal) || (subtotal as number) <= 0) {
+  if (
+    !code ||
+    !isPromotionProduct(productType) ||
+    !Number.isInteger(subtotal) ||
+    (subtotal as number) <= 0
+  ) {
     return NextResponse.json(
       { error: { code: 'INVALID_PROMOTION_REQUEST', message: 'Enter a valid promotion code.' } },
       { status: 400 },
@@ -39,7 +43,12 @@ export async function POST(request: Request) {
 
   if (!rule) {
     return NextResponse.json(
-      { error: { code: 'PROMOTION_NOT_AVAILABLE', message: 'This code is not available for this booking.' } },
+      {
+        error: {
+          code: 'PROMOTION_NOT_AVAILABLE',
+          message: 'This code is not available for this booking.',
+        },
+      },
       { status: 404 },
     );
   }
