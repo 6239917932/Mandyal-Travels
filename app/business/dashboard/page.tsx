@@ -35,9 +35,12 @@ export default async function BusinessDashboardPage() {
             include: {
               user: { select: { email: true, firstName: true, lastName: true, role: true } },
             },
+            orderBy: { createdAt: 'asc' },
+            take: 20,
           },
           invitations: {
             orderBy: { createdAt: 'desc' },
+            take: 20,
             where: { expiresAt: { gt: new Date() }, status: 'PENDING' },
           },
           auditEntries: {
@@ -83,6 +86,8 @@ export default async function BusinessDashboardPage() {
     bookedRequests,
     bookedValue,
     openSupportCases,
+    memberCount,
+    pendingInvitationCount,
   ] = await Promise.all([
     prisma.businessTravelRequest.findMany({
       include: requestInclude,
@@ -104,6 +109,10 @@ export default async function BusinessDashboardPage() {
       where: { currency: 'INR', organizationId, status: 'BOOKED' },
     }),
     prisma.businessSupportCase.count({ where: { organizationId, status: 'OPEN' } }),
+    prisma.organizationMember.count({ where: { organizationId } }),
+    prisma.organizationInvitation.count({
+      where: { expiresAt: { gt: new Date() }, organizationId, status: 'PENDING' },
+    }),
   ]);
   const travelRequests = [...pendingTravelRequests, ...recentTravelRequests];
 
@@ -130,6 +139,9 @@ export default async function BusinessDashboardPage() {
           <Link className="ui-button ui-button--secondary" href="/business/statements">
             Company statements
           </Link>
+          <Link className="ui-button ui-button--secondary" href="/business/members">
+            Team access
+          </Link>
           <Link className="ui-button ui-button--primary" href="/account#company-travel-request">
             Create company request
           </Link>
@@ -142,7 +154,7 @@ export default async function BusinessDashboardPage() {
       <div className="partner-bookings__summary">
         <Card>
           <span>Team members</span>
-          <strong>{membership.organization.members.length}</strong>
+          <strong>{memberCount}</strong>
         </Card>
         <Card>
           <span>Travel requests</span>
@@ -233,6 +245,13 @@ export default async function BusinessDashboardPage() {
             role: member.role,
           }))}
         />
+        {memberCount > membership.organization.members.length ||
+        pendingInvitationCount > membership.organization.invitations.length ? (
+          <p className="booking-confirmation__note">
+            This dashboard shows the first 20 members and latest 20 active invitations. Open{' '}
+            <Link href="/business/members">Team access</Link> to manage the complete member list.
+          </p>
+        ) : null}
       </div>
 
       <div className="account-trips">
