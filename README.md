@@ -2,6 +2,9 @@
 
 This GitHub repository is the main saved version of the Mandyal Travels portal.
 
+See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the completed scope, production integration blockers,
+and release checklist.
+
 ## Current portal modules
 
 - Hotel search, room selection, booking, payment demonstration, and partner operations
