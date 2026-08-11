@@ -344,6 +344,46 @@
   list-style: none;
 }
 
+.business-policy-history__heading,
+.business-policy-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.business-policy-history__heading {
+  margin-bottom: var(--space-4);
+}
+
+.business-policy-history__heading span,
+.business-policy-history span,
+.business-policy-history time {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.business-policy-history {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.business-policy-history li {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.business-policy-history li > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-policy-history li > div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
 .business-audit__list li,
 .business-statement-row,
 .business-statement__parties {
@@ -666,6 +706,8 @@
   }
 
   .business-audit__list li,
+  .business-policy-history__heading,
+  .business-policy-history li,
   .business-statement-row,
   .business-statement__parties {
     align-items: stretch;
@@ -673,6 +715,7 @@
   }
 
   .business-audit__list li > div:last-child,
+  .business-policy-history li > div:last-child,
   .business-statement-row > div:last-child {
     justify-items: start;
     text-align: left;

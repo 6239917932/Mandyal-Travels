@@ -45,6 +45,13 @@ export default async function BusinessDashboardPage() {
             orderBy: { createdAt: 'desc' },
             take: 20,
           },
+          policyVersions: {
+            include: {
+              createdBy: { select: { firstName: true, lastName: true } },
+            },
+            orderBy: { version: 'desc' },
+            take: 10,
+          },
           travelRequests: {
             include: {
               customerTrip: { select: { confirmationCode: true } },
@@ -176,6 +183,16 @@ export default async function BusinessDashboardPage() {
           <h2>Travel policy and approvals</h2>
         </div>
         <BusinessPolicyManager
+          initialHistory={membership.organization.policyVersions.map((version) => ({
+            approvalRequired: version.approvalRequired,
+            createdAt: version.createdAt.toISOString(),
+            createdByName: version.createdBy
+              ? `${version.createdBy.firstName} ${version.createdBy.lastName}`
+              : null,
+            defaultCabinClass: version.defaultCabinClass,
+            maximumTripAmount: version.maximumTripAmount,
+            version: version.version,
+          }))}
           initialPolicy={{
             approvalRequired: membership.organization.approvalRequired,
             defaultCabinClass: membership.organization.defaultCabinClass,

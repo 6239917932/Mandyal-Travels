@@ -75,11 +75,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const policy = access.membership.organization;
-  const decision = evaluateBusinessTravelRequest(policy, estimatedAmount);
-
   try {
     const travelRequest = await prisma.$transaction(async (transaction) => {
+      const policy = await transaction.organization.findUnique({
+        select: {
+          approvalRequired: true,
+          defaultCabinClass: true,
+          id: true,
+          maximumTripAmount: true,
+          policyVersions: {
+            orderBy: { version: 'desc' },
+            select: { id: true, version: true },
+            take: 1,
+          },
+        },
+        where: { id: access.membership.organization.id },
+      });
+      if (!policy) throw new Error('ORGANIZATION_NOT_FOUND');
+      const policyVersion = policy.policyVersions[0];
+      const decision = evaluateBusinessTravelRequest(policy, estimatedAmount);
       const createdRequest = await transaction.businessTravelRequest.create({
         data: {
           currency: 'INR',
@@ -91,7 +105,9 @@ export async function POST(request: Request) {
             approvalRequired: policy.approvalRequired,
             defaultCabinClass: policy.defaultCabinClass,
             maximumTripAmount: policy.maximumTripAmount,
+            version: policyVersion?.version ?? null,
           }),
+          policyVersionId: policyVersion?.id,
           productType,
           requesterId: access.user.id,
           startDate,
@@ -106,7 +122,12 @@ export async function POST(request: Request) {
           actorUserId: access.user.id,
           entityId: createdRequest.id,
           entityType: 'TRAVEL_REQUEST',
-          metadata: { estimatedAmount, productType, status: createdRequest.status },
+          metadata: {
+            estimatedAmount,
+            policyVersion: policyVersion?.version ?? null,
+            productType,
+            status: createdRequest.status,
+          },
           organizationId: policy.id,
           summary: `${productType.toLowerCase()} travel request created.`,
         }),
@@ -116,6 +137,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: travelRequest }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === 'ORGANIZATION_NOT_FOUND') {
+      return NextResponse.json({ error: 'The organization was not found.' }, { status: 404 });
+    }
     console.error('Business travel request creation failed.', error);
     return NextResponse.json(
       { error: 'The company travel request could not be created.' },

@@ -15,7 +15,12 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const body = (await request.json()) as Record<string, unknown>;
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: 'Enter a valid travel policy.' }, { status: 400 });
+  }
   const approvalRequired = body.approvalRequired;
   const defaultCabinClass = body.defaultCabinClass;
   const maximumTripAmount = body.maximumTripAmount;
@@ -41,10 +46,39 @@ export async function PATCH(request: Request) {
 
   try {
     const policy = await prisma.$transaction(async (transaction) => {
+      const currentPolicy = await transaction.organization.findUnique({
+        select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
+        where: { id: access.membership.organizationId },
+      });
+      if (!currentPolicy) throw new Error('ORGANIZATION_NOT_FOUND');
+
+      const latestVersion = await transaction.organizationPolicyVersion.findFirst({
+        orderBy: { version: 'desc' },
+        select: { version: true },
+        where: { organizationId: access.membership.organizationId },
+      });
+      const changed =
+        currentPolicy.approvalRequired !== approvalRequired ||
+        currentPolicy.defaultCabinClass !== defaultCabinClass ||
+        currentPolicy.maximumTripAmount !== maximumTripAmount;
+
+      if (!changed) {
+        return { ...currentPolicy, version: latestVersion?.version ?? 1 };
+      }
+
       const updatedPolicy = await transaction.organization.update({
         data: { approvalRequired, defaultCabinClass, maximumTripAmount },
         select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
         where: { id: access.membership.organizationId },
+      });
+      const version = (latestVersion?.version ?? 0) + 1;
+      await transaction.organizationPolicyVersion.create({
+        data: {
+          ...updatedPolicy,
+          createdByUserId: access.user.id,
+          organizationId: access.membership.organizationId,
+          version,
+        },
       });
       await transaction.businessAuditLog.create({
         data: createBusinessAuditData({
@@ -52,16 +86,19 @@ export async function PATCH(request: Request) {
           actorUserId: access.user.id,
           entityId: access.membership.organizationId,
           entityType: 'ORGANIZATION',
-          metadata: updatedPolicy,
+          metadata: { ...updatedPolicy, version },
           organizationId: access.membership.organizationId,
           summary: 'Organization travel policy updated.',
         }),
       });
-      return updatedPolicy;
+      return { ...updatedPolicy, version };
     });
 
     return NextResponse.json({ data: policy });
   } catch (error) {
+    if (error instanceof Error && error.message === 'ORGANIZATION_NOT_FOUND') {
+      return NextResponse.json({ error: 'The organization was not found.' }, { status: 404 });
+    }
     console.error('Business travel policy update failed.', error);
     return NextResponse.json(
       { error: 'The travel policy could not be saved. Refresh the generated database client.' },

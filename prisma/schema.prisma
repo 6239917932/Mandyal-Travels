@@ -8,39 +8,58 @@ datasource db {
 }
 
 model User {
-  id                      String                   @id @default(cuid())
-  email                   String                   @unique
+  id                      String                      @id @default(cuid())
+  email                   String                      @unique
   passwordHash            String
   firstName               String
   lastName                String
-  role                    String                   @default("CUSTOMER")
+  role                    String                      @default("CUSTOMER")
   emailVerifiedAt         DateTime?
   marketingConsentAt      DateTime?
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
   sessions                UserSession[]
   trips                   CustomerTrip[]
   organizationMemberships OrganizationMember[]
-  businessTravelRequests  BusinessTravelRequest[]  @relation("BusinessTravelRequester")
-  reviewedTravelRequests  BusinessTravelRequest[]  @relation("BusinessTravelReviewer")
-  businessAuditEntries    BusinessAuditLog[]       @relation("BusinessAuditActor")
-  sentBusinessInvitations OrganizationInvitation[] @relation("BusinessInvitationSender")
-  acceptedInvitations     OrganizationInvitation[] @relation("BusinessInvitationAcceptor")
+  businessTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelRequester")
+  reviewedTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelReviewer")
+  businessAuditEntries    BusinessAuditLog[]          @relation("BusinessAuditActor")
+  sentBusinessInvitations OrganizationInvitation[]    @relation("BusinessInvitationSender")
+  acceptedInvitations     OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
+  createdPolicyVersions   OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
 }
 
 model Organization {
-  id                String                   @id @default(cuid())
+  id                String                      @id @default(cuid())
   name              String
   type              String
-  approvalRequired  Boolean                  @default(true)
-  defaultCabinClass String                   @default("ECONOMY")
+  approvalRequired  Boolean                     @default(true)
+  defaultCabinClass String                      @default("ECONOMY")
   maximumTripAmount Int?
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
   members           OrganizationMember[]
   travelRequests    BusinessTravelRequest[]
   auditEntries      BusinessAuditLog[]
   invitations       OrganizationInvitation[]
+  policyVersions    OrganizationPolicyVersion[]
+}
+
+model OrganizationPolicyVersion {
+  id                String                  @id @default(cuid())
+  organizationId    String
+  version           Int
+  approvalRequired  Boolean
+  defaultCabinClass String
+  maximumTripAmount Int?
+  createdByUserId   String?
+  createdAt         DateTime                @default(now())
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy         User?                   @relation("OrganizationPolicyVersionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  travelRequests    BusinessTravelRequest[]
+
+  @@unique([organizationId, version])
+  @@index([organizationId, createdAt])
 }
 
 model OrganizationInvitation {
@@ -94,16 +113,17 @@ model OrganizationMember {
 }
 
 model BusinessTravelRequest {
-  id                 String        @id @default(cuid())
+  id                 String                     @id @default(cuid())
   organizationId     String
   requesterId        String
+  policyVersionId    String?
   reviewedByUserId   String?
   productType        String
   title              String
   startDate          String
   endDate            String?
   estimatedAmount    Int
-  currency           String        @default("INR")
+  currency           String                     @default("INR")
   status             String
   policyReason       String
   policySnapshotJson String
@@ -111,16 +131,18 @@ model BusinessTravelRequest {
   reviewedAt         DateTime?
   bookingTotalAmount Int?
   bookedAt           DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  requester          User          @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  reviewedBy         User?         @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  organization       Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester          User                       @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewedBy         User?                      @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  policyVersion      OrganizationPolicyVersion? @relation(fields: [policyVersionId], references: [id], onDelete: SetNull)
   customerTrip       CustomerTrip?
   hotelBooking       Booking?
 
   @@index([organizationId, status, createdAt])
   @@index([requesterId, status, createdAt])
+  @@index([policyVersionId])
 }
 
 model CustomerTrip {

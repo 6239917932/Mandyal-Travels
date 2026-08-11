@@ -60,6 +60,15 @@ export async function POST(request: Request) {
         data: {
           members: { create: { role: 'ADMIN', userId: createdUser.id } },
           name: organizationName,
+          policyVersions: {
+            create: {
+              approvalRequired: true,
+              createdByUserId: createdUser.id,
+              defaultCabinClass: 'ECONOMY',
+              maximumTripAmount: null,
+              version: 1,
+            },
+          },
           type: 'CORPORATE',
         },
       });
