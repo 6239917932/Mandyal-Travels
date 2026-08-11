@@ -10,6 +10,7 @@ import {
   readActiveBusinessTravelRequest,
 } from '@/lib/businessTravelClient';
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import { createBookingReference } from '@/lib/confirmationCode';
 
 type FormErrors = Record<string, string>;
 
@@ -135,7 +136,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     }
 
     setProcessing(true);
-    const confirmationCode = `MF${Date.now().toString().slice(-8)}`;
+    const confirmationCode = createBookingReference('MF');
     const finalTotal = promotion?.finalTotal ?? bookingSummary.total;
     const completedBooking = {
       ...bookingSummary,

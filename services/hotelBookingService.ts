@@ -2,6 +2,7 @@ import { createHash, createHmac } from 'node:crypto';
 
 import { calculatePromotion, findPromotionRule } from '@/constants/promotionRules';
 import { readConfiguredSecret } from '@/lib/security/configuredSecret';
+import { createBookingReference } from '@/lib/confirmationCode';
 
 import {
   availabilityLockRepository,
@@ -280,7 +281,7 @@ export class HotelBookingService {
 
     const booking: HotelBookingRecord = {
       availabilityLockId: convertedLock.id,
-      confirmationCode: `MT${Date.now().toString().slice(-8)}`,
+      confirmationCode: createBookingReference('MT'),
       createdAt: new Date().toISOString(),
       currency: quote.currency,
       guest: request.guest,

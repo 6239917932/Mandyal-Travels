@@ -8,6 +8,7 @@ import {
   readActiveBusinessTravelRequest,
 } from '@/lib/businessTravelClient';
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import { createBookingReference } from '@/lib/confirmationCode';
 
 interface AppliedPromotion {
   code: string;
@@ -111,7 +112,7 @@ export function CarPaymentForm({
       return;
     }
     setProcessing(true);
-    const confirmationCode = `MC${Date.now().toString().slice(-8)}`;
+    const confirmationCode = createBookingReference('MC');
     const finalTotal = promotion?.finalTotal ?? subtotal;
     const completedBooking = {
       ...bookingSummary,
