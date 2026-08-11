@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
-type AuthFormProps = { mode: 'login' | 'register' };
+type AuthFormProps = {
+  accountType?: 'business' | 'customer';
+  mode: 'login' | 'register';
+};
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +25,9 @@ export function AuthForm({ mode }: AuthFormProps) {
         email: form.get('email'),
         firstName: form.get('firstName'),
         lastName: form.get('lastName'),
+        accountType,
         marketingConsent: form.get('marketingConsent') === 'on',
+        organizationName: form.get('organizationName'),
         password: form.get('password'),
       }),
       headers: { 'Content-Type': 'application/json' },
@@ -57,6 +62,20 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
       ) : null}
 
+      {isRegister && accountType === 'business' ? (
+        <label className="ui-field">
+          <span className="ui-field__label">Organization name</span>
+          <input
+            autoComplete="organization"
+            className="ui-input"
+            maxLength={120}
+            minLength={2}
+            name="organizationName"
+            required
+          />
+        </label>
+      ) : null}
+
       <label className="ui-field">
         <span className="ui-field__label">Email address</span>
         <input autoComplete="email" className="ui-input" name="email" required type="email" />
@@ -81,9 +100,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         </label>
       ) : null}
 
-      {error ? <p className="auth-form__error" role="alert">{error}</p> : null}
+      {error ? (
+        <p className="auth-form__error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <button className="ui-button ui-button--accent ui-button--full-width" disabled={isSubmitting}>
-        {isSubmitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}
+        {isSubmitting
+          ? 'Please waitâ€¦'
+          : isRegister && accountType === 'business'
+            ? 'Create business account'
+            : isRegister
+              ? 'Create account'
+              : 'Sign in'}
       </button>
 
       <p className="auth-form__alternate">
