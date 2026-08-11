@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { BackNavigation } from '@/components/layout/BackNavigation';
 import { BookingProvider } from '@/context/BookingContext';
 import { getCurrentUser } from '@/lib/auth/session';
 
@@ -38,6 +39,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <BookingProvider>
           <SiteHeader user={user ? { firstName: user.firstName, role: user.role } : null} />
+          <BackNavigation />
           <main>{children}</main>
           <SiteFooter />
         </BookingProvider>
