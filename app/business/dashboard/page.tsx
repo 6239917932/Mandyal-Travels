@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
+import { BusinessPolicyManager } from '@/components/business/BusinessPolicyManager';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -108,26 +109,13 @@ export default async function BusinessDashboardPage() {
           <p className="hotel-page__eyebrow">Business controls</p>
           <h2>Travel policy and approvals</h2>
         </div>
-        <Card className="account-trip">
-          <div className="booking-confirmation__details">
-            <div>
-              <span>Booking approvals</span>
-              <strong>Required for managed travellers</strong>
-            </div>
-            <div>
-              <span>Default cabin</span>
-              <strong>Economy</strong>
-            </div>
-            <div>
-              <span>Invoices</span>
-              <strong>Organization reporting enabled</strong>
-            </div>
-          </div>
-          <p className="booking-confirmation__note">
-            Editable policy rules and booking approval queues are the next organization controls in
-            this workspace.
-          </p>
-        </Card>
+        <BusinessPolicyManager
+          initialPolicy={{
+            approvalRequired: membership.organization.approvalRequired,
+            defaultCabinClass: membership.organization.defaultCabinClass,
+            maximumTripAmount: membership.organization.maximumTripAmount,
+          }}
+        />
       </div>
 
       <form action="/api/v1/auth/logout" method="post">
