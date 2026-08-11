@@ -51,7 +51,7 @@ model OrganizationMember {
 }
 
 model BusinessTravelRequest {
-  id                 String       @id @default(cuid())
+  id                 String        @id @default(cuid())
   organizationId     String
   requesterId        String
   reviewedByUserId   String?
@@ -60,39 +60,45 @@ model BusinessTravelRequest {
   startDate          String
   endDate            String?
   estimatedAmount    Int
-  currency           String       @default("INR")
+  currency           String        @default("INR")
   status             String
   policyReason       String
   policySnapshotJson String
   reviewNote         String?
   reviewedAt         DateTime?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  requester          User         @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  reviewedBy         User?        @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  bookingTotalAmount Int?
+  bookedAt           DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester          User          @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewedBy         User?         @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  customerTrip       CustomerTrip?
+  hotelBooking       Booking?
 
   @@index([organizationId, status, createdAt])
   @@index([requesterId, status, createdAt])
 }
 
 model CustomerTrip {
-  id               String   @id @default(cuid())
-  userId           String?
-  email            String
-  productType      String
-  confirmationCode String   @unique
-  status           String
-  title            String
-  subtitle         String
-  startDate        String
-  endDate          String?
-  totalAmount      Int
-  currency         String   @default("INR")
-  detailsJson      String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                      String                 @id @default(cuid())
+  userId                  String?
+  email                   String
+  productType             String
+  confirmationCode        String                 @unique
+  status                  String
+  title                   String
+  subtitle                String
+  startDate               String
+  endDate                 String?
+  totalAmount             Int
+  currency                String                 @default("INR")
+  detailsJson             String
+  businessTravelRequestId String?                @unique
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  user                    User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([email, createdAt])
@@ -158,22 +164,24 @@ model PriceComponent {
 }
 
 model Booking {
-  id                 String              @id
-  confirmationCode   String              @unique
-  idempotencyKey     String              @unique
-  accessTokenHash    String?             @unique
-  hotelSlug          String
-  status             String
-  totalAmount        Int
-  currency           String
-  createdAt          DateTime            @default(now())
-  quoteId            String              @unique
-  availabilityLockId String              @unique
-  quote              HotelQuote          @relation(fields: [quoteId], references: [id])
-  availabilityLock   AvailabilityLock    @relation(fields: [availabilityLockId], references: [id])
-  guest              BookingGuest?
-  payment            PaymentTransaction?
-  amendments         BookingAmendment[]
+  id                      String                 @id
+  confirmationCode        String                 @unique
+  idempotencyKey          String                 @unique
+  accessTokenHash         String?                @unique
+  hotelSlug               String
+  status                  String
+  totalAmount             Int
+  currency                String
+  createdAt               DateTime               @default(now())
+  quoteId                 String                 @unique
+  availabilityLockId      String                 @unique
+  businessTravelRequestId String?                @unique
+  quote                   HotelQuote             @relation(fields: [quoteId], references: [id])
+  availabilityLock        AvailabilityLock       @relation(fields: [availabilityLockId], references: [id])
+  guest                   BookingGuest?
+  payment                 PaymentTransaction?
+  amendments              BookingAmendment[]
+  businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
 }
 
 model BookingAmendment {

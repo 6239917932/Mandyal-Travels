@@ -2,6 +2,18 @@ import type { HotelBookingRecord } from '@/types/commerce';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 
+export type BusinessBookingContext = {
+  requestId: string;
+  requesterId: string;
+};
+
+export class BusinessBookingRequestUnavailableError extends Error {
+  constructor() {
+    super('The approved company request is no longer available for booking.');
+    this.name = 'BusinessBookingRequestUnavailableError';
+  }
+}
+
 export interface BookingRepository {
   cancel(bookingId: string, refundPayment: boolean): Promise<void>;
   findByConfirmationCode(
@@ -15,7 +27,12 @@ export interface BookingRepository {
   findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined>;
   findById(id: string): Promise<HotelBookingRecord | undefined>;
   findAll(): Promise<HotelBookingRecord[]>;
-  save(booking: HotelBookingRecord, idempotencyKey: string, accessTokenHash: string): Promise<void>;
+  save(
+    booking: HotelBookingRecord,
+    idempotencyKey: string,
+    accessTokenHash: string,
+    businessContext?: BusinessBookingContext,
+  ): Promise<void>;
 }
 
 export class InMemoryBookingRepository implements BookingRepository {
@@ -77,7 +94,9 @@ export class InMemoryBookingRepository implements BookingRepository {
     booking: HotelBookingRecord,
     idempotencyKey: string,
     accessTokenHash: string,
+    businessContext?: BusinessBookingContext,
   ): Promise<void> {
+    void businessContext;
     this.bookingsByIdempotencyKey.set(idempotencyKey, booking);
     this.tokenHashesByConfirmationCode.set(booking.confirmationCode, accessTokenHash);
   }
@@ -159,10 +178,7 @@ export class PrismaBookingRepository implements BookingRepository {
       where: { confirmationCode: code },
     });
 
-    if (
-      !booking?.guest ||
-      normalizeEmail(booking.guest.email) !== normalizeEmail(email)
-    ) {
+    if (!booking?.guest || normalizeEmail(booking.guest.email) !== normalizeEmail(email)) {
       return undefined;
     }
 
@@ -199,31 +215,53 @@ export class PrismaBookingRepository implements BookingRepository {
     booking: HotelBookingRecord,
     idempotencyKey: string,
     accessTokenHash: string,
+    businessContext?: BusinessBookingContext,
   ): Promise<void> {
-    await prisma.booking.create({
-      data: {
-        accessTokenHash,
-        availabilityLockId: booking.availabilityLockId,
-        confirmationCode: booking.confirmationCode,
-        createdAt: new Date(booking.createdAt),
-        currency: booking.currency,
-        guest: { create: booking.guest },
-        hotelSlug: booking.hotelSlug,
-        id: booking.id,
-        idempotencyKey,
-        payment: {
-          create: {
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            provider: 'mock',
-            providerRef: `mock-${booking.id}`,
-            status: booking.paymentStatus,
+    await prisma.$transaction(async (transaction) => {
+      if (businessContext) {
+        const completed = await transaction.businessTravelRequest.updateMany({
+          data: {
+            bookedAt: new Date(),
+            bookingTotalAmount: booking.totalAmount,
+            status: 'BOOKED',
           },
+          where: {
+            id: businessContext.requestId,
+            requesterId: businessContext.requesterId,
+            status: 'APPROVED',
+          },
+        });
+        if (completed.count !== 1) {
+          throw new BusinessBookingRequestUnavailableError();
+        }
+      }
+
+      await transaction.booking.create({
+        data: {
+          accessTokenHash,
+          availabilityLockId: booking.availabilityLockId,
+          businessTravelRequestId: businessContext?.requestId,
+          confirmationCode: booking.confirmationCode,
+          createdAt: new Date(booking.createdAt),
+          currency: booking.currency,
+          guest: { create: booking.guest },
+          hotelSlug: booking.hotelSlug,
+          id: booking.id,
+          idempotencyKey,
+          payment: {
+            create: {
+              amount: booking.totalAmount,
+              currency: booking.currency,
+              provider: 'mock',
+              providerRef: `mock-${booking.id}`,
+              status: booking.paymentStatus,
+            },
+          },
+          quoteId: booking.quoteId,
+          status: booking.status,
+          totalAmount: booking.totalAmount,
         },
-        quoteId: booking.quoteId,
-        status: booking.status,
-        totalAmount: booking.totalAmount,
-      },
+      });
     });
   }
 }

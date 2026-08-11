@@ -271,6 +271,11 @@
   color: var(--color-success);
 }
 
+.business-request__status--booked {
+  background: var(--color-brand-100);
+  color: var(--color-brand-800);
+}
+
 .business-request__status--rejected {
   background: #fff0f0;
   color: var(--color-danger);
@@ -291,6 +296,29 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+.business-checkout-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border: 1px solid var(--color-brand-500);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-100);
+  padding: var(--space-4);
+}
+
+.business-checkout-notice > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-checkout-notice span,
+.business-request__guidance {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .customer-dashboard {
@@ -438,5 +466,10 @@
   .account-trip__body,
   .account-trip dl {
     grid-template-columns: 1fr;
+  }
+
+  .business-checkout-notice {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

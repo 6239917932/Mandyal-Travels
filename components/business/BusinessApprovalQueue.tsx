@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 type BusinessApprovalRequest = {
+  bookedAt: string | null;
+  bookingReference: string | null;
+  bookingTotalAmount: number | null;
   currency: string;
   endDate: string | null;
   estimatedAmount: number;
@@ -119,6 +122,24 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
                 <dt>Decision note</dt>
                 <dd>{request.reviewNote || '—'}</dd>
               </div>
+              {request.bookingReference ? (
+                <div>
+                  <dt>Booking reference</dt>
+                  <dd>{request.bookingReference}</dd>
+                </div>
+              ) : null}
+              {request.bookingTotalAmount !== null ? (
+                <div>
+                  <dt>Booked amount</dt>
+                  <dd>{formatCurrency(request.bookingTotalAmount, request.currency)}</dd>
+                </div>
+              ) : null}
+              {request.bookedAt ? (
+                <div>
+                  <dt>Booked on</dt>
+                  <dd>{new Date(request.bookedAt).toLocaleDateString('en-IN')}</dd>
+                </div>
+              ) : null}
             </dl>
           </div>
           {request.status === 'PENDING' ? (

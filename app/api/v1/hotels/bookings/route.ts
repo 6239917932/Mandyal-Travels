@@ -5,6 +5,12 @@ import {
   getBookingAccessCookieName,
   legacyBookingAccessCookieName,
 } from '@/lib/bookingAccess';
+import { getCurrentUser } from '@/lib/auth/session';
+import { prisma } from '@/lib/prisma';
+import {
+  BusinessCheckoutError,
+  validateBusinessCheckout,
+} from '@/services/businessCheckoutService';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse, CreateHotelBookingRequest } from '@/types/commerce';
 
@@ -18,6 +24,8 @@ function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequ
 
   return (
     typeof request.availabilityLockId === 'string' &&
+    (request.businessTravelRequestId === undefined ||
+      typeof request.businessTravelRequestId === 'string') &&
     typeof request.hotelSlug === 'string' &&
     (request.promotionCode === undefined || typeof request.promotionCode === 'string') &&
     typeof request.quoteId === 'string' &&
@@ -52,8 +60,67 @@ export async function POST(request: Request): Promise<Response> {
     return errorResponse('INVALID_BOOKING_REQUEST', 'Required booking fields are missing.', 400);
   }
 
+  let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
+  let businessRequesterId: string | undefined;
+  let completedBusinessRetry = false;
+  if (body.businessTravelRequestId) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return errorResponse(
+        'AUTH_REQUIRED',
+        'Sign in before completing an organization booking.',
+        401,
+      );
+    }
+    businessRequesterId = user.id;
+    const existingBooking = await prisma.booking.findFirst({
+      select: { id: true },
+      where: {
+        businessTravelRequest: {
+          id: body.businessTravelRequestId,
+          requesterId: user.id,
+          status: 'BOOKED',
+        },
+        idempotencyKey,
+      },
+    });
+    completedBusinessRetry = Boolean(existingBooking);
+
+    if (!completedBusinessRetry) {
+      try {
+        businessCheckout = await validateBusinessCheckout({
+          productType: 'HOTEL',
+          promotionCode: body.promotionCode,
+          requestId: body.businessTravelRequestId,
+          selection: { quoteId: body.quoteId },
+          userId: user.id,
+        });
+      } catch (error) {
+        if (error instanceof BusinessCheckoutError) {
+          return errorResponse(error.code, error.message, error.status);
+        }
+        console.error('Hotel business checkout validation failed.', error);
+        return errorResponse(
+          'BUSINESS_CHECKOUT_FAILED',
+          'The company approval could not be checked. No payment has been captured.',
+          500,
+        );
+      }
+    }
+  }
+
   try {
-    const createdBooking = await hotelBookingService.confirmBooking(body, idempotencyKey);
+    const createdBooking = await hotelBookingService.confirmBooking(
+      body,
+      idempotencyKey,
+      businessCheckout && businessRequesterId && !completedBusinessRetry
+        ? {
+            expectedTotal: businessCheckout.finalTotal,
+            requestId: businessCheckout.requestId,
+            requesterId: businessRequesterId,
+          }
+        : undefined,
+    );
     const response = NextResponse.json({ data: createdBooking.booking }, { status: 201 });
     response.cookies.set(
       getBookingAccessCookieName(createdBooking.booking.confirmationCode),
@@ -67,6 +134,9 @@ export async function POST(request: Request): Promise<Response> {
     );
     return response;
   } catch (error) {
+    if (error instanceof BusinessCheckoutError) {
+      return errorResponse(error.code, error.message, error.status);
+    }
     if (error instanceof HotelBookingRuleError) {
       return errorResponse(error.code, error.message, 409);
     }

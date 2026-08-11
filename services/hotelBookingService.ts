@@ -7,7 +7,12 @@ import {
   type AvailabilityLockRepository,
 } from '@/repositories/availabilityLockRepository';
 import { hotelService, type HotelService } from '@/services/hotelService';
-import { bookingRepository, type BookingRepository } from '@/repositories/bookingRepository';
+import {
+  bookingRepository,
+  BusinessBookingRequestUnavailableError,
+  type BookingRepository,
+  type BusinessBookingContext,
+} from '@/repositories/bookingRepository';
 import { quoteRepository, type QuoteRepository } from '@/repositories/quoteRepository';
 import { amendmentRepository, type AmendmentRepository } from '@/repositories/amendmentRepository';
 import {
@@ -202,6 +207,7 @@ export class HotelBookingService {
   async confirmBooking(
     request: CreateHotelBookingRequest,
     idempotencyKey: string,
+    businessContext?: BusinessBookingContext & { expectedTotal: number },
   ): Promise<CreatedHotelBooking> {
     const existingBooking = await this.bookings.findByIdempotencyKey(idempotencyKey);
     if (existingBooking) {
@@ -264,6 +270,13 @@ export class HotelBookingService {
       totalAmount = calculatePromotion(promotionRule, quote.totalAmount).finalTotal;
     }
 
+    if (businessContext && totalAmount !== businessContext.expectedTotal) {
+      throw new HotelBookingRuleError(
+        'BUSINESS_TOTAL_MISMATCH',
+        'The company booking total changed. Please review the room price again.',
+      );
+    }
+
     const booking: HotelBookingRecord = {
       availabilityLockId: convertedLock.id,
       confirmationCode: `MT${Date.now().toString().slice(-8)}`,
@@ -280,7 +293,17 @@ export class HotelBookingService {
 
     const accessToken = createBookingAccessToken(idempotencyKey);
     const accessTokenHash = hashBookingAccessToken(accessToken);
-    await this.bookings.save(booking, idempotencyKey, accessTokenHash);
+    try {
+      await this.bookings.save(booking, idempotencyKey, accessTokenHash, businessContext);
+    } catch (error) {
+      if (error instanceof BusinessBookingRequestUnavailableError) {
+        throw new HotelBookingRuleError(
+          'BUSINESS_REQUEST_ALREADY_USED',
+          'This company request is no longer available for booking.',
+        );
+      }
+      throw error;
+    }
     return { accessToken, booking };
   }
 
@@ -315,10 +338,7 @@ export class HotelBookingService {
     return this.enrichManagedBooking(booking);
   }
 
-  private async enrichManagedBooking(
-    booking: HotelBookingRecord,
-  ): Promise<ManagedHotelBooking> {
-
+  private async enrichManagedBooking(booking: HotelBookingRecord): Promise<ManagedHotelBooking> {
     const [hotel, quote, latestAmendment] = await Promise.all([
       this.hotels.getHotelBySlug(booking.hotelSlug),
       this.quotes.findById(booking.quoteId),

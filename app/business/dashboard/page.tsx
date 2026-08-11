@@ -35,6 +35,8 @@ export default async function BusinessDashboardPage() {
           },
           travelRequests: {
             include: {
+              customerTrip: { select: { confirmationCode: true } },
+              hotelBooking: { select: { confirmationCode: true } },
               requester: { select: { email: true, firstName: true, lastName: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -49,9 +51,10 @@ export default async function BusinessDashboardPage() {
 
   const travelRequests = membership.organization.travelRequests;
   const pendingRequests = travelRequests.filter((request) => request.status === 'PENDING').length;
-  const approvedValue = travelRequests
-    .filter((request) => request.status === 'APPROVED' && request.currency === 'INR')
-    .reduce((total, request) => total + request.estimatedAmount, 0);
+  const bookedRequests = travelRequests.filter((request) => request.status === 'BOOKED').length;
+  const bookedValue = travelRequests
+    .filter((request) => request.status === 'BOOKED' && request.currency === 'INR')
+    .reduce((total, request) => total + (request.bookingTotalAmount ?? 0), 0);
 
   return (
     <section className="account-page">
@@ -90,8 +93,12 @@ export default async function BusinessDashboardPage() {
           <strong>{pendingRequests}</strong>
         </Card>
         <Card>
-          <span>Approved travel value</span>
-          <strong>{formatCurrency(approvedValue)}</strong>
+          <span>Confirmed company journeys</span>
+          <strong>{bookedRequests}</strong>
+        </Card>
+        <Card>
+          <span>Booked company value</span>
+          <strong>{formatCurrency(bookedValue)}</strong>
         </Card>
       </div>
 
@@ -102,6 +109,12 @@ export default async function BusinessDashboardPage() {
         </div>
         <BusinessApprovalQueue
           requests={travelRequests.map((request) => ({
+            bookedAt: request.bookedAt?.toISOString() ?? null,
+            bookingReference:
+              request.customerTrip?.confirmationCode ??
+              request.hotelBooking?.confirmationCode ??
+              null,
+            bookingTotalAmount: request.bookingTotalAmount,
             currency: request.currency,
             endDate: request.endDate,
             estimatedAmount: request.estimatedAmount,

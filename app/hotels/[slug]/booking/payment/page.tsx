@@ -7,7 +7,12 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { BusinessCheckoutNotice } from '@/components/business/BusinessCheckoutNotice';
 import { useBookingContext } from '@/context/BookingContext';
+import {
+  clearActiveBusinessTravelRequest,
+  readActiveBusinessTravelRequest,
+} from '@/lib/businessTravelClient';
 import type { ApiErrorResponse, HotelBookingRecord } from '@/types/commerce';
 
 function formatCurrency(amount: number, currency: string): string {
@@ -97,31 +102,51 @@ export default function PaymentPage() {
     setPaymentError(undefined);
     setIsProcessing(true);
 
-    const response = await fetch('/api/v1/hotels/bookings', {
-      body: JSON.stringify({
-        availabilityLockId: bookingDraft.availabilityLock.id,
-        guest: bookingDraft.guest,
-        hotelSlug: bookingDraft.hotel.slug,
-        promotionCode: promotion?.code,
-        quoteId: bookingDraft.quoteId,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Idempotency-Key': `hotel-booking-${bookingDraft.quoteId}`,
-      },
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      const result = (await response.json()) as ApiErrorResponse;
-      setPaymentError(result.error.message);
+    const businessRequest = readActiveBusinessTravelRequest();
+    if (businessRequest && businessRequest.productType !== 'HOTEL') {
+      setPaymentError('The active company approval is for a different travel product.');
       setIsProcessing(false);
       return;
     }
 
-    const { data: createdBooking } = (await response.json()) as { data: HotelBookingRecord };
-    confirmBooking(createdBooking.confirmationCode, createdBooking.id, createdBooking.totalAmount);
-    router.push(`/hotels/${bookingSlug}/booking/confirmation`);
+    try {
+      const response = await fetch('/api/v1/hotels/bookings', {
+        body: JSON.stringify({
+          availabilityLockId: bookingDraft.availabilityLock.id,
+          businessTravelRequestId: businessRequest?.id,
+          guest: bookingDraft.guest,
+          hotelSlug: bookingDraft.hotel.slug,
+          promotionCode: promotion?.code,
+          quoteId: bookingDraft.quoteId,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `hotel-booking-${bookingDraft.quoteId}`,
+        },
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const result = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+        setPaymentError(
+          result?.error.message ?? 'The booking could not be completed. No payment was captured.',
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      const { data: createdBooking } = (await response.json()) as { data: HotelBookingRecord };
+      if (businessRequest) clearActiveBusinessTravelRequest();
+      confirmBooking(
+        createdBooking.confirmationCode,
+        createdBooking.id,
+        createdBooking.totalAmount,
+      );
+      router.push(`/hotels/${bookingSlug}/booking/confirmation`);
+    } catch {
+      setPaymentError('The booking service is unavailable. No payment was captured.');
+      setIsProcessing(false);
+    }
   }
 
   return (
@@ -141,6 +166,7 @@ export default function PaymentPage() {
             </div>
 
             <form className="booking-page__guest-form" onSubmit={submitPayment}>
+              <BusinessCheckoutNotice productType="HOTEL" />
               <div className="booking-page__payment-fields">
                 <Input
                   autoComplete="off"
@@ -175,8 +201,10 @@ export default function PaymentPage() {
                 <div className="booking-page__secure-banner" role="status">
                   <strong>{promotion.code} applied</strong>
                   <span>
-                    Save {formatCurrency(promotion.discountAmount, bookingDraft.pricing.total.currency)}
-                    {' '}and pay {formatCurrency(promotion.finalTotal, bookingDraft.pricing.total.currency)}.
+                    Save{' '}
+                    {formatCurrency(promotion.discountAmount, bookingDraft.pricing.total.currency)}{' '}
+                    and pay{' '}
+                    {formatCurrency(promotion.finalTotal, bookingDraft.pricing.total.currency)}.
                   </span>
                 </div>
               ) : null}
@@ -242,9 +270,7 @@ export default function PaymentPage() {
               </div>
               <div className="booking-page__total">
                 <dt>{promotion ? 'Fare before offers' : 'Total'}</dt>
-                <dd>
-                  {formatCurrency(originalTotal, booking.pricing.total.currency)}
-                </dd>
+                <dd>{formatCurrency(originalTotal, booking.pricing.total.currency)}</dd>
               </div>
               {promotion ? (
                 <>

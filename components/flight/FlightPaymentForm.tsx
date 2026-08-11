@@ -4,6 +4,11 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Input } from '@/components/ui/Input';
+import { BusinessCheckoutNotice } from '@/components/business/BusinessCheckoutNotice';
+import {
+  clearActiveBusinessTravelRequest,
+  readActiveBusinessTravelRequest,
+} from '@/lib/businessTravelClient';
 
 type FormErrors = Record<string, string>;
 
@@ -36,6 +41,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
   const router = useRouter();
   const [errors, setErrors] = useState<FormErrors>({});
   const [paid, setPaid] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promotion, setPromotion] = useState<AppliedPromotion>();
   const [validatingPromotion, setValidatingPromotion] = useState(false);
@@ -121,7 +127,13 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
       return;
     }
 
-    setPaid(true);
+    const businessRequest = readActiveBusinessTravelRequest();
+    if (businessRequest && businessRequest.productType !== 'FLIGHT') {
+      setErrors({ payment: 'The active company approval is for a different travel product.' });
+      return;
+    }
+
+    setProcessing(true);
     const confirmationCode = `MF${Date.now().toString().slice(-8)}`;
     const finalTotal = promotion?.finalTotal ?? bookingSummary.total;
     const completedBooking = {
@@ -136,16 +148,15 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
       paymentStatus: 'captured',
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
-    sessionStorage.setItem(
-      'mandyal-flight-booking',
-      JSON.stringify(completedBooking),
-    );
     try {
-      await fetch('/api/v1/account/trips', {
+      const response = await fetch('/api/v1/account/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          businessSelection: nextQuery,
+          businessTravelRequestId: businessRequest?.id,
           productType: 'FLIGHT',
+          promotionCode: promotion?.code,
           confirmationCode,
           status: 'CONFIRMED',
           title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
@@ -155,9 +166,31 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           details: completedBooking,
         }),
       });
+      if (businessRequest && !response.ok) {
+        const result = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        setErrors({
+          payment:
+            result.error?.message ??
+            'The company approval could not be verified. No payment has been captured.',
+        });
+        setProcessing(false);
+        return;
+      }
     } catch {
-      // Account trip history is optional and must not interrupt checkout.
+      if (businessRequest) {
+        setErrors({
+          payment: 'The company approval service is unavailable. No payment has been captured.',
+        });
+        setProcessing(false);
+        return;
+      }
     }
+    sessionStorage.setItem('mandyal-flight-booking', JSON.stringify(completedBooking));
+    if (businessRequest) clearActiveBusinessTravelRequest();
+    setPaid(true);
+    setProcessing(false);
     formElement.reset();
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/flights/booking/confirmation?${query.toString()}`);
@@ -165,6 +198,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
 
   return (
     <form className="flight-payment-form" noValidate onSubmit={submit}>
+      <BusinessCheckoutNotice productType="FLIGHT" />
       <div className="flight-payment-form__protected">
         <strong>Protected demonstration payment</strong>
         <span>Do not enter a real card number. These fields are never stored or submitted.</span>
@@ -233,10 +267,10 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
       </div>
       <button
         className="ui-button ui-button--accent ui-button--full-width"
-        disabled={paid}
+        disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : 'Pay securely'}
+        {paid ? 'Payment captured' : processing ? 'Checking approvalâ€¦' : 'Pay securely'}
       </button>
       {errors.payment ? (
         <p className="ui-field__error" role="alert">

@@ -140,6 +140,7 @@ export interface ManagedHotelBooking extends HotelBookingRecord {
 
 export interface CreateHotelBookingRequest {
   availabilityLockId: string;
+  businessTravelRequestId?: string;
   guest: HotelBookingRecord['guest'];
   hotelSlug: string;
   promotionCode?: string;

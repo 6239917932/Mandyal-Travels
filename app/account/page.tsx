@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
+import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
@@ -36,6 +37,10 @@ function formatCurrency(amount: number, currency: string) {
     currency,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function isBusinessProduct(value: string): value is 'FLIGHT' | 'HOTEL' | 'BUS' | 'CAR' {
+  return ['FLIGHT', 'HOTEL', 'BUS', 'CAR'].includes(value);
 }
 
 function getTripDocumentAction(trip: {
@@ -134,6 +139,7 @@ export default async function AccountPage() {
     .reduce((total, trip) => total + trip.totalAmount, 0);
   const businessTravelRequests = organizationMembership
     ? await prisma.businessTravelRequest.findMany({
+        include: { customerTrip: true, hotelBooking: true },
         orderBy: { createdAt: 'desc' },
         where: {
           organizationId: organizationMembership.organizationId,
@@ -251,12 +257,42 @@ export default async function AccountPage() {
                         <dt>Estimated amount</dt>
                         <dd>{formatCurrency(request.estimatedAmount, request.currency)}</dd>
                       </div>
+                      {request.bookingTotalAmount !== null ? (
+                        <div>
+                          <dt>Booked amount</dt>
+                          <dd>{formatCurrency(request.bookingTotalAmount, request.currency)}</dd>
+                        </div>
+                      ) : null}
+                      {request.customerTrip || request.hotelBooking ? (
+                        <div>
+                          <dt>Booking reference</dt>
+                          <dd>
+                            {request.customerTrip?.confirmationCode ??
+                              request.hotelBooking?.confirmationCode}
+                          </dd>
+                        </div>
+                      ) : null}
                       <div>
                         <dt>Organization</dt>
                         <dd>{organizationMembership.organization.name}</dd>
                       </div>
                     </dl>
                   </div>
+                  {request.status === 'APPROVED' && isBusinessProduct(request.productType) ? (
+                    <div className="account-trip__actions">
+                      <BusinessRequestCheckoutLink
+                        id={request.id}
+                        organizationName={organizationMembership.organization.name}
+                        productType={request.productType}
+                        title={request.title}
+                      />
+                    </div>
+                  ) : null}
+                  {request.status === 'PENDING' ? (
+                    <p className="business-request__guidance">
+                      Payment remains unavailable until an administrator approves this request.
+                    </p>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -295,7 +331,7 @@ export default async function AccountPage() {
 
       <NotificationPreferences email={user.email} />
 
-      <div className="account-trips">
+      <div className="account-trips" id="my-trips">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Your journeys</p>
           <h2>My trips</h2>
