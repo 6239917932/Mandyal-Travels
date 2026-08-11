@@ -7,9 +7,10 @@ import { type FormEvent, useState } from 'react';
 type AuthFormProps = {
   accountType?: 'business' | 'customer';
   mode: 'login' | 'register';
+  returnTo?: string;
 };
 
-export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
+export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormProps) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +30,7 @@ export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
         marketingConsent: form.get('marketingConsent') === 'on',
         organizationName: form.get('organizationName'),
         password: form.get('password'),
+        returnTo,
       }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
@@ -117,7 +119,15 @@ export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
 
       <p className="auth-form__alternate">
         {isRegister ? 'Already have an account?' : 'New to Mandyal Travels?'}{' '}
-        <Link href={isRegister ? '/login' : '/register'}>
+        <Link
+          href={
+            returnTo
+              ? `${isRegister ? '/login' : '/register'}?returnTo=${encodeURIComponent(returnTo)}`
+              : isRegister
+                ? '/login'
+                : '/register'
+          }
+        >
           {isRegister ? 'Sign in' : 'Create an account'}
         </Link>
       </p>

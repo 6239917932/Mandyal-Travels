@@ -2,12 +2,16 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { AuthForm } from '@/components/auth/AuthForm';
+import { getSafeReturnTo } from '@/lib/auth/redirect';
 import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-export default async function LoginPage() {
-  if (await getCurrentUser()) redirect('/account');
+type LoginPageProps = { searchParams: Promise<{ returnTo?: string }> };
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const returnTo = getSafeReturnTo((await searchParams).returnTo);
+  if (await getCurrentUser()) redirect(returnTo ?? '/account');
 
   return (
     <section className="auth-page">
@@ -16,7 +20,7 @@ export default async function LoginPage() {
         <h1>Welcome back.</h1>
         <p>Sign in to manage your Mandyal Travels account securely.</p>
       </div>
-      <AuthForm mode="login" />
+      <AuthForm mode="login" returnTo={returnTo ?? undefined} />
     </section>
   );
 }

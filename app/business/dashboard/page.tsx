@@ -34,6 +34,10 @@ export default async function BusinessDashboardPage() {
               user: { select: { email: true, firstName: true, lastName: true, role: true } },
             },
           },
+          invitations: {
+            orderBy: { createdAt: 'desc' },
+            where: { expiresAt: { gt: new Date() }, status: 'PENDING' },
+          },
           auditEntries: {
             include: {
               actor: { select: { firstName: true, lastName: true } },
@@ -148,6 +152,11 @@ export default async function BusinessDashboardPage() {
           <h2>Team members</h2>
         </div>
         <BusinessMemberManager
+          invitations={membership.organization.invitations.map((invitation) => ({
+            email: invitation.email,
+            expiresAt: invitation.expiresAt.toISOString(),
+            id: invitation.id,
+          }))}
           members={membership.organization.members.map((member) => ({
             email: member.user.email,
             id: member.id,

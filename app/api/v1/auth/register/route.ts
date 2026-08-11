@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { hashPassword } from '@/lib/auth/password';
+import { getSafeReturnTo } from '@/lib/auth/redirect';
 import { createSession } from '@/lib/auth/session';
 import { EMAIL_PATTERN, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
   const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
   const password = typeof body.password === 'string' ? body.password : '';
+  const returnTo = getSafeReturnTo(body.returnTo);
   const accountType = body.accountType === 'business' ? 'business' : 'customer';
   const organizationName =
     typeof body.organizationName === 'string' ? body.organizationName.trim() : '';
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
   await createSession(user.id);
   return NextResponse.json(
     {
-      redirectTo: user.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : '/account',
+      redirectTo: returnTo ?? (user.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : '/account'),
       user: { email: user.email, firstName: user.firstName },
     },
     { status: 201 },

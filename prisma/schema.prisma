@@ -8,36 +8,60 @@ datasource db {
 }
 
 model User {
-  id                      String                  @id @default(cuid())
-  email                   String                  @unique
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
   passwordHash            String
   firstName               String
   lastName                String
-  role                    String                  @default("CUSTOMER")
+  role                    String                   @default("CUSTOMER")
   emailVerifiedAt         DateTime?
   marketingConsentAt      DateTime?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
   sessions                UserSession[]
   trips                   CustomerTrip[]
   organizationMemberships OrganizationMember[]
-  businessTravelRequests  BusinessTravelRequest[] @relation("BusinessTravelRequester")
-  reviewedTravelRequests  BusinessTravelRequest[] @relation("BusinessTravelReviewer")
-  businessAuditEntries    BusinessAuditLog[]      @relation("BusinessAuditActor")
+  businessTravelRequests  BusinessTravelRequest[]  @relation("BusinessTravelRequester")
+  reviewedTravelRequests  BusinessTravelRequest[]  @relation("BusinessTravelReviewer")
+  businessAuditEntries    BusinessAuditLog[]       @relation("BusinessAuditActor")
+  sentBusinessInvitations OrganizationInvitation[] @relation("BusinessInvitationSender")
+  acceptedInvitations     OrganizationInvitation[] @relation("BusinessInvitationAcceptor")
 }
 
 model Organization {
-  id                String                  @id @default(cuid())
+  id                String                   @id @default(cuid())
   name              String
   type              String
-  approvalRequired  Boolean                 @default(true)
-  defaultCabinClass String                  @default("ECONOMY")
+  approvalRequired  Boolean                  @default(true)
+  defaultCabinClass String                   @default("ECONOMY")
   maximumTripAmount Int?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
   members           OrganizationMember[]
   travelRequests    BusinessTravelRequest[]
   auditEntries      BusinessAuditLog[]
+  invitations       OrganizationInvitation[]
+}
+
+model OrganizationInvitation {
+  id               String       @id @default(cuid())
+  organizationId   String
+  email            String
+  role             String       @default("TRAVELLER")
+  tokenHash        String       @unique
+  status           String       @default("PENDING")
+  invitedByUserId  String
+  acceptedByUserId String?
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy        User         @relation("BusinessInvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  acceptedBy       User?        @relation("BusinessInvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([email, status, expiresAt])
 }
 
 model BusinessAuditLog {

@@ -298,6 +298,44 @@
   gap: var(--space-3);
 }
 
+.business-invitation,
+.business-invitation__actions,
+.business-invitation-link {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.business-invitation > div:not(.business-invitation__actions) {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-invitation > div > span {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.business-invitation__actions {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  align-items: center;
+}
+
+.business-invitation-link {
+  border-radius: var(--radius-md);
+  background: var(--color-brand-100);
+  padding: var(--space-4);
+}
+
+.business-invitation-link > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+}
+
+.business-invitation-link small {
+  color: var(--color-text-muted);
+}
+
 .business-audit__list {
   display: grid;
   gap: 0;
@@ -535,6 +573,11 @@
   .business-checkout-notice {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .business-invitation__actions,
+  .business-invitation-link > div {
+    grid-template-columns: 1fr;
   }
 
   .business-audit__list li,
