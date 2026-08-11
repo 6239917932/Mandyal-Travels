@@ -1,0 +1,3 @@
+ALTER TABLE "User" ADD COLUMN "bookingEmailEnabled" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "User" ADD COLUMN "smsAlertsEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "whatsappAlertsEnabled" BOOLEAN NOT NULL DEFAULT false;

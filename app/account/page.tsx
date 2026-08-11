@@ -399,7 +399,14 @@ export default async function AccountPage() {
         </div>
       </section>
 
-      <NotificationPreferences email={user.email} />
+      <NotificationPreferences
+        initialPreferences={{
+          bookingEmail: user.bookingEmailEnabled,
+          marketingEmail: user.marketingConsentAt !== null,
+          smsAlerts: user.smsAlertsEnabled,
+          whatsappAlerts: user.whatsappAlertsEnabled,
+        }}
+      />
 
       <div className="account-trips" id="my-trips">
         <div className="account-trips__heading">
