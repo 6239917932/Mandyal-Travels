@@ -43,6 +43,18 @@ possible data loss, choose **No** and have the warning reviewed before continuin
   least 32 characters. Placeholder or short secrets are rejected in production.
 - The `main` branch is the saved working baseline.
 
+## Provision an internal operations administrator
+
+Platform operations access is intentionally separate from customer and company administration.
+Create a dedicated customer account, then run this once from the `frontend` folder:
+
+```powershell
+npm run admin:grant -- administrator@example.com --confirm
+```
+
+Sign in with that account to open the read-only operations console at `/admin`. The command refuses
+to replace a business administrator role so company and platform responsibilities remain separate.
+
 ## Release checks
 
 - Run `npm run check` before publishing a release.

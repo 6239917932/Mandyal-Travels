@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
-import { getSafeReturnTo } from '@/lib/auth/redirect';
+import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import {
   clearRateLimit,
   consumeRateLimit,
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
   await createSession(user.id);
   return NextResponse.json(
     {
-      redirectTo: returnTo ?? (user.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : '/account'),
+      redirectTo: returnTo ?? getAccountHomePath(user.role),
       user: { email: user.email, firstName: user.firstName },
     },
     { status: 201 },

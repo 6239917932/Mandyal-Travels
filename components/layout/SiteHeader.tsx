@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { siteConfig } from '@/config/site';
+import { getAccountHomePath } from '@/lib/auth/redirect';
 
 type SiteHeaderProps = { user: { firstName: string; role: string } | null };
 
@@ -59,9 +60,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
 
           <Link
             className="site-navigation__cta"
-            href={
-              user?.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : user ? '/account' : '/login'
-            }
+            href={user ? getAccountHomePath(user.role) : '/login'}
             onClick={closeMenu}
           >
             {user ? `Hi, ${user.firstName}` : 'Sign in'}

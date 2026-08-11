@@ -11,3 +11,9 @@ export function getSafeReturnTo(value: unknown) {
   }
   return value;
 }
+
+export function getAccountHomePath(role: string) {
+  if (role === 'PLATFORM_ADMIN') return '/admin';
+  if (role === 'BUSINESS_ADMIN') return '/business/dashboard';
+  return '/account';
+}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { AuthForm } from '@/components/auth/AuthForm';
-import { getSafeReturnTo } from '@/lib/auth/redirect';
+import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -12,7 +12,8 @@ type LoginPageProps = { searchParams: Promise<{ passwordChanged?: string; return
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const values = await searchParams;
   const returnTo = getSafeReturnTo(values.returnTo);
-  if (await getCurrentUser()) redirect(returnTo ?? '/account');
+  const user = await getCurrentUser();
+  if (user) redirect(returnTo ?? getAccountHomePath(user.role));
 
   return (
     <section className="auth-page">

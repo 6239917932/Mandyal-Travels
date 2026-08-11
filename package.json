@@ -11,6 +11,7 @@
     "check": "npm run lint && npm run typecheck && npm run db:verify-migrations && npm run build -- --webpack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "admin:grant": "node scripts/grant-platform-admin.mjs",
     "db:generate": "prisma generate",
     "db:verify-migrations": "node scripts/verify-migrations.mjs",
     "db:deploy": "prisma migrate deploy",

@@ -34,6 +34,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 
 ### Partner and operational foundation
 
+- Separately provisioned, read-only platform operations console with customer, organization,
+  session, booking, company approval, support, and hotel amendment oversight
 - Partner-key protected hotel booking, inventory, and amendment operations
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment
   persistence
