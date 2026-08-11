@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Input } from '@/components/ui/Input';
@@ -47,6 +47,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
   const [promoCode, setPromoCode] = useState('');
   const [promotion, setPromotion] = useState<AppliedPromotion>();
   const [validatingPromotion, setValidatingPromotion] = useState(false);
+  const confirmationCodeRef = useRef<string | null>(null);
 
   const money = (amount: number) =>
     new Intl.NumberFormat('en-IN', {
@@ -136,7 +137,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     }
 
     setProcessing(true);
-    const confirmationCode = createBookingReference('MF');
+    const confirmationCode = (confirmationCodeRef.current ??= createBookingReference('MF'));
     const finalTotal = promotion?.finalTotal ?? bookingSummary.total;
     const completedBooking = {
       ...bookingSummary,

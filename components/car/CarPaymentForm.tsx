@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { BusinessCheckoutNotice } from '@/components/business/BusinessCheckoutNotice';
@@ -36,6 +36,7 @@ export function CarPaymentForm({
   const [promoCode, setPromoCode] = useState('');
   const [promotion, setPromotion] = useState<AppliedPromotion>();
   const [validatingPromotion, setValidatingPromotion] = useState(false);
+  const confirmationCodeRef = useRef<string | null>(null);
   const subtotal = Number(bookingSummary.total);
 
   const money = (amount: number) =>
@@ -112,7 +113,7 @@ export function CarPaymentForm({
       return;
     }
     setProcessing(true);
-    const confirmationCode = createBookingReference('MC');
+    const confirmationCode = (confirmationCodeRef.current ??= createBookingReference('MC'));
     const finalTotal = promotion?.finalTotal ?? subtotal;
     const completedBooking = {
       ...bookingSummary,

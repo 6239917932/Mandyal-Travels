@@ -76,6 +76,36 @@ export async function POST(request: Request) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
   }
 
+  let existingTrip;
+  try {
+    existingTrip = await prisma.customerTrip.findUnique({ where: { confirmationCode } });
+  } catch (error) {
+    console.error('Trip history lookup failed.', error);
+    return errorResponse('TRIP_LOOKUP_FAILED', 'The booking could not be checked.', 500);
+  }
+
+  if (
+    existingTrip &&
+    existingTrip.userId !== user.id &&
+    existingTrip.email.toLowerCase() !== user.email.toLowerCase()
+  ) {
+    return errorResponse(
+      'CONFIRMATION_ALREADY_USED',
+      'This booking reference is already connected to another account.',
+      409,
+    );
+  }
+  if (existingTrip) {
+    if ((existingTrip.businessTravelRequestId ?? undefined) !== businessTravelRequestId) {
+      return errorResponse(
+        'CONFIRMATION_CONTEXT_MISMATCH',
+        'This booking reference is already connected to a different booking context.',
+        409,
+      );
+    }
+    return NextResponse.json({ data: existingTrip });
+  }
+
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
   if (businessTravelRequestId) {
     try {
@@ -122,37 +152,11 @@ export async function POST(request: Request) {
   };
 
   try {
-    const existingTrip = await prisma.customerTrip.findUnique({ where: { confirmationCode } });
-    if (
-      existingTrip &&
-      existingTrip.userId !== user.id &&
-      existingTrip.email.toLowerCase() !== user.email.toLowerCase()
-    ) {
-      return errorResponse(
-        'CONFIRMATION_ALREADY_USED',
-        'This booking reference is already connected to another account.',
-        409,
-      );
-    }
-
     if (!businessCheckout) {
-      const trip = existingTrip
-        ? await prisma.customerTrip.update({ data: tripData, where: { id: existingTrip.id } })
-        : await prisma.customerTrip.create({
-            data: { confirmationCode, ...tripData },
-          });
+      const trip = await prisma.customerTrip.create({
+        data: { confirmationCode, ...tripData },
+      });
       return NextResponse.json({ data: trip }, { status: 201 });
-    }
-
-    if (
-      existingTrip?.businessTravelRequestId &&
-      existingTrip.businessTravelRequestId !== businessCheckout.requestId
-    ) {
-      return errorResponse(
-        'BUSINESS_REQUEST_ALREADY_USED',
-        'This booking reference is already connected to another company request.',
-        409,
-      );
     }
 
     const trip = await prisma.$transaction(async (transaction) => {
@@ -172,9 +176,9 @@ export async function POST(request: Request) {
       }
 
       const data = { ...tripData, businessTravelRequestId: businessCheckout.requestId };
-      const completedTrip = await (existingTrip
-        ? transaction.customerTrip.update({ data, where: { id: existingTrip.id } })
-        : transaction.customerTrip.create({ data: { confirmationCode, ...data } }));
+      const completedTrip = await transaction.customerTrip.create({
+        data: { confirmationCode, ...data },
+      });
       await transaction.businessAuditLog.create({
         data: createBusinessAuditData({
           action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
