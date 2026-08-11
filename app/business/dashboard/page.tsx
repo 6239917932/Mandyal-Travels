@@ -189,9 +189,12 @@ export default async function BusinessDashboardPage() {
           <h2>Company contact details</h2>
         </div>
         <BusinessOrganizationProfile
+          billingAddress={membership.organization.billingAddress ?? ''}
           contactEmail={membership.organization.contactEmail ?? user.email}
           contactPhone={membership.organization.contactPhone ?? ''}
+          legalName={membership.organization.legalName ?? membership.organization.name}
           name={membership.organization.name}
+          taxRegistrationId={membership.organization.taxRegistrationId ?? ''}
         />
       </div>
 

@@ -26,7 +26,16 @@ export default async function CompanyStatementPage({
     include: {
       customerTrip: { select: { confirmationCode: true } },
       hotelBooking: { select: { confirmationCode: true } },
-      organization: { select: { contactEmail: true, contactPhone: true, name: true } },
+      organization: {
+        select: {
+          billingAddress: true,
+          contactEmail: true,
+          contactPhone: true,
+          legalName: true,
+          name: true,
+          taxRegistrationId: true,
+        },
+      },
       requester: { select: { email: true, firstName: true, lastName: true } },
       reviewedBy: { select: { firstName: true, lastName: true } },
     },
@@ -62,7 +71,17 @@ export default async function CompanyStatementPage({
         <section className="booking-document__section business-statement__parties">
           <div>
             <h2>Organization</h2>
-            <p>{request.organization.name}</p>
+            <p>{request.organization.legalName ?? request.organization.name}</p>
+            {request.organization.legalName &&
+            request.organization.legalName !== request.organization.name ? (
+              <p>Trading as {request.organization.name}</p>
+            ) : null}
+            {request.organization.billingAddress ? (
+              <p style={{ whiteSpace: 'pre-line' }}>{request.organization.billingAddress}</p>
+            ) : null}
+            {request.organization.taxRegistrationId ? (
+              <p>GSTIN: {request.organization.taxRegistrationId}</p>
+            ) : null}
             {request.organization.contactEmail ? <p>{request.organization.contactEmail}</p> : null}
             {request.organization.contactPhone ? <p>{request.organization.contactPhone}</p> : null}
           </div>

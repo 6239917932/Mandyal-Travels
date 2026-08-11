@@ -39,6 +39,9 @@ model Organization {
   type              String
   contactEmail      String?
   contactPhone      String?
+  legalName         String?
+  billingAddress    String?
+  taxRegistrationId String?
   approvalRequired  Boolean                     @default(true)
   defaultCabinClass String                      @default("ECONOMY")
   maximumTripAmount Int?

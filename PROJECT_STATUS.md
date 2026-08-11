@@ -20,7 +20,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 ### Business travel
 
 - Separate organization workspace and personal customer account
-- Organization profile, traveller invitations, membership removal, and administrator/traveller roles
+- Organization contact and billing profile, traveller invitations, membership removal, and
+  administrator/traveller roles
 - Versioned travel policy with approval requirement, default flight cabin, and maximum trip amount
 - Company travel requests with policy snapshots, retry protection, approval/rejection decisions,
   reviewer notes, and immutable audit history
@@ -57,8 +58,7 @@ credentials, contracts, or signed-off business rules:
 1. Live payment authorization, capture, refund, reconciliation, and webhook processing
 2. Live hotel, airline, bus, and car supplier APIs with production inventory and ticketing
 3. Transactional email, SMS, and WhatsApp delivery providers
-4. Statutory GST tax invoices, tax registration fields, tax component rules, credit notes, and
-   invoice numbering
+4. Statutory GST tax invoices, tax component rules, credit notes, and invoice numbering
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
 6. Production database, encrypted backups, monitoring, alerting, domain/DNS, TLS, and hosting
 7. Legal pages and approved customer communications: privacy, terms, cancellation, refunds, and
