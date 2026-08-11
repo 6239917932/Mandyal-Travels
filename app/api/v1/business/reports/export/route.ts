@@ -14,18 +14,29 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const filters = parseBusinessReportFilters(Object.fromEntries(url.searchParams.entries()));
-  const requests = await prisma.businessTravelRequest.findMany({
-    include: {
-      customerTrip: { select: { confirmationCode: true } },
-      hotelBooking: { select: { confirmationCode: true } },
-      requester: { select: { email: true, firstName: true, lastName: true } },
-      reviewedBy: { select: { firstName: true, lastName: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    where: buildBusinessReportWhere(access.membership.organizationId, filters),
-  });
+  const [organization, requests] = await Promise.all([
+    prisma.organization.findUnique({
+      select: { legalName: true, name: true, taxRegistrationId: true },
+      where: { id: access.membership.organizationId },
+    }),
+    prisma.businessTravelRequest.findMany({
+      include: {
+        customerTrip: { select: { confirmationCode: true } },
+        hotelBooking: { select: { confirmationCode: true } },
+        requester: { select: { email: true, firstName: true, lastName: true } },
+        reviewedBy: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      where: buildBusinessReportWhere(access.membership.organizationId, filters),
+    }),
+  ]);
+  if (!organization) {
+    return Response.json({ error: 'The organization was not found.' }, { status: 404 });
+  }
 
   const header = [
+    'Organization',
+    'GSTIN',
     'Request created',
     'Status',
     'Product',
@@ -44,6 +55,8 @@ export async function GET(request: Request) {
     'Booked at',
   ];
   const rows = requests.map((item) => [
+    organization.legalName ?? organization.name,
+    organization.taxRegistrationId,
     item.createdAt.toISOString(),
     item.status,
     item.productType,

@@ -51,7 +51,7 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
   const [organization, totalRequests, pendingCount, bookedCount, bookedValueResult] =
     await Promise.all([
       prisma.organization.findUnique({
-        select: { name: true },
+        select: { legalName: true, name: true },
         where: { id: access.membership.organizationId },
       }),
       prisma.businessTravelRequest.count({ where }),
@@ -91,7 +91,7 @@ export default async function BusinessReportsPage({ searchParams }: BusinessRepo
         <div>
           <p className="hotel-page__eyebrow">Organization reporting</p>
           <h1>Company travel report</h1>
-          <p>{organization.name}</p>
+          <p>{organization.legalName ?? organization.name}</p>
         </div>
         <div className="manage-booking__document-actions">
           <Link className="ui-button ui-button--secondary" href="/business/dashboard">

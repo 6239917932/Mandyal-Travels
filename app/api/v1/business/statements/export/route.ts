@@ -8,17 +8,28 @@ export async function GET() {
     return Response.json({ error: 'Business administrator access is required.' }, { status: 403 });
   }
 
-  const requests = await prisma.businessTravelRequest.findMany({
-    include: {
-      customerTrip: { select: { confirmationCode: true } },
-      hotelBooking: { select: { confirmationCode: true } },
-      requester: { select: { email: true, firstName: true, lastName: true } },
-    },
-    orderBy: { bookedAt: 'desc' },
-    where: { organizationId: access.membership.organizationId, status: 'BOOKED' },
-  });
+  const [organization, requests] = await Promise.all([
+    prisma.organization.findUnique({
+      select: { legalName: true, name: true, taxRegistrationId: true },
+      where: { id: access.membership.organizationId },
+    }),
+    prisma.businessTravelRequest.findMany({
+      include: {
+        customerTrip: { select: { confirmationCode: true } },
+        hotelBooking: { select: { confirmationCode: true } },
+        requester: { select: { email: true, firstName: true, lastName: true } },
+      },
+      orderBy: { bookedAt: 'desc' },
+      where: { organizationId: access.membership.organizationId, status: 'BOOKED' },
+    }),
+  ]);
+  if (!organization) {
+    return Response.json({ error: 'The organization was not found.' }, { status: 404 });
+  }
 
   const header = [
+    'Organization',
+    'GSTIN',
     'Booking reference',
     'Product',
     'Traveller',
@@ -31,6 +42,8 @@ export async function GET() {
     'Booked at',
   ];
   const rows = requests.map((request) => [
+    organization.legalName ?? organization.name,
+    organization.taxRegistrationId,
     request.customerTrip?.confirmationCode ?? request.hotelBooking?.confirmationCode ?? '',
     request.productType,
     `${request.requester.firstName} ${request.requester.lastName}`,
