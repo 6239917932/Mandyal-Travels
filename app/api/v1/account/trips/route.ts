@@ -7,6 +7,7 @@ import {
   validateBusinessCheckout,
 } from '@/services/businessCheckoutService';
 import type { PromotionProduct } from '@/constants/promotionRules';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'BUS', 'CAR']);
 
@@ -153,9 +154,21 @@ export async function POST(request: Request) {
       }
 
       const data = { ...tripData, businessTravelRequestId: businessCheckout.requestId };
-      return existingTrip
+      const completedTrip = await (existingTrip
         ? transaction.customerTrip.update({ data, where: { id: existingTrip.id } })
-        : transaction.customerTrip.create({ data: { confirmationCode, ...data } });
+        : transaction.customerTrip.create({ data: { confirmationCode, ...data } }));
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
+          actorUserId: user.id,
+          entityId: businessCheckout.requestId,
+          entityType: 'TRAVEL_REQUEST',
+          metadata: { confirmationCode, productType, totalAmount: totalAmount as number },
+          organizationId: businessCheckout.organizationId,
+          summary: `${productType.toLowerCase()} company travel booked.`,
+        }),
+      });
+      return completedTrip;
     });
 
     return NextResponse.json({ data: trip }, { status: 201 });

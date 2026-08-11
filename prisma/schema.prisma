@@ -23,6 +23,7 @@ model User {
   organizationMemberships OrganizationMember[]
   businessTravelRequests  BusinessTravelRequest[] @relation("BusinessTravelRequester")
   reviewedTravelRequests  BusinessTravelRequest[] @relation("BusinessTravelReviewer")
+  businessAuditEntries    BusinessAuditLog[]      @relation("BusinessAuditActor")
 }
 
 model Organization {
@@ -36,6 +37,24 @@ model Organization {
   updatedAt         DateTime                @updatedAt
   members           OrganizationMember[]
   travelRequests    BusinessTravelRequest[]
+  auditEntries      BusinessAuditLog[]
+}
+
+model BusinessAuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  entityType     String
+  entityId       String?
+  summary        String
+  metadataJson   String       @default("{}")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actor          User?        @relation("BusinessAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, action, createdAt])
 }
 
 model OrganizationMember {

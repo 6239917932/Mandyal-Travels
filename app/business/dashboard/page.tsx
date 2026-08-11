@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { BusinessApprovalQueue } from '@/components/business/BusinessApprovalQueue';
+import { BusinessAuditTimeline } from '@/components/business/BusinessAuditTimeline';
 import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
 import { BusinessPolicyManager } from '@/components/business/BusinessPolicyManager';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +33,13 @@ export default async function BusinessDashboardPage() {
             include: {
               user: { select: { email: true, firstName: true, lastName: true, role: true } },
             },
+          },
+          auditEntries: {
+            include: {
+              actor: { select: { firstName: true, lastName: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
           },
           travelRequests: {
             include: {
@@ -70,6 +78,9 @@ export default async function BusinessDashboardPage() {
           <h2>Company travel summary</h2>
         </div>
         <div className="manage-booking__document-actions">
+          <Link className="ui-button ui-button--secondary" href="/business/statements">
+            Company statements
+          </Link>
           <Link className="ui-button ui-button--primary" href="/account#company-travel-request">
             Create company request
           </Link>
@@ -157,6 +168,22 @@ export default async function BusinessDashboardPage() {
             defaultCabinClass: membership.organization.defaultCabinClass,
             maximumTripAmount: membership.organization.maximumTripAmount,
           }}
+        />
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Audit history</p>
+          <h2>Recent company activity</h2>
+        </div>
+        <BusinessAuditTimeline
+          entries={membership.organization.auditEntries.map((entry) => ({
+            action: entry.action,
+            actorName: entry.actor ? `${entry.actor.firstName} ${entry.actor.lastName}` : null,
+            createdAt: entry.createdAt.toISOString(),
+            id: entry.id,
+            summary: entry.summary,
+          }))}
         />
       </div>
 

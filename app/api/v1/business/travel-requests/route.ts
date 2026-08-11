@@ -6,6 +6,7 @@ import {
   BUSINESS_TRAVEL_PRODUCTS,
   evaluateBusinessTravelRequest,
 } from '@/services/businessTravelRequestService';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -78,25 +79,39 @@ export async function POST(request: Request) {
   const decision = evaluateBusinessTravelRequest(policy, estimatedAmount);
 
   try {
-    const travelRequest = await prisma.businessTravelRequest.create({
-      data: {
-        currency: 'INR',
-        endDate,
-        estimatedAmount,
-        organizationId: policy.id,
-        policyReason: decision.policyReason,
-        policySnapshotJson: JSON.stringify({
-          approvalRequired: policy.approvalRequired,
-          defaultCabinClass: policy.defaultCabinClass,
-          maximumTripAmount: policy.maximumTripAmount,
+    const travelRequest = await prisma.$transaction(async (transaction) => {
+      const createdRequest = await transaction.businessTravelRequest.create({
+        data: {
+          currency: 'INR',
+          endDate,
+          estimatedAmount,
+          organizationId: policy.id,
+          policyReason: decision.policyReason,
+          policySnapshotJson: JSON.stringify({
+            approvalRequired: policy.approvalRequired,
+            defaultCabinClass: policy.defaultCabinClass,
+            maximumTripAmount: policy.maximumTripAmount,
+          }),
+          productType,
+          requesterId: access.user.id,
+          startDate,
+          status: decision.status,
+          title,
+        },
+        select: { id: true, policyReason: true, status: true },
+      });
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.REQUEST_CREATED,
+          actorUserId: access.user.id,
+          entityId: createdRequest.id,
+          entityType: 'TRAVEL_REQUEST',
+          metadata: { estimatedAmount, productType, status: createdRequest.status },
+          organizationId: policy.id,
+          summary: `${productType.toLowerCase()} travel request created.`,
         }),
-        productType,
-        requesterId: access.user.id,
-        startDate,
-        status: decision.status,
-        title,
-      },
-      select: { id: true, policyReason: true, status: true },
+      });
+      return createdRequest;
     });
 
     return NextResponse.json({ data: travelRequest }, { status: 201 });

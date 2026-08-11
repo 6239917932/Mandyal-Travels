@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 type TravelRequestRouteContext = { params: Promise<{ requestId: string }> };
 
@@ -36,18 +37,34 @@ export async function PATCH(request: Request, { params }: TravelRequestRouteCont
   const { requestId } = await params;
 
   try {
-    const result = await prisma.businessTravelRequest.updateMany({
-      data: {
-        reviewNote: reviewNote || null,
-        reviewedAt: new Date(),
-        reviewedByUserId: access.user.id,
-        status,
-      },
-      where: {
-        id: requestId,
-        organizationId: access.membership.organizationId,
-        status: 'PENDING',
-      },
+    const result = await prisma.$transaction(async (transaction) => {
+      const reviewed = await transaction.businessTravelRequest.updateMany({
+        data: {
+          reviewNote: reviewNote || null,
+          reviewedAt: new Date(),
+          reviewedByUserId: access.user.id,
+          status,
+        },
+        where: {
+          id: requestId,
+          organizationId: access.membership.organizationId,
+          status: 'PENDING',
+        },
+      });
+      if (reviewed.count === 1) {
+        await transaction.businessAuditLog.create({
+          data: createBusinessAuditData({
+            action: BUSINESS_AUDIT_ACTIONS.REQUEST_REVIEWED,
+            actorUserId: access.user.id,
+            entityId: requestId,
+            entityType: 'TRAVEL_REQUEST',
+            metadata: { reviewNote: reviewNote || null, status },
+            organizationId: access.membership.organizationId,
+            summary: `Company travel request ${status.toLowerCase()}.`,
+          }),
+        });
+      }
+      return reviewed;
     });
 
     if (result.count === 0) {

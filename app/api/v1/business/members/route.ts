@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { EMAIL_PATTERN, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 export async function POST(request: Request) {
   const access = await getBusinessAdminMembership();
@@ -37,12 +38,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const member = await prisma.organizationMember.create({
-    data: {
-      organizationId: access.membership.organizationId,
-      role: 'TRAVELLER',
-      userId: traveller.id,
-    },
+  const member = await prisma.$transaction(async (transaction) => {
+    const createdMember = await transaction.organizationMember.create({
+      data: {
+        organizationId: access.membership.organizationId,
+        role: 'TRAVELLER',
+        userId: traveller.id,
+      },
+    });
+    await transaction.businessAuditLog.create({
+      data: createBusinessAuditData({
+        action: BUSINESS_AUDIT_ACTIONS.MEMBER_ADDED,
+        actorUserId: access.user.id,
+        entityId: createdMember.id,
+        entityType: 'MEMBERSHIP',
+        metadata: { memberEmail: traveller.email, role: createdMember.role },
+        organizationId: access.membership.organizationId,
+        summary: `${traveller.firstName} ${traveller.lastName} added as a company traveller.`,
+      }),
+    });
+    return createdMember;
   });
 
   return NextResponse.json({ data: { id: member.id } }, { status: 201 });

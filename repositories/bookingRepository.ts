@@ -1,6 +1,7 @@
 import type { HotelBookingRecord } from '@/types/commerce';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 export type BusinessBookingContext = {
   requestId: string;
@@ -218,7 +219,17 @@ export class PrismaBookingRepository implements BookingRepository {
     businessContext?: BusinessBookingContext,
   ): Promise<void> {
     await prisma.$transaction(async (transaction) => {
+      let organizationId: string | undefined;
       if (businessContext) {
+        const travelRequest = await transaction.businessTravelRequest.findFirst({
+          select: { organizationId: true },
+          where: {
+            id: businessContext.requestId,
+            requesterId: businessContext.requesterId,
+            status: 'APPROVED',
+          },
+        });
+        organizationId = travelRequest?.organizationId;
         const completed = await transaction.businessTravelRequest.updateMany({
           data: {
             bookedAt: new Date(),
@@ -262,6 +273,24 @@ export class PrismaBookingRepository implements BookingRepository {
           totalAmount: booking.totalAmount,
         },
       });
+
+      if (businessContext && organizationId) {
+        await transaction.businessAuditLog.create({
+          data: createBusinessAuditData({
+            action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
+            actorUserId: businessContext.requesterId,
+            entityId: businessContext.requestId,
+            entityType: 'TRAVEL_REQUEST',
+            metadata: {
+              confirmationCode: booking.confirmationCode,
+              productType: 'HOTEL',
+              totalAmount: booking.totalAmount,
+            },
+            organizationId,
+            summary: 'Hotel company travel booked.',
+          }),
+        });
+      }
     });
   }
 }

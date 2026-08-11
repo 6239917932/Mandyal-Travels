@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 const CABIN_CLASSES = new Set(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']);
 
@@ -39,10 +40,24 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const policy = await prisma.organization.update({
-      data: { approvalRequired, defaultCabinClass, maximumTripAmount },
-      select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
-      where: { id: access.membership.organizationId },
+    const policy = await prisma.$transaction(async (transaction) => {
+      const updatedPolicy = await transaction.organization.update({
+        data: { approvalRequired, defaultCabinClass, maximumTripAmount },
+        select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
+        where: { id: access.membership.organizationId },
+      });
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.POLICY_UPDATED,
+          actorUserId: access.user.id,
+          entityId: access.membership.organizationId,
+          entityType: 'ORGANIZATION',
+          metadata: updatedPolicy,
+          organizationId: access.membership.organizationId,
+          summary: 'Organization travel policy updated.',
+        }),
+      });
+      return updatedPolicy;
     });
 
     return NextResponse.json({ data: policy });
