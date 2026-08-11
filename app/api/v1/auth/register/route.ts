@@ -12,6 +12,10 @@ import { createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidName, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
+import {
+  ACCOUNT_SECURITY_ACTIONS,
+  createAccountSecurityEventData,
+} from '@/services/accountSecurityService';
 
 const REGISTRATION_ATTEMPT_LIMIT = 5;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
@@ -109,6 +113,14 @@ export async function POST(request: Request) {
           },
         });
       }
+
+      await transaction.accountSecurityEvent.create({
+        data: createAccountSecurityEventData({
+          action: ACCOUNT_SECURITY_ACTIONS.ACCOUNT_CREATED,
+          summary: `${accountType === 'business' ? 'Business administrator' : 'Customer'} account created.`,
+          userId: createdUser.id,
+        }),
+      });
 
       return createdUser;
     });

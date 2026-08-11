@@ -110,6 +110,7 @@ export default async function AccountPage() {
     confirmedHotelTripCount,
     hotelTripValue,
     activeSessions,
+    securityEvents,
   ] = await Promise.all([
     prisma.customerTrip.findMany({
       where: tripFilter,
@@ -144,6 +145,11 @@ export default async function AccountPage() {
       orderBy: { lastSeenAt: 'desc' },
       select: { createdAt: true, expiresAt: true, id: true, lastSeenAt: true },
       where: { expiresAt: { gt: new Date() }, userId: user.id },
+    }),
+    prisma.accountSecurityEvent.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: RECENT_ITEM_LIMIT,
+      where: { userId: user.id },
     }),
   ]);
 
@@ -293,6 +299,37 @@ export default async function AccountPage() {
           lastSeenAt: session.lastSeenAt.toISOString(),
         }))}
       />
+
+      <section className="account-trips" aria-labelledby="security-activity-heading">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Account protection</p>
+          <h2 id="security-activity-heading">Recent security activity</h2>
+          <p>Sign-ins and important account changes are recorded without passwords or tokens.</p>
+        </div>
+        {securityEvents.length > 0 ? (
+          <div className="account-trips__list">
+            {securityEvents.map((event) => (
+              <article className="account-trip ui-card ui-card--padded" key={event.id}>
+                <div className="account-trip__topline">
+                  <strong>{event.action.replaceAll('_', ' ')}</strong>
+                  <time dateTime={event.createdAt.toISOString()}>
+                    {new Intl.DateTimeFormat('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }).format(event.createdAt)}
+                  </time>
+                </div>
+                <p>{event.summary}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="account-trips__empty ui-card ui-card--padded">
+            <strong>No security activity recorded yet.</strong>
+            <p>New sign-ins and material account changes will appear here.</p>
+          </div>
+        )}
+      </section>
 
       {organizationMembership ? (
         <section

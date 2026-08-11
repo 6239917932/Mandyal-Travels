@@ -22,6 +22,7 @@ model User {
   createdAt               DateTime                    @default(now())
   updatedAt               DateTime                    @updatedAt
   sessions                UserSession[]
+  securityEvents          AccountSecurityEvent[]
   trips                   CustomerTrip[]
   organizationMemberships OrganizationMember[]
   businessTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelRequester")
@@ -34,6 +35,17 @@ model User {
   sentBusinessInvitations OrganizationInvitation[]    @relation("BusinessInvitationSender")
   acceptedInvitations     OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
   createdPolicyVersions   OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
+}
+
+model AccountSecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  summary   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Organization {

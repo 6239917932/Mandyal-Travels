@@ -20,6 +20,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Bounded personal JSON archive for profile, preferences, bookings, company requests, and support
   history without passwords, session tokens, or card data
 - Platform-admin user and organization directories with bounded search and pagination for servicing
+- Account security activity history for sign-ins, profile/password/preference changes, and session revocation
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 

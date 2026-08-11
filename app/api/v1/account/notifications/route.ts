@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import {
+  ACCOUNT_SECURITY_ACTIONS,
+  createAccountSecurityEventData,
+} from '@/services/accountSecurityService';
 
 const PREFERENCE_KEYS = ['bookingEmail', 'marketingEmail', 'smsAlerts', 'whatsappAlerts'] as const;
 
@@ -28,15 +32,24 @@ export async function PATCH(request: Request) {
     const marketingEmail = body.marketingEmail as boolean;
     const smsAlerts = body.smsAlerts as boolean;
     const whatsappAlerts = body.whatsappAlerts as boolean;
-    await prisma.user.update({
-      data: {
-        bookingEmailEnabled: bookingEmail,
-        marketingConsentAt: marketingEmail ? (user.marketingConsentAt ?? new Date()) : null,
-        smsAlertsEnabled: smsAlerts,
-        whatsappAlertsEnabled: whatsappAlerts,
-      },
-      where: { id: user.id },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        data: {
+          bookingEmailEnabled: bookingEmail,
+          marketingConsentAt: marketingEmail ? (user.marketingConsentAt ?? new Date()) : null,
+          smsAlertsEnabled: smsAlerts,
+          whatsappAlertsEnabled: whatsappAlerts,
+        },
+        where: { id: user.id },
+      }),
+      prisma.accountSecurityEvent.create({
+        data: createAccountSecurityEventData({
+          action: ACCOUNT_SECURITY_ACTIONS.NOTIFICATION_PREFERENCES_UPDATED,
+          summary: 'Your notification and marketing preferences were updated.',
+          userId: user.id,
+        }),
+      }),
+    ]);
 
     return NextResponse.json({
       data: { bookingEmail, marketingEmail, smsAlerts, whatsappAlerts },

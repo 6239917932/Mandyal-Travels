@@ -4,6 +4,10 @@ import { readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isValidName } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import {
+  ACCOUNT_SECURITY_ACTIONS,
+  createAccountSecurityEventData,
+} from '@/services/accountSecurityService';
 
 export async function PATCH(request: Request) {
   try {
@@ -26,10 +30,20 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updated = await prisma.user.update({
-      data: { firstName, lastName },
-      select: { email: true, firstName: true, lastName: true },
-      where: { id: user.id },
+    const updated = await prisma.$transaction(async (transaction) => {
+      const profile = await transaction.user.update({
+        data: { firstName, lastName },
+        select: { email: true, firstName: true, lastName: true },
+        where: { id: user.id },
+      });
+      await transaction.accountSecurityEvent.create({
+        data: createAccountSecurityEventData({
+          action: ACCOUNT_SECURITY_ACTIONS.PROFILE_UPDATED,
+          summary: 'Your account name was updated.',
+          userId: user.id,
+        }),
+      });
+      return profile;
     });
 
     return NextResponse.json({ data: updated });

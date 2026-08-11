@@ -2,6 +2,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 
 import { prisma } from '@/lib/prisma';
+import {
+  ACCOUNT_SECURITY_ACTIONS,
+  createAccountSecurityEventData,
+} from '@/services/accountSecurityService';
 
 export const SESSION_COOKIE_NAME = 'mandyal_session';
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
@@ -23,6 +27,13 @@ export async function createSession(userId: string) {
     });
     await transaction.userSession.create({
       data: { expiresAt, tokenHash, userId },
+    });
+    await transaction.accountSecurityEvent.create({
+      data: createAccountSecurityEventData({
+        action: ACCOUNT_SECURITY_ACTIONS.SIGNED_IN,
+        summary: 'A new browser session signed in to your account.',
+        userId,
+      }),
     });
     const excessSessions = await transaction.userSession.findMany({
       orderBy: { createdAt: 'desc' },

@@ -14,13 +14,16 @@ export async function GET() {
   const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
 
   try {
-    const [tripCount, hotelCount, requestCount, supportCount] = await Promise.all([
+    const [tripCount, hotelCount, requestCount, supportCount, securityEventCount] =
+      await Promise.all([
       prisma.customerTrip.count({ where: tripFilter }),
       prisma.bookingGuest.count({ where: { email: user.email } }),
       prisma.businessTravelRequest.count({ where: { requesterId: user.id } }),
       prisma.customerSupportCase.count({ where: { userId: user.id } }),
+      prisma.accountSecurityEvent.count({ where: { userId: user.id } }),
     ]);
-    const exportRecordCount = tripCount + hotelCount + requestCount + supportCount;
+    const exportRecordCount =
+      tripCount + hotelCount + requestCount + supportCount + securityEventCount;
     if (exportRecordCount > MAX_EXPORT_RECORDS) {
       return NextResponse.json(
         {
@@ -30,7 +33,7 @@ export async function GET() {
       );
     }
 
-    const [account, trips, hotelBookings, companyRequests, supportCases, membership] =
+    const [account, trips, hotelBookings, companyRequests, supportCases, membership, securityEvents] =
       await Promise.all([
       prisma.user.findUnique({ select: { createdAt: true }, where: { id: user.id } }),
       prisma.customerTrip.findMany({
@@ -126,6 +129,11 @@ export async function GET() {
         },
         where: { userId: user.id },
       }),
+      prisma.accountSecurityEvent.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: { action: true, createdAt: true, summary: true },
+        where: { userId: user.id },
+      }),
     ]);
 
     const exportedAt = new Date();
@@ -151,6 +159,7 @@ export async function GET() {
       companyTravelRequests: companyRequests,
       exportedAt,
       hotelBookings,
+      securityActivity: securityEvents,
       supportCases,
       travelBookings: trips,
     };

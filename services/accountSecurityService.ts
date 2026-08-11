@@ -1,0 +1,19 @@
+export const ACCOUNT_SECURITY_ACTIONS = {
+  ACCOUNT_CREATED: 'ACCOUNT_CREATED',
+  NOTIFICATION_PREFERENCES_UPDATED: 'NOTIFICATION_PREFERENCES_UPDATED',
+  OTHER_SESSIONS_REVOKED: 'OTHER_SESSIONS_REVOKED',
+  PASSWORD_CHANGED: 'PASSWORD_CHANGED',
+  PROFILE_UPDATED: 'PROFILE_UPDATED',
+  SIGNED_IN: 'SIGNED_IN',
+  SIGNED_OUT: 'SIGNED_OUT',
+} as const;
+
+type AccountSecurityEventData = {
+  action: (typeof ACCOUNT_SECURITY_ACTIONS)[keyof typeof ACCOUNT_SECURITY_ACTIONS];
+  summary: string;
+  userId: string;
+};
+
+export function createAccountSecurityEventData(data: AccountSecurityEventData) {
+  return data;
+}

@@ -11,6 +11,10 @@ import {
 import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { isValidPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import {
+  ACCOUNT_SECURITY_ACTIONS,
+  createAccountSecurityEventData,
+} from '@/services/accountSecurityService';
 
 const PASSWORD_CHANGE_ATTEMPT_LIMIT = 5;
 const PASSWORD_CHANGE_WINDOW_MS = 15 * 60 * 1000;
@@ -73,6 +77,13 @@ export async function PATCH(request: Request) {
     await prisma.$transaction([
       prisma.user.update({ data: { passwordHash }, where: { id: user.id } }),
       prisma.userSession.deleteMany({ where: { userId: user.id } }),
+      prisma.accountSecurityEvent.create({
+        data: createAccountSecurityEventData({
+          action: ACCOUNT_SECURITY_ACTIONS.PASSWORD_CHANGED,
+          summary: 'Your password changed and all browser sessions were signed out.',
+          userId: user.id,
+        }),
+      }),
     ]);
     (await cookies()).delete(SESSION_COOKIE_NAME);
 
