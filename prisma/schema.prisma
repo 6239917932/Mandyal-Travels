@@ -24,12 +24,15 @@ model User {
 }
 
 model Organization {
-  id        String               @id @default(cuid())
-  name      String
-  type      String
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  members   OrganizationMember[]
+  id                   String               @id @default(cuid())
+  name                 String
+  type                 String
+  approvalRequired     Boolean              @default(true)
+  defaultCabinClass    String               @default("ECONOMY")
+  maximumTripAmount    Int?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  members              OrganizationMember[]
 }
 
 model OrganizationMember {
