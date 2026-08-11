@@ -498,6 +498,18 @@
   color: var(--color-text-primary);
 }
 
+.business-audit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.business-audit-pagination > span {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
 .business-statement-row h2,
 .business-statement-row p,
 .business-statement__parties p {

@@ -89,6 +89,9 @@ export default async function BusinessDashboardPage() {
           <h2>Company travel summary</h2>
         </div>
         <div className="manage-booking__document-actions">
+          <Link className="ui-button ui-button--secondary" href="/business/audit">
+            Audit log
+          </Link>
           <Link className="ui-button ui-button--secondary" href="/business/reports">
             Company report
           </Link>
