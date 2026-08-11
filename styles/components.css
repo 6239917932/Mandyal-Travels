@@ -701,6 +701,11 @@
   justify-self: start;
 }
 
+.admin-support-action__note {
+  min-height: 5rem;
+  resize: vertical;
+}
+
 .admin-export-form {
   display: grid;
   gap: var(--space-4);

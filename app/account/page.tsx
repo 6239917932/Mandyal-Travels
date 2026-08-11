@@ -26,6 +26,11 @@ const customerQuickActions = [
     label: 'Manage booking',
   },
   { description: 'View current travel discounts.', href: '/offers', label: 'Offers' },
+  {
+    description: 'Create and track a booking or account support case.',
+    href: '/account/support',
+    label: 'Customer support',
+  },
 ] as const;
 
 function humanizeSlug(value: string) {

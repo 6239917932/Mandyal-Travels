@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { AdminCustomerSupportAction } from '@/components/admin/AdminCustomerSupportAction';
 import { AdminSupportAction } from '@/components/admin/AdminSupportAction';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
@@ -39,12 +40,14 @@ export default async function AdminPage() {
     hotelBookingCount,
     customerTripCount,
     pendingRequestCount,
-    openSupportCount,
+    openCompanySupportCount,
+    openCustomerSupportCount,
     pendingAmendmentCount,
     hotelValue,
     tripValue,
     pendingRequests,
     recentSupportCases,
+    recentCustomerSupportCases,
     pendingAmendments,
     recentHotelBookings,
     recentTrips,
@@ -56,6 +59,7 @@ export default async function AdminPage() {
     prisma.customerTrip.count(),
     prisma.businessTravelRequest.count({ where: { status: 'PENDING' } }),
     prisma.businessSupportCase.count({ where: { status: 'OPEN' } }),
+    prisma.customerSupportCase.count({ where: { status: 'OPEN' } }),
     prisma.bookingAmendment.count({ where: { status: 'pending' } }),
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
@@ -78,6 +82,13 @@ export default async function AdminPage() {
       include: {
         createdBy: { select: { email: true, firstName: true, lastName: true } },
         organization: { select: { name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 12,
+    }),
+    prisma.customerSupportCase.findMany({
+      include: {
+        createdBy: { select: { email: true, firstName: true, lastName: true } },
       },
       orderBy: { updatedAt: 'desc' },
       take: 12,
@@ -114,8 +125,8 @@ export default async function AdminPage() {
         <p className="hotel-page__eyebrow">Mandyal operations</p>
         <h1>Operations console</h1>
         <p>
-          Read-only platform oversight for {administrator.firstName}. Organization administrators
-          retain control of company approvals and policies.
+          Platform oversight and customer support servicing for {administrator.firstName}.
+          Organization administrators retain control of company approvals and policies.
         </p>
         <form action="/api/v1/auth/logout" method="post">
           <button className="ui-button ui-button--secondary" type="submit">
@@ -183,13 +194,89 @@ export default async function AdminPage() {
           </Card>
           <Card>
             <span>Open company support</span>
-            <strong>{openSupportCount}</strong>
+            <strong>{openCompanySupportCount}</strong>
+          </Card>
+          <Card>
+            <span>Open customer support</span>
+            <strong>{openCustomerSupportCount}</strong>
           </Card>
           <Card>
             <span>Hotel amendments</span>
             <strong>{pendingAmendmentCount}</strong>
           </Card>
         </div>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Customer servicing</p>
+          <h2>Recent customer support cases</h2>
+        </div>
+        <Card className="business-report__table-card">
+          <div className="business-report__table-scroll">
+            <table className="business-report__table">
+              <thead>
+                <tr>
+                  <th>Case</th>
+                  <th>Customer</th>
+                  <th>Subject</th>
+                  <th>Message</th>
+                  <th>Status and action</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentCustomerSupportCases.map((supportCase) => (
+                  <tr key={supportCase.id}>
+                    <td>
+                      <strong>{supportCase.caseNumber}</strong>
+                      <span>{supportCase.category}</span>
+                    </td>
+                    <td>
+                      <strong>
+                        {supportCase.createdBy.firstName} {supportCase.createdBy.lastName}
+                      </strong>
+                      <span>{supportCase.createdBy.email}</span>
+                    </td>
+                    <td>
+                      <strong>{supportCase.subject}</strong>
+                      <span>{supportCase.bookingReference ?? 'No booking reference'}</span>
+                    </td>
+                    <td>
+                      <span>
+                        {supportCase.message.length > 180
+                          ? `${supportCase.message.slice(0, 180)}…`
+                          : supportCase.message}
+                      </span>
+                      {supportCase.resolutionNote ? (
+                        <span>Resolution: {supportCase.resolutionNote}</span>
+                      ) : null}
+                    </td>
+                    <td>
+                      <strong className={statusClass(supportCase.status)}>
+                        {supportCase.status}
+                      </strong>
+                      <AdminCustomerSupportAction
+                        caseId={supportCase.id}
+                        status={supportCase.status}
+                      />
+                    </td>
+                    <td>
+                      <time dateTime={supportCase.updatedAt.toISOString()}>
+                        {formatDate(supportCase.updatedAt)}
+                      </time>
+                    </td>
+                  </tr>
+                ))}
+                {recentCustomerSupportCases.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>No customer support cases have been created.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
 
       <div className="account-trips">

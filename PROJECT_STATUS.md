@@ -16,6 +16,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
 - Customer hotel cancellation/amendment handling and account-bound booking access
+- Booking-linked customer support cases with personal status tracking and operations resolution
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 
@@ -38,6 +39,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   session, booking, company approval, support, and hotel amendment oversight
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
+- Customer support servicing with required resolution notes and append-only case events
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Partner-key protected hotel booking, inventory, and amendment operations
