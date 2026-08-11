@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { readJsonObject } from '@/lib/api/request';
-import { EMAIL_PATTERN, normalizeEmail } from '@/lib/auth/validation';
+import { isValidEmail, normalizeEmail } from '@/lib/auth/validation';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
@@ -34,7 +34,7 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
-  if (!EMAIL_PATTERN.test(contactEmail)) {
+  if (!isValidEmail(contactEmail)) {
     return NextResponse.json({ error: 'Enter a valid contact email.' }, { status: 400 });
   }
   if (contactPhone && !PHONE_PATTERN.test(contactPhone)) {

@@ -7,6 +7,7 @@ import {
 } from '@/lib/bookingAccess';
 import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
+import { isValidEmail, isValidName, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
@@ -21,21 +22,29 @@ function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequ
   }
 
   const request = value as Record<string, unknown>;
-  const guest = request.guest;
+  const guest = request.guest as Record<string, unknown> | undefined;
 
   return (
     typeof request.availabilityLockId === 'string' &&
+    request.availabilityLockId.length > 0 &&
+    request.availabilityLockId.length <= 200 &&
     (request.businessTravelRequestId === undefined ||
       typeof request.businessTravelRequestId === 'string') &&
     typeof request.hotelSlug === 'string' &&
-    (request.promotionCode === undefined || typeof request.promotionCode === 'string') &&
+    request.hotelSlug.length > 0 &&
+    request.hotelSlug.length <= 120 &&
+    (request.promotionCode === undefined ||
+      (typeof request.promotionCode === 'string' && request.promotionCode.length <= 50)) &&
     typeof request.quoteId === 'string' &&
+    request.quoteId.length > 0 &&
+    request.quoteId.length <= 200 &&
     Boolean(guest) &&
-    typeof guest === 'object' &&
-    typeof (guest as Record<string, unknown>).email === 'string' &&
-    typeof (guest as Record<string, unknown>).firstName === 'string' &&
-    typeof (guest as Record<string, unknown>).lastName === 'string' &&
-    typeof (guest as Record<string, unknown>).phone === 'string'
+    isValidEmail(normalizeEmail(typeof guest?.email === 'string' ? guest.email : '')) &&
+    isValidName(typeof guest?.firstName === 'string' ? guest.firstName : '') &&
+    isValidName(typeof guest?.lastName === 'string' ? guest.lastName : '') &&
+    typeof guest?.phone === 'string' &&
+    guest.phone.trim().length >= 7 &&
+    guest.phone.trim().length <= 32
   );
 }
 

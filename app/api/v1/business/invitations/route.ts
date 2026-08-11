@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { readJsonObject } from '@/lib/api/request';
-import { normalizeEmail, EMAIL_PATTERN } from '@/lib/auth/validation';
+import { isValidEmail, normalizeEmail } from '@/lib/auth/validation';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Enter a valid invitation request.' }, { status: 400 });
   }
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return NextResponse.json({ error: 'Enter a valid traveller email address.' }, { status: 400 });
   }
 

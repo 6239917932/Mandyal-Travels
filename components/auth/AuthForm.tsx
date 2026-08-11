@@ -63,11 +63,23 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
         <div className="auth-form__row">
           <label className="ui-field">
             <span className="ui-field__label">First name</span>
-            <input autoComplete="given-name" className="ui-input" name="firstName" required />
+            <input
+              autoComplete="given-name"
+              className="ui-input"
+              maxLength={80}
+              name="firstName"
+              required
+            />
           </label>
           <label className="ui-field">
             <span className="ui-field__label">Last name</span>
-            <input autoComplete="family-name" className="ui-input" name="lastName" required />
+            <input
+              autoComplete="family-name"
+              className="ui-input"
+              maxLength={80}
+              name="lastName"
+              required
+            />
           </label>
         </div>
       ) : null}
@@ -88,13 +100,21 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
 
       <label className="ui-field">
         <span className="ui-field__label">Email address</span>
-        <input autoComplete="email" className="ui-input" name="email" required type="email" />
+        <input
+          autoComplete="email"
+          className="ui-input"
+          maxLength={254}
+          name="email"
+          required
+          type="email"
+        />
       </label>
       <label className="ui-field">
         <span className="ui-field__label">Password</span>
         <input
           autoComplete={isRegister ? 'new-password' : 'current-password'}
           className="ui-input"
+          maxLength={128}
           minLength={10}
           name="password"
           required

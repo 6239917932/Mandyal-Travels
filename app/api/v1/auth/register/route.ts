@@ -9,7 +9,7 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { createSession } from '@/lib/auth/session';
-import { EMAIL_PATTERN, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
+import { isValidEmail, isValidName, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 
@@ -43,9 +43,16 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!firstName || !lastName || !EMAIL_PATTERN.test(email) || !isValidPassword(password)) {
+  if (
+    !isValidName(firstName) ||
+    !isValidName(lastName) ||
+    !isValidEmail(email) ||
+    !isValidPassword(password)
+  ) {
     return NextResponse.json(
-      { error: 'Enter your name, a valid email, and a password of at least 10 characters.' },
+      {
+        error: 'Enter a valid name, email address, and password between 10 and 128 characters.',
+      },
       { status: 400 },
     );
   }

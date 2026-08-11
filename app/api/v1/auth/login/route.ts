@@ -9,7 +9,7 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { createSession } from '@/lib/auth/session';
-import { EMAIL_PATTERN, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
+import { isValidEmail, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 
 const LOGIN_ATTEMPT_LIMIT = 8;
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
     );
   }
-  const validCredentials = EMAIL_PATTERN.test(email) && isValidPassword(password);
+  const validCredentials = isValidEmail(email) && isValidPassword(password);
   const user = validCredentials ? await prisma.user.findUnique({ where: { email } }) : null;
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
