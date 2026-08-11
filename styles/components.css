@@ -243,6 +243,54 @@
   padding: var(--space-3);
 }
 
+.business-support,
+.business-support__cases {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.business-support__message-input {
+  min-height: 8rem;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.business-support__heading,
+.business-support__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.business-support__heading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-support__heading > div:last-child {
+  justify-items: end;
+}
+
+.business-support__heading span,
+.business-support__meta {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.business-support__message {
+  white-space: pre-wrap;
+}
+
+.business-request__status--open {
+  background: var(--color-accent-100);
+  color: var(--color-warning);
+}
+
+.business-request__status--closed {
+  background: var(--color-brand-100);
+  color: var(--color-brand-800);
+}
+
 .business-travel-request,
 .business-approval__review {
   display: grid;
@@ -762,6 +810,16 @@
   .business-request-record__columns,
   .business-request-record__details {
     grid-template-columns: 1fr;
+  }
+
+  .business-support__heading,
+  .business-support__meta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .business-support__heading > div:last-child {
+    justify-items: start;
   }
 
   .business-audit__list li,

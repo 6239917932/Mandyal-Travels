@@ -24,6 +24,7 @@ model User {
   businessTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelRequester")
   reviewedTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelReviewer")
   businessAuditEntries    BusinessAuditLog[]          @relation("BusinessAuditActor")
+  businessSupportCases    BusinessSupportCase[]       @relation("BusinessSupportCaseCreator")
   sentBusinessInvitations OrganizationInvitation[]    @relation("BusinessInvitationSender")
   acceptedInvitations     OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
   createdPolicyVersions   OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
@@ -45,6 +46,26 @@ model Organization {
   auditEntries      BusinessAuditLog[]
   invitations       OrganizationInvitation[]
   policyVersions    OrganizationPolicyVersion[]
+  supportCases      BusinessSupportCase[]
+}
+
+model BusinessSupportCase {
+  id               String       @id @default(cuid())
+  caseNumber       String       @unique
+  organizationId   String
+  createdByUserId  String
+  category         String
+  subject          String
+  message          String
+  bookingReference String?
+  status           String       @default("OPEN")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy        User         @relation("BusinessSupportCaseCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status, createdAt])
+  @@index([createdByUserId, createdAt])
 }
 
 model OrganizationPolicyVersion {

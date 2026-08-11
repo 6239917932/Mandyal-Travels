@@ -9,6 +9,8 @@ export const BUSINESS_AUDIT_ACTIONS = {
   POLICY_UPDATED: 'POLICY_UPDATED',
   REQUEST_CREATED: 'REQUEST_CREATED',
   REQUEST_REVIEWED: 'REQUEST_REVIEWED',
+  SUPPORT_CASE_CLOSED: 'SUPPORT_CASE_CLOSED',
+  SUPPORT_CASE_CREATED: 'SUPPORT_CASE_CREATED',
   TRAVEL_BOOKED: 'TRAVEL_BOOKED',
 } as const;
 
@@ -16,7 +18,7 @@ type BusinessAuditData = {
   action: (typeof BUSINESS_AUDIT_ACTIONS)[keyof typeof BUSINESS_AUDIT_ACTIONS];
   actorUserId?: string | null;
   entityId?: string | null;
-  entityType: 'INVITATION' | 'MEMBERSHIP' | 'ORGANIZATION' | 'TRAVEL_REQUEST';
+  entityType: 'INVITATION' | 'MEMBERSHIP' | 'ORGANIZATION' | 'SUPPORT_CASE' | 'TRAVEL_REQUEST';
   metadata?: Record<string, boolean | number | string | null>;
   organizationId: string;
   summary: string;

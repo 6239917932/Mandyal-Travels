@@ -7,6 +7,7 @@ import { BusinessAuditTimeline } from '@/components/business/BusinessAuditTimeli
 import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
 import { BusinessOrganizationProfile } from '@/components/business/BusinessOrganizationProfile';
 import { BusinessPolicyManager } from '@/components/business/BusinessPolicyManager';
+import { BusinessSupportCenter } from '@/components/business/BusinessSupportCenter';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -53,6 +54,13 @@ export default async function BusinessDashboardPage() {
             orderBy: { version: 'desc' },
             take: 10,
           },
+          supportCases: {
+            include: {
+              createdBy: { select: { firstName: true, lastName: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          },
         },
       },
     },
@@ -67,26 +75,33 @@ export default async function BusinessDashboardPage() {
     requester: { select: { email: true, firstName: true, lastName: true } },
   } as const;
   const organizationId = membership.organizationId;
-  const [pendingTravelRequests, recentTravelRequests, totalRequests, bookedRequests, bookedValue] =
-    await Promise.all([
-      prisma.businessTravelRequest.findMany({
-        include: requestInclude,
-        orderBy: { createdAt: 'asc' },
-        where: { organizationId, status: 'PENDING' },
-      }),
-      prisma.businessTravelRequest.findMany({
-        include: requestInclude,
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        where: { organizationId, status: { not: 'PENDING' } },
-      }),
-      prisma.businessTravelRequest.count({ where: { organizationId } }),
-      prisma.businessTravelRequest.count({ where: { organizationId, status: 'BOOKED' } }),
-      prisma.businessTravelRequest.aggregate({
-        _sum: { bookingTotalAmount: true },
-        where: { currency: 'INR', organizationId, status: 'BOOKED' },
-      }),
-    ]);
+  const [
+    pendingTravelRequests,
+    recentTravelRequests,
+    totalRequests,
+    bookedRequests,
+    bookedValue,
+    openSupportCases,
+  ] = await Promise.all([
+    prisma.businessTravelRequest.findMany({
+      include: requestInclude,
+      orderBy: { createdAt: 'asc' },
+      where: { organizationId, status: 'PENDING' },
+    }),
+    prisma.businessTravelRequest.findMany({
+      include: requestInclude,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      where: { organizationId, status: { not: 'PENDING' } },
+    }),
+    prisma.businessTravelRequest.count({ where: { organizationId } }),
+    prisma.businessTravelRequest.count({ where: { organizationId, status: 'BOOKED' } }),
+    prisma.businessTravelRequest.aggregate({
+      _sum: { bookingTotalAmount: true },
+      where: { currency: 'INR', organizationId, status: 'BOOKED' },
+    }),
+    prisma.businessSupportCase.count({ where: { organizationId, status: 'OPEN' } }),
+  ]);
   const travelRequests = [...pendingTravelRequests, ...recentTravelRequests];
 
   return (
@@ -141,6 +156,10 @@ export default async function BusinessDashboardPage() {
         <Card>
           <span>Booked company value</span>
           <strong>{formatCurrency(bookedValue._sum.bookingTotalAmount ?? 0)}</strong>
+        </Card>
+        <Card>
+          <span>Open support cases</span>
+          <strong>{openSupportCases}</strong>
         </Card>
       </div>
 
@@ -235,6 +254,34 @@ export default async function BusinessDashboardPage() {
             maximumTripAmount: membership.organization.maximumTripAmount,
           }}
         />
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Account servicing</p>
+          <h2>Organization support center</h2>
+          <p>
+            Raise and track booking, billing, account, or technical requests for this organization.
+          </p>
+        </div>
+        <BusinessSupportCenter
+          cases={membership.organization.supportCases.map((supportCase) => ({
+            bookingReference: supportCase.bookingReference,
+            caseNumber: supportCase.caseNumber,
+            category: supportCase.category,
+            createdAt: supportCase.createdAt.toISOString(),
+            createdByName: `${supportCase.createdBy.firstName} ${supportCase.createdBy.lastName}`,
+            id: supportCase.id,
+            message: supportCase.message,
+            status: supportCase.status,
+            subject: supportCase.subject,
+          }))}
+        />
+        {membership.organization.supportCases.length === 20 ? (
+          <p className="booking-confirmation__note">
+            The 20 most recent organization support cases are shown here.
+          </p>
+        ) : null}
       </div>
 
       <div className="account-trips">
