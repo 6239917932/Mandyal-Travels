@@ -10,9 +10,16 @@ export interface CreateBookingAmendmentInput {
 
 export interface AmendmentRepository {
   create(input: CreateBookingAmendmentInput): Promise<BookingAmendmentRecord>;
+  countPending(): Promise<number>;
   decline(id: string, reviewNote: string): Promise<BookingAmendmentRecord | undefined>;
   findLatestByBookingId(bookingId: string): Promise<BookingAmendmentRecord | undefined>;
-  findPending(): Promise<Array<BookingAmendmentRecord & { bookingId: string }>>;
+  findPending(options?: {
+    skip?: number;
+    take?: number;
+  }): Promise<Array<BookingAmendmentRecord & { bookingId: string }>>;
+  findPendingById(
+    id: string,
+  ): Promise<(BookingAmendmentRecord & { bookingId: string }) | undefined>;
   approve(
     id: string,
     input: {
@@ -53,6 +60,10 @@ function mapAmendment(amendment: {
 }
 
 export class PrismaAmendmentRepository implements AmendmentRepository {
+  async countPending(): Promise<number> {
+    return prisma.bookingAmendment.count({ where: { status: 'pending' } });
+  }
+
   async approve(
     id: string,
     input: {
@@ -129,15 +140,28 @@ export class PrismaAmendmentRepository implements AmendmentRepository {
     return amendment ? mapAmendment(amendment) : undefined;
   }
 
-  async findPending(): Promise<Array<BookingAmendmentRecord & { bookingId: string }>> {
+  async findPending(
+    options: { skip?: number; take?: number } = {},
+  ): Promise<Array<BookingAmendmentRecord & { bookingId: string }>> {
     const amendments = await prisma.bookingAmendment.findMany({
       orderBy: { createdAt: 'asc' },
+      skip: options.skip,
+      take: options.take,
       where: { status: 'pending' },
     });
     return amendments.map((amendment) => ({
       ...mapAmendment(amendment),
       bookingId: amendment.bookingId,
     }));
+  }
+
+  async findPendingById(
+    id: string,
+  ): Promise<(BookingAmendmentRecord & { bookingId: string }) | undefined> {
+    const amendment = await prisma.bookingAmendment.findFirst({
+      where: { id, status: 'pending' },
+    });
+    return amendment ? { ...mapAmendment(amendment), bookingId: amendment.bookingId } : undefined;
   }
 
   async decline(id: string, reviewNote: string): Promise<BookingAmendmentRecord | undefined> {

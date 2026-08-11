@@ -13,5 +13,27 @@ function unauthorized(): Response {
 
 export async function GET(request: Request): Promise<Response> {
   if (!isValidPartnerKey(request.headers.get('x-partner-key'))) return unauthorized();
-  return Response.json({ data: await hotelBookingService.listPendingAmendments() });
+
+  const url = new URL(request.url);
+  const requestedPage = Number(url.searchParams.get('page') ?? '1');
+  const requestedPageSize = Number(url.searchParams.get('pageSize') ?? '50');
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const pageSize =
+    Number.isInteger(requestedPageSize) && requestedPageSize > 0
+      ? Math.min(requestedPageSize, 100)
+      : 50;
+  const [amendments, totalCount] = await Promise.all([
+    hotelBookingService.listPendingAmendments({ skip: (page - 1) * pageSize, take: pageSize }),
+    hotelBookingService.getPendingAmendmentCount(),
+  ]);
+
+  return Response.json({
+    data: amendments,
+    meta: {
+      page,
+      pageSize,
+      totalCount,
+      totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+    },
+  });
 }

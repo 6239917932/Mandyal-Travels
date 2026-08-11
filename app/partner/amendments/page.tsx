@@ -9,6 +9,13 @@ import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerAmendmentRecord } from '@/types/commerce';
 
+type PartnerAmendmentMeta = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
 function money(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -20,21 +27,21 @@ function money(amount: number, currency: string): string {
 export default function PartnerAmendmentsPage() {
   const [partnerKey, setPartnerKey] = useState('');
   const [amendments, setAmendments] = useState<PartnerAmendmentRecord[]>([]);
+  const [meta, setMeta] = useState<PartnerAmendmentMeta>();
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [reviewingId, setReviewingId] = useState<string>();
 
-  async function loadAmendments(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
+  async function loadPage(page: number) {
     setError(undefined);
     setIsLoading(true);
     try {
-      const response = await fetch('/api/v1/partner/amendments', {
+      const response = await fetch(`/api/v1/partner/amendments?page=${page}&pageSize=50`, {
         headers: { 'x-partner-key': partnerKey },
       });
-      const result = await readJsonResponse<{ data: PartnerAmendmentRecord[] } | ApiErrorResponse>(
-        response,
-      );
+      const result = await readJsonResponse<
+        { data: PartnerAmendmentRecord[]; meta: PartnerAmendmentMeta } | ApiErrorResponse
+      >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
@@ -44,11 +51,17 @@ export default function PartnerAmendmentsPage() {
         return;
       }
       setAmendments(result.data);
+      setMeta(result.meta);
     } catch {
       setError('The partner service could not be reached.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function loadAmendments(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await loadPage(1);
   }
 
   async function review(amendmentId: string, decision: 'approved' | 'declined') {
@@ -81,7 +94,9 @@ export default function PartnerAmendmentsPage() {
         );
         return;
       }
-      setAmendments((current) => current.filter((item) => item.id !== amendmentId));
+      const targetPage =
+        amendments.length === 1 && meta && meta.page > 1 ? meta.page - 1 : meta?.page;
+      await loadPage(targetPage ?? 1);
     } catch {
       setError('The partner service could not be reached.');
     } finally {
@@ -193,6 +208,29 @@ export default function PartnerAmendmentsPage() {
               </div>
             </Card>
           ))}
+          {meta ? (
+            <Card className="business-report__pagination">
+              <span>
+                Page {meta.page} of {meta.totalPages} · {meta.totalCount} pending requests
+              </span>
+              <div className="manage-booking__document-actions">
+                <Button
+                  disabled={isLoading || meta.page <= 1}
+                  onClick={() => loadPage(meta.page - 1)}
+                  variant="secondary"
+                >
+                  Previous
+                </Button>
+                <Button
+                  disabled={isLoading || meta.page >= meta.totalPages}
+                  onClick={() => loadPage(meta.page + 1)}
+                  variant="secondary"
+                >
+                  Next
+                </Button>
+              </div>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>

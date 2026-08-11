@@ -436,8 +436,10 @@ export class HotelBookingService {
     return this.getManagedBooking(code, accessToken);
   }
 
-  async listPendingAmendments(): Promise<PartnerAmendmentRecord[]> {
-    const pending = await this.amendments.findPending();
+  async listPendingAmendments(
+    options: { skip?: number; take?: number } = {},
+  ): Promise<PartnerAmendmentRecord[]> {
+    const pending = await this.amendments.findPending(options);
     const results = await Promise.all(
       pending.map(async (amendment) => {
         const { bookingId, ...publicAmendment } = amendment;
@@ -470,6 +472,10 @@ export class HotelBookingService {
       }),
     );
     return results.filter((item): item is PartnerAmendmentRecord => item !== undefined);
+  }
+
+  async getPendingAmendmentCount(): Promise<number> {
+    return this.amendments.countPending();
   }
 
   async listPartnerBookings(
@@ -607,7 +613,7 @@ export class HotelBookingService {
     decision: 'approved' | 'declined',
     reviewNote: string,
   ): Promise<BookingAmendmentRecord | undefined> {
-    const pending = (await this.amendments.findPending()).find((item) => item.id === id);
+    const pending = await this.amendments.findPendingById(id);
     if (!pending) return undefined;
     if (decision === 'declined') {
       return this.amendments.decline(id, reviewNote);
