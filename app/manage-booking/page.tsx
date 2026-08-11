@@ -57,7 +57,7 @@ export default function ManageBookingPage() {
       if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
-            ? 'This browser does not have secure access to that booking. Please use the browser where the booking was completed.'
+            ? 'Sign in to the booking account or use the browser where the booking was completed.'
             : 'We could not find that booking. Check the reference and try again.',
         );
         return;
@@ -147,8 +147,8 @@ export default function ManageBookingPage() {
         <p className="hotel-page__eyebrow">Your trip</p>
         <h1>Manage your booking</h1>
         <p className="booking-page__intro">
-          Enter the booking reference from your confirmation. For your security, access is limited
-          to the browser used to complete the booking.
+          Enter the booking reference from your confirmation. Access is available from the browser
+          used to book or while signed in to the matching customer account.
         </p>
 
         <div className="manage-booking__grid">

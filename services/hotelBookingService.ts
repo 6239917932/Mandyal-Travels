@@ -390,6 +390,21 @@ export class HotelBookingService {
     return this.getManagedBooking(code, accessToken);
   }
 
+  async cancelBookingForGuest(
+    code: string,
+    email: string,
+  ): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.getManagedBookingForGuest(code, email);
+    if (!booking) {
+      return undefined;
+    }
+
+    if (booking.status !== 'cancelled') {
+      await this.bookings.cancel(booking.id, booking.refundable === true);
+    }
+    return this.getManagedBookingForGuest(code, email);
+  }
+
   async requestAmendment(
     code: string,
     accessToken: string,
@@ -400,6 +415,28 @@ export class HotelBookingService {
       return undefined;
     }
 
+    await this.createAmendmentRequest(booking, request);
+    return this.getManagedBooking(code, accessToken);
+  }
+
+  async requestAmendmentForGuest(
+    code: string,
+    email: string,
+    request: { reason: string; requestedCheckInDate: string; requestedCheckOutDate: string },
+  ): Promise<ManagedHotelBooking | undefined> {
+    const booking = await this.getManagedBookingForGuest(code, email);
+    if (!booking) {
+      return undefined;
+    }
+
+    await this.createAmendmentRequest(booking, request);
+    return this.getManagedBookingForGuest(code, email);
+  }
+
+  private async createAmendmentRequest(
+    booking: ManagedHotelBooking,
+    request: { reason: string; requestedCheckInDate: string; requestedCheckOutDate: string },
+  ): Promise<void> {
     if (booking.status !== 'confirmed') {
       throw new HotelBookingRuleError(
         'BOOKING_NOT_AMENDABLE',
@@ -434,7 +471,6 @@ export class HotelBookingService {
     }
 
     await this.amendments.create({ bookingId: booking.id, ...request });
-    return this.getManagedBooking(code, accessToken);
   }
 
   async listPendingAmendments(

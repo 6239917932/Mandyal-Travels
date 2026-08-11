@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 
+import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
@@ -21,8 +22,13 @@ export async function POST(
   const accessToken =
     request.cookies.get(getBookingAccessCookieName(confirmationCode))?.value ??
     request.cookies.get(legacyBookingAccessCookieName)?.value;
-  if (!accessToken) {
-    return errorResponse('BOOKING_ACCESS_TOKEN_REQUIRED', 'Booking access is required.', 401);
+  const user = await getCurrentUser();
+  if (!accessToken && !user) {
+    return errorResponse(
+      'BOOKING_ACCESS_REQUIRED',
+      'Sign in to the booking account or use the browser where it was booked.',
+      401,
+    );
   }
 
   const body = await readJsonObject(request);
@@ -45,11 +51,21 @@ export async function POST(
   }
 
   try {
-    const booking = await hotelBookingService.requestAmendment(confirmationCode, accessToken, {
+    const amendmentRequest = {
       reason: values.reason.trim(),
       requestedCheckInDate: values.requestedCheckInDate,
       requestedCheckOutDate: values.requestedCheckOutDate,
-    });
+    };
+    let booking = accessToken
+      ? await hotelBookingService.requestAmendment(confirmationCode, accessToken, amendmentRequest)
+      : undefined;
+    if (!booking && user) {
+      booking = await hotelBookingService.requestAmendmentForGuest(
+        confirmationCode,
+        user.email,
+        amendmentRequest,
+      );
+    }
     return booking
       ? Response.json({ data: booking }, { status: 201 })
       : errorResponse('BOOKING_NOT_FOUND', 'The booking could not be found.', 404);

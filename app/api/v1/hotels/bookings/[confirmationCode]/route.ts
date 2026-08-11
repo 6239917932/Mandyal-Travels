@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 
+import { getCurrentUser } from '@/lib/auth/session';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -21,18 +22,25 @@ function getAccessToken(request: NextRequest, confirmationCode: string): string 
 export async function GET(request: NextRequest, context: BookingRouteContext): Promise<Response> {
   const { confirmationCode } = await context.params;
   const accessToken = getAccessToken(request, confirmationCode);
+  let booking = accessToken
+    ? await hotelBookingService.getManagedBooking(confirmationCode, accessToken)
+    : undefined;
+  if (!booking) {
+    const user = await getCurrentUser();
+    booking = user
+      ? await hotelBookingService.getManagedBookingForGuest(confirmationCode, user.email)
+      : undefined;
+  }
 
-  if (!accessToken) {
+  if (!accessToken && !booking) {
     const body: ApiErrorResponse = {
       error: {
         code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
-        message: 'A booking access token is required.',
+        message: 'Sign in to the booking account or use the browser where it was booked.',
       },
     };
     return Response.json(body, { status: 401 });
   }
-
-  const booking = await hotelBookingService.getManagedBooking(confirmationCode, accessToken);
 
   if (!booking) {
     const body: ApiErrorResponse = {
@@ -44,7 +52,7 @@ export async function GET(request: NextRequest, context: BookingRouteContext): P
     return Response.json(body, { status: 404 });
   }
 
-  return Response.json({ data: booking });
+  return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
 export async function DELETE(
@@ -53,19 +61,28 @@ export async function DELETE(
 ): Promise<Response> {
   const { confirmationCode } = await context.params;
   const accessToken = getAccessToken(request, confirmationCode);
-  if (!accessToken) {
+  let booking = accessToken
+    ? await hotelBookingService.cancelBooking(confirmationCode, accessToken)
+    : undefined;
+  if (!booking) {
+    const user = await getCurrentUser();
+    booking = user
+      ? await hotelBookingService.cancelBookingForGuest(confirmationCode, user.email)
+      : undefined;
+  }
+
+  if (!accessToken && !booking) {
     return Response.json(
       {
         error: {
           code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
-          message: 'A booking access token is required.',
+          message: 'Sign in to the booking account or use the browser where it was booked.',
         },
       } satisfies ApiErrorResponse,
       { status: 401 },
     );
   }
 
-  const booking = await hotelBookingService.cancelBooking(confirmationCode, accessToken);
   if (!booking) {
     return Response.json(
       {
@@ -78,5 +95,5 @@ export async function DELETE(
     );
   }
 
-  return Response.json({ data: booking });
+  return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
