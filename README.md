@@ -29,3 +29,11 @@ This GitHub repository is the main saved version of the Mandyal Travels portal.
 - Before a production deployment, replace both example secrets with independent random values of at
   least 32 characters. Placeholder or short secrets are rejected in production.
 - The `main` branch is the saved working baseline.
+
+## Release checks
+
+- Run `npm run check` before publishing a release.
+- The deployment readiness endpoint is `/api/v1/health`. It returns HTTP 200 only when the portal
+  can reach its database.
+- Apply reviewed Prisma schema changes before starting an updated deployment, and back up the
+  database before approving any command that warns about data loss.
