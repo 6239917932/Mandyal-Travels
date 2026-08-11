@@ -79,6 +79,7 @@ export default async function BusinessDashboardPage() {
     pendingTravelRequests,
     recentTravelRequests,
     totalRequests,
+    pendingRequestCount,
     bookedRequests,
     bookedValue,
     openSupportCases,
@@ -86,6 +87,7 @@ export default async function BusinessDashboardPage() {
     prisma.businessTravelRequest.findMany({
       include: requestInclude,
       orderBy: { createdAt: 'asc' },
+      take: 50,
       where: { organizationId, status: 'PENDING' },
     }),
     prisma.businessTravelRequest.findMany({
@@ -95,6 +97,7 @@ export default async function BusinessDashboardPage() {
       where: { organizationId, status: { not: 'PENDING' } },
     }),
     prisma.businessTravelRequest.count({ where: { organizationId } }),
+    prisma.businessTravelRequest.count({ where: { organizationId, status: 'PENDING' } }),
     prisma.businessTravelRequest.count({ where: { organizationId, status: 'BOOKED' } }),
     prisma.businessTravelRequest.aggregate({
       _sum: { bookingTotalAmount: true },
@@ -147,7 +150,7 @@ export default async function BusinessDashboardPage() {
         </Card>
         <Card>
           <span>Pending approvals</span>
-          <strong>{pendingTravelRequests.length}</strong>
+          <strong>{pendingRequestCount}</strong>
         </Card>
         <Card>
           <span>Confirmed company journeys</span>
@@ -204,9 +207,9 @@ export default async function BusinessDashboardPage() {
         />
         {totalRequests > travelRequests.length ? (
           <p className="booking-confirmation__note">
-            All pending approvals and the 20 most recent reviewed requests are shown here. Open the{' '}
-            <Link href="/business/reports">company report</Link> for the complete searchable
-            history.
+            The 50 oldest pending approvals and the 20 most recent reviewed requests are shown here.
+            Open the <Link href="/business/reports">company report</Link> for the complete
+            searchable history.
           </p>
         ) : null}
       </div>
