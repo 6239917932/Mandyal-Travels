@@ -89,7 +89,8 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
         { status: 409 },
       );
     }
-    throw error;
+    console.error('Business member role update failed.', error);
+    return NextResponse.json({ error: 'The member access could not be updated.' }, { status: 500 });
   }
 
   return NextResponse.json({ data: { id: updatedMember.id, role: updatedMember.role } });
@@ -104,32 +105,43 @@ export async function DELETE(_request: Request, { params }: MemberRouteContext) 
     );
   }
 
-  const { membershipId } = await params;
-  const member = await prisma.organizationMember.findFirst({
-    include: { user: { select: { email: true, firstName: true, lastName: true } } },
-    where: {
-      id: membershipId,
-      organizationId: access.membership.organizationId,
-      role: 'TRAVELLER',
-    },
-  });
-  if (!member) {
-    return NextResponse.json({ error: 'The traveller membership was not found.' }, { status: 404 });
-  }
-
-  await prisma.$transaction(async (transaction) => {
-    await transaction.organizationMember.delete({ where: { id: member.id } });
-    await transaction.businessAuditLog.create({
-      data: createBusinessAuditData({
-        action: BUSINESS_AUDIT_ACTIONS.MEMBER_REMOVED,
-        actorUserId: access.user.id,
-        entityId: member.id,
-        entityType: 'MEMBERSHIP',
-        metadata: { memberEmail: member.user.email, role: member.role },
+  try {
+    const { membershipId } = await params;
+    const member = await prisma.organizationMember.findFirst({
+      include: { user: { select: { email: true, firstName: true, lastName: true } } },
+      where: {
+        id: membershipId,
         organizationId: access.membership.organizationId,
-        summary: `${member.user.firstName} ${member.user.lastName} removed from company travellers.`,
-      }),
+        role: 'TRAVELLER',
+      },
     });
-  });
-  return NextResponse.json({ data: { id: member.id } });
+    if (!member) {
+      return NextResponse.json(
+        { error: 'The traveller membership was not found.' },
+        { status: 404 },
+      );
+    }
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.organizationMember.delete({ where: { id: member.id } });
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.MEMBER_REMOVED,
+          actorUserId: access.user.id,
+          entityId: member.id,
+          entityType: 'MEMBERSHIP',
+          metadata: { memberEmail: member.user.email, role: member.role },
+          organizationId: access.membership.organizationId,
+          summary: `${member.user.firstName} ${member.user.lastName} removed from company travellers.`,
+        }),
+      });
+    });
+    return NextResponse.json({ data: { id: member.id } });
+  } catch (error) {
+    console.error('Business member removal failed.', error);
+    return NextResponse.json(
+      { error: 'The traveller could not be removed from the organization.' },
+      { status: 500 },
+    );
+  }
 }

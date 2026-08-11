@@ -15,35 +15,43 @@ export async function DELETE(_request: Request, { params }: InvitationRouteConte
     );
   }
 
-  const { invitationId } = await params;
-  const invitation = await prisma.organizationInvitation.findFirst({
-    where: {
-      id: invitationId,
-      organizationId: access.membership.organizationId,
-      status: 'PENDING',
-    },
-  });
-  if (!invitation) {
-    return NextResponse.json({ error: 'The pending invitation was not found.' }, { status: 404 });
-  }
-
-  await prisma.$transaction(async (transaction) => {
-    await transaction.organizationInvitation.update({
-      data: { status: 'REVOKED' },
-      where: { id: invitation.id },
-    });
-    await transaction.businessAuditLog.create({
-      data: createBusinessAuditData({
-        action: BUSINESS_AUDIT_ACTIONS.INVITATION_REVOKED,
-        actorUserId: access.user.id,
-        entityId: invitation.id,
-        entityType: 'INVITATION',
-        metadata: { email: invitation.email },
+  try {
+    const { invitationId } = await params;
+    const invitation = await prisma.organizationInvitation.findFirst({
+      where: {
+        id: invitationId,
         organizationId: access.membership.organizationId,
-        summary: `Traveller invitation revoked for ${invitation.email}.`,
-      }),
+        status: 'PENDING',
+      },
     });
-  });
+    if (!invitation) {
+      return NextResponse.json({ error: 'The pending invitation was not found.' }, { status: 404 });
+    }
 
-  return NextResponse.json({ data: { id: invitation.id } });
+    await prisma.$transaction(async (transaction) => {
+      await transaction.organizationInvitation.update({
+        data: { status: 'REVOKED' },
+        where: { id: invitation.id },
+      });
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.INVITATION_REVOKED,
+          actorUserId: access.user.id,
+          entityId: invitation.id,
+          entityType: 'INVITATION',
+          metadata: { email: invitation.email },
+          organizationId: access.membership.organizationId,
+          summary: `Traveller invitation revoked for ${invitation.email}.`,
+        }),
+      });
+    });
+
+    return NextResponse.json({ data: { id: invitation.id } });
+  } catch (error) {
+    console.error('Business invitation revocation failed.', error);
+    return NextResponse.json(
+      { error: 'The traveller invitation could not be revoked.' },
+      { status: 500 },
+    );
+  }
 }
