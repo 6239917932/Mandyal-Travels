@@ -38,6 +38,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   session, booking, company approval, support, and hotel amendment oversight
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
+- Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
+  and bounded export size
 - Partner-key protected hotel booking, inventory, and amendment operations
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment
   persistence

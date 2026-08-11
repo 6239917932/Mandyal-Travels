@@ -701,6 +701,36 @@
   justify-self: start;
 }
 
+.admin-export-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  padding: var(--space-5);
+}
+
+.admin-export-form > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.admin-export-form > div span {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.admin-export-form form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .admin-export-form form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .account-trips {
   display: grid;
   gap: var(--space-5);

@@ -124,6 +124,30 @@ export default async function AdminPage() {
         </form>
       </div>
 
+      <Card className="admin-export-form">
+        <div>
+          <strong>Operational travel export</strong>
+          <span>Download hotel, flight, bus, and car records for a selected period.</span>
+        </div>
+        <form action="/api/v1/admin/reports/export" method="get">
+          <div className="ui-field">
+            <label className="ui-field__label" htmlFor="admin-export-from">
+              From date
+            </label>
+            <input className="ui-input" id="admin-export-from" name="from" type="date" />
+          </div>
+          <div className="ui-field">
+            <label className="ui-field__label" htmlFor="admin-export-to">
+              To date
+            </label>
+            <input className="ui-input" id="admin-export-to" name="to" type="date" />
+          </div>
+          <button className="ui-button ui-button--primary" type="submit">
+            Export travel CSV
+          </button>
+        </form>
+      </Card>
+
       <div className="partner-bookings__summary">
         <Card>
           <span>Customer accounts</span>
