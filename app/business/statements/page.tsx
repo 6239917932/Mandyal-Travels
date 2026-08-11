@@ -8,6 +8,12 @@ import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'Company statements' };
 
+const PAGE_SIZE = 50;
+
+type BusinessStatementsPageProps = {
+  searchParams: Promise<{ page?: string | string[] }>;
+};
+
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -16,30 +22,47 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
-export default async function BusinessStatementsPage() {
+function readPage(value: string | string[] | undefined) {
+  const parsed = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export default async function BusinessStatementsPage({
+  searchParams,
+}: BusinessStatementsPageProps) {
   const access = await getBusinessAdminMembership();
   if (!access) redirect('/business');
 
-  const organization = await prisma.organization.findUnique({
-    include: {
-      travelRequests: {
-        include: {
-          customerTrip: { select: { confirmationCode: true } },
-          hotelBooking: { select: { confirmationCode: true } },
-          requester: { select: { firstName: true, lastName: true } },
-        },
-        orderBy: { bookedAt: 'desc' },
-        where: { status: 'BOOKED' },
-      },
-    },
-    where: { id: access.membership.organizationId },
-  });
+  const organizationId = access.membership.organizationId;
+  const values = await searchParams;
+  const [organization, totalBookings, totalValue] = await Promise.all([
+    prisma.organization.findUnique({
+      select: { contactEmail: true, name: true },
+      where: { id: organizationId },
+    }),
+    prisma.businessTravelRequest.count({
+      where: { organizationId, status: 'BOOKED' },
+    }),
+    prisma.businessTravelRequest.aggregate({
+      _sum: { bookingTotalAmount: true },
+      where: { currency: 'INR', organizationId, status: 'BOOKED' },
+    }),
+  ]);
   if (!organization) redirect('/business');
 
-  const total = organization.travelRequests.reduce(
-    (sum, request) => sum + (request.currency === 'INR' ? (request.bookingTotalAmount ?? 0) : 0),
-    0,
-  );
+  const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
+  const page = Math.min(readPage(values.page), totalPages);
+  const travelRequests = await prisma.businessTravelRequest.findMany({
+    include: {
+      customerTrip: { select: { confirmationCode: true } },
+      hotelBooking: { select: { confirmationCode: true } },
+      requester: { select: { firstName: true, lastName: true } },
+    },
+    orderBy: { bookedAt: 'desc' },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    where: { organizationId, status: 'BOOKED' },
+  });
 
   return (
     <section className="account-page">
@@ -63,11 +86,17 @@ export default async function BusinessStatementsPage() {
       <div className="partner-bookings__summary">
         <Card>
           <span>Confirmed company journeys</span>
-          <strong>{organization.travelRequests.length}</strong>
+          <strong>{totalBookings}</strong>
         </Card>
         <Card>
           <span>Recorded company value</span>
-          <strong>{formatCurrency(total, 'INR')}</strong>
+          <strong>{formatCurrency(totalValue._sum.bookingTotalAmount ?? 0, 'INR')}</strong>
+        </Card>
+        <Card>
+          <span>Page</span>
+          <strong>
+            {page} of {totalPages}
+          </strong>
         </Card>
       </div>
 
@@ -76,13 +105,13 @@ export default async function BusinessStatementsPage() {
       </p>
 
       <div className="account-trips__list">
-        {organization.travelRequests.length === 0 ? (
+        {travelRequests.length === 0 ? (
           <Card className="account-trips__empty">
             <strong>No confirmed company journeys yet.</strong>
             <p>Approved company bookings will appear here automatically.</p>
           </Card>
         ) : (
-          organization.travelRequests.map((request) => {
+          travelRequests.map((request) => {
             const reference =
               request.customerTrip?.confirmationCode ??
               request.hotelBooking?.confirmationCode ??
@@ -93,7 +122,7 @@ export default async function BusinessStatementsPage() {
                   <span className="account-trip__type">{request.productType}</span>
                   <h2>{request.title}</h2>
                   <p>
-                    {request.requester.firstName} {request.requester.lastName} · {reference}
+                    {request.requester.firstName} {request.requester.lastName} Â· {reference}
                   </p>
                 </div>
                 <div>
@@ -108,6 +137,34 @@ export default async function BusinessStatementsPage() {
           })
         )}
       </div>
+
+      {totalPages > 1 ? (
+        <nav aria-label="Company statement pages" className="business-audit-pagination">
+          {page > 1 ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={`/business/statements?page=${page - 1}`}
+            >
+              Previous page
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={`/business/statements?page=${page + 1}`}
+            >
+              Next page
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </section>
   );
 }
