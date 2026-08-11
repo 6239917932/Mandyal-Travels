@@ -58,9 +58,7 @@ function getTripDocumentAction(trip: {
     };
     const route = routes[trip.productType];
 
-    return route
-      ? { href: `${route.path}?${details.documentQuery}`, label: route.label }
-      : null;
+    return route ? { href: `${route.path}?${details.documentQuery}`, label: route.label } : null;
   } catch {
     return null;
   }
@@ -70,7 +68,7 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const [storedTrips, hotelGuests] = await Promise.all([
+  const [storedTrips, hotelGuests, organizationMembership] = await Promise.all([
     prisma.customerTrip.findMany({
       where: { OR: [{ userId: user.id }, { email: user.email }] },
       orderBy: { createdAt: 'desc' },
@@ -78,6 +76,10 @@ export default async function AccountPage() {
     prisma.bookingGuest.findMany({
       where: { email: user.email },
       include: { booking: { include: { quote: true } } },
+    }),
+    prisma.organizationMember.findFirst({
+      where: { userId: user.id },
+      include: { organization: true },
     }),
   ]);
 
@@ -112,9 +114,7 @@ export default async function AccountPage() {
     })),
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  const confirmedTrips = trips.filter(
-    (trip) => trip.status.toUpperCase() === 'CONFIRMED',
-  ).length;
+  const confirmedTrips = trips.filter((trip) => trip.status.toUpperCase() === 'CONFIRMED').length;
   const bookedValue = trips
     .filter((trip) => trip.currency === 'INR')
     .reduce((total, trip) => total + trip.totalAmount, 0);
@@ -124,14 +124,36 @@ export default async function AccountPage() {
       <div className="auth-page__intro">
         <p className="hotel-page__eyebrow">My account</p>
         <h1>Hello, {user.firstName}.</h1>
-        <p>Your customer account is active and protected by a secure browser session.</p>
+        <p>
+          Your {user.role === 'BUSINESS_ADMIN' ? 'business' : 'customer'} account is active and
+          protected by a secure browser session.
+        </p>
       </div>
       <div className="account-card ui-card ui-card--padded">
-        <div><span>Name</span><strong>{user.firstName} {user.lastName}</strong></div>
-        <div><span>Email</span><strong>{user.email}</strong></div>
-        <div><span>Account type</span><strong>Customer</strong></div>
+        <div>
+          <span>Name</span>
+          <strong>
+            {user.firstName} {user.lastName}
+          </strong>
+        </div>
+        <div>
+          <span>Email</span>
+          <strong>{user.email}</strong>
+        </div>
+        <div>
+          <span>Account type</span>
+          <strong>{user.role === 'BUSINESS_ADMIN' ? 'Business administrator' : 'Customer'}</strong>
+        </div>
+        {organizationMembership ? (
+          <div>
+            <span>Organization</span>
+            <strong>{organizationMembership.organization.name}</strong>
+          </div>
+        ) : null}
         <form action="/api/v1/auth/logout" method="post">
-          <button className="ui-button ui-button--secondary" type="submit">Sign out</button>
+          <button className="ui-button ui-button--secondary" type="submit">
+            Sign out
+          </button>
         </form>
       </div>
 
@@ -178,39 +200,45 @@ export default async function AccountPage() {
               const documentAction = getTripDocumentAction(trip);
 
               return (
-              <article className="account-trip ui-card ui-card--padded" key={`${trip.productType}-${trip.id}`}>
-                <div className="account-trip__topline">
-                  <span className="account-trip__type">{trip.productType}</span>
-                  <strong>{trip.status}</strong>
-                </div>
-                <div className="account-trip__body">
-                  <div>
-                    <h3>{trip.title}</h3>
-                    <p>{trip.subtitle}</p>
+                <article
+                  className="account-trip ui-card ui-card--padded"
+                  key={`${trip.productType}-${trip.id}`}
+                >
+                  <div className="account-trip__topline">
+                    <span className="account-trip__type">{trip.productType}</span>
+                    <strong>{trip.status}</strong>
                   </div>
-                  <dl>
+                  <div className="account-trip__body">
                     <div>
-                      <dt>Travel dates</dt>
-                      <dd>{trip.startDate}{trip.endDate ? ` to ${trip.endDate}` : ''}</dd>
+                      <h3>{trip.title}</h3>
+                      <p>{trip.subtitle}</p>
                     </div>
-                    <div>
-                      <dt>Booking reference</dt>
-                      <dd>{trip.confirmationCode}</dd>
-                    </div>
-                    <div>
-                      <dt>Total</dt>
-                      <dd>{formatCurrency(trip.totalAmount, trip.currency)}</dd>
-                    </div>
-                  </dl>
-                </div>
-                {documentAction ? (
-                  <div className="account-trip__actions">
-                    <Link className="ui-button ui-button--secondary" href={documentAction.href}>
-                      {documentAction.label}
-                    </Link>
+                    <dl>
+                      <div>
+                        <dt>Travel dates</dt>
+                        <dd>
+                          {trip.startDate}
+                          {trip.endDate ? ` to ${trip.endDate}` : ''}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Booking reference</dt>
+                        <dd>{trip.confirmationCode}</dd>
+                      </div>
+                      <div>
+                        <dt>Total</dt>
+                        <dd>{formatCurrency(trip.totalAmount, trip.currency)}</dd>
+                      </div>
+                    </dl>
                   </div>
-                ) : null}
-              </article>
+                  {documentAction ? (
+                    <div className="account-trip__actions">
+                      <Link className="ui-button ui-button--secondary" href={documentAction.href}>
+                        {documentAction.label}
+                      </Link>
+                    </div>
+                  ) : null}
+                </article>
               );
             })}
           </div>
