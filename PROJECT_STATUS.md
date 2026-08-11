@@ -44,7 +44,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Pagination and bounded query sizes for operational lists
 - Explicit row limits for company travel, statement, and audit CSV exports with filter guidance when
   a report is too large
-- Health/readiness endpoint at `/api/v1/health`
+- Health/readiness endpoint at `/api/v1/health` verifies database access and core customer,
+  organization, booking, and company-request schema availability
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate

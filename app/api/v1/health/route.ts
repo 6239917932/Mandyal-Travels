@@ -6,8 +6,16 @@ export async function GET() {
   const checkedAt = new Date().toISOString();
 
   try {
-    await prisma.$queryRaw`SELECT 1`;
-    return Response.json({ data: { checkedAt, status: 'ready' } }, { headers: RESPONSE_HEADERS });
+    await prisma.$transaction([
+      prisma.user.findFirst({ select: { id: true } }),
+      prisma.organization.findFirst({ select: { id: true } }),
+      prisma.booking.findFirst({ select: { id: true } }),
+      prisma.businessTravelRequest.findFirst({ select: { id: true } }),
+    ]);
+    return Response.json(
+      { data: { checkedAt, database: 'ready', schema: 'ready', status: 'ready' } },
+      { headers: RESPONSE_HEADERS },
+    );
   } catch (error) {
     console.error('Portal readiness check failed.', error);
     return Response.json(
