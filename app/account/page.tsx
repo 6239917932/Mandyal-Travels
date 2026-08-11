@@ -262,6 +262,7 @@ export default async function AccountPage() {
           <div className="account-trips__heading">
             <p className="hotel-page__eyebrow">Company travel</p>
             <h2 id="company-travel-heading">Request an organization trip</h2>
+            <Link href="/account/company-requests">View all company requests</Link>
           </div>
           <BusinessTravelRequestForm
             organizationName={organizationMembership.organization.name}
@@ -277,7 +278,7 @@ export default async function AccountPage() {
               {businessTravelRequestCount > RECENT_ITEM_LIMIT ? (
                 <p className="business-request__guidance">
                   Showing your latest {RECENT_ITEM_LIMIT} of {businessTravelRequestCount} company
-                  requests.
+                  requests. Open the full request history to browse older records.
                 </p>
               ) : null}
               <div className="account-trips__list">
