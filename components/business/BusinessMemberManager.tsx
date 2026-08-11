@@ -117,18 +117,24 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
     setError('');
     setRemovingId(member.id);
 
-    const response = await fetch(`/api/v1/business/members/${encodeURIComponent(member.id)}`, {
-      method: 'DELETE',
-    });
-    const result = (await response.json()) as { error?: string };
-    setRemovingId(undefined);
+    try {
+      const response = await fetch(`/api/v1/business/members/${encodeURIComponent(member.id)}`, {
+        method: 'DELETE',
+      });
+      const responseText = await response.text();
+      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
 
-    if (!response.ok) {
-      setError(result.error ?? 'The traveller could not be removed.');
-      return;
+      if (!response.ok) {
+        setError(result.error ?? 'The traveller could not be removed.');
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      setError('The organization access service could not be reached. Please try again.');
+    } finally {
+      setRemovingId(undefined);
     }
-
-    router.refresh();
   }
 
   async function updateMemberRole(member: BusinessMember, role: 'ADMIN' | 'TRAVELLER') {

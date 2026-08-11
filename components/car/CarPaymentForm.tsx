@@ -200,7 +200,7 @@ export function CarPaymentForm({
             onClick={applyPromotion}
             type="button"
           >
-            {validatingPromotion ? 'Checking…' : 'Apply code'}
+            {validatingPromotion ? 'Checkingâ€¦' : 'Apply code'}
           </button>
         </div>
       </div>
@@ -227,7 +227,7 @@ export function CarPaymentForm({
         disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : processing ? 'Checking approvalâ€¦' : 'Pay securely'}
+        {paid ? 'Payment captured' : processing ? 'Checking approval...' : 'Pay securely'}
       </button>
       {errors.payment ? <p className="ui-field__error">{errors.payment}</p> : null}
     </form>

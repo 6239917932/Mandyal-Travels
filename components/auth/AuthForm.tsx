@@ -21,30 +21,38 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
     setIsSubmitting(true);
     const form = new FormData(event.currentTarget);
 
-    const response = await fetch(`/api/v1/auth/${mode}`, {
-      body: JSON.stringify({
-        email: form.get('email'),
-        firstName: form.get('firstName'),
-        lastName: form.get('lastName'),
-        accountType,
-        marketingConsent: form.get('marketingConsent') === 'on',
-        organizationName: form.get('organizationName'),
-        password: form.get('password'),
-        returnTo,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
-    const result = (await response.json()) as { error?: string; redirectTo?: string };
+    try {
+      const response = await fetch(`/api/v1/auth/${mode}`, {
+        body: JSON.stringify({
+          email: form.get('email'),
+          firstName: form.get('firstName'),
+          lastName: form.get('lastName'),
+          accountType,
+          marketingConsent: form.get('marketingConsent') === 'on',
+          organizationName: form.get('organizationName'),
+          password: form.get('password'),
+          returnTo,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const responseText = await response.text();
+      const result = responseText
+        ? (JSON.parse(responseText) as { error?: string; redirectTo?: string })
+        : {};
 
-    if (!response.ok) {
-      setError(result.error ?? 'We could not complete your request. Please try again.');
+      if (!response.ok) {
+        setError(result.error ?? 'We could not complete your request. Please try again.');
+        return;
+      }
+
+      router.push(result.redirectTo ?? '/account');
+      router.refresh();
+    } catch {
+      setError('The account service could not be reached. Please try again.');
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    router.push(result.redirectTo ?? '/account');
-    router.refresh();
   }
 
   const isRegister = mode === 'register';
@@ -109,7 +117,7 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
       ) : null}
       <button className="ui-button ui-button--accent ui-button--full-width" disabled={isSubmitting}>
         {isSubmitting
-          ? 'Please waitâ€¦'
+          ? 'Please wait...'
           : isRegister && accountType === 'business'
             ? 'Create business account'
             : isRegister

@@ -159,7 +159,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           promotionCode: promotion?.code,
           confirmationCode,
           status: 'CONFIRMED',
-          title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
+          title: `${bookingSummary.departureAirport} â†’ ${bookingSummary.destinationAirport}`,
           subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
           startDate: bookingSummary.departureDate,
           totalAmount: finalTotal,
@@ -224,7 +224,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
             onClick={applyPromotion}
             type="button"
           >
-            {validatingPromotion ? 'Checking…' : 'Apply code'}
+            {validatingPromotion ? 'Checkingâ€¦' : 'Apply code'}
           </button>
         </div>
       </div>
@@ -270,7 +270,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : processing ? 'Checking approvalâ€¦' : 'Pay securely'}
+        {paid ? 'Payment captured' : processing ? 'Checking approval...' : 'Pay securely'}
       </button>
       {errors.payment ? (
         <p className="ui-field__error" role="alert">
