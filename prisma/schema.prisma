@@ -8,18 +8,41 @@ datasource db {
 }
 
 model User {
-  id                 String        @id @default(cuid())
-  email              String        @unique
-  passwordHash       String
-  firstName          String
-  lastName           String
-  role               String        @default("CUSTOMER")
-  emailVerifiedAt    DateTime?
-  marketingConsentAt DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  sessions           UserSession[]
-  trips              CustomerTrip[]
+  id                      String               @id @default(cuid())
+  email                   String               @unique
+  passwordHash            String
+  firstName               String
+  lastName                String
+  role                    String               @default("CUSTOMER")
+  emailVerifiedAt         DateTime?
+  marketingConsentAt      DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  sessions                UserSession[]
+  trips                   CustomerTrip[]
+  organizationMemberships OrganizationMember[]
+}
+
+model Organization {
+  id        String               @id @default(cuid())
+  name      String
+  type      String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   OrganizationMember[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 model CustomerTrip {
@@ -58,35 +81,35 @@ model UserSession {
 }
 
 model AvailabilityLock {
-  id              String   @id
+  id              String      @id
   roomTypeId      String
-  checkInDate     String   @default("")
-  checkOutDate    String   @default("")
+  checkInDate     String      @default("")
+  checkOutDate    String      @default("")
   quantity        Int
   inventorySource String
   status          String
   expiresAt       DateTime
-  createdAt       DateTime @default(now())
-  quote            HotelQuote?
-  booking          Booking?
+  createdAt       DateTime    @default(now())
+  quote           HotelQuote?
+  booking         Booking?
 
   @@index([roomTypeId, status, expiresAt])
 }
 
 model HotelQuote {
-  id                 String             @id
-  hotelSlug          String             @default("")
-  checkInDate        String             @default("")
-  checkOutDate       String             @default("")
-  ratePlanId         String             @default("")
-  rooms              Int                @default(1)
+  id                 String           @id
+  hotelSlug          String           @default("")
+  checkInDate        String           @default("")
+  checkOutDate       String           @default("")
+  ratePlanId         String           @default("")
+  rooms              Int              @default(1)
   currency           String
   totalAmount        Int
   nights             Int
   quotedAt           DateTime
   expiresAt          DateTime
-  availabilityLockId String             @unique
-  availabilityLock   AvailabilityLock   @relation(fields: [availabilityLockId], references: [id])
+  availabilityLockId String           @unique
+  availabilityLock   AvailabilityLock @relation(fields: [availabilityLockId], references: [id])
   components         PriceComponent[]
   booking            Booking?
 }
@@ -104,36 +127,36 @@ model PriceComponent {
 }
 
 model Booking {
-  id                 String             @id
-  confirmationCode   String             @unique
-  idempotencyKey     String             @unique
-  accessTokenHash    String?            @unique
+  id                 String              @id
+  confirmationCode   String              @unique
+  idempotencyKey     String              @unique
+  accessTokenHash    String?             @unique
   hotelSlug          String
   status             String
   totalAmount        Int
   currency           String
-  createdAt          DateTime           @default(now())
-  quoteId            String             @unique
-  availabilityLockId String             @unique
-  quote              HotelQuote         @relation(fields: [quoteId], references: [id])
-  availabilityLock   AvailabilityLock   @relation(fields: [availabilityLockId], references: [id])
+  createdAt          DateTime            @default(now())
+  quoteId            String              @unique
+  availabilityLockId String              @unique
+  quote              HotelQuote          @relation(fields: [quoteId], references: [id])
+  availabilityLock   AvailabilityLock    @relation(fields: [availabilityLockId], references: [id])
   guest              BookingGuest?
   payment            PaymentTransaction?
   amendments         BookingAmendment[]
 }
 
 model BookingAmendment {
-  id                    String   @id
+  id                    String    @id
   bookingId             String
   requestedCheckInDate  String
   requestedCheckOutDate String
   reason                String
   status                String
-  createdAt             DateTime @default(now())
+  createdAt             DateTime  @default(now())
   reviewedAt            DateTime?
   reviewNote            String?
   requestedTotalAmount  Int?
-  booking               Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking               Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId, status, createdAt])
 }
