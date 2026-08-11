@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -92,26 +93,14 @@ export default async function BusinessDashboardPage() {
           <p className="hotel-page__eyebrow">Organization access</p>
           <h2>Team members</h2>
         </div>
-        <div className="account-trips__list">
-          {membership.organization.members.map((member) => (
-            <Card className="account-trip" key={member.id}>
-              <div className="account-trip__topline">
-                <span className="account-trip__type">{member.role}</span>
-                <strong>
-                  {member.user.role === 'BUSINESS_ADMIN' ? 'Administrator' : 'Traveller'}
-                </strong>
-              </div>
-              <div className="account-trip__body">
-                <div>
-                  <h3>
-                    {member.user.firstName} {member.user.lastName}
-                  </h3>
-                  <p>{member.user.email}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <BusinessMemberManager
+          members={membership.organization.members.map((member) => ({
+            email: member.user.email,
+            id: member.id,
+            name: `${member.user.firstName} ${member.user.lastName}`,
+            role: member.role,
+          }))}
+        />
       </div>
 
       <div className="account-trips">
@@ -135,7 +124,7 @@ export default async function BusinessDashboardPage() {
             </div>
           </div>
           <p className="booking-confirmation__note">
-            Traveller invitations and editable policy rules are the next organization controls in
+            Editable policy rules and booking approval queues are the next organization controls in
             this workspace.
           </p>
         </Card>
