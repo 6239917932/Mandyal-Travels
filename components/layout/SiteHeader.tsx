@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { siteConfig } from '@/config/site';
 
-type SiteHeaderProps = { user: { firstName: string } | null };
+type SiteHeaderProps = { user: { firstName: string; role: string } | null };
 
 export function SiteHeader({ user }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,7 +51,13 @@ export function SiteHeader({ user }: SiteHeaderProps) {
             </Link>
           ))}
 
-          <Link className="site-navigation__cta" href={user ? '/account' : '/login'} onClick={closeMenu}>
+          <Link
+            className="site-navigation__cta"
+            href={
+              user?.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : user ? '/account' : '/login'
+            }
+            onClick={closeMenu}
+          >
             {user ? `Hi, ${user.firstName}` : 'Sign in'}
           </Link>
         </nav>
