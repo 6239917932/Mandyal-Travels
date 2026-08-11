@@ -83,8 +83,8 @@ export default function BookingConfirmationPage() {
             </div>
           </div>
           <p className="booking-confirmation__note">
-            This is a frontend demonstration. Payment capture, voucher generation, and email
-            delivery will connect to backend services in the hotel business-engine phase.
+            Your reservation and voucher are saved in the booking system. Payment capture and email
+            delivery remain simulated until approved provider integrations are configured.
           </p>
           <Link className="ui-button ui-button--primary" href="/hotels" onClick={clearBooking}>
             Plan another stay
