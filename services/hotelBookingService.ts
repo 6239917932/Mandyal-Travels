@@ -1,6 +1,7 @@
 import { createHash, createHmac } from 'node:crypto';
 
 import { calculatePromotion, findPromotionRule } from '@/constants/promotionRules';
+import { readConfiguredSecret } from '@/lib/security/configuredSecret';
 
 import {
   availabilityLockRepository,
@@ -40,9 +41,9 @@ function hashBookingAccessToken(token: string): string {
 }
 
 function createBookingAccessToken(idempotencyKey: string): string {
-  const secret = process.env.BOOKING_TOKEN_SECRET;
+  const secret = readConfiguredSecret('BOOKING_TOKEN_SECRET');
   if (!secret) {
-    throw new Error('BOOKING_TOKEN_SECRET is not configured.');
+    throw new Error('BOOKING_TOKEN_SECRET is not securely configured.');
   }
 
   return createHmac('sha256', secret).update(idempotencyKey).digest('hex');

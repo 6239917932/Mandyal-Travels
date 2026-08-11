@@ -10,6 +10,8 @@ This GitHub repository is the main saved version of the Mandyal Travels portal.
 - Car rental search and booking journey
 - Inventory and availability controls
 - Customer accounts and unified trip history
+- Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
+  and organization support cases
 - Prisma-based data layer prepared for development
 
 ## Run the portal on Windows
@@ -24,4 +26,6 @@ This GitHub repository is the main saved version of the Mandyal Travels portal.
 - Payment functions are demonstrations until a real payment gateway is connected.
 - Do not commit a real `.env` file or credentials.
 - Use `.env.example` only as the configuration guide.
+- Before a production deployment, replace both example secrets with independent random values of at
+  least 32 characters. Placeholder or short secrets are rejected in production.
 - The `main` branch is the saved working baseline.
