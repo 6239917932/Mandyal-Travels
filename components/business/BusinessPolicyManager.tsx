@@ -75,7 +75,7 @@ export function BusinessPolicyManager({ initialPolicy }: BusinessPolicyManagerPr
           />
           <span>
             <strong>Require booking approval</strong>
-            <small>Managed travellers must receive administrator approval before booking.</small>
+            <small>Company travel requests are sent to an administrator for review.</small>
           </span>
         </label>
 
