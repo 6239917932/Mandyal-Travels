@@ -11,6 +11,9 @@ export async function POST(request: Request) {
   const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
   const password = typeof body.password === 'string' ? body.password : '';
+  const accountType = body.accountType === 'business' ? 'business' : 'customer';
+  const organizationName =
+    typeof body.organizationName === 'string' ? body.organizationName.trim() : '';
 
   if (!firstName || !lastName || !EMAIL_PATTERN.test(email) || !isValidPassword(password)) {
     return NextResponse.json(
@@ -19,21 +22,53 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    return NextResponse.json({ error: 'An account already exists for this email.' }, { status: 409 });
+  if (
+    accountType === 'business' &&
+    (organizationName.length < 2 || organizationName.length > 120)
+  ) {
+    return NextResponse.json(
+      { error: 'Enter an organization name between 2 and 120 characters.' },
+      { status: 400 },
+    );
   }
 
-  const user = await prisma.user.create({
-    data: {
-      email,
-      firstName,
-      lastName,
-      marketingConsentAt: body.marketingConsent === true ? new Date() : null,
-      passwordHash: await hashPassword(password),
-    },
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return NextResponse.json(
+      { error: 'An account already exists for this email.' },
+      { status: 409 },
+    );
+  }
+
+  const passwordHash = await hashPassword(password);
+  const user = await prisma.$transaction(async (transaction) => {
+    const createdUser = await transaction.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        marketingConsentAt: body.marketingConsent === true ? new Date() : null,
+        passwordHash,
+        role: accountType === 'business' ? 'BUSINESS_ADMIN' : 'CUSTOMER',
+      },
+    });
+
+    if (accountType === 'business') {
+      await transaction.organization.create({
+        data: {
+          members: { create: { role: 'ADMIN', userId: createdUser.id } },
+          name: organizationName,
+          type: 'CORPORATE',
+        },
+      });
+    }
+
+    return createdUser;
   });
 
   await createSession(user.id);
-  return NextResponse.json({ user: { email: user.email, firstName: user.firstName } }, { status: 201 });
+  return NextResponse.json(
+    { user: { email: user.email, firstName: user.firstName } },
+    { status: 201 },
+  );
 }
