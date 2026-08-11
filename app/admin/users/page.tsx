@@ -47,6 +47,11 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           { email: { contains: query } },
           { firstName: { contains: query } },
           { lastName: { contains: query } },
+          {
+            organizationMemberships: {
+              some: { organization: { name: { contains: query } } },
+            },
+          },
         ],
       }
     : {};
@@ -57,7 +62,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     include: {
       _count: { select: { customerSupportCases: true, trips: true } },
       organizationMemberships: {
-        select: { organization: { select: { name: true } }, role: true },
+        select: { organization: { select: { id: true, name: true } }, role: true },
         take: 1,
       },
       sessions: {
@@ -144,7 +149,16 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                       <span>{user.emailVerifiedAt ? 'Email verified' : 'Email not verified'}</span>
                     </td>
                     <td>
-                      <strong>{membership?.organization.name ?? 'Personal account'}</strong>
+                      {membership ? (
+                        <Link
+                          className="admin-directory-link"
+                          href={`/admin/organizations/${membership.organization.id}`}
+                        >
+                          {membership.organization.name}
+                        </Link>
+                      ) : (
+                        <strong>Personal account</strong>
+                      )}
                       <span>{membership ? membership.role : 'No company membership'}</span>
                     </td>
                     <td>
