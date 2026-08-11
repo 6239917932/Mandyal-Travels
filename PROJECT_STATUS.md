@@ -43,6 +43,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Separately provisioned, read-only platform operations console with an executive activity snapshot,
   quick navigation, and customer, organization, session, booking, company approval, support, and
   hotel amendment oversight
+- Accurate full-account servicing totals, direct user-to-organization navigation, queue shortcuts,
+  a visible security-control posture, and a prefilled bounded reporting window
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
 - Customer support servicing with required resolution notes and append-only case events

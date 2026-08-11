@@ -823,6 +823,47 @@
   gap: var(--space-4);
 }
 
+.admin-control-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.admin-control-grid .ui-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  border-top: 0.25rem solid var(--color-brand-500);
+  background: linear-gradient(180deg, var(--color-white), var(--color-brand-50));
+  padding: var(--space-5);
+}
+
+.admin-control-grid span {
+  color: var(--color-brand-700);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-control-grid strong {
+  color: var(--color-brand-950);
+  font-size: 1.05rem;
+}
+
+.admin-control-grid small {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+#queues .partner-bookings__summary .ui-card a {
+  align-self: end;
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
 .admin-metric,
 .admin-record-summary .ui-card {
   display: grid;
@@ -1005,7 +1046,8 @@
   }
 
   .admin-overview-grid,
-  .admin-record-summary {
+  .admin-record-summary,
+  .admin-control-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1013,6 +1055,7 @@
 @media (max-width: 520px) {
   .admin-overview-grid,
   .admin-record-summary,
+  .admin-control-grid,
   .admin-record-list {
     grid-template-columns: 1fr;
   }

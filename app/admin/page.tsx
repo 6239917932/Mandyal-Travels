@@ -25,6 +25,10 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+function formatDateInput(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
 function statusClass(status: string) {
   return `business-request__status business-request__status--${status.toLowerCase()}`;
 }
@@ -72,8 +76,8 @@ export default async function AdminPage() {
     }),
     prisma.businessTravelRequest.findMany({
       include: {
-        organization: { select: { name: true } },
-        requester: { select: { email: true, firstName: true, lastName: true } },
+        organization: { select: { id: true, name: true } },
+        requester: { select: { email: true, firstName: true, id: true, lastName: true } },
       },
       orderBy: { createdAt: 'asc' },
       take: 12,
@@ -81,15 +85,15 @@ export default async function AdminPage() {
     }),
     prisma.businessSupportCase.findMany({
       include: {
-        createdBy: { select: { email: true, firstName: true, lastName: true } },
-        organization: { select: { name: true } },
+        createdBy: { select: { email: true, firstName: true, id: true, lastName: true } },
+        organization: { select: { id: true, name: true } },
       },
       orderBy: { updatedAt: 'desc' },
       take: 12,
     }),
     prisma.customerSupportCase.findMany({
       include: {
-        createdBy: { select: { email: true, firstName: true, lastName: true } },
+        createdBy: { select: { email: true, firstName: true, id: true, lastName: true } },
       },
       orderBy: { updatedAt: 'desc' },
       take: 12,
@@ -113,7 +117,7 @@ export default async function AdminPage() {
       take: 10,
     }),
     prisma.customerTrip.findMany({
-      include: { user: { select: { email: true } } },
+      include: { user: { select: { email: true, firstName: true, id: true, lastName: true } } },
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),
@@ -128,6 +132,10 @@ export default async function AdminPage() {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(now);
+  const exportFrom = new Date(now);
+  exportFrom.setUTCDate(exportFrom.getUTCDate() - 30);
+  const exportFromValue = formatDateInput(exportFrom);
+  const exportToValue = formatDateInput(now);
 
   return (
     <section className="account-page platform-admin-page">
@@ -180,7 +188,7 @@ export default async function AdminPage() {
           <small>Confirmed hotel, flight, bus, and car records</small>
         </Card>
         <Card className="admin-metric">
-          <span>Customer accounts</span>
+          <span>Platform accounts</span>
           <strong>{userCount.toLocaleString('en-IN')}</strong>
           <small>{activeSessionCount} currently active sessions</small>
         </Card>
@@ -206,6 +214,29 @@ export default async function AdminPage() {
           <small>
             {attentionCount > 0 ? 'Review the queues below' : 'No queued items at this snapshot'}
           </small>
+        </Card>
+      </div>
+
+      <div className="admin-control-grid" aria-label="Administrative control posture">
+        <Card>
+          <span>Access boundary</span>
+          <strong>Role protected</strong>
+          <small>Every console page and administrative mutation requires platform access.</small>
+        </Card>
+        <Card>
+          <span>Administrator enrollment</span>
+          <strong>Private provisioning</strong>
+          <small>Public registration cannot create a platform administrator.</small>
+        </Card>
+        <Card>
+          <span>Operational exports</span>
+          <strong>Bounded and private</strong>
+          <small>Downloads are authenticated, date-scoped, and excluded from shared caches.</small>
+        </Card>
+        <Card>
+          <span>Servicing accountability</span>
+          <strong>Activity recorded</strong>
+          <small>Support decisions and organization actions retain an operator history.</small>
         </Card>
       </div>
 
@@ -242,18 +273,22 @@ export default async function AdminPage() {
           <Card>
             <span>Company approvals</span>
             <strong>{pendingRequestCount}</strong>
+            <a href="#company-approvals">Review queue</a>
           </Card>
           <Card>
             <span>Open company support</span>
             <strong>{openCompanySupportCount}</strong>
+            <a href="#company-support">Review queue</a>
           </Card>
           <Card>
             <span>Open customer support</span>
             <strong>{openCustomerSupportCount}</strong>
+            <a href="#customer-support">Review queue</a>
           </Card>
           <Card>
             <span>Hotel amendments</span>
             <strong>{pendingAmendmentCount}</strong>
+            <a href="#hotel-amendments">Review queue</a>
           </Card>
         </div>
       </div>
@@ -271,13 +306,27 @@ export default async function AdminPage() {
             <label className="ui-field__label" htmlFor="admin-export-from">
               From date
             </label>
-            <input className="ui-input" id="admin-export-from" name="from" type="date" />
+            <input
+              className="ui-input"
+              defaultValue={exportFromValue}
+              id="admin-export-from"
+              max={exportToValue}
+              name="from"
+              type="date"
+            />
           </div>
           <div className="ui-field">
             <label className="ui-field__label" htmlFor="admin-export-to">
               To date
             </label>
-            <input className="ui-input" id="admin-export-to" name="to" type="date" />
+            <input
+              className="ui-input"
+              defaultValue={exportToValue}
+              id="admin-export-to"
+              max={exportToValue}
+              name="to"
+              type="date"
+            />
           </div>
           <button className="ui-button ui-button--primary" type="submit">
             Export travel CSV
@@ -285,7 +334,7 @@ export default async function AdminPage() {
         </form>
       </Card>
 
-      <div className="account-trips">
+      <div className="account-trips" id="customer-support">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Customer servicing</p>
           <h2>Recent customer support cases</h2>
@@ -311,9 +360,11 @@ export default async function AdminPage() {
                       <span>{supportCase.category}</span>
                     </td>
                     <td>
-                      <strong>
-                        {supportCase.createdBy.firstName} {supportCase.createdBy.lastName}
-                      </strong>
+                      <Link href={`/admin/users/${supportCase.createdBy.id}`}>
+                        <strong>
+                          {supportCase.createdBy.firstName} {supportCase.createdBy.lastName}
+                        </strong>
+                      </Link>
                       <span>{supportCase.createdBy.email}</span>
                     </td>
                     <td>
@@ -357,7 +408,7 @@ export default async function AdminPage() {
         </Card>
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="company-approvals">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Company approvals</p>
           <h2>Pending travel requests</h2>
@@ -378,12 +429,16 @@ export default async function AdminPage() {
                 {pendingRequests.map((request) => (
                   <tr key={request.id}>
                     <td>
-                      <strong>{request.organization.name}</strong>
+                      <Link href={`/admin/organizations/${request.organization.id}`}>
+                        <strong>{request.organization.name}</strong>
+                      </Link>
                     </td>
                     <td>
-                      <strong>
-                        {request.requester.firstName} {request.requester.lastName}
-                      </strong>
+                      <Link href={`/admin/users/${request.requester.id}`}>
+                        <strong>
+                          {request.requester.firstName} {request.requester.lastName}
+                        </strong>
+                      </Link>
                       <span>{request.requester.email}</span>
                     </td>
                     <td>
@@ -420,7 +475,7 @@ export default async function AdminPage() {
         ) : null}
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="company-support">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Account servicing</p>
           <h2>Recent company support cases</h2>
@@ -446,12 +501,16 @@ export default async function AdminPage() {
                       <span>{supportCase.category}</span>
                     </td>
                     <td>
-                      <strong>{supportCase.organization.name}</strong>
+                      <Link href={`/admin/organizations/${supportCase.organization.id}`}>
+                        <strong>{supportCase.organization.name}</strong>
+                      </Link>
                     </td>
                     <td>
-                      <strong>
-                        {supportCase.createdBy.firstName} {supportCase.createdBy.lastName}
-                      </strong>
+                      <Link href={`/admin/users/${supportCase.createdBy.id}`}>
+                        <strong>
+                          {supportCase.createdBy.firstName} {supportCase.createdBy.lastName}
+                        </strong>
+                      </Link>
                       <span>{supportCase.createdBy.email}</span>
                     </td>
                     <td>
@@ -482,7 +541,7 @@ export default async function AdminPage() {
         </Card>
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="hotel-amendments">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Partner operations</p>
           <h2>Pending hotel amendments</h2>
@@ -602,7 +661,18 @@ export default async function AdminPage() {
                       <strong>{trip.productType}</strong>
                       <span>{trip.title}</span>
                     </td>
-                    <td>{trip.user?.email ?? trip.email}</td>
+                    <td>
+                      {trip.user ? (
+                        <Link href={`/admin/users/${trip.user.id}`}>
+                          <strong>
+                            {trip.user.firstName} {trip.user.lastName}
+                          </strong>
+                          <span>{trip.user.email}</span>
+                        </Link>
+                      ) : (
+                        trip.email
+                      )}
+                    </td>
                     <td>
                       <strong>{trip.startDate}</strong>
                       <span>{trip.endDate ? `to ${trip.endDate}` : trip.subtitle}</span>

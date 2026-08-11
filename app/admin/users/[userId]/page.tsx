@@ -59,11 +59,6 @@ export default async function AdminUserDetailPage({ params }: Props) {
         select: { action: true, createdAt: true, summary: true },
         take: 20,
       },
-      sessions: {
-        orderBy: { lastSeenAt: 'desc' },
-        select: { expiresAt: true },
-        take: 20,
-      },
       smsAlertsEnabled: true,
       trips: {
         orderBy: { createdAt: 'desc' },
@@ -86,22 +81,28 @@ export default async function AdminUserDetailPage({ params }: Props) {
   });
   if (!user) notFound();
 
-  const hotelBookings = await prisma.booking.findMany({
-    orderBy: { createdAt: 'desc' },
-    select: {
-      confirmationCode: true,
-      createdAt: true,
-      currency: true,
-      hotelSlug: true,
-      quote: { select: { checkInDate: true, checkOutDate: true } },
-      status: true,
-      totalAmount: true,
-    },
-    take: 20,
-    where: { guest: { is: { email: user.email } } },
-  });
   const now = new Date();
-  const activeSessions = user.sessions.filter((session) => session.expiresAt > now).length;
+  const [hotelBookings, hotelBookingCount, tripCount, supportCaseCount, activeSessions] =
+    await Promise.all([
+      prisma.booking.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          confirmationCode: true,
+          createdAt: true,
+          currency: true,
+          hotelSlug: true,
+          quote: { select: { checkInDate: true, checkOutDate: true } },
+          status: true,
+          totalAmount: true,
+        },
+        take: 20,
+        where: { guest: { is: { email: user.email } } },
+      }),
+      prisma.booking.count({ where: { guest: { is: { email: user.email } } } }),
+      prisma.customerTrip.count({ where: { userId: user.id } }),
+      prisma.customerSupportCase.count({ where: { userId: user.id } }),
+      prisma.userSession.count({ where: { expiresAt: { gt: now }, userId: user.id } }),
+    ]);
 
   return (
     <section className="account-page business-report admin-record-page">
@@ -129,15 +130,15 @@ export default async function AdminUserDetailPage({ params }: Props) {
         </Card>
         <Card>
           <span>Transport records</span>
-          <strong>{user.trips.length}</strong>
+          <strong>{tripCount}</strong>
         </Card>
         <Card>
           <span>Hotel records</span>
-          <strong>{hotelBookings.length}</strong>
+          <strong>{hotelBookingCount}</strong>
         </Card>
         <Card>
           <span>Support cases</span>
-          <strong>{user.customerSupportCases.length}</strong>
+          <strong>{supportCaseCount}</strong>
         </Card>
       </div>
 
@@ -150,7 +151,9 @@ export default async function AdminUserDetailPage({ params }: Props) {
               <dd>
                 {user.emailVerifiedAt
                   ? `Verified ${formatDate(user.emailVerifiedAt)}`
-                  : 'Not verified'}
+                  : user.role === 'PLATFORM_ADMIN'
+                    ? 'Locally provisioned administrator'
+                    : 'Not verified'}
               </dd>
             </div>
             <div>
@@ -275,6 +278,12 @@ export default async function AdminUserDetailPage({ params }: Props) {
             </table>
           </div>
         </Card>
+        {hotelBookingCount + tripCount > hotelBookings.length + user.trips.length ? (
+          <p className="booking-confirmation__note">
+            Showing the latest {hotelBookings.length + user.trips.length} of{' '}
+            {hotelBookingCount + tripCount} travel records.
+          </p>
+        ) : null}
       </div>
 
       <div className="admin-record-grid">
@@ -313,6 +322,11 @@ export default async function AdminUserDetailPage({ params }: Props) {
           )}
         </Card>
       </div>
+      {supportCaseCount > user.customerSupportCases.length ? (
+        <p className="booking-confirmation__note">
+          Showing the latest {user.customerSupportCases.length} of {supportCaseCount} support cases.
+        </p>
+      ) : null}
     </section>
   );
 }

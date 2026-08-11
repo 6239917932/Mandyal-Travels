@@ -96,12 +96,16 @@ export default async function AdminOrganizationDetailPage({ params }: Props) {
   });
   if (!organization) notFound();
 
-  const openRequests = organization.travelRequests.filter(
-    (request) => request.status === 'PENDING',
-  ).length;
-  const openSupport = organization.supportCases.filter(
-    (supportCase) => supportCase.status === 'OPEN',
-  ).length;
+  const [memberCount, openRequests, openSupport, policyVersionCount] = await Promise.all([
+    prisma.organizationMember.count({ where: { organizationId: organization.id } }),
+    prisma.businessTravelRequest.count({
+      where: { organizationId: organization.id, status: 'PENDING' },
+    }),
+    prisma.businessSupportCase.count({
+      where: { organizationId: organization.id, status: 'OPEN' },
+    }),
+    prisma.organizationPolicyVersion.count({ where: { organizationId: organization.id } }),
+  ]);
 
   return (
     <section className="account-page business-report admin-record-page">
@@ -119,7 +123,7 @@ export default async function AdminOrganizationDetailPage({ params }: Props) {
       <div className="admin-record-summary">
         <Card>
           <span>Team members</span>
-          <strong>{organization.members.length}</strong>
+          <strong>{memberCount}</strong>
         </Card>
         <Card>
           <span>Pending requests</span>
@@ -130,8 +134,8 @@ export default async function AdminOrganizationDetailPage({ params }: Props) {
           <strong>{openSupport}</strong>
         </Card>
         <Card>
-          <span>Policy versions</span>
-          <strong>{organization.policyVersions.length}</strong>
+          <span>Saved policy history</span>
+          <strong>{policyVersionCount}</strong>
         </Card>
       </div>
 
