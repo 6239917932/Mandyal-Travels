@@ -26,7 +26,7 @@ export default async function CompanyStatementPage({
     include: {
       customerTrip: { select: { confirmationCode: true } },
       hotelBooking: { select: { confirmationCode: true } },
-      organization: { select: { name: true } },
+      organization: { select: { contactEmail: true, contactPhone: true, name: true } },
       requester: { select: { email: true, firstName: true, lastName: true } },
       reviewedBy: { select: { firstName: true, lastName: true } },
     },
@@ -63,6 +63,8 @@ export default async function CompanyStatementPage({
           <div>
             <h2>Organization</h2>
             <p>{request.organization.name}</p>
+            {request.organization.contactEmail ? <p>{request.organization.contactEmail}</p> : null}
+            {request.organization.contactPhone ? <p>{request.organization.contactPhone}</p> : null}
           </div>
           <div>
             <h2>Traveller</h2>

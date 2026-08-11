@@ -58,6 +58,7 @@ export async function POST(request: Request) {
     if (accountType === 'business') {
       await transaction.organization.create({
         data: {
+          contactEmail: email,
           members: { create: { role: 'ADMIN', userId: createdUser.id } },
           name: organizationName,
           policyVersions: {

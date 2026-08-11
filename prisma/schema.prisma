@@ -33,6 +33,8 @@ model Organization {
   id                String                      @id @default(cuid())
   name              String
   type              String
+  contactEmail      String?
+  contactPhone      String?
   approvalRequired  Boolean                     @default(true)
   defaultCabinClass String                      @default("ECONOMY")
   maximumTripAmount Int?

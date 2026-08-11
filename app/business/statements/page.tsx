@@ -48,6 +48,7 @@ export default async function BusinessStatementsPage() {
           <p className="hotel-page__eyebrow">Organization reporting</p>
           <h1>Company booking statements</h1>
           <p>{organization.name}</p>
+          {organization.contactEmail ? <p>{organization.contactEmail}</p> : null}
         </div>
         <div className="manage-booking__document-actions">
           <Link className="ui-button ui-button--secondary" href="/business/dashboard">

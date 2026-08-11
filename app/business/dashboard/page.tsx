@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { BusinessApprovalQueue } from '@/components/business/BusinessApprovalQueue';
 import { BusinessAuditTimeline } from '@/components/business/BusinessAuditTimeline';
 import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
+import { BusinessOrganizationProfile } from '@/components/business/BusinessOrganizationProfile';
 import { BusinessPolicyManager } from '@/components/business/BusinessPolicyManager';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
@@ -128,6 +129,18 @@ export default async function BusinessDashboardPage() {
           <span>Booked company value</span>
           <strong>{formatCurrency(bookedValue)}</strong>
         </Card>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Organization profile</p>
+          <h2>Company contact details</h2>
+        </div>
+        <BusinessOrganizationProfile
+          contactEmail={membership.organization.contactEmail ?? user.email}
+          contactPhone={membership.organization.contactPhone ?? ''}
+          name={membership.organization.name}
+        />
       </div>
 
       <div className="account-trips">
