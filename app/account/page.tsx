@@ -10,6 +10,8 @@ import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'My account' };
 
+const RECENT_ITEM_LIMIT = 20;
+
 const customerQuickActions = [
   { description: 'Find and reserve your next stay.', href: '/hotels', label: 'Hotels' },
   { description: 'Compare fares and book a flight.', href: '/flights', label: 'Flights' },
@@ -87,18 +89,46 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const [storedTrips, hotelGuests, organizationMembership] = await Promise.all([
+  const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
+  const [
+    storedTrips,
+    hotelGuests,
+    organizationMembership,
+    storedTripCount,
+    confirmedStoredTripCount,
+    storedTripValue,
+    hotelTripCount,
+    confirmedHotelTripCount,
+    hotelTripValue,
+  ] = await Promise.all([
     prisma.customerTrip.findMany({
-      where: { OR: [{ userId: user.id }, { email: user.email }] },
+      where: tripFilter,
       orderBy: { createdAt: 'desc' },
+      take: RECENT_ITEM_LIMIT,
     }),
     prisma.bookingGuest.findMany({
       where: { email: user.email },
       include: { booking: { include: { quote: true } } },
+      orderBy: { booking: { createdAt: 'desc' } },
+      take: RECENT_ITEM_LIMIT,
     }),
     prisma.organizationMember.findFirst({
       where: { userId: user.id },
       include: { organization: true },
+    }),
+    prisma.customerTrip.count({ where: tripFilter }),
+    prisma.customerTrip.count({ where: { ...tripFilter, status: 'CONFIRMED' } }),
+    prisma.customerTrip.aggregate({
+      _sum: { totalAmount: true },
+      where: { ...tripFilter, currency: 'INR' },
+    }),
+    prisma.bookingGuest.count({ where: { email: user.email } }),
+    prisma.bookingGuest.count({
+      where: { booking: { status: 'confirmed' }, email: user.email },
+    }),
+    prisma.booking.aggregate({
+      _sum: { totalAmount: true },
+      where: { currency: 'INR', guest: { is: { email: user.email } } },
     }),
   ]);
 
@@ -131,22 +161,33 @@ export default async function AccountPage() {
       detailsJson: null,
       createdAt: booking.createdAt,
     })),
-  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  ]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, RECENT_ITEM_LIMIT);
 
-  const confirmedTrips = trips.filter((trip) => trip.status.toUpperCase() === 'CONFIRMED').length;
-  const bookedValue = trips
-    .filter((trip) => trip.currency === 'INR')
-    .reduce((total, trip) => total + trip.totalAmount, 0);
-  const businessTravelRequests = organizationMembership
-    ? await prisma.businessTravelRequest.findMany({
-        include: { customerTrip: true, hotelBooking: true },
-        orderBy: { createdAt: 'desc' },
-        where: {
-          organizationId: organizationMembership.organizationId,
-          requesterId: user.id,
-        },
-      })
-    : [];
+  const totalTrips = storedTripCount + hotelTripCount;
+  const confirmedTrips = confirmedStoredTripCount + confirmedHotelTripCount;
+  const bookedValue =
+    (storedTripValue._sum.totalAmount ?? 0) + (hotelTripValue._sum.totalAmount ?? 0);
+  const [businessTravelRequests, businessTravelRequestCount] = organizationMembership
+    ? await Promise.all([
+        prisma.businessTravelRequest.findMany({
+          include: { customerTrip: true, hotelBooking: true },
+          orderBy: { createdAt: 'desc' },
+          take: RECENT_ITEM_LIMIT,
+          where: {
+            organizationId: organizationMembership.organizationId,
+            requesterId: user.id,
+          },
+        }),
+        prisma.businessTravelRequest.count({
+          where: {
+            organizationId: organizationMembership.organizationId,
+            requesterId: user.id,
+          },
+        }),
+      ])
+    : [[], 0];
 
   return (
     <section className="account-page">
@@ -226,91 +267,99 @@ export default async function AccountPage() {
           />
 
           {businessTravelRequests.length > 0 ? (
-            <div className="account-trips__list">
-              {businessTravelRequests.map((request) => (
-                <article className="account-trip ui-card ui-card--padded" key={request.id}>
-                  <div className="account-trip__topline">
-                    <span className="account-trip__type">{request.productType}</span>
-                    <strong
-                      className={`business-request__status business-request__status--${request.status.toLowerCase()}`}
-                    >
-                      {request.status}
-                    </strong>
-                  </div>
-                  <div className="account-trip__body">
-                    <div>
-                      <h3>{request.title}</h3>
-                      <p>{request.policyReason}</p>
-                      {request.reviewNote ? (
-                        <small>Administrator note: {request.reviewNote}</small>
-                      ) : null}
+            <>
+              {businessTravelRequestCount > RECENT_ITEM_LIMIT ? (
+                <p className="business-request__guidance">
+                  Showing your latest {RECENT_ITEM_LIMIT} of {businessTravelRequestCount} company
+                  requests.
+                </p>
+              ) : null}
+              <div className="account-trips__list">
+                {businessTravelRequests.map((request) => (
+                  <article className="account-trip ui-card ui-card--padded" key={request.id}>
+                    <div className="account-trip__topline">
+                      <span className="account-trip__type">{request.productType}</span>
+                      <strong
+                        className={`business-request__status business-request__status--${request.status.toLowerCase()}`}
+                      >
+                        {request.status}
+                      </strong>
                     </div>
-                    <dl>
+                    <div className="account-trip__body">
                       <div>
-                        <dt>Travel dates</dt>
-                        <dd>
-                          {request.startDate}
-                          {request.endDate ? ` to ${request.endDate}` : ''}
-                        </dd>
+                        <h3>{request.title}</h3>
+                        <p>{request.policyReason}</p>
+                        {request.reviewNote ? (
+                          <small>Administrator note: {request.reviewNote}</small>
+                        ) : null}
                       </div>
-                      <div>
-                        <dt>Estimated amount</dt>
-                        <dd>{formatCurrency(request.estimatedAmount, request.currency)}</dd>
-                      </div>
-                      {request.bookingTotalAmount !== null ? (
+                      <dl>
                         <div>
-                          <dt>Booked amount</dt>
-                          <dd>{formatCurrency(request.bookingTotalAmount, request.currency)}</dd>
-                        </div>
-                      ) : null}
-                      {request.customerTrip || request.hotelBooking ? (
-                        <div>
-                          <dt>Booking reference</dt>
+                          <dt>Travel dates</dt>
                           <dd>
-                            {request.customerTrip?.confirmationCode ??
-                              request.hotelBooking?.confirmationCode}
+                            {request.startDate}
+                            {request.endDate ? ` to ${request.endDate}` : ''}
                           </dd>
                         </div>
-                      ) : null}
-                      <div>
-                        <dt>Organization</dt>
-                        <dd>{organizationMembership.organization.name}</dd>
+                        <div>
+                          <dt>Estimated amount</dt>
+                          <dd>{formatCurrency(request.estimatedAmount, request.currency)}</dd>
+                        </div>
+                        {request.bookingTotalAmount !== null ? (
+                          <div>
+                            <dt>Booked amount</dt>
+                            <dd>{formatCurrency(request.bookingTotalAmount, request.currency)}</dd>
+                          </div>
+                        ) : null}
+                        {request.customerTrip || request.hotelBooking ? (
+                          <div>
+                            <dt>Booking reference</dt>
+                            <dd>
+                              {request.customerTrip?.confirmationCode ??
+                                request.hotelBooking?.confirmationCode}
+                            </dd>
+                          </div>
+                        ) : null}
+                        <div>
+                          <dt>Organization</dt>
+                          <dd>{organizationMembership.organization.name}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                    {request.status === 'APPROVED' && isBusinessProduct(request.productType) ? (
+                      <div className="account-trip__actions">
+                        <BusinessRequestCheckoutLink
+                          id={request.id}
+                          organizationName={organizationMembership.organization.name}
+                          productType={request.productType}
+                          title={request.title}
+                        />
+                        <Link
+                          className="ui-button ui-button--secondary"
+                          href={`/business/requests/${request.id}`}
+                        >
+                          View request record
+                        </Link>
                       </div>
-                    </dl>
-                  </div>
-                  {request.status === 'APPROVED' && isBusinessProduct(request.productType) ? (
-                    <div className="account-trip__actions">
-                      <BusinessRequestCheckoutLink
-                        id={request.id}
-                        organizationName={organizationMembership.organization.name}
-                        productType={request.productType}
-                        title={request.title}
-                      />
-                      <Link
-                        className="ui-button ui-button--secondary"
-                        href={`/business/requests/${request.id}`}
-                      >
-                        View request record
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="account-trip__actions">
-                      <Link
-                        className="ui-button ui-button--secondary"
-                        href={`/business/requests/${request.id}`}
-                      >
-                        View request record
-                      </Link>
-                    </div>
-                  )}
-                  {request.status === 'PENDING' ? (
-                    <p className="business-request__guidance">
-                      Payment remains unavailable until an administrator approves this request.
-                    </p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
+                    ) : (
+                      <div className="account-trip__actions">
+                        <Link
+                          className="ui-button ui-button--secondary"
+                          href={`/business/requests/${request.id}`}
+                        >
+                          View request record
+                        </Link>
+                      </div>
+                    )}
+                    {request.status === 'PENDING' ? (
+                      <p className="business-request__guidance">
+                        Payment remains unavailable until an administrator approves this request.
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="account-trips__empty ui-card ui-card--padded">
               <strong>No company requests yet.</strong>
@@ -329,7 +378,7 @@ export default async function AccountPage() {
           <dl>
             <div>
               <dt>Total bookings</dt>
-              <dd>{trips.length}</dd>
+              <dd>{totalTrips}</dd>
             </div>
             <div>
               <dt>Confirmed journeys</dt>
@@ -358,53 +407,61 @@ export default async function AccountPage() {
             <p>Your signed-in bookings will appear here automatically.</p>
           </div>
         ) : (
-          <div className="account-trips__list">
-            {trips.map((trip) => {
-              const documentAction = getTripDocumentAction(trip);
+          <>
+            {totalTrips > RECENT_ITEM_LIMIT ? (
+              <div className="business-request__guidance">
+                Showing your latest {RECENT_ITEM_LIMIT} of {totalTrips} bookings. Use Manage booking
+                to open an older trip by its reference.
+              </div>
+            ) : null}
+            <div className="account-trips__list">
+              {trips.map((trip) => {
+                const documentAction = getTripDocumentAction(trip);
 
-              return (
-                <article
-                  className="account-trip ui-card ui-card--padded"
-                  key={`${trip.productType}-${trip.id}`}
-                >
-                  <div className="account-trip__topline">
-                    <span className="account-trip__type">{trip.productType}</span>
-                    <strong>{trip.status}</strong>
-                  </div>
-                  <div className="account-trip__body">
-                    <div>
-                      <h3>{trip.title}</h3>
-                      <p>{trip.subtitle}</p>
+                return (
+                  <article
+                    className="account-trip ui-card ui-card--padded"
+                    key={`${trip.productType}-${trip.id}`}
+                  >
+                    <div className="account-trip__topline">
+                      <span className="account-trip__type">{trip.productType}</span>
+                      <strong>{trip.status}</strong>
                     </div>
-                    <dl>
+                    <div className="account-trip__body">
                       <div>
-                        <dt>Travel dates</dt>
-                        <dd>
-                          {trip.startDate}
-                          {trip.endDate ? ` to ${trip.endDate}` : ''}
-                        </dd>
+                        <h3>{trip.title}</h3>
+                        <p>{trip.subtitle}</p>
                       </div>
-                      <div>
-                        <dt>Booking reference</dt>
-                        <dd>{trip.confirmationCode}</dd>
-                      </div>
-                      <div>
-                        <dt>Total</dt>
-                        <dd>{formatCurrency(trip.totalAmount, trip.currency)}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  {documentAction ? (
-                    <div className="account-trip__actions">
-                      <Link className="ui-button ui-button--secondary" href={documentAction.href}>
-                        {documentAction.label}
-                      </Link>
+                      <dl>
+                        <div>
+                          <dt>Travel dates</dt>
+                          <dd>
+                            {trip.startDate}
+                            {trip.endDate ? ` to ${trip.endDate}` : ''}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Booking reference</dt>
+                          <dd>{trip.confirmationCode}</dd>
+                        </div>
+                        <div>
+                          <dt>Total</dt>
+                          <dd>{formatCurrency(trip.totalAmount, trip.currency)}</dd>
+                        </div>
+                      </dl>
                     </div>
-                  ) : null}
-                </article>
-              );
-            })}
-          </div>
+                    {documentAction ? (
+                      <div className="account-trip__actions">
+                        <Link className="ui-button ui-button--secondary" href={documentAction.href}>
+                          {documentAction.label}
+                        </Link>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </section>
