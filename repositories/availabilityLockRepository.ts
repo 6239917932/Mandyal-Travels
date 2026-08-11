@@ -19,6 +19,7 @@ export interface AvailabilityLockRepository {
     checkInDate: string,
     checkOutDate: string,
   ): Promise<AvailabilityLock[]>;
+  release(id: string): Promise<void>;
 }
 
 export class InMemoryAvailabilityLockRepository implements AvailabilityLockRepository {
@@ -90,6 +91,16 @@ export class InMemoryAvailabilityLockRepository implements AvailabilityLockRepos
     }
 
     return lock;
+  }
+
+  async release(id: string): Promise<void> {
+    const lock = this.locks.get(id);
+    if (!lock || lock.status !== 'converted') return;
+
+    this.locks.set(id, {
+      ...lock,
+      status: new Date(lock.expiresAt).getTime() <= Date.now() ? 'expired' : 'active',
+    });
   }
 }
 
@@ -179,6 +190,20 @@ export class PrismaAvailabilityLockRepository implements AvailabilityLockReposit
     }
 
     return mapLock(lock);
+  }
+
+  async release(id: string): Promise<void> {
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.availabilityLock.updateMany({
+        data: { status: 'active' },
+        where: { expiresAt: { gt: now }, id, status: 'converted' },
+      }),
+      prisma.availabilityLock.updateMany({
+        data: { status: 'expired' },
+        where: { expiresAt: { lte: now }, id, status: 'converted' },
+      }),
+    ]);
   }
 }
 

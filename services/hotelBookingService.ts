@@ -163,7 +163,7 @@ export class HotelBookingService {
       {
         amount: roomChargeAmount,
         currency: ratePlan.nightlyRate.currency,
-        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
+        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} Ã— ${nights} night${nights === 1 ? '' : 's'}`,
         type: 'room-charge',
       },
       {
@@ -244,14 +244,6 @@ export class HotelBookingService {
       );
     }
 
-    const convertedLock = await this.locks.convert(lock.id);
-    if (!convertedLock) {
-      throw new HotelBookingRuleError(
-        'LOCK_CONVERSION_FAILED',
-        'The room hold could not be confirmed.',
-      );
-    }
-
     let totalAmount = quote.totalAmount;
     if (request.promotionCode) {
       const promotionRule = findPromotionRule(request.promotionCode, 'HOTEL');
@@ -264,7 +256,7 @@ export class HotelBookingService {
       if (quote.totalAmount < promotionRule.minimumSubtotal) {
         throw new HotelBookingRuleError(
           'MINIMUM_SUBTOTAL_NOT_MET',
-          `This offer requires a minimum booking value of ₹${promotionRule.minimumSubtotal.toLocaleString('en-IN')}.`,
+          `This offer requires a minimum booking value of â‚¹${promotionRule.minimumSubtotal.toLocaleString('en-IN')}.`,
         );
       }
       totalAmount = calculatePromotion(promotionRule, quote.totalAmount).finalTotal;
@@ -274,6 +266,14 @@ export class HotelBookingService {
       throw new HotelBookingRuleError(
         'BUSINESS_TOTAL_MISMATCH',
         'The company booking total changed. Please review the room price again.',
+      );
+    }
+
+    const convertedLock = await this.locks.convert(lock.id);
+    if (!convertedLock) {
+      throw new HotelBookingRuleError(
+        'LOCK_CONVERSION_FAILED',
+        'The room hold could not be confirmed.',
       );
     }
 
@@ -296,6 +296,11 @@ export class HotelBookingService {
     try {
       await this.bookings.save(booking, idempotencyKey, accessTokenHash, businessContext);
     } catch (error) {
+      try {
+        await this.locks.release(convertedLock.id);
+      } catch (releaseError) {
+        console.error('Hotel availability hold release failed.', releaseError);
+      }
       if (error instanceof BusinessBookingRequestUnavailableError) {
         throw new HotelBookingRuleError(
           'BUSINESS_REQUEST_ALREADY_USED',
@@ -657,7 +662,7 @@ export class HotelBookingService {
       {
         amount: roomChargeAmount,
         currency: ratePlan.nightlyRate.currency,
-        label: `${quote.rooms} room${quote.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
+        label: `${quote.rooms} room${quote.rooms === 1 ? '' : 's'} Ã— ${nights} night${nights === 1 ? '' : 's'}`,
         type: 'room-charge',
       },
       {
