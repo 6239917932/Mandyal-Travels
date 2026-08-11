@@ -37,7 +37,7 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <BookingProvider>
-          <SiteHeader user={user ? { firstName: user.firstName } : null} />
+          <SiteHeader user={user ? { firstName: user.firstName, role: user.role } : null} />
           <main>{children}</main>
           <SiteFooter />
         </BookingProvider>
