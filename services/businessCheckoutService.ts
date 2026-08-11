@@ -13,6 +13,7 @@ import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
 
 type CheckoutProduct = PromotionProduct;
+const POLICY_CABIN_CLASSES = new Set(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']);
 
 export class BusinessCheckoutError extends Error {
   constructor(
@@ -64,6 +65,24 @@ function applyPromotion(productType: CheckoutProduct, subtotal: number, promotio
     );
   }
   return calculatePromotion(rule, subtotal).finalTotal;
+}
+
+function readApprovedCabin(policySnapshotJson: string) {
+  try {
+    const snapshot = JSON.parse(policySnapshotJson) as { defaultCabinClass?: unknown };
+    const cabin =
+      typeof snapshot.defaultCabinClass === 'string'
+        ? snapshot.defaultCabinClass.toUpperCase()
+        : '';
+    if (POLICY_CABIN_CLASSES.has(cabin)) return cabin;
+  } catch {
+    // Invalid snapshots fail closed below rather than using a newer organization policy.
+  }
+
+  throw new BusinessCheckoutError(
+    'BUSINESS_POLICY_SNAPSHOT_INVALID',
+    'The saved approval policy could not be verified. Ask a company administrator to create a new request.',
+  );
 }
 
 async function revalidateSelection(
@@ -222,16 +241,8 @@ export async function validateBusinessCheckout({
   }
 
   if (selectionResult.policyCabin) {
-    let approvedCabin = travelRequest.organization.defaultCabinClass;
-    try {
-      const snapshot = JSON.parse(travelRequest.policySnapshotJson) as {
-        defaultCabinClass?: string;
-      };
-      approvedCabin = snapshot.defaultCabinClass ?? approvedCabin;
-    } catch {
-      // The current policy is the safe fallback for legacy request snapshots.
-    }
-    if (selectionResult.policyCabin !== approvedCabin.toUpperCase()) {
+    const approvedCabin = readApprovedCabin(travelRequest.policySnapshotJson);
+    if (selectionResult.policyCabin !== approvedCabin) {
       throw new BusinessCheckoutError(
         'BUSINESS_CABIN_MISMATCH',
         `The selected cabin does not match the approved ${approvedCabin.toLowerCase()} cabin policy.`,
