@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 
+import { readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { getSafeReturnTo } from '@/lib/auth/redirect';
 import { createSession } from '@/lib/auth/session';
 import { EMAIL_PATTERN, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Record<string, unknown>;
+  const body = await readJsonObject(request);
+  if (!body) {
+    return NextResponse.json({ error: 'Enter valid account details.' }, { status: 400 });
+  }
   const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
   const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
@@ -43,40 +48,55 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.$transaction(async (transaction) => {
-    const createdUser = await transaction.user.create({
-      data: {
-        email,
-        firstName,
-        lastName,
-        marketingConsentAt: body.marketingConsent === true ? new Date() : null,
-        passwordHash,
-        role: accountType === 'business' ? 'BUSINESS_ADMIN' : 'CUSTOMER',
-      },
-    });
-
-    if (accountType === 'business') {
-      await transaction.organization.create({
+  let user;
+  try {
+    user = await prisma.$transaction(async (transaction) => {
+      const createdUser = await transaction.user.create({
         data: {
-          contactEmail: email,
-          members: { create: { role: 'ADMIN', userId: createdUser.id } },
-          name: organizationName,
-          policyVersions: {
-            create: {
-              approvalRequired: true,
-              createdByUserId: createdUser.id,
-              defaultCabinClass: 'ECONOMY',
-              maximumTripAmount: null,
-              version: 1,
-            },
-          },
-          type: 'CORPORATE',
+          email,
+          firstName,
+          lastName,
+          marketingConsentAt: body.marketingConsent === true ? new Date() : null,
+          passwordHash,
+          role: accountType === 'business' ? 'BUSINESS_ADMIN' : 'CUSTOMER',
         },
       });
-    }
 
-    return createdUser;
-  });
+      if (accountType === 'business') {
+        await transaction.organization.create({
+          data: {
+            contactEmail: email,
+            members: { create: { role: 'ADMIN', userId: createdUser.id } },
+            name: organizationName,
+            policyVersions: {
+              create: {
+                approvalRequired: true,
+                createdByUserId: createdUser.id,
+                defaultCabinClass: 'ECONOMY',
+                maximumTripAmount: null,
+                version: 1,
+              },
+            },
+            type: 'CORPORATE',
+          },
+        });
+      }
+
+      return createdUser;
+    });
+  } catch (error) {
+    if (hasPrismaErrorCode(error, 'P2002')) {
+      return NextResponse.json(
+        { error: 'An account already exists for this email.' },
+        { status: 409 },
+      );
+    }
+    console.error('Account registration failed.', error);
+    return NextResponse.json(
+      { error: 'Your account could not be created. Please try again.' },
+      { status: 500 },
+    );
+  }
 
   await createSession(user.id);
   return NextResponse.json(

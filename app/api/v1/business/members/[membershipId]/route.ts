@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { readJsonObject } from '@/lib/api/request';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
@@ -15,10 +16,8 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
     );
   }
 
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return NextResponse.json({ error: 'Enter a valid member role request.' }, { status: 400 });
   }
   const role = body.role === 'ADMIN' || body.role === 'TRAVELLER' ? body.role : null;

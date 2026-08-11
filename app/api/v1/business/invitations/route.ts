@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { readJsonObject } from '@/lib/api/request';
 import { normalizeEmail, EMAIL_PATTERN } from '@/lib/auth/validation';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
@@ -18,10 +19,8 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return NextResponse.json({ error: 'Enter a valid invitation request.' }, { status: 400 });
   }
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');

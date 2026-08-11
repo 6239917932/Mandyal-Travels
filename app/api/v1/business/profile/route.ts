@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { readJsonObject } from '@/lib/api/request';
 import { EMAIL_PATTERN, normalizeEmail } from '@/lib/auth/validation';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
@@ -16,10 +17,8 @@ export async function PATCH(request: Request) {
     );
   }
 
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
+  const body = await readJsonObject(request);
+  if (!body) {
     return NextResponse.json({ error: 'Enter valid organization details.' }, { status: 400 });
   }
 

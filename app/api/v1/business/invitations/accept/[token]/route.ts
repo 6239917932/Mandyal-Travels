@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import { hashBusinessInvitationToken } from '@/services/businessInvitationService';
 
@@ -54,31 +55,45 @@ export async function POST(_request: Request, { params }: AcceptInvitationRouteC
     );
   }
 
-  await prisma.$transaction(async (transaction) => {
-    const acceptedAt = new Date();
-    const member = await transaction.organizationMember.create({
-      data: {
-        organizationId: invitation.organizationId,
-        role: invitation.role,
-        userId: user.id,
-      },
+  try {
+    await prisma.$transaction(async (transaction) => {
+      const acceptedAt = new Date();
+      const member = await transaction.organizationMember.create({
+        data: {
+          organizationId: invitation.organizationId,
+          role: invitation.role,
+          userId: user.id,
+        },
+      });
+      await transaction.organizationInvitation.update({
+        data: { acceptedAt, acceptedByUserId: user.id, status: 'ACCEPTED' },
+        where: { id: invitation.id },
+      });
+      await transaction.businessAuditLog.create({
+        data: createBusinessAuditData({
+          action: BUSINESS_AUDIT_ACTIONS.INVITATION_ACCEPTED,
+          actorUserId: user.id,
+          entityId: invitation.id,
+          entityType: 'INVITATION',
+          metadata: { email: user.email, membershipId: member.id, role: member.role },
+          organizationId: invitation.organizationId,
+          summary: `${user.firstName} ${user.lastName} accepted the company traveller invitation.`,
+        }),
+      });
     });
-    await transaction.organizationInvitation.update({
-      data: { acceptedAt, acceptedByUserId: user.id, status: 'ACCEPTED' },
-      where: { id: invitation.id },
-    });
-    await transaction.businessAuditLog.create({
-      data: createBusinessAuditData({
-        action: BUSINESS_AUDIT_ACTIONS.INVITATION_ACCEPTED,
-        actorUserId: user.id,
-        entityId: invitation.id,
-        entityType: 'INVITATION',
-        metadata: { email: user.email, membershipId: member.id, role: member.role },
-        organizationId: invitation.organizationId,
-        summary: `${user.firstName} ${user.lastName} accepted the company traveller invitation.`,
-      }),
-    });
-  });
+  } catch (error) {
+    if (hasPrismaErrorCode(error, 'P2002')) {
+      return NextResponse.json(
+        { error: 'This account already belongs to an organization.' },
+        { status: 409 },
+      );
+    }
+    console.error('Business invitation acceptance failed.', error);
+    return NextResponse.json(
+      { error: 'The invitation could not be accepted. Please try again.' },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ data: { organizationName: invitation.organization.name } });
 }
