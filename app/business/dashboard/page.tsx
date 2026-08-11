@@ -86,6 +86,7 @@ export default async function BusinessDashboardPage() {
     bookedRequests,
     bookedValue,
     openSupportCases,
+    supportCaseCount,
     memberCount,
     pendingInvitationCount,
   ] = await Promise.all([
@@ -109,6 +110,7 @@ export default async function BusinessDashboardPage() {
       where: { currency: 'INR', organizationId, status: 'BOOKED' },
     }),
     prisma.businessSupportCase.count({ where: { organizationId, status: 'OPEN' } }),
+    prisma.businessSupportCase.count({ where: { organizationId } }),
     prisma.organizationMember.count({ where: { organizationId } }),
     prisma.organizationInvitation.count({
       where: { expiresAt: { gt: new Date() }, organizationId, status: 'PENDING' },
@@ -138,6 +140,9 @@ export default async function BusinessDashboardPage() {
           </Link>
           <Link className="ui-button ui-button--secondary" href="/business/statements">
             Company statements
+          </Link>
+          <Link className="ui-button ui-button--secondary" href="/business/support">
+            Support cases
           </Link>
           <Link className="ui-button ui-button--secondary" href="/business/members">
             Team access
@@ -299,9 +304,10 @@ export default async function BusinessDashboardPage() {
             subject: supportCase.subject,
           }))}
         />
-        {membership.organization.supportCases.length === 20 ? (
+        {supportCaseCount > membership.organization.supportCases.length ? (
           <p className="booking-confirmation__note">
-            The 20 most recent organization support cases are shown here.
+            The 20 most recent organization support cases are shown here. Open{' '}
+            <Link href="/business/support">Support cases</Link> for the complete history.
           </p>
         ) : null}
       </div>
