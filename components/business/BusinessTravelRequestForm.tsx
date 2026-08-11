@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 
+type BusinessTravelProduct = 'FLIGHT' | 'HOTEL' | 'BUS' | 'CAR';
+
 type BusinessTravelRequestFormProps = {
   organizationName: string;
   policy: {
@@ -25,6 +27,7 @@ export function BusinessTravelRequestForm({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [productType, setProductType] = useState<BusinessTravelProduct>('FLIGHT');
 
   async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,7 +86,14 @@ export function BusinessTravelRequestForm({
             <label className="ui-field__label" htmlFor="business-product-type">
               Travel product
             </label>
-            <select className="ui-input" id="business-product-type" name="productType" required>
+            <select
+              className="ui-input"
+              id="business-product-type"
+              name="productType"
+              onChange={(event) => setProductType(event.target.value as BusinessTravelProduct)}
+              required
+              value={productType}
+            >
               <option value="FLIGHT">Flight</option>
               <option value="HOTEL">Hotel</option>
               <option value="BUS">Bus</option>
@@ -101,7 +111,19 @@ export function BusinessTravelRequestForm({
 
         <div className="auth-form__row">
           <Input label="Start date" name="startDate" required type="date" />
-          <Input label="End date (optional)" name="endDate" type="date" />
+          <Input
+            disabled={productType === 'BUS'}
+            label={
+              productType === 'FLIGHT'
+                ? 'Return date (optional)'
+                : productType === 'BUS'
+                  ? 'End date (not used for bus)'
+                  : 'End date'
+            }
+            name="endDate"
+            required={productType === 'HOTEL' || productType === 'CAR'}
+            type="date"
+          />
         </div>
 
         <Input

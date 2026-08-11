@@ -208,7 +208,7 @@ export async function validateBusinessCheckout({
       'The selected start date does not match the approved company request.',
     );
   }
-  if (travelRequest.endDate && selectionResult.endDate !== travelRequest.endDate) {
+  if (selectionResult.endDate !== travelRequest.endDate) {
     throw new BusinessCheckoutError(
       'BUSINESS_DATE_MISMATCH',
       'The selected end date does not match the approved company request.',

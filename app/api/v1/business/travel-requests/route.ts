@@ -62,6 +62,18 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  if ((productType === 'HOTEL' || productType === 'CAR') && endDate === null) {
+    return NextResponse.json(
+      { error: 'Enter the approved end date for hotel and car travel.' },
+      { status: 400 },
+    );
+  }
+  if (productType === 'BUS' && endDate !== null) {
+    return NextResponse.json(
+      { error: 'Bus requests use one travel date. Leave the end date blank.' },
+      { status: 400 },
+    );
+  }
   if (
     typeof estimatedAmount !== 'number' ||
     !Number.isInteger(estimatedAmount) ||
