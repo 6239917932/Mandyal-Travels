@@ -33,7 +33,7 @@ export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     });
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json()) as { error?: string; redirectTo?: string };
 
     if (!response.ok) {
       setError(result.error ?? 'We could not complete your request. Please try again.');
@@ -41,7 +41,7 @@ export function AuthForm({ accountType = 'customer', mode }: AuthFormProps) {
       return;
     }
 
-    router.push('/account');
+    router.push(result.redirectTo ?? '/account');
     router.refresh();
   }
 
