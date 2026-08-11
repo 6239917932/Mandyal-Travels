@@ -16,5 +16,8 @@ export async function POST(request: Request) {
   }
 
   await createSession(user.id);
-  return NextResponse.json({ user: { email: user.email, firstName: user.firstName } });
+  return NextResponse.json({
+    redirectTo: user.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : '/account',
+    user: { email: user.email, firstName: user.firstName },
+  });
 }
