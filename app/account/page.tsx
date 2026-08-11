@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
+import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
@@ -131,6 +132,15 @@ export default async function AccountPage() {
   const bookedValue = trips
     .filter((trip) => trip.currency === 'INR')
     .reduce((total, trip) => total + trip.totalAmount, 0);
+  const businessTravelRequests = organizationMembership
+    ? await prisma.businessTravelRequest.findMany({
+        orderBy: { createdAt: 'desc' },
+        where: {
+          organizationId: organizationMembership.organizationId,
+          requesterId: user.id,
+        },
+      })
+    : [];
 
   return (
     <section className="account-page">
@@ -189,6 +199,75 @@ export default async function AccountPage() {
           </button>
         </form>
       </div>
+
+      {organizationMembership ? (
+        <section
+          className="account-trips"
+          id="company-travel-request"
+          aria-labelledby="company-travel-heading"
+        >
+          <div className="account-trips__heading">
+            <p className="hotel-page__eyebrow">Company travel</p>
+            <h2 id="company-travel-heading">Request an organization trip</h2>
+          </div>
+          <BusinessTravelRequestForm
+            organizationName={organizationMembership.organization.name}
+            policy={{
+              approvalRequired: organizationMembership.organization.approvalRequired,
+              defaultCabinClass: organizationMembership.organization.defaultCabinClass,
+              maximumTripAmount: organizationMembership.organization.maximumTripAmount,
+            }}
+          />
+
+          {businessTravelRequests.length > 0 ? (
+            <div className="account-trips__list">
+              {businessTravelRequests.map((request) => (
+                <article className="account-trip ui-card ui-card--padded" key={request.id}>
+                  <div className="account-trip__topline">
+                    <span className="account-trip__type">{request.productType}</span>
+                    <strong
+                      className={`business-request__status business-request__status--${request.status.toLowerCase()}`}
+                    >
+                      {request.status}
+                    </strong>
+                  </div>
+                  <div className="account-trip__body">
+                    <div>
+                      <h3>{request.title}</h3>
+                      <p>{request.policyReason}</p>
+                      {request.reviewNote ? (
+                        <small>Administrator note: {request.reviewNote}</small>
+                      ) : null}
+                    </div>
+                    <dl>
+                      <div>
+                        <dt>Travel dates</dt>
+                        <dd>
+                          {request.startDate}
+                          {request.endDate ? ` to ${request.endDate}` : ''}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Estimated amount</dt>
+                        <dd>{formatCurrency(request.estimatedAmount, request.currency)}</dd>
+                      </div>
+                      <div>
+                        <dt>Organization</dt>
+                        <dd>{organizationMembership.organization.name}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="account-trips__empty ui-card ui-card--padded">
+              <strong>No company requests yet.</strong>
+              <p>Your submitted requests and approval status will appear here.</p>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="account-trips" aria-labelledby="travel-summary-heading">
         <div className="account-trips__heading">
