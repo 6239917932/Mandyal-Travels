@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerAmendmentRecord } from '@/types/commerce';
 
 function money(amount: number, currency: string): string {
@@ -31,9 +32,10 @@ export default function PartnerAmendmentsPage() {
       const response = await fetch('/api/v1/partner/amendments', {
         headers: { 'x-partner-key': partnerKey },
       });
-      const result = (await response.json()) as
-        { data: PartnerAmendmentRecord[] } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
+      const result = await readJsonResponse<{ data: PartnerAmendmentRecord[] } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
             ? 'The partner access key is incorrect.'
@@ -72,9 +74,11 @@ export default function PartnerAmendmentsPage() {
           method: 'PATCH',
         },
       );
-      const result = (await response.json()) as { data: unknown } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
-        setError('error' in result ? result.error.message : 'The review could not be saved.');
+      const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(
+          result && 'error' in result ? result.error.message : 'The review could not be saved.',
+        );
         return;
       }
       setAmendments((current) => current.filter((item) => item.id !== amendmentId));

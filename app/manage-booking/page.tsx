@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, ManagedHotelBooking } from '@/types/commerce';
 
 function formatCurrency(amount: number, currency: string): string {
@@ -49,9 +50,11 @@ export default function ManageBookingPage() {
       const response = await fetch(
         `/api/v1/hotels/bookings/${encodeURIComponent(confirmationCode)}`,
       );
-      const result = (await response.json()) as { data: ManagedHotelBooking } | ApiErrorResponse;
+      const result = await readJsonResponse<{ data: ManagedHotelBooking } | ApiErrorResponse>(
+        response,
+      );
 
-      if (!response.ok || !('data' in result)) {
+      if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
             ? 'This browser does not have secure access to that booking. Please use the browser where the booking was completed.'
@@ -85,8 +88,10 @@ export default function ManageBookingPage() {
         `/api/v1/hotels/bookings/${encodeURIComponent(booking.confirmationCode)}`,
         { method: 'DELETE' },
       );
-      const result = (await response.json()) as { data: ManagedHotelBooking } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
+      const result = await readJsonResponse<{ data: ManagedHotelBooking } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
         setError('The booking could not be cancelled. Please try again.');
         return;
       }
@@ -118,9 +123,13 @@ export default function ManageBookingPage() {
           method: 'POST',
         },
       );
-      const result = (await response.json()) as { data: ManagedHotelBooking } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
-        setError('error' in result ? result.error.message : 'The request could not be saved.');
+      const result = await readJsonResponse<{ data: ManagedHotelBooking } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
+        setError(
+          result && 'error' in result ? result.error.message : 'The request could not be saved.',
+        );
         return;
       }
       setBooking(result.data);

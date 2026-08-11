@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessInvitationAcceptanceProps = {
   organizationName: string;
@@ -27,8 +28,7 @@ export function BusinessInvitationAcceptance({
         `/api/v1/business/invitations/accept/${encodeURIComponent(token)}`,
         { method: 'POST' },
       );
-      const responseText = await response.text();
-      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'The invitation could not be accepted.');

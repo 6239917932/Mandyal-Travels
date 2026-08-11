@@ -6,6 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessOrganizationProfileProps = {
   contactEmail: string;
@@ -40,15 +41,7 @@ export function BusinessOrganizationProfile({
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
-      const responseText = await response.text();
-      let result: { error?: string } = {};
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText) as { error?: string };
-        } catch {
-          result = {};
-        }
-      }
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
       if (!response.ok) {
         setError(result.error ?? 'The organization profile could not be saved.');
         return;

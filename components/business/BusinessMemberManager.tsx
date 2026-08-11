@@ -6,6 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessMember = {
   email: string;
@@ -51,10 +52,9 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
-      const responseText = await response.text();
-      const result = responseText
-        ? (JSON.parse(responseText) as { data?: { acceptPath?: string }; error?: string })
-        : {};
+      const result =
+        (await readJsonResponse<{ data?: { acceptPath?: string }; error?: string }>(response)) ??
+        {};
 
       if (!response.ok) {
         setError(result.error ?? 'The traveller invitation could not be created.');
@@ -97,8 +97,7 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
         `/api/v1/business/invitations/${encodeURIComponent(invitation.id)}`,
         { method: 'DELETE' },
       );
-      const responseText = await response.text();
-      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
       if (!response.ok) {
         setError(result.error ?? 'The invitation could not be revoked.');
         return;
@@ -121,8 +120,7 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
       const response = await fetch(`/api/v1/business/members/${encodeURIComponent(member.id)}`, {
         method: 'DELETE',
       });
-      const responseText = await response.text();
-      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'The traveller could not be removed.');
@@ -154,8 +152,7 @@ export function BusinessMemberManager({ invitations, members }: BusinessMemberMa
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
-      const responseText = await response.text();
-      const result = responseText ? (JSON.parse(responseText) as { error?: string }) : {};
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
       if (!response.ok) {
         setError(result.error ?? 'The member access could not be changed.');
         return;

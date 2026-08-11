@@ -6,6 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessTravelRequestFormProps = {
   organizationName: string;
@@ -45,16 +46,8 @@ export function BusinessTravelRequestForm({
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
-      const responseText = await response.text();
-      let result: { data?: { status?: string }; error?: string } = {};
-
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText) as typeof result;
-        } catch {
-          result = {};
-        }
-      }
+      const result =
+        (await readJsonResponse<{ data?: { status?: string }; error?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'The company travel request could not be created.');

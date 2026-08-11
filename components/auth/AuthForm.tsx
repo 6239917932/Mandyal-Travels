@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
+import { readJsonResponse } from '@/lib/api/clientResponse';
+
 type AuthFormProps = {
   accountType?: 'business' | 'customer';
   mode: 'login' | 'register';
@@ -36,10 +38,8 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
-      const responseText = await response.text();
-      const result = responseText
-        ? (JSON.parse(responseText) as { error?: string; redirectTo?: string })
-        : {};
+      const result =
+        (await readJsonResponse<{ error?: string; redirectTo?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'We could not complete your request. Please try again.');

@@ -9,6 +9,7 @@ import {
   clearActiveBusinessTravelRequest,
   readActiveBusinessTravelRequest,
 } from '@/lib/businessTravelClient';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type FormErrors = Record<string, string>;
 
@@ -72,12 +73,12 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           subtotal: bookingSummary.total,
         }),
       });
-      const payload = (await response.json()) as PromotionResponse;
+      const payload = await readJsonResponse<PromotionResponse>(response);
 
-      if (!response.ok || !payload.data) {
+      if (!response.ok || !payload?.data) {
         setErrors((current) => ({
           ...current,
-          promotion: payload.error?.message ?? 'The promotion could not be validated.',
+          promotion: payload?.error?.message ?? 'The promotion could not be validated.',
         }));
         return;
       }
@@ -167,12 +168,12 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         }),
       });
       if (businessRequest && !response.ok) {
-        const result = (await response.json().catch(() => ({}))) as {
+        const result = await readJsonResponse<{
           error?: { message?: string };
-        };
+        }>(response);
         setErrors({
           payment:
-            result.error?.message ??
+            result?.error?.message ??
             'The company approval could not be verified. No payment has been captured.',
         });
         setProcessing(false);

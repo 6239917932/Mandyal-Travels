@@ -6,6 +6,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerBookingRecord } from '@/types/commerce';
 
 function money(amount: number, currency: string): string {
@@ -46,8 +47,10 @@ export default function PartnerBookingsPage() {
       const response = await fetch('/api/v1/partner/bookings', {
         headers: { 'x-partner-key': partnerKey },
       });
-      const result = (await response.json()) as { data: PartnerBookingRecord[] } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
+      const result = await readJsonResponse<{ data: PartnerBookingRecord[] } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
             ? 'The partner access key is incorrect.'

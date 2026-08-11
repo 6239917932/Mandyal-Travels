@@ -7,6 +7,7 @@ import {
   clearActiveBusinessTravelRequest,
   readActiveBusinessTravelRequest,
 } from '@/lib/businessTravelClient';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 interface AppliedPromotion {
   code: string;
@@ -58,12 +59,12 @@ export function CarPaymentForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: promoCode, productType: 'CAR', subtotal }),
       });
-      const payload = (await response.json()) as PromotionResponse;
+      const payload = await readJsonResponse<PromotionResponse>(response);
 
-      if (!response.ok || !payload.data) {
+      if (!response.ok || !payload?.data) {
         setErrors((current) => ({
           ...current,
-          promotion: payload.error?.message ?? 'The promotion could not be validated.',
+          promotion: payload?.error?.message ?? 'The promotion could not be validated.',
         }));
         return;
       }
@@ -144,12 +145,12 @@ export function CarPaymentForm({
         }),
       });
       if (businessRequest && !response.ok) {
-        const result = (await response.json().catch(() => ({}))) as {
+        const result = await readJsonResponse<{
           error?: { message?: string };
-        };
+        }>(response);
         setErrors({
           payment:
-            result.error?.message ??
+            result?.error?.message ??
             'The company approval could not be verified. No payment has been captured.',
         });
         setProcessing(false);

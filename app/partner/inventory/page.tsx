@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerInventoryRecord } from '@/types/commerce';
 
 function futureDate(days: number): string {
@@ -34,10 +35,13 @@ export default function PartnerInventoryPage() {
       const response = await fetch(`/api/v1/partner/inventory?${params}`, {
         headers: { 'x-partner-key': partnerKey },
       });
-      const result = (await response.json()) as
-        { data: PartnerInventoryRecord[] } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
-        setError('error' in result ? result.error.message : 'Inventory could not be loaded.');
+      const result = await readJsonResponse<{ data: PartnerInventoryRecord[] } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
+        setError(
+          result && 'error' in result ? result.error.message : 'Inventory could not be loaded.',
+        );
         return;
       }
       setInventory(result.data);
@@ -67,11 +71,14 @@ export default function PartnerInventoryPage() {
         headers: { 'Content-Type': 'application/json', 'x-partner-key': partnerKey },
         method: 'POST',
       });
-      const result = (await response.json()) as
-        { data: PartnerInventoryRecord[] } | ApiErrorResponse;
-      if (!response.ok || !('data' in result)) {
+      const result = await readJsonResponse<{ data: PartnerInventoryRecord[] } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
         setError(
-          'error' in result ? result.error.message : 'The inventory limit could not be saved.',
+          result && 'error' in result
+            ? result.error.message
+            : 'The inventory limit could not be saved.',
         );
         return;
       }

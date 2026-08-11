@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessApprovalRequest = {
   bookedAt: string | null;
@@ -54,16 +55,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
           method: 'PATCH',
         },
       );
-      const responseText = await response.text();
-      let result: { error?: string } = {};
-
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText) as { error?: string };
-        } catch {
-          result = {};
-        }
-      }
+      const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'The request could not be reviewed.');

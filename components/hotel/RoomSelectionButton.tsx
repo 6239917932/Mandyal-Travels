@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { useBookingContext } from '@/context/BookingContext';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { Hotel, HotelRatePlan, HotelRoom } from '@/types/hotel';
 import type { ApiErrorResponse, HotelQuote } from '@/types/commerce';
 
@@ -53,10 +54,8 @@ export function RoomSelectionButton({
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
-      const responseText = await response.text();
-      const result = responseText
-        ? (JSON.parse(responseText) as Partial<ApiErrorResponse> & { data?: HotelQuote })
-        : {};
+      const result =
+        (await readJsonResponse<Partial<ApiErrorResponse> & { data?: HotelQuote }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error?.message ?? 'The room price could not be confirmed. Try again.');

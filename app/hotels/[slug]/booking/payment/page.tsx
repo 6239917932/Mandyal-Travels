@@ -13,6 +13,7 @@ import {
   clearActiveBusinessTravelRequest,
   readActiveBusinessTravelRequest,
 } from '@/lib/businessTravelClient';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, HotelBookingRecord } from '@/types/commerce';
 
 function formatCurrency(amount: number, currency: string): string {
@@ -81,10 +82,10 @@ export default function PaymentPage() {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
-      const result = (await response.json()) as PromotionResponse;
+      const result = await readJsonResponse<PromotionResponse>(response);
 
-      if (!response.ok || !result.data) {
-        setPromotionError(result.error?.message ?? 'The promotion could not be validated.');
+      if (!response.ok || !result?.data) {
+        setPromotionError(result?.error?.message ?? 'The promotion could not be validated.');
         return;
       }
 
@@ -126,16 +127,20 @@ export default function PaymentPage() {
         method: 'POST',
       });
 
-      if (!response.ok) {
-        const result = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+      const result = await readJsonResponse<{ data: HotelBookingRecord } | ApiErrorResponse>(
+        response,
+      );
+      if (!response.ok || !result || !('data' in result)) {
         setPaymentError(
-          result?.error.message ?? 'The booking could not be completed. No payment was captured.',
+          result && 'error' in result
+            ? result.error.message
+            : 'The booking could not be completed. No payment was captured.',
         );
         setIsProcessing(false);
         return;
       }
 
-      const { data: createdBooking } = (await response.json()) as { data: HotelBookingRecord };
+      const createdBooking = result.data;
       if (businessRequest) clearActiveBusinessTravelRequest();
       confirmBooking(
         createdBooking.confirmationCode,

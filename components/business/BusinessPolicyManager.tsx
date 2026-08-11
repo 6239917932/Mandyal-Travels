@@ -6,6 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type BusinessPolicy = {
   approvalRequired: boolean;
@@ -60,16 +61,8 @@ export function BusinessPolicyManager({
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
-      const responseText = await response.text();
-      let result: { data?: { version?: number }; error?: string } = {};
-
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText) as { data?: { version?: number }; error?: string };
-        } catch {
-          result = {};
-        }
-      }
+      const result =
+        (await readJsonResponse<{ data?: { version?: number }; error?: string }>(response)) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'The travel policy could not be saved.');
