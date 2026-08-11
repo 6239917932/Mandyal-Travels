@@ -8,14 +8,14 @@ export const siteConfig = {
   name: 'Mandyal Travels',
   navigation: [
     { href: '/', label: 'Home' },
-    { href: '/hotels', label: 'Hotels' },
-    { href: '/manage-booking', label: 'Manage booking' },
     { href: '/flights', label: 'Flights' },
+    { href: '/hotels', label: 'Hotels' },
     { href: '/buses', label: 'Buses' },
     { href: '/cars', label: 'Cars' },
     { href: '/offers', label: 'Offers' },
     { href: '/business', label: 'Business' },
     { href: '/partners', label: 'Partners' },
+    { href: '/manage-booking', label: 'Manage booking' },
   ] satisfies NavigationItem[],
   supportEmail: 'support@mandyaltravels.com',
 } as const;
