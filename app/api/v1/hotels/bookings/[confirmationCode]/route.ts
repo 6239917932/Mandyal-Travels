@@ -20,80 +20,106 @@ function getAccessToken(request: NextRequest, confirmationCode: string): string 
 }
 
 export async function GET(request: NextRequest, context: BookingRouteContext): Promise<Response> {
-  const { confirmationCode } = await context.params;
-  const accessToken = getAccessToken(request, confirmationCode);
-  let booking = accessToken
-    ? await hotelBookingService.getManagedBooking(confirmationCode, accessToken)
-    : undefined;
-  if (!booking) {
-    const user = await getCurrentUser();
-    booking = user
-      ? await hotelBookingService.getManagedBookingForGuest(confirmationCode, user.email)
+  try {
+    const { confirmationCode } = await context.params;
+    const accessToken = getAccessToken(request, confirmationCode);
+    let booking = accessToken
+      ? await hotelBookingService.getManagedBooking(confirmationCode, accessToken)
       : undefined;
-  }
+    if (!booking) {
+      const user = await getCurrentUser();
+      booking = user
+        ? await hotelBookingService.getManagedBookingForGuest(confirmationCode, user.email)
+        : undefined;
+    }
 
-  if (!accessToken && !booking) {
-    const body: ApiErrorResponse = {
-      error: {
-        code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
-        message: 'Sign in to the booking account or use the browser where it was booked.',
-      },
-    };
-    return Response.json(body, { status: 401 });
-  }
+    if (!accessToken && !booking) {
+      const body: ApiErrorResponse = {
+        error: {
+          code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
+          message: 'Sign in to the booking account or use the browser where it was booked.',
+        },
+      };
+      return Response.json(body, { status: 401 });
+    }
 
-  if (!booking) {
-    const body: ApiErrorResponse = {
-      error: {
-        code: 'BOOKING_NOT_FOUND',
-        message: 'The booking reference or access token is invalid.',
-      },
-    };
-    return Response.json(body, { status: 404 });
-  }
+    if (!booking) {
+      const body: ApiErrorResponse = {
+        error: {
+          code: 'BOOKING_NOT_FOUND',
+          message: 'The booking reference or access token is invalid.',
+        },
+      };
+      return Response.json(body, { status: 404 });
+    }
 
-  return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
+    return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    console.error('Managed hotel booking lookup failed.', error);
+    return Response.json(
+      {
+        error: {
+          code: 'BOOKING_SERVICE_UNAVAILABLE',
+          message: 'Booking management is temporarily unavailable. Please try again.',
+        },
+      } satisfies ApiErrorResponse,
+      { status: 503 },
+    );
+  }
 }
 
 export async function DELETE(
   request: NextRequest,
   context: BookingRouteContext,
 ): Promise<Response> {
-  const { confirmationCode } = await context.params;
-  const accessToken = getAccessToken(request, confirmationCode);
-  let booking = accessToken
-    ? await hotelBookingService.cancelBooking(confirmationCode, accessToken)
-    : undefined;
-  if (!booking) {
-    const user = await getCurrentUser();
-    booking = user
-      ? await hotelBookingService.cancelBookingForGuest(confirmationCode, user.email)
+  try {
+    const { confirmationCode } = await context.params;
+    const accessToken = getAccessToken(request, confirmationCode);
+    let booking = accessToken
+      ? await hotelBookingService.cancelBooking(confirmationCode, accessToken)
       : undefined;
-  }
+    if (!booking) {
+      const user = await getCurrentUser();
+      booking = user
+        ? await hotelBookingService.cancelBookingForGuest(confirmationCode, user.email)
+        : undefined;
+    }
 
-  if (!accessToken && !booking) {
+    if (!accessToken && !booking) {
+      return Response.json(
+        {
+          error: {
+            code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
+            message: 'Sign in to the booking account or use the browser where it was booked.',
+          },
+        } satisfies ApiErrorResponse,
+        { status: 401 },
+      );
+    }
+
+    if (!booking) {
+      return Response.json(
+        {
+          error: {
+            code: 'BOOKING_NOT_FOUND',
+            message: 'The booking reference or access token is invalid.',
+          },
+        } satisfies ApiErrorResponse,
+        { status: 404 },
+      );
+    }
+
+    return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    console.error('Managed hotel booking cancellation failed.', error);
     return Response.json(
       {
         error: {
-          code: 'BOOKING_ACCESS_TOKEN_REQUIRED',
-          message: 'Sign in to the booking account or use the browser where it was booked.',
+          code: 'BOOKING_SERVICE_UNAVAILABLE',
+          message: 'The booking could not be cancelled right now. Please try again.',
         },
       } satisfies ApiErrorResponse,
-      { status: 401 },
+      { status: 503 },
     );
   }
-
-  if (!booking) {
-    return Response.json(
-      {
-        error: {
-          code: 'BOOKING_NOT_FOUND',
-          message: 'The booking reference or access token is invalid.',
-        },
-      } satisfies ApiErrorResponse,
-      { status: 404 },
-    );
-  }
-
-  return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
