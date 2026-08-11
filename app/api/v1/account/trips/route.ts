@@ -11,6 +11,9 @@ import type { PromotionProduct } from '@/constants/promotionRules';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'BUS', 'CAR']);
+const CONFIRMATION_CODE_PATTERN = /^M[BCF][A-Z0-9]{8,20}$/;
+const MAX_DETAILS_LENGTH = 32_000;
+const MAX_TRIP_AMOUNT = 100_000_000;
 
 function isText(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -18,6 +21,12 @@ function isText(value: unknown): value is string {
 
 function isProductType(value: string): value is PromotionProduct {
   return PRODUCT_TYPES.has(value as PromotionProduct);
+}
+
+function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 function errorResponse(code: string, message: string, status: number) {
@@ -43,18 +52,28 @@ export async function POST(request: Request) {
   const businessTravelRequestId = isText(body.businessTravelRequestId)
     ? body.businessTravelRequestId.trim()
     : undefined;
+  const details =
+    body.details && typeof body.details === 'object' && !Array.isArray(body.details)
+      ? body.details
+      : {};
+  const detailsJson = JSON.stringify(details);
 
   if (
     !isProductType(productType) ||
-    !confirmationCode ||
-    !title ||
-    !subtitle ||
-    !startDate ||
-    endDate === '' ||
+    !CONFIRMATION_CODE_PATTERN.test(confirmationCode) ||
+    title.length < 1 ||
+    title.length > 160 ||
+    subtitle.length < 1 ||
+    subtitle.length > 200 ||
+    !isIsoDate(startDate) ||
+    (endDate !== null && (!isIsoDate(endDate) || endDate < startDate)) ||
     !Number.isInteger(totalAmount) ||
-    (totalAmount as number) < 0
+    (totalAmount as number) < 0 ||
+    (totalAmount as number) > MAX_TRIP_AMOUNT ||
+    detailsJson.length > MAX_DETAILS_LENGTH ||
+    (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
-    return errorResponse('INVALID_TRIP', 'The trip details are incomplete.', 400);
+    return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
   }
 
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
@@ -90,7 +109,7 @@ export async function POST(request: Request) {
 
   const tripData = {
     currency: 'INR',
-    detailsJson: JSON.stringify(body.details ?? {}),
+    detailsJson,
     email: user.email,
     endDate,
     productType,
