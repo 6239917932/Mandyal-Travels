@@ -30,7 +30,10 @@ export default function BusinessTravelPage() {
             policies, invoices, and support.
           </p>
           <div className="home-hero__actions">
-            <Link className="home-link-button home-link-button--primary" href="/register">
+            <Link
+              className="home-link-button home-link-button--primary"
+              href="/register?account=business"
+            >
               Create a business account
             </Link>
             <Link className="home-link-button home-link-button--secondary" href="/login">
@@ -44,7 +47,9 @@ export default function BusinessTravelPage() {
         <div className="home-container">
           <div className="home-section__heading">
             <p className="home-section__eyebrow">Choose your business channel</p>
-            <h2 className="home-section__title">Shared travel engines, organization-aware controls.</h2>
+            <h2 className="home-section__title">
+              Shared travel engines, organization-aware controls.
+            </h2>
           </div>
           <div className="travel-options-grid">
             {businessOptions.map((option, index) => (
