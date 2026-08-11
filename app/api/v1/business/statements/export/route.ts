@@ -1,11 +1,6 @@
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
-
-function csvCell(value: string | number | null) {
-  let text = value == null ? '' : String(value);
-  if (/^[=+\-@]/.test(text)) text = `'${text}`;
-  return `"${text.replaceAll('"', '""')}"`;
-}
+import { createCsv } from '@/utils/csv';
 
 export async function GET() {
   const access = await getBusinessAdminMembership();
@@ -47,115 +42,13 @@ export async function GET() {
     request.currency,
     request.bookedAt?.toISOString() ?? '',
   ]);
-  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const csv = createCsv([header, ...rows]);
 
-  return new R◊~∫ˆ⁄$z{-ÆÈ‹j◊ùnc findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined> {
-    const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
-      where: { idempotencyKey: key },
-    });
-    return booking ? mapBooking(booking) : undefined;
-  }
-
-  async findById(id: string): Promise<HotelBookingRecord | undefined> {
-    const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
-      where: { id },
-    });
-    return booking ? mapBooking(booking) : undefined;
-  }
-
-  async findAll(): Promise<HotelBookingRecord[]> {
-    const bookings = await prisma.booking.findMany({
-      include: { guest: true, payment: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    return bookings
-      .map(mapBooking)
-      .filter((booking): booking is HotelBookingRecord => booking !== undefined);
-  }
-
-  async save(
-    booking: HotelBookingRecord,
-    idempotencyKey: string,
-    accessTokenHash: string,
-    businessContext?: BusinessBookingContext,
-  ): Promise<void> {
-    await prisma.$transaction(async (transaction) => {
-      let organizationId: string | undefined;
-      if (businessContext) {
-        const travelRequest = await transaction.businessTravelRequest.findFirst({
-          select: { organizationId: true },
-          where: {
-            id: businessContext.requestId,
-            requesterId: businessContext.requesterId,
-            status: 'APPROVED',
-          },
-        });
-        organizationId = travelRequest?.organizationId;
-        const completed = await transaction.businessTravelRequest.updateMany({
-          data: {
-            bookedAt: new Date(),
-            bookingTotalAmount: booking.totalAmount,
-            status: 'BOOKED',
-          },
-          where: {
-            id: businessContext.requestId,
-            requesterId: businessContext.requesterId,
-            status: 'APPROVED',
-          },
-        });
-        if (completed.count !== 1) {
-          throw new BusinessBookingRequestUnavailableError();
-        }
-      }
-
-      await transaction.booking.create({
-        data: {
-          accessTokenHash,
-          availabilityLockId: booking.availabilityLockId,
-          businessTravelRequestId: businessContext?.requestId,
-          confirmationCode: booking.confirmationCode,
-          createdAt: new Date(booking.createdAt),
-          currency: booking.currency,
-          guest: { create: booking.guest },
-          hotelSlug: booking.hotelSlug,
-          id: booking.id,
-          idempotencyKey,
-          payment: {
-            create: {
-              amount: booking.totalAmount,
-              currency: booking.currency,
-              provider: 'mock',
-              providerRef: `mock-${booking.id}`,
-              status: booking.paymentStatus,
-            },
-          },
-          quoteId: booking.quoteId,
-          status: booking.status,
-          totalAmount: booking.totalAmount,
-        },
-      });
-
-      if (businessContext && organizationId) {
-        await transaction.businessAuditLog.create({
-          data: createBusinessAuditData({
-            action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
-            actorUserId: businessContext.requesterId,
-            entityId: businessContext.requestId,
-            entityType: 'TRAVEL_REQUEST',
-            metadata: {
-              confirmationCode: booking.confirmationCode,
-              productType: 'HOTEL',
-              totalAmount: booking.totalAmount,
-            },
-            organizationId,
-            summary: 'Hotel company travel booked.',
-          }),
-        });
-      }
-    });
-  }
+  return new Response(csv, {
+    headers: {
+      'Cache-Control': 'private, no-store',
+      'Content-Disposition': 'attachment; filename="mandyal-company-bookings.csv"',
+      'Content-Type': 'text/csv; charset=utf-8',
+    },
+  });
 }
-
-export const bookingRepository = new PrismaBookingRepository();

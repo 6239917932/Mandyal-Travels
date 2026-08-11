@@ -386,6 +386,78 @@
   font-size: 0.875rem;
 }
 
+.business-report {
+  width: min(100% - 2rem, 76rem);
+}
+
+.business-report__filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.business-report__search {
+  grid-column: span 2;
+}
+
+.business-report__filter-actions {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.business-report__table-card {
+  overflow: hidden;
+}
+
+.business-report__table-scroll {
+  overflow-x: auto;
+}
+
+.business-report__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.business-report__table th,
+.business-report__table td {
+  min-width: 10rem;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.business-report__table th {
+  background: var(--color-brand-50);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.business-report__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.business-report__table td {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.business-report__table td > * {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.business-report__table td > *:last-child {
+  margin-bottom: 0;
+}
+
+.business-report__table td strong:not(.business-request__status) {
+  color: var(--color-text-primary);
+}
+
 .business-statement-row h2,
 .business-statement-row p,
 .business-statement__parties p {
@@ -578,6 +650,19 @@
   .business-invitation__actions,
   .business-invitation-link > div {
     grid-template-columns: 1fr;
+  }
+
+  .business-report__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .business-report__search {
+    grid-column: auto;
+  }
+
+  .business-report__filter-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .business-audit__list li,
