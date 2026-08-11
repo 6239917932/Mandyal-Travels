@@ -8,6 +8,19 @@ import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'My account' };
 
+const customerQuickActions = [
+  { description: 'Find and reserve your next stay.', href: '/hotels', label: 'Hotels' },
+  { description: 'Compare fares and book a flight.', href: '/flights', label: 'Flights' },
+  { description: 'Choose routes, operators, and seats.', href: '/buses', label: 'Buses' },
+  { description: 'Reserve self-drive and chauffeur cars.', href: '/cars', label: 'Cars' },
+  {
+    description: 'Open, amend, or cancel an existing stay.',
+    href: '/manage-booking',
+    label: 'Manage booking',
+  },
+  { description: 'View current travel discounts.', href: '/offers', label: 'Offers' },
+] as const;
+
 function humanizeSlug(value: string) {
   return value
     .split('-')
@@ -122,13 +135,33 @@ export default async function AccountPage() {
   return (
     <section className="account-page">
       <div className="auth-page__intro">
-        <p className="hotel-page__eyebrow">My account</p>
-        <h1>Hello, {user.firstName}.</h1>
+        <p className="hotel-page__eyebrow">
+          {user.role === 'BUSINESS_ADMIN' ? 'Personal travel profile' : 'Customer workspace'}
+        </p>
+        <h1>Welcome back, {user.firstName}.</h1>
         <p>
           Your {user.role === 'BUSINESS_ADMIN' ? 'business' : 'customer'} account is active and
           protected by a secure browser session.
         </p>
       </div>
+
+      {user.role === 'CUSTOMER' ? (
+        <section className="customer-dashboard" aria-labelledby="customer-actions-heading">
+          <div className="account-trips__heading">
+            <p className="hotel-page__eyebrow">Plan and manage</p>
+            <h2 id="customer-actions-heading">What would you like to do?</h2>
+          </div>
+          <div className="customer-dashboard__actions">
+            {customerQuickActions.map((action) => (
+              <Link className="customer-dashboard__action" href={action.href} key={action.href}>
+                <strong>{action.label}</strong>
+                <span>{action.description}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="account-card ui-card ui-card--padded">
         <div>
           <span>Name</span>
