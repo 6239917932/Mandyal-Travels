@@ -691,6 +691,16 @@
   width: min(100% - 2rem, 76rem);
 }
 
+.admin-support-action {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.admin-support-action .ui-button {
+  justify-self: start;
+}
+
 .account-trips {
   display: grid;
   gap: var(--space-5);

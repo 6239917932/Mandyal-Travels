@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { AdminSupportAction } from '@/components/admin/AdminSupportAction';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
@@ -43,7 +44,7 @@ export default async function AdminPage() {
     hotelValue,
     tripValue,
     pendingRequests,
-    openSupportCases,
+    recentSupportCases,
     pendingAmendments,
     recentHotelBookings,
     recentTrips,
@@ -78,9 +79,8 @@ export default async function AdminPage() {
         createdBy: { select: { email: true, firstName: true, lastName: true } },
         organization: { select: { name: true } },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { updatedAt: 'desc' },
       take: 12,
-      where: { status: 'OPEN' },
     }),
     prisma.bookingAmendment.findMany({
       include: {
@@ -234,7 +234,7 @@ export default async function AdminPage() {
       <div className="account-trips">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Account servicing</p>
-          <h2>Open company support cases</h2>
+          <h2>Recent company support cases</h2>
         </div>
         <Card className="business-report__table-card">
           <div className="business-report__table-scroll">
@@ -245,11 +245,12 @@ export default async function AdminPage() {
                   <th>Organization</th>
                   <th>Created by</th>
                   <th>Subject</th>
-                  <th>Opened</th>
+                  <th>Status and action</th>
+                  <th>Updated</th>
                 </tr>
               </thead>
               <tbody>
-                {openSupportCases.map((supportCase) => (
+                {recentSupportCases.map((supportCase) => (
                   <tr key={supportCase.id}>
                     <td>
                       <strong>{supportCase.caseNumber}</strong>
@@ -269,15 +270,21 @@ export default async function AdminPage() {
                       <span>{supportCase.bookingReference ?? 'No booking reference'}</span>
                     </td>
                     <td>
-                      <time dateTime={supportCase.createdAt.toISOString()}>
-                        {formatDate(supportCase.createdAt)}
+                      <strong className={statusClass(supportCase.status)}>
+                        {supportCase.status}
+                      </strong>
+                      <AdminSupportAction caseId={supportCase.id} status={supportCase.status} />
+                    </td>
+                    <td>
+                      <time dateTime={supportCase.updatedAt.toISOString()}>
+                        {formatDate(supportCase.updatedAt)}
                       </time>
                     </td>
                   </tr>
                 ))}
-                {openSupportCases.length === 0 ? (
+                {recentSupportCases.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>No company support cases are open.</td>
+                    <td colSpan={6}>No company support cases have been created.</td>
                   </tr>
                 ) : null}
               </tbody>
