@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { AccountProfileForm } from '@/components/account/AccountProfileForm';
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
 import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
@@ -247,6 +248,8 @@ export default async function AccountPage() {
           </button>
         </form>
       </div>
+
+      <AccountProfileForm email={user.email} firstName={user.firstName} lastName={user.lastName} />
 
       <PasswordChangeForm />
 
