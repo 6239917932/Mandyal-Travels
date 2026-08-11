@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { siteConfig } from '@/config/site';
@@ -9,10 +10,14 @@ type SiteHeaderProps = { user: { firstName: string; role: string } | null };
 
 export function SiteHeader({ user }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
+
+  const isActivePage = (href: string) =>
+    href === '/' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <header className="site-header">
@@ -42,6 +47,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
         >
           {siteConfig.navigation.map((item) => (
             <Link
+              aria-current={isActivePage(item.href) ? 'page' : undefined}
               className="site-navigation__link"
               href={item.href}
               key={item.href}

@@ -16,6 +16,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
 - Customer hotel cancellation/amendment handling and account-bound booking access
+- Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
+  navigation
 
 ### Business travel
 
