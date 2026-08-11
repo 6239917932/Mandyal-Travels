@@ -8,11 +8,12 @@ import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type AuthFormProps = {
   accountType?: 'business' | 'customer';
+  message?: string;
   mode: 'login' | 'register';
   returnTo?: string;
 };
 
-export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormProps) {
+export function AuthForm({ accountType = 'customer', message, mode, returnTo }: AuthFormProps) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +60,11 @@ export function AuthForm({ accountType = 'customer', mode, returnTo }: AuthFormP
 
   return (
     <form className="auth-form ui-card ui-card--padded" onSubmit={handleSubmit}>
+      {message ? (
+        <p className="business-policy__success" role="status">
+          {message}
+        </p>
+      ) : null}
       {isRegister ? (
         <div className="auth-form__row">
           <label className="ui-field">

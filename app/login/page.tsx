@@ -7,10 +7,11 @@ import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-type LoginPageProps = { searchParams: Promise<{ returnTo?: string }> };
+type LoginPageProps = { searchParams: Promise<{ passwordChanged?: string; returnTo?: string }> };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const returnTo = getSafeReturnTo((await searchParams).returnTo);
+  const values = await searchParams;
+  const returnTo = getSafeReturnTo(values.returnTo);
   if (await getCurrentUser()) redirect(returnTo ?? '/account');
 
   return (
@@ -20,7 +21,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <h1>Welcome back.</h1>
         <p>Sign in to manage your Mandyal Travels account securely.</p>
       </div>
-      <AuthForm mode="login" returnTo={returnTo ?? undefined} />
+      <AuthForm
+        message={
+          values.passwordChanged === '1'
+            ? 'Your password was updated. Sign in again on this device.'
+            : undefined
+        }
+        mode="login"
+        returnTo={returnTo ?? undefined}
+      />
     </section>
   );
 }

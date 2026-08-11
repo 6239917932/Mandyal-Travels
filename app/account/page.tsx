@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
+import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
 import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
 import { getCurrentUser } from '@/lib/auth/session';
@@ -246,6 +247,8 @@ export default async function AccountPage() {
           </button>
         </form>
       </div>
+
+      <PasswordChangeForm />
 
       {organizationMembership ? (
         <section
