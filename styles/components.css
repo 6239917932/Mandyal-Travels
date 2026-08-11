@@ -547,6 +547,48 @@
   line-height: 1.5;
 }
 
+.business-request-record {
+  width: min(100% - 2rem, 76rem);
+}
+
+.business-request-record__columns,
+.business-request-record__details {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.business-request-record__columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.business-request-record__details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.business-request-record__details > div,
+.business-request-record__list > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-request-record__details span,
+.business-request-record__details small,
+.business-request-record__list dt {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.business-request-record__list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.business-request-record__list dd {
+  margin: 0;
+  font-weight: 700;
+}
+
 .customer-dashboard {
   display: grid;
   gap: var(--space-5);
@@ -715,6 +757,11 @@
   .business-report__filter-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .business-request-record__columns,
+  .business-request-record__details {
+    grid-template-columns: 1fr;
   }
 
   .business-audit__list li,

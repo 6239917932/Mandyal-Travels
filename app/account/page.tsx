@@ -286,8 +286,23 @@ export default async function AccountPage() {
                         productType={request.productType}
                         title={request.title}
                       />
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/business/requests/${request.id}`}
+                      >
+                        View request record
+                      </Link>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="account-trip__actions">
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/business/requests/${request.id}`}
+                      >
+                        View request record
+                      </Link>
+                    </div>
+                  )}
                   {request.status === 'PENDING' ? (
                     <p className="business-request__guidance">
                       Payment remains unavailable until an administrator approves this request.

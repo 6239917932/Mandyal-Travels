@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -102,7 +103,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
             <div>
               <h3>{request.title}</h3>
               <p>
-                {request.requesterName} · {request.requesterEmail}
+                {request.requesterName} Â· {request.requesterEmail}
               </p>
               <small>{request.policyReason}</small>
             </div>
@@ -120,7 +121,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
               </div>
               <div>
                 <dt>Decision note</dt>
-                <dd>{request.reviewNote || '—'}</dd>
+                <dd>{request.reviewNote || 'â€”'}</dd>
               </div>
               {request.bookingReference ? (
                 <div>
@@ -176,6 +177,14 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
               </div>
             </div>
           ) : null}
+          <div className="account-trip__actions">
+            <Link
+              className="ui-button ui-button--secondary"
+              href={`/business/requests/${request.id}`}
+            >
+              View request record
+            </Link>
+          </div>
         </Card>
       ))}
       {error ? (
