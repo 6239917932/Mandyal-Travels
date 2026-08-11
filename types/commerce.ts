@@ -119,6 +119,7 @@ export interface HotelBookingRecord {
   hotelSlug: string;
   id: string;
   paymentStatus: PaymentStatus;
+  paymentAmount: number;
   quoteId: string;
   status: 'confirmed' | 'cancelled';
   totalAmount: number;

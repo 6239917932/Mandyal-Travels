@@ -225,9 +225,31 @@ export default function ManageBookingPage() {
                   <strong>{formatPaymentStatus(booking.paymentStatus)}</strong>
                 </div>
                 <div>
-                  <span>Total</span>
+                  <span>Amount paid</span>
+                  <strong>{formatCurrency(booking.paymentAmount, booking.currency)}</strong>
+                </div>
+                <div>
+                  <span>Current booking total</span>
                   <strong>{formatCurrency(booking.totalAmount, booking.currency)}</strong>
                 </div>
+                {booking.status === 'confirmed' &&
+                booking.paymentStatus === 'captured' &&
+                booking.totalAmount !== booking.paymentAmount ? (
+                  <div>
+                    <span>
+                      {booking.totalAmount > booking.paymentAmount
+                        ? 'Additional amount due'
+                        : 'Refund adjustment due'}
+                    </span>
+                    <strong>
+                      {formatCurrency(
+                        Math.abs(booking.totalAmount - booking.paymentAmount),
+                        booking.currency,
+                      )}
+                    </strong>
+                    <small>Pending settlement</small>
+                  </div>
+                ) : null}
               </div>
               <p className="booking-confirmation__note">
                 {booking.cancellationPolicy ??

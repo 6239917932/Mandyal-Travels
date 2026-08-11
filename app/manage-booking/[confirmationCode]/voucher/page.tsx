@@ -92,7 +92,7 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
 
         <section className="booking-document__total">
           <span>Amount paid</span>
-          <strong>{formatCurrency(booking.totalAmount, booking.currency)}</strong>
+          <strong>{formatCurrency(booking.paymentAmount, booking.currency)}</strong>
         </section>
 
         <footer className="booking-document__footer">

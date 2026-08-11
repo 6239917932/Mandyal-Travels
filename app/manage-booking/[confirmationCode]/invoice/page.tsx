@@ -59,10 +59,31 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
                 <strong>{formatCurrency(component.amount, component.currency)}</strong>
               </div>
             ))}
-            <div className="booking-document__charges-total">
-              <span>Total paid</span>
+            <div>
+              <span>Current booking total</span>
               <strong>{formatCurrency(booking.totalAmount, booking.currency)}</strong>
             </div>
+            <div className="booking-document__charges-total">
+              <span>Payment received</span>
+              <strong>{formatCurrency(booking.paymentAmount, booking.currency)}</strong>
+            </div>
+            {booking.status === 'confirmed' &&
+            booking.paymentStatus === 'captured' &&
+            booking.totalAmount !== booking.paymentAmount ? (
+              <div>
+                <span>
+                  {booking.totalAmount > booking.paymentAmount
+                    ? 'Pending additional payment'
+                    : 'Pending refund adjustment'}
+                </span>
+                <strong>
+                  {formatCurrency(
+                    Math.abs(booking.totalAmount - booking.paymentAmount),
+                    booking.currency,
+                  )}
+                </strong>
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -73,13 +94,21 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
           </div>
           <div>
             <span>Payment status</span>
-            <strong>{booking.paymentStatus === 'refunded' ? 'REFUNDED' : 'PAID'}</strong>
+            <strong>
+              {booking.paymentStatus === 'refunded'
+                ? 'REFUNDED'
+                : booking.status !== 'confirmed' || booking.totalAmount === booking.paymentAmount
+                  ? 'PAID'
+                  : 'ADJUSTMENT PENDING'}
+            </strong>
           </div>
         </section>
 
         <footer className="booking-document__footer">
           This development-stage document is a payment receipt, not a statutory GST tax invoice.
-          Supplier tax registration and compliant invoicing will be connected before production.
+          Approved date-change price differences remain pending until a payment provider completes
+          the additional charge or refund. Supplier tax registration and compliant invoicing will be
+          connected before production.
         </footer>
       </article>
     </div>

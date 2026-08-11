@@ -103,7 +103,7 @@ export class InMemoryBookingRepository implements BookingRepository {
     return {
       capturedInrValue: bookings
         .filter((booking) => booking.currency === 'INR' && booking.paymentStatus === 'captured')
-        .reduce((total, booking) => total + booking.totalAmount, 0),
+        .reduce((total, booking) => total + booking.paymentAmount, 0),
       confirmedCount: bookings.filter((booking) => booking.status === 'confirmed').length,
       totalCount: bookings.length,
     };
@@ -129,7 +129,7 @@ function mapBooking(booking: {
   guest: { email: string; firstName: string; lastName: string; phone: string } | null;
   hotelSlug: string;
   id: string;
-  payment: { status: string } | null;
+  payment: { amount: number; status: string } | null;
   quoteId: string;
   status: string;
   totalAmount: number;
@@ -146,6 +146,7 @@ function mapBooking(booking: {
     guest: booking.guest,
     hotelSlug: booking.hotelSlug,
     id: booking.id,
+    paymentAmount: booking.payment.amount,
     paymentStatus: booking.payment.status as HotelBookingRecord['paymentStatus'],
     quoteId: booking.quoteId,
     status: booking.status as HotelBookingRecord['status'],
@@ -297,7 +298,7 @@ export class PrismaBookingRepository implements BookingRepository {
           idempotencyKey,
           payment: {
             create: {
-              amount: booking.totalAmount,
+              amount: booking.paymentAmount,
               currency: booking.currency,
               provider: 'mock',
               providerRef: `mock-${booking.id}`,

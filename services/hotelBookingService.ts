@@ -287,6 +287,7 @@ export class HotelBookingService {
       guest: request.guest,
       hotelSlug: request.hotelSlug,
       id: crypto.randomUUID(),
+      paymentAmount: totalAmount,
       paymentStatus: 'captured',
       quoteId: quote.id,
       status: 'confirmed',

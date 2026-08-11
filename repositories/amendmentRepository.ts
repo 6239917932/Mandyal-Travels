@@ -113,10 +113,6 @@ export class PrismaAmendmentRepository implements AmendmentRepository {
         data: { totalAmount: input.totalAmount },
         where: { id: amendment.bookingId },
       }),
-      prisma.paymentTransaction.update({
-        data: { amount: input.totalAmount },
-        where: { bookingId: amendment.bookingId },
-      }),
     ]);
     return mapAmendment(updated);
   }
