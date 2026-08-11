@@ -37,7 +37,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   persistence
 - Pagination and bounded query sizes for operational lists
 - Health/readiness endpoint at `/api/v1/health`
-- Safe Windows start and update helpers
+- Safe Windows start and update helpers with automatic pre-update database backups
 
 ### Security and reliability controls
 

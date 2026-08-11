@@ -7,6 +7,22 @@ git pull --ff-only
 if errorlevel 1 goto :failed
 
 echo.
+echo Backing up the local portal database...
+if not exist "prisma\dev.db" (
+  echo No existing local database was found; this is a first-time setup.
+  goto :backup_complete
+)
+if not exist "prisma\backups" mkdir "prisma\backups"
+if errorlevel 1 goto :failed
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "BACKUP_STAMP=%%i"
+if not defined BACKUP_STAMP goto :failed
+copy /b /y "prisma\dev.db" "prisma\backups\dev-%BACKUP_STAMP%.db" >nul
+if errorlevel 1 goto :failed
+echo Database backup created: prisma\backups\dev-%BACKUP_STAMP%.db
+
+:backup_complete
+
+echo.
 echo Applying reviewed database changes...
 call npx prisma db push
 if errorlevel 1 (

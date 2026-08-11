@@ -27,7 +27,8 @@ and release checklist.
 ## Install future updates on Windows
 
 1. Stop the running portal window.
-2. Double-click `UPDATE-PORTAL.cmd` and leave its window open until it reports success.
+2. Double-click `UPDATE-PORTAL.cmd` and leave its window open until it reports success. It creates a
+   timestamped database backup in `prisma/backups` before applying schema changes.
 3. Double-click `START-PORTAL.cmd` again.
 
 The update helper never accepts a database data-loss warning automatically. If Prisma asks about
