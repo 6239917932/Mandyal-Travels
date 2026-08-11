@@ -29,25 +29,39 @@ export function BusinessPolicyManager({ initialPolicy }: BusinessPolicyManagerPr
     setMessage('');
     setIsSaving(true);
 
-    const response = await fetch('/api/v1/business/policy', {
-      body: JSON.stringify({
-        approvalRequired: data.get('approvalRequired') === 'on',
-        defaultCabinClass: data.get('defaultCabinClass'),
-        maximumTripAmount: maximumTripAmount ? Number(maximumTripAmount) : null,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'PATCH',
-    });
-    const result = (await response.json()) as { error?: string };
-    setIsSaving(false);
+    try {
+      const response = await fetch('/api/v1/business/policy', {
+        body: JSON.stringify({
+          approvalRequired: data.get('approvalRequired') === 'on',
+          defaultCabinClass: data.get('defaultCabinClass'),
+          maximumTripAmount: maximumTripAmount ? Number(maximumTripAmount) : null,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const responseText = await response.text();
+      let result: { error?: string } = {};
 
-    if (!response.ok) {
-      setError(result.error ?? 'The travel policy could not be saved.');
-      return;
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText) as { error?: string };
+        } catch {
+          result = {};
+        }
+      }
+
+      if (!response.ok) {
+        setError(result.error ?? 'The travel policy could not be saved.');
+        return;
+      }
+
+      setMessage('Travel policy saved successfully.');
+      router.refresh();
+    } catch {
+      setError('The travel policy service could not be reached. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
-
-    setMessage('Travel policy saved successfully.');
-    router.refresh();
   }
 
   return (
