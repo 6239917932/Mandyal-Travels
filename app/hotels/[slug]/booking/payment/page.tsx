@@ -16,6 +16,19 @@ import {
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, HotelBookingRecord } from '@/types/commerce';
 
+const HOTEL_IDEMPOTENCY_KEY_PATTERN =
+  /^hotel-booking-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getHotelIdempotencyKey(quoteId: string) {
+  const storageKey = `mandyal-hotel-idempotency-${quoteId}`;
+  const stored = window.sessionStorage.getItem(storageKey);
+  if (stored && HOTEL_IDEMPOTENCY_KEY_PATTERN.test(stored)) return stored;
+
+  const created = `hotel-booking-${crypto.randomUUID()}`;
+  window.sessionStorage.setItem(storageKey, created);
+  return created;
+}
+
 function formatCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -111,6 +124,7 @@ export default function PaymentPage() {
     }
 
     try {
+      const idempotencyKey = getHotelIdempotencyKey(bookingDraft.quoteId);
       const response = await fetch('/api/v1/hotels/bookings', {
         body: JSON.stringify({
           availabilityLockId: bookingDraft.availabilityLock.id,
@@ -122,7 +136,7 @@ export default function PaymentPage() {
         }),
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': `hotel-booking-${bookingDraft.quoteId}`,
+          'Idempotency-Key': idempotencyKey,
         },
         method: 'POST',
       });

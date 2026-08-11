@@ -1,6 +1,7 @@
 import { createHash, createHmac } from 'node:crypto';
 
 import { calculatePromotion, findPromotionRule } from '@/constants/promotionRules';
+import { normalizeEmail } from '@/lib/auth/validation';
 import { readConfiguredSecret } from '@/lib/security/configuredSecret';
 import { createBookingReference } from '@/lib/confirmationCode';
 
@@ -213,6 +214,20 @@ export class HotelBookingService {
   ): Promise<CreatedHotelBooking> {
     const existingBooking = await this.bookings.findByIdempotencyKey(idempotencyKey);
     if (existingBooking) {
+      const sameRequest =
+        existingBooking.availabilityLockId === request.availabilityLockId &&
+        existingBooking.hotelSlug === request.hotelSlug &&
+        existingBooking.quoteId === request.quoteId &&
+        normalizeEmail(existingBooking.guest.email) === normalizeEmail(request.guest.email) &&
+        existingBooking.guest.firstName === request.guest.firstName &&
+        existingBooking.guest.lastName === request.guest.lastName &&
+        existingBooking.guest.phone === request.guest.phone;
+      if (!sameRequest) {
+        throw new HotelBookingRuleError(
+          'IDEMPOTENCY_KEY_REUSED',
+          'This booking retry key is already connected to different reservation details.',
+        );
+      }
       return {
         accessToken: createBookingAccessToken(idempotencyKey),
         booking: existingBooking,

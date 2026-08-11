@@ -16,6 +16,9 @@ import {
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse, CreateHotelBookingRequest } from '@/types/commerce';
 
+const IDEMPOTENCY_KEY_PATTERN =
+  /^hotel-booking-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequest {
   if (!value || typeof value !== 'object') {
     return false;
@@ -55,8 +58,8 @@ function errorResponse(code: string, message: string, status: number): Response 
 
 export async function POST(request: Request): Promise<Response> {
   const idempotencyKey = request.headers.get('Idempotency-Key');
-  if (!idempotencyKey) {
-    return errorResponse('IDEMPOTENCY_KEY_REQUIRED', 'An Idempotency-Key header is required.', 400);
+  if (!idempotencyKey || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+    return errorResponse('IDEMPOTENCY_KEY_INVALID', 'A valid booking retry key is required.', 400);
   }
 
   const body = await readJsonObject(request);
@@ -66,6 +69,28 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!isCreateBookingRequest(body)) {
     return errorResponse('INVALID_BOOKING_REQUEST', 'Required booking fields are missing.', 400);
+  }
+
+  let existingBusinessRequestId: string | null | undefined;
+  try {
+    const existingContext = await prisma.booking.findUnique({
+      select: { businessTravelRequestId: true },
+      where: { idempotencyKey },
+    });
+    existingBusinessRequestId = existingContext?.businessTravelRequestId;
+  } catch (error) {
+    console.error('Hotel booking retry lookup failed.', error);
+    return errorResponse('BOOKING_LOOKUP_FAILED', 'The booking retry could not be checked.', 500);
+  }
+  if (
+    existingBusinessRequestId !== undefined &&
+    existingBusinessRequestId !== (body.businessTravelRequestId ?? null)
+  ) {
+    return errorResponse(
+      'IDEMPOTENCY_CONTEXT_MISMATCH',
+      'This booking retry key is connected to a different booking context.',
+      409,
+    );
   }
 
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
