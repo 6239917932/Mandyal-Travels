@@ -26,7 +26,7 @@ export function BackNavigation() {
     <div className="back-navigation">
       <div className="back-navigation__inner">
         <button aria-label="Return to previous page" onClick={goBack} type="button">
-          <span aria-hidden="true">â†</span> Back to previous page
+          <span aria-hidden="true">&larr;</span> Back to previous page
         </button>
       </div>
     </div>
