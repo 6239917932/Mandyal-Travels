@@ -45,6 +45,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   session revocation after a password change
 - Content-security policy, anti-framing, content-type, referrer, permissions, and production HTTPS
   response headers
+- Same-origin enforcement for authenticated API mutations to protect account and booking actions
+  from cross-site requests
 - Authorization checks at customer, organization, administrator, and partner API boundaries
 - Bounded JSON bodies and server-side validation for booking, policy, member, support, and account
   mutations
