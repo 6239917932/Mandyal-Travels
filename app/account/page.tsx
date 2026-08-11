@@ -264,6 +264,24 @@ export default async function AccountPage() {
 
       <AccountProfileForm email={user.email} firstName={user.firstName} lastName={user.lastName} />
 
+      <section className="account-trips" aria-labelledby="account-data-heading">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Data and privacy</p>
+          <h2 id="account-data-heading">Download my data</h2>
+          <p>
+            Export your profile, preferences, bookings, company requests, and customer support
+            history as JSON.
+          </p>
+        </div>
+        <div className="account-trips__empty ui-card ui-card--padded">
+          <strong>Private account archive</strong>
+          <p>The archive never includes your password, session tokens, or payment-card details.</p>
+          <a className="ui-button ui-button--secondary" href="/api/v1/account/export">
+            Download account data
+          </a>
+        </div>
+      </section>
+
       <PasswordChangeForm />
 
       <SessionManager
