@@ -33,16 +33,24 @@ export async function PATCH(request: Request) {
       maximumTripAmount > 10_000_000)
   ) {
     return NextResponse.json(
-      { error: 'Maximum trip amount must be between â‚¹1,000 and â‚¹1,00,00,000.' },
+      { error: 'Maximum trip amount must be between INR 1,000 and INR 1,00,00,000.' },
       { status: 400 },
     );
   }
 
-  const policy = await prisma.organization.update({
-    data: { approvalRequired, defaultCabinClass, maximumTripAmount },
-    select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
-    where: { id: access.membership.organizationId },
-  });
+  try {
+    const policy = await prisma.organization.update({
+      data: { approvalRequired, defaultCabinClass, maximumTripAmount },
+      select: { approvalRequired: true, defaultCabinClass: true, maximumTripAmount: true },
+      where: { id: access.membership.organizationId },
+    });
 
-  return NextResponse.json({ data: policy });
+    return NextResponse.json({ data: policy });
+  } catch (error) {
+    console.error('Business travel policy update failed.', error);
+    return NextResponse.json(
+      { error: 'The travel policy could not be saved. Refresh the generated database client.' },
+      { status: 500 },
+    );
+  }
 }
