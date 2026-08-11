@@ -225,6 +225,24 @@
   font-size: 0.8125rem;
 }
 
+.business-policy {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.business-policy .auth-form__checkbox span {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.business-policy__success {
+  margin: 0;
+  border-radius: var(--radius-md);
+  background: #e8f7ee;
+  color: #087333;
+  padding: var(--space-3);
+}
+
 .customer-dashboard {
   display: grid;
   gap: var(--space-5);
