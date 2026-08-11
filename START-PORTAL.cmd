@@ -12,6 +12,14 @@ if not exist node_modules (
   )
 )
 
+call npx prisma generate
+if errorlevel 1 (
+  echo.
+  echo The portal database client could not be prepared. Run UPDATE-PORTAL.cmd first.
+  pause
+  exit /b 1
+)
+
 echo Starting Mandyal Travels Portal...
 start "Mandyal Travels Portal" cmd /k "npm run dev"
 timeout /t 5 /nobreak >nul

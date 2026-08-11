@@ -21,6 +21,15 @@ This GitHub repository is the main saved version of the Mandyal Travels portal.
 3. Keep the command window open while using the portal.
 4. The portal opens at `http://localhost:3000`.
 
+## Install future updates on Windows
+
+1. Stop the running portal window.
+2. Double-click `UPDATE-PORTAL.cmd` and leave its window open until it reports success.
+3. Double-click `START-PORTAL.cmd` again.
+
+The update helper never accepts a database data-loss warning automatically. If Prisma asks about
+possible data loss, choose **No** and have the warning reviewed before continuing.
+
 ## Important
 
 - Payment functions are demonstrations until a real payment gateway is connected.
