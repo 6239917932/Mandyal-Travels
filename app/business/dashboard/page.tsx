@@ -53,14 +53,6 @@ export default async function BusinessDashboardPage() {
             orderBy: { version: 'desc' },
             take: 10,
           },
-          travelRequests: {
-            include: {
-              customerTrip: { select: { confirmationCode: true } },
-              hotelBooking: { select: { confirmationCode: true } },
-              requester: { select: { email: true, firstName: true, lastName: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-          },
         },
       },
     },
@@ -69,12 +61,33 @@ export default async function BusinessDashboardPage() {
 
   if (!membership) redirect('/business');
 
-  const travelRequests = membership.organization.travelRequests;
-  const pendingRequests = travelRequests.filter((request) => request.status === 'PENDING').length;
-  const bookedRequests = travelRequests.filter((request) => request.status === 'BOOKED').length;
-  const bookedValue = travelRequests
-    .filter((request) => request.status === 'BOOKED' && request.currency === 'INR')
-    .reduce((total, request) => total + (request.bookingTotalAmount ?? 0), 0);
+  const requestInclude = {
+    customerTrip: { select: { confirmationCode: true } },
+    hotelBooking: { select: { confirmationCode: true } },
+    requester: { select: { email: true, firstName: true, lastName: true } },
+  } as const;
+  const organizationId = membership.organizationId;
+  const [pendingTravelRequests, recentTravelRequests, totalRequests, bookedRequests, bookedValue] =
+    await Promise.all([
+      prisma.businessTravelRequest.findMany({
+        include: requestInclude,
+        orderBy: { createdAt: 'asc' },
+        where: { organizationId, status: 'PENDING' },
+      }),
+      prisma.businessTravelRequest.findMany({
+        include: requestInclude,
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        where: { organizationId, status: { not: 'PENDING' } },
+      }),
+      prisma.businessTravelRequest.count({ where: { organizationId } }),
+      prisma.businessTravelRequest.count({ where: { organizationId, status: 'BOOKED' } }),
+      prisma.businessTravelRequest.aggregate({
+        _sum: { bookingTotalAmount: true },
+        where: { currency: 'INR', organizationId, status: 'BOOKED' },
+      }),
+    ]);
+  const travelRequests = [...pendingTravelRequests, ...recentTravelRequests];
 
   return (
     <section className="account-page">
@@ -115,11 +128,11 @@ export default async function BusinessDashboardPage() {
         </Card>
         <Card>
           <span>Travel requests</span>
-          <strong>{travelRequests.length}</strong>
+          <strong>{totalRequests}</strong>
         </Card>
         <Card>
           <span>Pending approvals</span>
-          <strong>{pendingRequests}</strong>
+          <strong>{pendingTravelRequests.length}</strong>
         </Card>
         <Card>
           <span>Confirmed company journeys</span>
@@ -127,7 +140,7 @@ export default async function BusinessDashboardPage() {
         </Card>
         <Card>
           <span>Booked company value</span>
-          <strong>{formatCurrency(bookedValue)}</strong>
+          <strong>{formatCurrency(bookedValue._sum.bookingTotalAmount ?? 0)}</strong>
         </Card>
       </div>
 
@@ -170,6 +183,13 @@ export default async function BusinessDashboardPage() {
             title: request.title,
           }))}
         />
+        {totalRequests > travelRequests.length ? (
+          <p className="booking-confirmation__note">
+            All pending approvals and the 20 most recent reviewed requests are shown here. Open the{' '}
+            <Link href="/business/reports">company report</Link> for the complete searchable
+            history.
+          </p>
+        ) : null}
       </div>
 
       <div className="account-trips">
