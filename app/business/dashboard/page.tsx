@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { BusinessApprovalQueue } from '@/components/business/BusinessApprovalQueue';
 import { BusinessMemberManager } from '@/components/business/BusinessMemberManager';
 import { BusinessPolicyManager } from '@/components/business/BusinessPolicyManager';
 import { Card } from '@/components/ui/Card';
@@ -32,20 +33,25 @@ export default async function BusinessDashboardPage() {
               user: { select: { email: true, firstName: true, lastName: true, role: true } },
             },
           },
+          travelRequests: {
+            include: {
+              requester: { select: { email: true, firstName: true, lastName: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
       },
     },
-    where: { userId: user.id },
+    where: { role: 'ADMIN', userId: user.id },
   });
 
   if (!membership) redirect('/business');
 
-  const memberIds = membership.organization.members.map((member) => member.userId);
-  const trips = await prisma.customerTrip.findMany({ where: { userId: { in: memberIds } } });
-  const confirmedTrips = trips.filter((trip) => trip.status.toUpperCase() === 'CONFIRMED').length;
-  const bookedValue = trips
-    .filter((trip) => trip.currency === 'INR')
-    .reduce((total, trip) => total + trip.totalAmount, 0);
+  const travelRequests = membership.organization.travelRequests;
+  const pendingRequests = travelRequests.filter((request) => request.status === 'PENDING').length;
+  const approvedValue = travelRequests
+    .filter((request) => request.status === 'APPROVED' && request.currency === 'INR')
+    .reduce((total, request) => total + request.estimatedAmount, 0);
 
   return (
     <section className="account-page">
@@ -61,8 +67,8 @@ export default async function BusinessDashboardPage() {
           <h2>Company travel summary</h2>
         </div>
         <div className="manage-booking__document-actions">
-          <Link className="ui-button ui-button--primary" href="/">
-            Book company travel
+          <Link className="ui-button ui-button--primary" href="/account#company-travel-request">
+            Create company request
           </Link>
           <Link className="ui-button ui-button--secondary" href="/account">
             Personal account settings
@@ -76,17 +82,40 @@ export default async function BusinessDashboardPage() {
           <strong>{membership.organization.members.length}</strong>
         </Card>
         <Card>
-          <span>Company bookings</span>
-          <strong>{trips.length}</strong>
+          <span>Travel requests</span>
+          <strong>{travelRequests.length}</strong>
         </Card>
         <Card>
-          <span>Confirmed journeys</span>
-          <strong>{confirmedTrips}</strong>
+          <span>Pending approvals</span>
+          <strong>{pendingRequests}</strong>
         </Card>
         <Card>
-          <span>Booked value</span>
-          <strong>{formatCurrency(bookedValue)}</strong>
+          <span>Approved travel value</span>
+          <strong>{formatCurrency(approvedValue)}</strong>
         </Card>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Approval center</p>
+          <h2>Company travel requests</h2>
+        </div>
+        <BusinessApprovalQueue
+          requests={travelRequests.map((request) => ({
+            currency: request.currency,
+            endDate: request.endDate,
+            estimatedAmount: request.estimatedAmount,
+            id: request.id,
+            policyReason: request.policyReason,
+            productType: request.productType,
+            requesterEmail: request.requester.email,
+            requesterName: `${request.requester.firstName} ${request.requester.lastName}`,
+            reviewNote: request.reviewNote,
+            startDate: request.startDate,
+            status: request.status,
+            title: request.title,
+          }))}
+        />
       </div>
 
       <div className="account-trips">
