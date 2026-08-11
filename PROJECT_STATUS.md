@@ -9,8 +9,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 
 ### Customer travel
 
-- Customer registration, sign-in, sign-out, secure browser sessions, profile editing, and password
-  changes
+- Customer registration, sign-in, sign-out, secure browser sessions, active-session review and
+  other-device revocation, profile editing, and password changes
 - Persistent booking-email, SMS-alert, WhatsApp-update, and marketing preferences
 - Hotel, flight, bus, and car search and booking demonstrations
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
@@ -54,8 +54,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 
 ### Security and reliability controls
 
-- Password hashing, server-side sessions, secure cookie settings, login/register throttling, and
-  session revocation after a password change
+- Password hashing, server-side sessions, secure cookie settings, login/register throttling,
+  account-scoped active-session controls, and session revocation after a password change
 - Content-security policy, anti-framing, content-type, referrer, permissions, and production HTTPS
   response headers
 - Same-origin enforcement for authenticated API mutations to protect account and booking actions

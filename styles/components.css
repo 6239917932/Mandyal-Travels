@@ -754,6 +754,50 @@
   gap: var(--space-2);
 }
 
+.account-session {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.account-session > div,
+.account-session dl,
+.account-session dl > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.account-session > div span,
+.account-session dt,
+.account-session__actions span {
+  color: var(--color-text-muted);
+}
+
+.account-session dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.account-session dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.account-session__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .account-session,
+  .account-session dl {
+    grid-template-columns: 1fr;
+  }
+}
+
 .account-trip {
   display: grid;
   gap: var(--space-5);

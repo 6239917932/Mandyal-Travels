@@ -60,7 +60,7 @@ export async function deleteCurrentSession() {
   }
 }
 
-export async function getCurrentUser() {
+export async function getCurrentSession() {
   const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
@@ -97,5 +97,9 @@ export async function getCurrentUser() {
       where: { id: session.id, lastSeenAt: session.lastSeenAt },
     });
   }
-  return session.user;
+  return session;
+}
+
+export async function getCurrentUser() {
+  return (await getCurrentSession())?.user ?? null;
 }

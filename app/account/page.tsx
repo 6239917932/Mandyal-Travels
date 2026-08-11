@@ -5,9 +5,10 @@ import { redirect } from 'next/navigation';
 import { AccountProfileForm } from '@/components/account/AccountProfileForm';
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
 import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
+import { SessionManager } from '@/components/account/SessionManager';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
 import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
-import { getCurrentUser } from '@/lib/auth/session';
+import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'My account' };
@@ -88,8 +89,9 @@ function getTripDocumentAction(trip: {
 }
 
 export default async function AccountPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  const currentSession = await getCurrentSession();
+  if (!currentSession) redirect('/login');
+  const { user } = currentSession;
 
   const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
   const [
@@ -102,6 +104,7 @@ export default async function AccountPage() {
     hotelTripCount,
     confirmedHotelTripCount,
     hotelTripValue,
+    activeSessions,
   ] = await Promise.all([
     prisma.customerTrip.findMany({
       where: tripFilter,
@@ -131,6 +134,11 @@ export default async function AccountPage() {
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
       where: { currency: 'INR', guest: { is: { email: user.email } } },
+    }),
+    prisma.userSession.findMany({
+      orderBy: { lastSeenAt: 'desc' },
+      select: { createdAt: true, expiresAt: true, id: true, lastSeenAt: true },
+      where: { expiresAt: { gt: new Date() }, userId: user.id },
     }),
   ]);
 
@@ -252,6 +260,16 @@ export default async function AccountPage() {
       <AccountProfileForm email={user.email} firstName={user.firstName} lastName={user.lastName} />
 
       <PasswordChangeForm />
+
+      <SessionManager
+        sessions={activeSessions.map((session) => ({
+          createdAt: session.createdAt.toISOString(),
+          expiresAt: session.expiresAt.toISOString(),
+          id: session.id,
+          isCurrent: session.id === currentSession.id,
+          lastSeenAt: session.lastSeenAt.toISOString(),
+        }))}
+      />
 
       {organizationMembership ? (
         <section
