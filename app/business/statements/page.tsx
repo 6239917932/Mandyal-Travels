@@ -122,7 +122,7 @@ export default async function BusinessStatementsPage({
                   <span className="account-trip__type">{request.productType}</span>
                   <h2>{request.title}</h2>
                   <p>
-                    {request.requester.firstName} {request.requester.lastName} Â· {reference}
+                    {request.requester.firstName} {request.requester.lastName} · {reference}
                   </p>
                 </div>
                 <div>

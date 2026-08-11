@@ -103,7 +103,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
             <div>
               <h3>{request.title}</h3>
               <p>
-                {request.requesterName} Â· {request.requesterEmail}
+                {request.requesterName} · {request.requesterEmail}
               </p>
               <small>{request.policyReason}</small>
             </div>
@@ -121,7 +121,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
               </div>
               <div>
                 <dt>Decision note</dt>
-                <dd>{request.reviewNote || 'â€”'}</dd>
+                <dd>{request.reviewNote || '—'}</dd>
               </div>
               {request.bookingReference ? (
                 <div>

@@ -163,7 +163,7 @@ export class HotelBookingService {
       {
         amount: roomChargeAmount,
         currency: ratePlan.nightlyRate.currency,
-        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} Ã— ${nights} night${nights === 1 ? '' : 's'}`,
+        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
         type: 'room-charge',
       },
       {
@@ -256,7 +256,7 @@ export class HotelBookingService {
       if (quote.totalAmount < promotionRule.minimumSubtotal) {
         throw new HotelBookingRuleError(
           'MINIMUM_SUBTOTAL_NOT_MET',
-          `This offer requires a minimum booking value of â‚¹${promotionRule.minimumSubtotal.toLocaleString('en-IN')}.`,
+          `This offer requires a minimum booking value of ₹${promotionRule.minimumSubtotal.toLocaleString('en-IN')}.`,
         );
       }
       totalAmount = calculatePromotion(promotionRule, quote.totalAmount).finalTotal;
@@ -662,7 +662,7 @@ export class HotelBookingService {
       {
         amount: roomChargeAmount,
         currency: ratePlan.nightlyRate.currency,
-        label: `${quote.rooms} room${quote.rooms === 1 ? '' : 's'} Ã— ${nights} night${nights === 1 ? '' : 's'}`,
+        label: `${quote.rooms} room${quote.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
         type: 'room-charge',
       },
       {

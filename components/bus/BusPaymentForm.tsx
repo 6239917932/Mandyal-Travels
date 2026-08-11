@@ -147,7 +147,7 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
           promotionCode: promotion?.code,
           confirmationCode,
           status: 'CONFIRMED',
-          title: `${bookingSummary.origin} â†’ ${bookingSummary.destination}`,
+          title: `${bookingSummary.origin} → ${bookingSummary.destination}`,
           subtitle: bookingSummary.operatorName,
           startDate: bookingSummary.travelDate,
           totalAmount: finalTotal,
@@ -211,7 +211,7 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
             onClick={applyPromotion}
             type="button"
           >
-            {validatingPromotion ? 'Checkingâ€¦' : 'Apply code'}
+            {validatingPromotion ? 'Checking…' : 'Apply code'}
           </button>
         </div>
       </div>

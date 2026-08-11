@@ -200,7 +200,7 @@ export function CarPaymentForm({
             onClick={applyPromotion}
             type="button"
           >
-            {validatingPromotion ? 'Checkingâ€¦' : 'Apply code'}
+            {validatingPromotion ? 'Checking…' : 'Apply code'}
           </button>
         </div>
       </div>
