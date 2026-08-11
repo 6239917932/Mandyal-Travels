@@ -471,8 +471,10 @@ export class HotelBookingService {
     return results.filter((item): item is PartnerAmendmentRecord => item !== undefined);
   }
 
-  async listPartnerBookings(): Promise<PartnerBookingRecord[]> {
-    const bookings = await this.bookings.findAll();
+  async listPartnerBookings(
+    options: { skip?: number; take?: number } = {},
+  ): Promise<PartnerBookingRecord[]> {
+    const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
       bookings.map(async (booking) => {
         const [hotel, quote] = await Promise.all([
@@ -503,6 +505,10 @@ export class HotelBookingService {
       }),
     );
     return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
+  }
+
+  async getPartnerBookingSummary() {
+    return this.bookings.getPartnerSummary();
   }
 
   async getPartnerInventory(

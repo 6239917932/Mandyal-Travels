@@ -9,6 +9,15 @@ import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerBookingRecord } from '@/types/commerce';
 
+type PartnerBookingMeta = {
+  capturedInrValue: number;
+  confirmedCount: number;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
 function money(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -20,6 +29,7 @@ function money(amount: number, currency: string): string {
 export default function PartnerBookingsPage() {
   const [partnerKey, setPartnerKey] = useState('');
   const [bookings, setBookings] = useState<PartnerBookingRecord[]>([]);
+  const [meta, setMeta] = useState<PartnerBookingMeta>();
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,22 +44,16 @@ export default function PartnerBookingsPage() {
     );
   }, [bookings, filter]);
 
-  const confirmedCount = bookings.filter((booking) => booking.status === 'confirmed').length;
-  const paidValue = bookings
-    .filter((booking) => booking.paymentStatus === 'captured')
-    .reduce((total, booking) => total + booking.totalAmount, 0);
-
-  async function loadBookings(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function loadPage(page: number) {
     setError(undefined);
     setIsLoading(true);
     try {
-      const response = await fetch('/api/v1/partner/bookings', {
+      const response = await fetch(`/api/v1/partner/bookings?page=${page}&pageSize=50`, {
         headers: { 'x-partner-key': partnerKey },
       });
-      const result = await readJsonResponse<{ data: PartnerBookingRecord[] } | ApiErrorResponse>(
-        response,
-      );
+      const result = await readJsonResponse<
+        { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
+      >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
@@ -59,11 +63,18 @@ export default function PartnerBookingsPage() {
         return;
       }
       setBookings(result.data);
+      setMeta(result.meta);
+      setFilter('');
     } catch {
       setError('The partner service could not be reached.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function loadBookings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await loadPage(1);
   }
 
   return (
@@ -106,25 +117,25 @@ export default function PartnerBookingsPage() {
             ) : null}
           </form>
         </Card>
-        {bookings.length > 0 ? (
+        {meta ? (
           <>
             <div className="partner-bookings__summary">
               <Card>
                 <span>Total bookings</span>
-                <strong>{bookings.length}</strong>
+                <strong>{meta.totalCount}</strong>
               </Card>
               <Card>
                 <span>Confirmed</span>
-                <strong>{confirmedCount}</strong>
+                <strong>{meta.confirmedCount}</strong>
               </Card>
               <Card>
                 <span>Captured value</span>
-                <strong>{money(paidValue, 'INR')}</strong>
+                <strong>{money(meta.capturedInrValue, 'INR')}</strong>
               </Card>
             </div>
             <Card className="partner-bookings__search">
               <Input
-                label="Search bookings"
+                label="Search this page"
                 name="filter"
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Reference, guest, email, or hotel"
@@ -176,6 +187,27 @@ export default function PartnerBookingsPage() {
               ))}
               {filteredBookings.length === 0 ? <p>No bookings match your search.</p> : null}
             </div>
+            <Card className="business-report__pagination">
+              <p>
+                Page {meta.page} of {meta.totalPages} · showing up to {meta.pageSize} bookings
+              </p>
+              <div className="manage-booking__document-actions">
+                <Button
+                  disabled={isLoading || meta.page <= 1}
+                  onClick={() => loadPage(meta.page - 1)}
+                  variant="secondary"
+                >
+                  Previous page
+                </Button>
+                <Button
+                  disabled={isLoading || meta.page >= meta.totalPages}
+                  onClick={() => loadPage(meta.page + 1)}
+                  variant="secondary"
+                >
+                  Next page
+                </Button>
+              </div>
+            </Card>
           </>
         ) : null}
       </div>

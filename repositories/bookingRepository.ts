@@ -27,7 +27,12 @@ export interface BookingRepository {
   ): Promise<HotelBookingRecord | undefined>;
   findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined>;
   findById(id: string): Promise<HotelBookingRecord | undefined>;
-  findAll(): Promise<HotelBookingRecord[]>;
+  findAll(options?: { skip?: number; take?: number }): Promise<HotelBookingRecord[]>;
+  getPartnerSummary(): Promise<{
+    capturedInrValue: number;
+    confirmedCount: number;
+    totalCount: number;
+  }>;
   save(
     booking: HotelBookingRecord,
     idempotencyKey: string,
@@ -85,10 +90,23 @@ export class InMemoryBookingRepository implements BookingRepository {
     return [...this.bookingsByIdempotencyKey.values()].find((booking) => booking.id === id);
   }
 
-  async findAll(): Promise<HotelBookingRecord[]> {
-    return [...this.bookingsByIdempotencyKey.values()].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
+  async findAll(options: { skip?: number; take?: number } = {}): Promise<HotelBookingRecord[]> {
+    const skip = options.skip ?? 0;
+    const take = options.take ?? Number.POSITIVE_INFINITY;
+    return [...this.bookingsByIdempotencyKey.values()]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(skip, skip + take);
+  }
+
+  async getPartnerSummary() {
+    const bookings = [...this.bookingsByIdempotencyKey.values()];
+    return {
+      capturedInrValue: bookings
+        .filter((booking) => booking.currency === 'INR' && booking.paymentStatus === 'captured')
+        .reduce((total, booking) => total + booking.totalAmount, 0),
+      confirmedCount: bookings.filter((booking) => booking.status === 'confirmed').length,
+      totalCount: bookings.length,
+    };
   }
 
   async save(
@@ -202,14 +220,32 @@ export class PrismaBookingRepository implements BookingRepository {
     return booking ? mapBooking(booking) : undefined;
   }
 
-  async findAll(): Promise<HotelBookingRecord[]> {
+  async findAll(options: { skip?: number; take?: number } = {}): Promise<HotelBookingRecord[]> {
     const bookings = await prisma.booking.findMany({
       include: { guest: true, payment: true },
       orderBy: { createdAt: 'desc' },
+      skip: options.skip,
+      take: options.take,
     });
     return bookings
       .map(mapBooking)
       .filter((booking): booking is HotelBookingRecord => booking !== undefined);
+  }
+
+  async getPartnerSummary() {
+    const [totalCount, confirmedCount, capturedValue] = await Promise.all([
+      prisma.booking.count(),
+      prisma.booking.count({ where: { status: 'confirmed' } }),
+      prisma.paymentTransaction.aggregate({
+        _sum: { amount: true },
+        where: { currency: 'INR', status: 'captured' },
+      }),
+    ]);
+    return {
+      capturedInrValue: capturedValue._sum.amount ?? 0,
+      confirmedCount,
+      totalCount,
+    };
   }
 
   async save(
