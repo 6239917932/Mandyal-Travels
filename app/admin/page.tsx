@@ -119,71 +119,97 @@ export default async function AdminPage() {
     }),
   ]);
   const recordedValue = (hotelValue._sum.totalAmount ?? 0) + (tripValue._sum.totalAmount ?? 0);
+  const attentionCount =
+    pendingRequestCount +
+    openCompanySupportCount +
+    openCustomerSupportCount +
+    pendingAmendmentCount;
+  const snapshotLabel = new Intl.DateTimeFormat('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(now);
 
   return (
     <section className="account-page platform-admin-page">
-      <div className="auth-page__intro">
-        <p className="hotel-page__eyebrow">Mandyal operations</p>
-        <h1>Operations console</h1>
-        <p>
-          Platform oversight and customer support servicing for {administrator.firstName}.
-          Organization administrators retain control of company approvals and policies.
-        </p>
-        <form action="/api/v1/auth/logout" method="post">
-          <button className="ui-button ui-button--secondary" type="submit">
-            Sign out
-          </button>
-        </form>
-      </div>
-
-      <Card className="admin-export-form">
-        <div>
-          <strong>Operational travel export</strong>
-          <span>Download hotel, flight, bus, and car records for a selected period.</span>
+      <header className="admin-hero" id="overview">
+        <div className="admin-hero__content">
+          <p className="admin-hero__eyebrow">Secure platform administration</p>
+          <h1>Operations control center</h1>
+          <p>
+            Welcome, {administrator.firstName}. Monitor platform activity, service accounts, and
+            coordinate operational queues from one protected workspace.
+          </p>
+          <div className="admin-hero__actions">
+            <Link className="ui-button ui-button--primary" href="/admin/users">
+              Find a customer
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/organizations">
+              Find an organization
+            </Link>
+            <form action="/api/v1/auth/logout" method="post">
+              <button className="admin-hero__signout" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
-        <form action="/api/v1/admin/reports/export" method="get">
-          <div className="ui-field">
-            <label className="ui-field__label" htmlFor="admin-export-from">
-              From date
-            </label>
-            <input className="ui-input" id="admin-export-from" name="from" type="date" />
-          </div>
-          <div className="ui-field">
-            <label className="ui-field__label" htmlFor="admin-export-to">
-              To date
-            </label>
-            <input className="ui-input" id="admin-export-to" name="to" type="date" />
-          </div>
-          <button className="ui-button ui-button--primary" type="submit">
-            Export travel CSV
-          </button>
-        </form>
-      </Card>
+        <div className="admin-hero__posture">
+          <span className="admin-hero__secure">Platform administrator</span>
+          <strong>
+            {attentionCount === 0
+              ? 'Operations are clear'
+              : `${attentionCount} items need attention`}
+          </strong>
+          <span>Live snapshot: {snapshotLabel}</span>
+          <span>Public administrator registration is disabled.</span>
+        </div>
+      </header>
 
-      <div className="partner-bookings__summary">
-        <Card>
-          <span>Customer accounts</span>
-          <strong>{userCount}</strong>
-        </Card>
-        <Card>
-          <span>Organizations</span>
-          <strong>{organizationCount}</strong>
-        </Card>
-        <Card>
-          <span>Active sessions</span>
-          <strong>{activeSessionCount}</strong>
-        </Card>
-        <Card>
-          <span>Travel records</span>
-          <strong>{hotelBookingCount + customerTripCount}</strong>
-        </Card>
-        <Card>
+      <nav aria-label="Operations console sections" className="admin-section-nav">
+        <a href="#overview">Overview</a>
+        <a href="#directories">Directories</a>
+        <a href="#queues">Queues</a>
+        <a href="#reporting">Reporting</a>
+        <a href="#recent-activity">Recent activity</a>
+      </nav>
+
+      <div className="admin-overview-grid">
+        <Card className="admin-metric admin-metric--primary">
           <span>Recorded confirmed value</span>
           <strong>{formatCurrency(recordedValue)}</strong>
+          <small>Confirmed hotel, flight, bus, and car records</small>
+        </Card>
+        <Card className="admin-metric">
+          <span>Customer accounts</span>
+          <strong>{userCount.toLocaleString('en-IN')}</strong>
+          <small>{activeSessionCount} currently active sessions</small>
+        </Card>
+        <Card className="admin-metric">
+          <span>Organizations</span>
+          <strong>{organizationCount.toLocaleString('en-IN')}</strong>
+          <small>Corporate workspaces under servicing</small>
+        </Card>
+        <Card className="admin-metric">
+          <span>Travel records</span>
+          <strong>{(hotelBookingCount + customerTripCount).toLocaleString('en-IN')}</strong>
+          <small>Across all supported travel products</small>
+        </Card>
+        <Card
+          className={
+            attentionCount > 0
+              ? 'admin-metric admin-metric--attention'
+              : 'admin-metric admin-metric--clear'
+          }
+        >
+          <span>Open operational work</span>
+          <strong>{attentionCount.toLocaleString('en-IN')}</strong>
+          <small>
+            {attentionCount > 0 ? 'Review the queues below' : 'No queued items at this snapshot'}
+          </small>
         </Card>
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="directories">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Account servicing</p>
           <h2>Platform directories</h2>
@@ -207,7 +233,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="queues">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Operational queues</p>
           <h2>Items needing attention</h2>
@@ -231,6 +257,33 @@ export default async function AdminPage() {
           </Card>
         </div>
       </div>
+
+      <Card className="admin-export-form" id="reporting">
+        <div>
+          <p className="hotel-page__eyebrow">Reporting</p>
+          <strong>Operational travel export</strong>
+          <span>
+            Download a bounded CSV of hotel, flight, bus, and car records for a selected period.
+          </span>
+        </div>
+        <form action="/api/v1/admin/reports/export" method="get">
+          <div className="ui-field">
+            <label className="ui-field__label" htmlFor="admin-export-from">
+              From date
+            </label>
+            <input className="ui-input" id="admin-export-from" name="from" type="date" />
+          </div>
+          <div className="ui-field">
+            <label className="ui-field__label" htmlFor="admin-export-to">
+              To date
+            </label>
+            <input className="ui-input" id="admin-export-to" name="to" type="date" />
+          </div>
+          <button className="ui-button ui-button--primary" type="submit">
+            Export travel CSV
+          </button>
+        </form>
+      </Card>
 
       <div className="account-trips">
         <div className="account-trips__heading">
@@ -484,7 +537,7 @@ export default async function AdminPage() {
         </Card>
       </div>
 
-      <div className="account-trips">
+      <div className="account-trips" id="recent-activity">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Recent activity</p>
           <h2>Latest confirmed and changed journeys</h2>
@@ -521,8 +574,14 @@ export default async function AdminPage() {
                       <span>{booking.guest?.email ?? '—'}</span>
                     </td>
                     <td>
-                      <strong>{booking.quote.checkInDate}</strong>
-                      <span>to {booking.quote.checkOutDate}</span>
+                      {booking.quote.checkInDate && booking.quote.checkOutDate ? (
+                        <>
+                          <strong>{booking.quote.checkInDate}</strong>
+                          <span>to {booking.quote.checkOutDate}</span>
+                        </>
+                      ) : (
+                        <span>Dates unavailable for this older record</span>
+                      )}
                     </td>
                     <td>
                       <strong className={statusClass(booking.status)}>{booking.status}</strong>

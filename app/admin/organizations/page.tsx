@@ -39,7 +39,9 @@ function formatCurrency(amount: number | null) {
 }
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(
+    value,
+  );
 }
 
 export default async function AdminOrganizationsPage({
@@ -132,7 +134,12 @@ export default async function AdminOrganizationsPage({
               {organizations.map((organization) => (
                 <tr key={organization.id}>
                   <td>
-                    <strong>{organization.name}</strong>
+                    <Link
+                      className="admin-directory-link"
+                      href={`/admin/organizations/${organization.id}`}
+                    >
+                      {organization.name}
+                    </Link>
                     <span>{organization.legalName ?? organization.type}</span>
                     {organization.taxRegistrationId ? (
                       <span>Tax ID: {organization.taxRegistrationId}</span>
@@ -151,7 +158,9 @@ export default async function AdminOrganizationsPage({
                     <span>{organization._count.supportCases} support cases</span>
                   </td>
                   <td>
-                    <strong>{organization.approvalRequired ? 'Approval required' : 'Auto-approved'}</strong>
+                    <strong>
+                      {organization.approvalRequired ? 'Approval required' : 'Auto-approved'}
+                    </strong>
                     <span>Cabin: {organization.defaultCabinClass}</span>
                     <span>Limit: {formatCurrency(organization.maximumTripAmount)}</span>
                   </td>

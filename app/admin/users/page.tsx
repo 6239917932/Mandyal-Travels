@@ -30,7 +30,9 @@ function pagePath(page: number, query: string) {
 }
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(
+    value,
+  );
 }
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
@@ -132,9 +134,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                 return (
                   <tr key={user.id}>
                     <td>
-                      <strong>
+                      <Link className="admin-directory-link" href={`/admin/users/${user.id}`}>
                         {user.firstName} {user.lastName}
-                      </strong>
+                      </Link>
                       <span>{user.email}</span>
                     </td>
                     <td>
@@ -151,10 +153,14 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                     </td>
                     <td>
                       <strong>{sessionActive ? 'Active' : 'No active latest session'}</strong>
-                      <span>{latestSession ? formatDate(latestSession.createdAt) : 'Never signed in'}</span>
+                      <span>
+                        {latestSession ? formatDate(latestSession.createdAt) : 'Never signed in'}
+                      </span>
                     </td>
                     <td>
-                      <time dateTime={user.createdAt.toISOString()}>{formatDate(user.createdAt)}</time>
+                      <time dateTime={user.createdAt.toISOString()}>
+                        {formatDate(user.createdAt)}
+                      </time>
                     </td>
                   </tr>
                 );

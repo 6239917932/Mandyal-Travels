@@ -19,7 +19,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking-linked customer support cases with personal status tracking and operations resolution
 - Bounded personal JSON archive for profile, preferences, bookings, company requests, and support
   history without passwords, session tokens, or card data
-- Platform-admin user and organization directories with bounded search and pagination for servicing
+- Platform-admin user and organization directories with bounded search, pagination, and protected
+  read-only servicing records for profile, access, travel, support, policy, and audit context
 - Account security activity history for sign-ins, profile/password/preference changes, and session revocation
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
@@ -39,8 +40,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 
 ### Partner and operational foundation
 
-- Separately provisioned, read-only platform operations console with customer, organization,
-  session, booking, company approval, support, and hotel amendment oversight
+- Separately provisioned, read-only platform operations console with an executive activity snapshot,
+  quick navigation, and customer, organization, session, booking, company approval, support, and
+  hotel amendment oversight
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
 - Customer support servicing with required resolution notes and append-only case events
