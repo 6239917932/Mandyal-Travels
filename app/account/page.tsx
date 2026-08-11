@@ -412,6 +412,7 @@ export default async function AccountPage() {
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Your journeys</p>
           <h2>My trips</h2>
+          <Link href="/account/trips">View complete travel history</Link>
         </div>
 
         {trips.length === 0 ? (
@@ -423,8 +424,8 @@ export default async function AccountPage() {
           <>
             {totalTrips > RECENT_ITEM_LIMIT ? (
               <div className="business-request__guidance">
-                Showing your latest {RECENT_ITEM_LIMIT} of {totalTrips} bookings. Use Manage booking
-                to open an older trip by its reference.
+                Showing your latest {RECENT_ITEM_LIMIT} of {totalTrips} bookings. Open the complete
+                travel history to browse older journeys.
               </div>
             ) : null}
             <div className="account-trips__list">
