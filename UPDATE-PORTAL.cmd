@@ -2,6 +2,16 @@
 setlocal
 cd /d "%~dp0"
 
+echo Checking for an older Mandyal Travels server...
+powershell -NoProfile -Command "$listeners = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; foreach ($listener in $listeners) { $process = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue; if ($process -and $process.ProcessName -eq 'node') { Stop-Process -Id $process.Id -Force -ErrorAction Stop } }"
+if errorlevel 1 (
+  echo.
+  echo The running portal could not be stopped safely.
+  echo Close the black Mandyal Travels server window, then run UPDATE-PORTAL.cmd again.
+  pause
+  exit /b 1
+)
+
 echo Updating Mandyal Travels Portal from GitHub...
 git pull --ff-only
 if errorlevel 1 goto :failed
