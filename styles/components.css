@@ -871,6 +871,62 @@
   background: var(--color-brand-50);
 }
 
+.partner-application__textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+.partner-application__status {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.supplier-admin__grid,
+.partner-fleet__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  margin: 1rem 0 2.5rem;
+}
+.partner-review__controls {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+}
+.supplier-form {
+  display: grid;
+  gap: 1.25rem;
+}
+.supplier-form__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.supplier-form__check {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+}
+.partner-fleet__grid {
+  margin-top: 1.5rem;
+}
+.partner-fleet__grid .ui-card {
+  display: grid;
+  gap: 1rem;
+}
+.supplier-assignment {
+  align-items: end;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 1rem 0;
+}
+@media (max-width: 720px) {
+  .supplier-form__grid,
+  .supplier-assignment {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-overview-grid,
 .admin-record-summary {
   display: grid;

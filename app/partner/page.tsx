@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 import { hotelBookingService } from '@/services/hotelBookingService';
+import { partnerOperationsService } from '@/services/partnerOperationsService';
 
 export const metadata: Metadata = { title: 'Partner workspace' };
 
@@ -41,11 +42,23 @@ export default async function PartnerWorkspacePage() {
           take: 8,
         },
         properties: { orderBy: { displayName: 'asc' }, where: { status: 'ACTIVE' } },
+        vehicles: {
+          include: {
+            inventoryDays: {
+              where: { serviceDate: { gte: new Date().toISOString().slice(0, 10) } },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
       where: { id: access.partnerId },
     }),
-    hotelBookingService.getPartnerBookingSummary(access.allowedHotelSlugs),
-    hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs),
+    access.partnerType === 'HOTEL'
+      ? hotelBookingService.getPartnerBookingSummary(access.allowedHotelSlugs)
+      : partnerOperationsService.getVehicleReservationSummary(access.partnerId),
+    access.partnerType === 'HOTEL'
+      ? hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs)
+      : Promise.resolve(0),
   ]);
   if (!partner) redirect('/partners');
 
@@ -56,14 +69,21 @@ export default async function PartnerWorkspacePage() {
           <p className="admin-hero__eyebrow">Secure supplier workspace</p>
           <h1>{partner.name}</h1>
           <p>
-            Welcome, {user.firstName}. Manage only the properties assigned to this supplier account.
+            Welcome, {user.firstName}. Manage only the inventory assigned to this verified supplier
+            account.
           </p>
           <div className="admin-hero__actions">
-            <Link className="ui-button ui-button--primary" href="/partner/bookings">
-              Open bookings
+            <Link
+              className="ui-button ui-button--primary"
+              href={partner.type === 'CAR' ? '/partner/reservations' : '/partner/bookings'}
+            >
+              {partner.type === 'CAR' ? 'Open reservations' : 'Open bookings'}
             </Link>
-            <Link className="ui-button ui-button--secondary" href="/partner/inventory">
-              Manage inventory
+            <Link
+              className="ui-button ui-button--secondary"
+              href={partner.type === 'CAR' ? '/cars' : '/partner/inventory'}
+            >
+              {partner.type === 'CAR' ? 'View live car search' : 'Manage room calendar'}
             </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
@@ -79,23 +99,33 @@ export default async function PartnerWorkspacePage() {
               ? `${pendingAmendments} amendments need review`
               : 'Operations are clear'}
           </strong>
-          <span>{partner.properties.length} assigned properties</span>
+          <span>
+            {partner.type === 'CAR'
+              ? `${partner.vehicles.length} fleet records`
+              : `${partner.properties.length} assigned properties`}
+          </span>
           <span>Access is restricted to named partner accounts.</span>
         </div>
       </header>
 
       <div className="partner-bookings__summary">
         <Card>
-          <span>Assigned properties</span>
-          <strong>{partner.properties.length}</strong>
+          <span>{partner.type === 'CAR' ? 'Fleet records' : 'Assigned properties'}</span>
+          <strong>
+            {partner.type === 'CAR' ? partner.vehicles.length : partner.properties.length}
+          </strong>
         </Card>
         <Card>
-          <span>Total bookings</span>
-          <strong>{bookingSummary.totalCount}</strong>
+          <span>{partner.type === 'CAR' ? 'Reservations' : 'Total bookings'}</span>
+          <strong>
+            {bookingSummary.totalCount}
+          </strong>
         </Card>
         <Card>
-          <span>Confirmed stays</span>
-          <strong>{bookingSummary.confirmedCount}</strong>
+          <span>{partner.type === 'CAR' ? 'Confirmed rentals' : 'Confirmed stays'}</span>
+          <strong>
+            {bookingSummary.confirmedCount}
+          </strong>
         </Card>
         <Card>
           <span>Captured value</span>
@@ -107,46 +137,98 @@ export default async function PartnerWorkspacePage() {
         </Card>
       </div>
 
-      <div className="partner-workspace__links">
-        <Card>
-          <p className="hotel-page__eyebrow">Reservations</p>
-          <h2>Booking operations</h2>
-          <p>Review guests, stay dates, allocation, booking state, and payment status.</p>
-          <Link className="home-card__link" href="/partner/bookings">
-            Open booking dashboard
-          </Link>
-        </Card>
-        <Card>
-          <p className="hotel-page__eyebrow">Availability</p>
-          <h2>Room inventory</h2>
-          <p>Monitor allocations and apply an audited stop-sell or inventory limit.</p>
-          <Link className="home-card__link" href="/partner/inventory">
-            Open inventory dashboard
-          </Link>
-        </Card>
-        <Card>
-          <p className="hotel-page__eyebrow">Guest changes</p>
-          <h2>Amendment queue</h2>
-          <p>Approve or decline date-change requests after availability and price checks.</p>
-          <Link className="home-card__link" href="/partner/amendments">
-            Review amendments
-          </Link>
-        </Card>
-      </div>
+      {partner.type === 'HOTEL' ? (
+        <div className="partner-workspace__links">
+          <Card>
+            <p className="hotel-page__eyebrow">Reservations</p>
+            <h2>Booking operations</h2>
+            <p>Review guests, stay dates, allocation, booking state, and payment status.</p>
+            <Link className="home-card__link" href="/partner/bookings">
+              Open booking dashboard
+            </Link>
+          </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Availability</p>
+            <h2>Room inventory</h2>
+            <p>Monitor allocations and apply an audited stop-sell or inventory limit.</p>
+            <Link className="home-card__link" href="/partner/inventory">
+              Open inventory dashboard
+            </Link>
+          </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Guest changes</p>
+            <h2>Amendment queue</h2>
+            <p>Approve or decline date-change requests after availability and price checks.</p>
+            <Link className="home-card__link" href="/partner/amendments">
+              Review amendments
+            </Link>
+          </Card>
+        </div>
+      ) : (
+        <div className="partner-workspace__links">
+          <Card>
+            <p className="hotel-page__eyebrow">Reservations</p>
+            <h2>Rental operations</h2>
+            <p>Review confirmed drivers, routes, rental dates, vehicle assignment, and value.</p>
+            <Link className="home-card__link" href="/partner/reservations">
+              Open reservations
+            </Link>
+          </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Vehicles</p>
+            <h2>Fleet catalogue</h2>
+            <p>Add vehicles and operating routes with commercial terms and capacity.</p>
+            <Link className="home-card__link" href="/partner/fleet">
+              Manage fleet
+            </Link>
+          </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Yield and availability</p>
+            <h2>Daily fleet calendar</h2>
+            <p>Override daily rates, available units, and stop-sales for maintenance.</p>
+            <Link className="home-card__link" href="/partner/fleet">
+              Open calendar
+            </Link>
+          </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Distribution</p>
+            <h2>Live customer channel</h2>
+            <p>Review how active, available direct fleet offers appear to customers.</p>
+            <Link className="home-card__link" href="/cars">
+              View car search
+            </Link>
+          </Card>
+        </div>
+      )}
 
       <div className="partner-workspace__columns">
         <section>
           <p className="hotel-page__eyebrow">Property scope</p>
-          <h2>Assigned hotels</h2>
+          <h2>{partner.type === 'CAR' ? 'Published fleet' : 'Assigned hotels'}</h2>
           <div className="partner-workspace__properties">
-            {partner.properties.map((property) => (
-              <Card key={property.id}>
-                <strong>{property.displayName}</strong>
-                <span>{property.hotelSlug}</span>
-                <small>Active inventory access</small>
-              </Card>
-            ))}
-            {partner.properties.length === 0 ? <Card>No properties are assigned.</Card> : null}
+            {partner.type === 'HOTEL'
+              ? partner.properties.map((property) => (
+                  <Card key={property.id}>
+                    <strong>{property.displayName}</strong>
+                    <span>{property.hotelSlug}</span>
+                    <small>Active inventory access</small>
+                  </Card>
+                ))
+              : partner.vehicles.map((vehicle) => (
+                  <Card key={vehicle.id}>
+                    <strong>{vehicle.vehicleName}</strong>
+                    <span>
+                      {vehicle.pickupLocation} → {vehicle.dropoffLocation}
+                    </span>
+                    <small>
+                      {vehicle.totalUnits} units · ₹{vehicle.pricePerDay.toLocaleString('en-IN')} /
+                      day
+                    </small>
+                  </Card>
+                ))}
+            {partner.properties.length === 0 && partner.vehicles.length === 0 ? (
+              <Card>No inventory has been published.</Card>
+            ) : null}
           </div>
         </section>
         <section>

@@ -1,6 +1,8 @@
 import { readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
+import { partnerOperationsService } from '@/services/partnerOperationsService';
+import { prisma } from '@/lib/prisma';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 function errorResponse(code: string, message: string, status: number): Response {
@@ -55,25 +57,67 @@ export async function POST(request: Request): Promise<Response> {
       400,
     );
   }
+  const roomTypeId = values.roomTypeId;
+  const checkInDate = values.checkInDate;
+  const checkOutDate = values.checkOutDate;
+  const availableRooms = values.availableRooms;
+  const note = values.note.trim();
+  const nightlyRate =
+    typeof values.nightlyRate === 'number' && values.nightlyRate > 0
+      ? values.nightlyRate
+      : undefined;
+  const stopSell = values.stopSell === true || availableRooms === 0;
   try {
     const data = await hotelBookingService.setPartnerInventoryOverride(
       {
-        availableRooms: values.availableRooms,
-        checkInDate: values.checkInDate,
-        checkOutDate: values.checkOutDate,
-        note: values.note.trim(),
-        roomTypeId: values.roomTypeId,
+        availableRooms,
+        checkInDate,
+        checkOutDate,
+        note,
+        roomTypeId,
       },
       access.allowedHotelSlugs,
     );
+    if (access.partnerId) {
+      const hotels = await Promise.all(
+        (access.allowedHotelSlugs ?? []).map((slug) =>
+          hotelBookingService
+            .getPartnerInventory(checkInDate, checkOutDate, [slug])
+            .then((rooms) => ({ rooms, slug })),
+        ),
+      );
+      const assigned = hotels.find((hotel) =>
+        hotel.rooms.some((room) => room.roomTypeId === roomTypeId),
+      );
+      const property = assigned
+        ? await prisma.partnerProperty.findFirst({
+            where: { hotelSlug: assigned.slug, partnerId: access.partnerId, status: 'ACTIVE' },
+          })
+        : null;
+      if (property) {
+        await partnerOperationsService.setHotelCalendar({
+          availableRooms,
+          endDate: checkOutDate,
+          nightlyRate,
+          note,
+          partnerId: access.partnerId,
+          propertyId: property.id,
+          roomTypeId,
+          startDate: checkInDate,
+          stopSell,
+        });
+      }
+    }
     await recordPartnerAudit(access, {
       action: 'INVENTORY_OVERRIDE_UPDATED',
-      entityId: values.roomTypeId,
+      entityId: roomTypeId,
       entityType: 'ROOM_TYPE',
       metadata: {
-        availableRooms: values.availableRooms,
-        checkInDate: values.checkInDate,
-        checkOutDate: values.checkOutDate,
+        availableRooms,
+        checkInDate,
+        checkOutDate,
+        nightlyRate,
+        stopSell,
       },
       summary: 'Room inventory limit updated.',
     });

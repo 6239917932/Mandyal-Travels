@@ -63,7 +63,11 @@ export default function PartnerInventoryPage() {
           checkInDate,
           checkOutDate,
           note: String(formData.get('note') ?? ''),
+          nightlyRate: formData.get('nightlyRate')
+            ? Number(formData.get('nightlyRate'))
+            : undefined,
           roomTypeId: String(formData.get('roomTypeId') ?? ''),
+          stopSell: formData.get('stopSell') === 'on',
         }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
@@ -145,7 +149,7 @@ export default function PartnerInventoryPage() {
         </Card>
         {inventory.length > 0 ? (
           <Card className="partner-inventory__override-card">
-            <h2>Set inventory limit</h2>
+            <h2>Room, rate, and stop-sell calendar</h2>
             <p>
               Use zero to stop sales. The limit applies to every night in the selected date range.
             </p>
@@ -170,6 +174,13 @@ export default function PartnerInventoryPage() {
                   type="number"
                 />
                 <Input
+                  label="Nightly rate (INR, optional)"
+                  min={100}
+                  name="nightlyRate"
+                  placeholder="Keep existing rate"
+                  type="number"
+                />
+                <Input
                   label="Reason"
                   maxLength={200}
                   minLength={3}
@@ -178,8 +189,12 @@ export default function PartnerInventoryPage() {
                   required
                 />
               </div>
+              <label className="supplier-form__check">
+                <input name="stopSell" type="checkbox" /> Stop selling this room for the selected
+                dates
+              </label>
               <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
-                Save inventory limit
+                Save PMS calendar
               </Button>
             </form>
           </Card>

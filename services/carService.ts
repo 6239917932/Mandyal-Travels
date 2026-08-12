@@ -1,5 +1,5 @@
 import {
-  FixtureCarSupplierAdapter,
+  CompositeCarSupplierAdapter,
   type CarSupplierAdapter,
 } from '@/repositories/carOfferRepository';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
@@ -15,7 +15,7 @@ const rentalDays = (pickupDate: string, dropoffDate: string) =>
   );
 
 export class CarService {
-  constructor(private readonly supplier: CarSupplierAdapter = new FixtureCarSupplierAdapter()) {}
+  constructor(private readonly supplier: CarSupplierAdapter = new CompositeCarSupplierAdapter()) {}
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
     if (criteria.dropoffDate <= criteria.pickupDate)
       throw new Error('Drop-off date must be after pickup date.');

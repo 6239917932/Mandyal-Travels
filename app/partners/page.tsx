@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
-import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = { title: 'Supply partners' };
 
@@ -41,12 +40,9 @@ export default function PartnersPage() {
             documents, reporting, and settlement visibility.
           </p>
           <div className="home-hero__actions">
-            <a
-              className="home-link-button home-link-button--primary"
-              href={`mailto:${siteConfig.supportEmail}?subject=Partner%20onboarding%20request`}
-            >
+            <Link className="home-link-button home-link-button--primary" href="/partners/apply">
               Request partner onboarding
-            </a>
+            </Link>
             <Link className="home-link-button home-link-button--secondary" href="/partner">
               Open partner operations
             </Link>

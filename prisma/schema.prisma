@@ -8,49 +8,54 @@ datasource db {
 }
 
 model User {
-  id                      String                      @id @default(cuid())
-  email                   String                      @unique
-  passwordHash            String
-  firstName               String
-  lastName                String
-  role                    String                      @default("CUSTOMER")
-  emailVerifiedAt         DateTime?
-  marketingConsentAt      DateTime?
-  bookingEmailEnabled     Boolean                     @default(true)
-  smsAlertsEnabled        Boolean                     @default(false)
-  whatsappAlertsEnabled   Boolean                     @default(false)
-  createdAt               DateTime                    @default(now())
-  updatedAt               DateTime                    @updatedAt
-  sessions                UserSession[]
-  securityEvents          AccountSecurityEvent[]
-  trips                   CustomerTrip[]
-  organizationMemberships OrganizationMember[]
-  businessTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelRequester")
-  reviewedTravelRequests  BusinessTravelRequest[]     @relation("BusinessTravelReviewer")
-  businessAuditEntries    BusinessAuditLog[]          @relation("BusinessAuditActor")
-  businessSupportCases    BusinessSupportCase[]       @relation("BusinessSupportCaseCreator")
-  customerSupportCases    CustomerSupportCase[]       @relation("CustomerSupportCaseCreator")
-  reviewedCustomerCases   CustomerSupportCase[]       @relation("CustomerSupportCaseReviewer")
-  customerSupportEvents   CustomerSupportCaseEvent[]  @relation("CustomerSupportCaseEventActor")
-  sentBusinessInvitations OrganizationInvitation[]    @relation("BusinessInvitationSender")
-  acceptedInvitations     OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
-  createdPolicyVersions   OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
-  supplyPartnerMemberships SupplyPartnerMember[]
-  partnerAuditEntries      PartnerAuditLog[]           @relation("PartnerAuditActor")
+  id                          String                      @id @default(cuid())
+  email                       String                      @unique
+  passwordHash                String
+  firstName                   String
+  lastName                    String
+  role                        String                      @default("CUSTOMER")
+  emailVerifiedAt             DateTime?
+  marketingConsentAt          DateTime?
+  bookingEmailEnabled         Boolean                     @default(true)
+  smsAlertsEnabled            Boolean                     @default(false)
+  whatsappAlertsEnabled       Boolean                     @default(false)
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @updatedAt
+  sessions                    UserSession[]
+  securityEvents              AccountSecurityEvent[]
+  trips                       CustomerTrip[]
+  organizationMemberships     OrganizationMember[]
+  businessTravelRequests      BusinessTravelRequest[]     @relation("BusinessTravelRequester")
+  reviewedTravelRequests      BusinessTravelRequest[]     @relation("BusinessTravelReviewer")
+  businessAuditEntries        BusinessAuditLog[]          @relation("BusinessAuditActor")
+  businessSupportCases        BusinessSupportCase[]       @relation("BusinessSupportCaseCreator")
+  customerSupportCases        CustomerSupportCase[]       @relation("CustomerSupportCaseCreator")
+  reviewedCustomerCases       CustomerSupportCase[]       @relation("CustomerSupportCaseReviewer")
+  customerSupportEvents       CustomerSupportCaseEvent[]  @relation("CustomerSupportCaseEventActor")
+  sentBusinessInvitations     OrganizationInvitation[]    @relation("BusinessInvitationSender")
+  acceptedInvitations         OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
+  createdPolicyVersions       OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
+  supplyPartnerMemberships    SupplyPartnerMember[]
+  partnerAuditEntries         PartnerAuditLog[]           @relation("PartnerAuditActor")
+  partnerApplications         PartnerApplication[]        @relation("PartnerApplicationApplicant")
+  reviewedPartnerApplications PartnerApplication[]        @relation("PartnerApplicationReviewer")
 }
 
 model SupplyPartner {
-  id           String                @id @default(cuid())
-  name         String
-  type         String                @default("HOTEL")
-  status       String                @default("ACTIVE")
-  contactEmail String?
-  contactPhone String?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  members      SupplyPartnerMember[]
-  properties   PartnerProperty[]
-  auditEntries PartnerAuditLog[]
+  id                  String                      @id @default(cuid())
+  name                String
+  type                String                      @default("HOTEL")
+  status              String                      @default("ACTIVE")
+  contactEmail        String?
+  contactPhone        String?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  members             SupplyPartnerMember[]
+  properties          PartnerProperty[]
+  auditEntries        PartnerAuditLog[]
+  applications        PartnerApplication[]
+  vehicles            PartnerVehicle[]
+  vehicleReservations PartnerVehicleReservation[]
 
   @@index([status, createdAt])
 }
@@ -69,16 +74,130 @@ model SupplyPartnerMember {
 }
 
 model PartnerProperty {
-  id          String        @id @default(cuid())
-  partnerId   String
-  hotelSlug   String        @unique
-  displayName String
-  status      String        @default("ACTIVE")
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  partner     SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  id            String                     @id @default(cuid())
+  partnerId     String
+  hotelSlug     String                     @unique
+  displayName   String
+  status        String                     @default("ACTIVE")
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  partner       SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  inventoryDays PartnerHotelInventoryDay[]
 
   @@index([partnerId, status])
+}
+
+model PartnerApplication {
+  id               String         @id @default(cuid())
+  applicantUserId  String
+  reviewedByUserId String?
+  partnerId        String?
+  businessName     String
+  partnerType      String
+  contactName      String
+  contactEmail     String
+  contactPhone     String
+  city             String
+  inventorySummary String
+  status           String         @default("PENDING")
+  reviewNote       String?
+  reviewedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  applicant        User           @relation("PartnerApplicationApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
+  reviewedBy       User?          @relation("PartnerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  partner          SupplyPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([applicantUserId, createdAt])
+}
+
+model PartnerHotelInventoryDay {
+  id             String          @id @default(cuid())
+  propertyId     String
+  roomTypeId     String
+  stayDate       String
+  availableRooms Int
+  nightlyRate    Int?
+  currency       String          @default("INR")
+  stopSell       Boolean         @default(false)
+  note           String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  property       PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, roomTypeId, stayDate])
+  @@index([propertyId, stayDate])
+}
+
+model PartnerVehicle {
+  id                 String                       @id @default(cuid())
+  partnerId          String
+  code               String                       @unique
+  vehicleName        String
+  category           String
+  registrationNumber String?
+  transmission       String
+  seats              Int
+  bags               Int
+  fuelPolicy         String
+  mileagePolicy      String
+  cancellationPolicy String
+  featuresJson       String                       @default("[]")
+  pickupLocation     String
+  dropoffLocation    String
+  pricePerDay        Int
+  currency           String                       @default("INR")
+  totalUnits         Int                          @default(1)
+  status             String                       @default("ACTIVE")
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  partner            SupplyPartner                @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  inventoryDays      PartnerVehicleInventoryDay[]
+  reservations       PartnerVehicleReservation[]
+
+  @@index([partnerId, status])
+  @@index([pickupLocation, dropoffLocation, status])
+}
+
+model PartnerVehicleInventoryDay {
+  id             String         @id @default(cuid())
+  vehicleId      String
+  serviceDate    String
+  availableUnits Int
+  pricePerDay    Int?
+  stopSell       Boolean        @default(false)
+  note           String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  vehicle        PartnerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, serviceDate])
+  @@index([vehicleId, serviceDate])
+}
+
+model PartnerVehicleReservation {
+  id               String         @id @default(cuid())
+  confirmationCode String         @unique
+  partnerId        String
+  vehicleId        String
+  customerTripId   String         @unique
+  customerName     String
+  customerEmail    String
+  pickupDate       String
+  dropoffDate      String
+  units            Int            @default(1)
+  totalAmount      Int
+  currency         String         @default("INR")
+  status           String         @default("CONFIRMED")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  partner          SupplyPartner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  vehicle          PartnerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  customerTrip     CustomerTrip   @relation(fields: [customerTripId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId, status, createdAt])
+  @@index([vehicleId, pickupDate, dropoffDate, status])
 }
 
 model PartnerAuditLog {
@@ -294,25 +413,26 @@ model BusinessTravelRequest {
 }
 
 model CustomerTrip {
-  id                      String                 @id @default(cuid())
+  id                      String                     @id @default(cuid())
   userId                  String?
   email                   String
   productType             String
-  confirmationCode        String                 @unique
+  confirmationCode        String                     @unique
   status                  String
   title                   String
   subtitle                String
   startDate               String
   endDate                 String?
   totalAmount             Int
-  currency                String                 @default("INR")
+  currency                String                     @default("INR")
   detailsJson             String
-  businessTravelRequestId String?                @unique
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
-  user                    User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
+  businessTravelRequestId String?                    @unique
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+  user                    User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  businessTravelRequest   BusinessTravelRequest?     @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   supportCases            CustomerSupportCase[]
+  vehicleReservation      PartnerVehicleReservation?
 
   @@index([userId, createdAt])
   @@index([email, createdAt])

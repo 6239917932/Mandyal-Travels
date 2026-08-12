@@ -7,6 +7,7 @@ import {
   inventoryOverrideRepository,
   type InventoryOverrideRepository,
 } from '@/repositories/inventoryOverrideRepository';
+import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
 import type {
   Hotel,
   HotelRatePlan,
@@ -104,7 +105,7 @@ export class HotelService {
               return false;
             }
 
-            const [reservedLocks, overrideLimit] = await Promise.all([
+            const [reservedLocks, overrideLimit, partnerControl] = await Promise.all([
               this.locks.findReservedByRoomType(
                 room.roomTypeId,
                 criteria.checkInDate,
@@ -115,19 +116,43 @@ export class HotelService {
                 criteria.checkInDate,
                 criteria.checkOutDate,
               ),
+              partnerHotelInventoryRepository.findStayControl(
+                room.roomTypeId,
+                criteria.checkInDate,
+                criteria.checkOutDate,
+              ),
             ]);
             const reservedRooms = reservedLocks.reduce((total, lock) => total + lock.quantity, 0);
             const effectiveInventory = Math.min(
               room.inventoryCount,
               overrideLimit ?? room.inventoryCount,
+              partnerControl.availableRooms ?? room.inventoryCount,
             );
             return effectiveInventory - reservedRooms >= criteria.rooms;
           }),
         );
 
-        const availableRatePlans = hotel.rooms
-          .filter((_room, index) => availability[index])
-          .flatMap((room) => room.ratePlans);
+        const availableRatePlans = await Promise.all(
+          hotel.rooms
+            .filter((_room, index) => availability[index])
+            .flatMap((room) =>
+              room.ratePlans.map(async (ratePlan) => {
+                const control = await partnerHotelInventoryRepository.findStayControl(
+                  room.roomTypeId,
+                  criteria.checkInDate,
+                  criteria.checkOutDate,
+                  ratePlan.nightlyRate.amount,
+                );
+                return {
+                  ...ratePlan,
+                  nightlyRate: {
+                    ...ratePlan.nightlyRate,
+                    amount: Math.round(control.averageNightlyRate ?? ratePlan.nightlyRate.amount),
+                  },
+                };
+              }),
+            ),
+        );
 
         const lowestRatePlan = findLowestRatePlan(availableRatePlans);
 

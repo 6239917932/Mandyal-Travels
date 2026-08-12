@@ -154,6 +154,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/organizations">
               Find an organization
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/partners">
+              Manage suppliers
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out

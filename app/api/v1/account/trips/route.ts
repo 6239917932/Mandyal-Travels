@@ -9,6 +9,10 @@ import {
 } from '@/services/businessCheckoutService';
 import type { PromotionProduct } from '@/constants/promotionRules';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
+import {
+  PartnerOperationsError,
+  partnerOperationsService,
+} from '@/services/partnerOperationsService';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'BUS', 'CAR']);
 const CONFIRMATION_CODE_PATTERN = /^M[BCF][A-Z0-9]{8,20}$/;
@@ -31,6 +35,21 @@ function isIsoDate(value: string): boolean {
 
 function errorResponse(code: string, message: string, status: number) {
   return NextResponse.json({ error: { code, message } }, { status });
+}
+
+function readCarOfferId(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const offerId = (value as Record<string, unknown>).offerId;
+  return isText(offerId) && offerId.length <= 160 ? offerId.trim() : undefined;
+}
+
+function readCustomerName(details: Record<string, unknown>, fallback: string): string {
+  const driver = details.driver;
+  if (!driver || typeof driver !== 'object' || Array.isArray(driver)) return fallback;
+  const record = driver as Record<string, unknown>;
+  const firstName = isText(record.firstName) ? record.firstName.trim() : '';
+  const lastName = isText(record.lastName) ? record.lastName.trim() : '';
+  return `${firstName} ${lastName}`.trim() || fallback;
 }
 
 export async function POST(request: Request) {
@@ -57,6 +76,7 @@ export async function POST(request: Request) {
       ? body.details
       : {};
   const detailsJson = JSON.stringify(details);
+  const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
 
   if (
     !isProductType(productType) ||
@@ -153,8 +173,23 @@ export async function POST(request: Request) {
 
   try {
     if (!businessCheckout) {
-      const trip = await prisma.customerTrip.create({
-        data: { confirmationCode, ...tripData },
+      const trip = await prisma.$transaction(async (transaction) => {
+        const createdTrip = await transaction.customerTrip.create({
+          data: { confirmationCode, ...tripData },
+        });
+        if (carOfferId?.startsWith('direct-')) {
+          await partnerOperationsService.reserveDirectVehicle(transaction, {
+            confirmationCode,
+            customerEmail: user.email,
+            customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+            customerTripId: createdTrip.id,
+            dropoffDate: endDate ?? startDate,
+            offerId: carOfferId,
+            pickupDate: startDate,
+            totalAmount: totalAmount as number,
+          });
+        }
+        return createdTrip;
       });
       return NextResponse.json({ data: trip }, { status: 201 });
     }
@@ -179,6 +214,18 @@ export async function POST(request: Request) {
       const completedTrip = await transaction.customerTrip.create({
         data: { confirmationCode, ...data },
       });
+      if (carOfferId?.startsWith('direct-')) {
+        await partnerOperationsService.reserveDirectVehicle(transaction, {
+          confirmationCode,
+          customerEmail: user.email,
+          customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+          customerTripId: completedTrip.id,
+          dropoffDate: endDate ?? startDate,
+          offerId: carOfferId,
+          pickupDate: startDate,
+          totalAmount: totalAmount as number,
+        });
+      }
       await transaction.businessAuditLog.create({
         data: createBusinessAuditData({
           action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
@@ -195,6 +242,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: trip }, { status: 201 });
   } catch (error) {
+    if (error instanceof PartnerOperationsError) {
+      return errorResponse(error.code, error.message, 409);
+    }
     if (error instanceof BusinessCheckoutError) {
       return errorResponse(error.code, error.message, error.status);
     }

@@ -6,9 +6,11 @@ import { readConfiguredSecret } from '@/lib/security/configuredSecret';
 
 export type PartnerAccess = {
   allowedHotelSlugs?: string[];
+  memberRole?: string;
   mode: 'integration-key' | 'user-session';
   partnerId?: string;
   partnerName?: string;
+  partnerType?: string;
   userId?: string;
 };
 
@@ -46,9 +48,11 @@ export async function getPartnerAccess(request?: Request): Promise<PartnerAccess
   if (!membership || membership.partner.status !== 'ACTIVE') return null;
   return {
     allowedHotelSlugs: membership.partner.properties.map((property) => property.hotelSlug),
+    memberRole: membership.role,
     mode: 'user-session',
     partnerId: membership.partnerId,
     partnerName: membership.partner.name,
+    partnerType: membership.partner.type,
     userId: user.id,
   };
 }

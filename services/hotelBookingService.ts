@@ -22,6 +22,7 @@ import {
   inventoryOverrideRepository,
   type InventoryOverrideRepository,
 } from '@/repositories/inventoryOverrideRepository';
+import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
 import type {
   BookingAmendmentRecord,
   CreateHotelBookingRequest,
@@ -142,12 +143,23 @@ export class HotelBookingService {
       request.checkOutDate,
     );
     const lockedInventory = reservedLocks.reduce((total, lock) => total + lock.quantity, 0);
-    const overrideLimit = await this.inventoryOverrides.findLimitForStay(
-      room.roomTypeId,
-      request.checkInDate,
-      request.checkOutDate,
+    const [overrideLimit, partnerControl] = await Promise.all([
+      this.inventoryOverrides.findLimitForStay(
+        room.roomTypeId,
+        request.checkInDate,
+        request.checkOutDate,
+      ),
+      partnerHotelInventoryRepository.findStayControl(
+        room.roomTypeId,
+        request.checkInDate,
+        request.checkOutDate,
+      ),
+    ]);
+    const effectiveInventory = Math.min(
+      room.inventoryCount,
+      overrideLimit ?? room.inventoryCount,
+      partnerControl.availableRooms ?? room.inventoryCount,
     );
-    const effectiveInventory = Math.min(room.inventoryCount, overrideLimit ?? room.inventoryCount);
     if (effectiveInventory - lockedInventory < request.rooms) {
       throw new HotelBookingRuleError(
         'INVENTORY_NOT_AVAILABLE',
@@ -160,7 +172,14 @@ export class HotelBookingService {
       throw new HotelBookingRuleError('RATE_PLAN_NOT_FOUND', 'The selected rate is unavailable.');
     }
 
-    const roomChargeAmount = ratePlan.nightlyRate.amount * nights * request.rooms;
+    const rateControl = await partnerHotelInventoryRepository.findStayControl(
+      room.roomTypeId,
+      request.checkInDate,
+      request.checkOutDate,
+      ratePlan.nightlyRate.amount,
+    );
+    const roomChargeAmount =
+      (rateControl.nightlyCharge ?? ratePlan.nightlyRate.amount * nights) * request.rooms;
     const taxAndFeeAmount = ratePlan.taxesAndFees.amount * nights * request.rooms;
     const components: PriceComponent[] = [
       {
