@@ -489,7 +489,7 @@ export class HotelBookingService {
   }
 
   async listPendingAmendments(
-    options: { skip?: number; take?: number } = {},
+    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
   ): Promise<PartnerAmendmentRecord[]> {
     const pending = await this.amendments.findPending(options);
     const results = await Promise.all(
@@ -526,12 +526,12 @@ export class HotelBookingService {
     return results.filter((item): item is PartnerAmendmentRecord => item !== undefined);
   }
 
-  async getPendingAmendmentCount(): Promise<number> {
-    return this.amendments.countPending();
+  async getPendingAmendmentCount(hotelSlugs?: string[]): Promise<number> {
+    return this.amendments.countPending(hotelSlugs);
   }
 
   async listPartnerBookings(
-    options: { skip?: number; take?: number } = {},
+    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
   ): Promise<PartnerBookingRecord[]> {
     const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
@@ -566,13 +566,14 @@ export class HotelBookingService {
     return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
   }
 
-  async getPartnerBookingSummary() {
-    return this.bookings.getPartnerSummary();
+  async getPartnerBookingSummary(hotelSlugs?: string[]) {
+    return this.bookings.getPartnerSummary(hotelSlugs);
   }
 
   async getPartnerInventory(
     checkInDate: string,
     checkOutDate: string,
+    hotelSlugs?: string[],
   ): Promise<PartnerInventoryRecord[]> {
     const nights = calculateNights(checkInDate, checkOutDate);
     const today = new Date().toISOString().slice(0, 10);
@@ -583,7 +584,9 @@ export class HotelBookingService {
       );
     }
 
-    const hotels = await this.hotels.getHotels();
+    const hotels = (await this.hotels.getHotels()).filter(
+      (hotel) => !hotelSlugs || hotelSlugs.includes(hotel.slug),
+    );
     const records = await Promise.all(
       hotels.flatMap((hotel) =>
         hotel.rooms.map(async (room) => {
@@ -625,13 +628,16 @@ export class HotelBookingService {
     return records;
   }
 
-  async setPartnerInventoryOverride(input: {
-    availableRooms: number;
-    checkInDate: string;
-    checkOutDate: string;
-    note: string;
-    roomTypeId: string;
-  }): Promise<PartnerInventoryRecord[]> {
+  async setPartnerInventoryOverride(
+    input: {
+      availableRooms: number;
+      checkInDate: string;
+      checkOutDate: string;
+      note: string;
+      roomTypeId: string;
+    },
+    hotelSlugs?: string[],
+  ): Promise<PartnerInventoryRecord[]> {
     const nights = calculateNights(input.checkInDate, input.checkOutDate);
     const today = new Date().toISOString().slice(0, 10);
     if (!Number.isFinite(nights) || nights < 1 || input.checkInDate < today) {
@@ -640,7 +646,9 @@ export class HotelBookingService {
         'Choose a future date range of at least one night.',
       );
     }
-    const hotels = await this.hotels.getHotels();
+    const hotels = (await this.hotels.getHotels()).filter(
+      (hotel) => !hotelSlugs || hotelSlugs.includes(hotel.slug),
+    );
     const room = hotels
       .flatMap((hotel) => hotel.rooms)
       .find((candidate) => candidate.roomTypeId === input.roomTypeId);
@@ -657,15 +665,16 @@ export class HotelBookingService {
       );
     }
     await this.inventoryOverrides.setRange(input);
-    return this.getPartnerInventory(input.checkInDate, input.checkOutDate);
+    return this.getPartnerInventory(input.checkInDate, input.checkOutDate, hotelSlugs);
   }
 
   async reviewAmendment(
     id: string,
     decision: 'approved' | 'declined',
     reviewNote: string,
+    hotelSlugs?: string[],
   ): Promise<BookingAmendmentRecord | undefined> {
-    const pending = await this.amendments.findPendingById(id);
+    const pending = await this.amendments.findPendingById(id, hotelSlugs);
     if (!pending) return undefined;
     if (decision === 'declined') {
       return this.amendments.decline(id, reviewNote);

@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse, PartnerAmendmentRecord } from '@/types/commerce';
 
@@ -25,27 +24,24 @@ function money(amount: number, currency: string): string {
 }
 
 export default function PartnerAmendmentsPage() {
-  const [partnerKey, setPartnerKey] = useState('');
   const [amendments, setAmendments] = useState<PartnerAmendmentRecord[]>([]);
   const [meta, setMeta] = useState<PartnerAmendmentMeta>();
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [reviewingId, setReviewingId] = useState<string>();
 
-  async function loadPage(page: number) {
+  const loadPage = useCallback(async (page: number) => {
     setError(undefined);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/partner/amendments?page=${page}&pageSize=50`, {
-        headers: { 'x-partner-key': partnerKey },
-      });
+      const response = await fetch(`/api/v1/partner/amendments?page=${page}&pageSize=50`);
       const result = await readJsonResponse<
         { data: PartnerAmendmentRecord[]; meta: PartnerAmendmentMeta } | ApiErrorResponse
       >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
-            ? 'The partner access key is incorrect.'
+            ? 'Sign in with an assigned partner account to open this workspace.'
             : 'Requests could not be loaded.',
         );
         return;
@@ -57,12 +53,12 @@ export default function PartnerAmendmentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  async function loadAmendments(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await loadPage(1);
-  }
+  useEffect(() => {
+    const task = window.setTimeout(() => void loadPage(1), 0);
+    return () => window.clearTimeout(task);
+  }, [loadPage]);
 
   async function review(amendmentId: string, decision: 'approved' | 'declined') {
     const note = window.prompt(
@@ -83,7 +79,7 @@ export default function PartnerAmendmentsPage() {
         `/api/v1/partner/amendments/${encodeURIComponent(amendmentId)}`,
         {
           body: JSON.stringify({ decision, reviewNote: note.trim() }),
-          headers: { 'Content-Type': 'application/json', 'x-partner-key': partnerKey },
+          headers: { 'Content-Type': 'application/json' },
           method: 'PATCH',
         },
       );
@@ -113,6 +109,9 @@ export default function PartnerAmendmentsPage() {
             <h1>Amendment requests</h1>
           </div>
           <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner">
+              Workspace
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/bookings">
               Bookings
             </Link>
@@ -125,28 +124,14 @@ export default function PartnerAmendmentsPage() {
           Review guest date-change requests. Approval rechecks inventory and recalculates the total
           using the booked rate plan.
         </p>
-        <Card>
-          <form className="booking-page__guest-form" onSubmit={loadAmendments}>
-            <Input
-              label="Partner access key"
-              name="partnerKey"
-              onChange={(event) => setPartnerKey(event.target.value)}
-              required
-              type="password"
-              value={partnerKey}
-            />
-            <Button fullWidth isLoading={isLoading} type="submit" variant="accent">
-              Open review queue
-            </Button>
-            {error ? (
-              <p className="booking-page__payment-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </form>
-        </Card>
+        {isLoading && !meta ? <Card>Loading your assigned amendment queue…</Card> : null}
+        {error ? (
+          <p className="booking-page__payment-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <div className="partner-amendments__list" aria-live="polite">
-          {!isLoading && partnerKey && amendments.length === 0 && !error ? (
+          {!isLoading && meta && amendments.length === 0 && !error ? (
             <p>No pending amendment requests.</p>
           ) : null}
           {amendments.map((amendment) => (

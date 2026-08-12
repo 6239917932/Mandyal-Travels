@@ -788,6 +788,61 @@
   line-height: 1.5;
 }
 
+.partner-workspace__links {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--space-6);
+}
+
+.partner-workspace__links .ui-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.partner-workspace__links h2,
+.partner-workspace__links p {
+  margin: 0;
+}
+
+.partner-workspace__columns {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: var(--space-8);
+}
+
+.partner-workspace__columns h2 {
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.partner-workspace__properties {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.partner-workspace__properties .ui-card {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.partner-workspace__properties span,
+.partner-workspace__properties small,
+.partner-workspace__audit span {
+  color: var(--color-text-muted);
+}
+
+.partner-workspace__audit > div {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+}
+
+.partner-workspace__audit > div + div {
+  border-top: 1px solid var(--color-border);
+}
+
 .admin-section-nav {
   position: sticky;
   z-index: 5;
@@ -1041,7 +1096,9 @@
 
 @media (max-width: 900px) {
   .admin-hero,
-  .admin-record-grid {
+  .admin-record-grid,
+  .partner-workspace__links,
+  .partner-workspace__columns {
     grid-template-columns: 1fr;
   }
 

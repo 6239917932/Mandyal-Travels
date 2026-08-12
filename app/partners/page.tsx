@@ -47,7 +47,7 @@ export default function PartnersPage() {
             >
               Request partner onboarding
             </a>
-            <Link className="home-link-button home-link-button--secondary" href="/partner/bookings">
+            <Link className="home-link-button home-link-button--secondary" href="/partner">
               Open partner operations
             </Link>
           </div>
@@ -78,8 +78,8 @@ export default function PartnersPage() {
             <p className="home-section__eyebrow">Existing partners</p>
             <h2 className="home-section__title">Run day-to-day supply operations.</h2>
             <p className="home-section__description">
-              Operational access is separate from customer and business accounts. Use the partner
-              access key issued by the Mandyal Travels platform administrator.
+              Operational access is separate from customer and business accounts. Named supplier
+              accounts are invite-only and restricted to properties assigned by Mandyal Travels.
             </p>
           </div>
           <div className="travel-options-grid">

@@ -10,15 +10,17 @@ export interface CreateBookingAmendmentInput {
 
 export interface AmendmentRepository {
   create(input: CreateBookingAmendmentInput): Promise<BookingAmendmentRecord>;
-  countPending(): Promise<number>;
+  countPending(hotelSlugs?: string[]): Promise<number>;
   decline(id: string, reviewNote: string): Promise<BookingAmendmentRecord | undefined>;
   findLatestByBookingId(bookingId: string): Promise<BookingAmendmentRecord | undefined>;
   findPending(options?: {
+    hotelSlugs?: string[];
     skip?: number;
     take?: number;
   }): Promise<Array<BookingAmendmentRecord & { bookingId: string }>>;
   findPendingById(
     id: string,
+    hotelSlugs?: string[],
   ): Promise<(BookingAmendmentRecord & { bookingId: string }) | undefined>;
   approve(
     id: string,
@@ -60,8 +62,13 @@ function mapAmendment(amendment: {
 }
 
 export class PrismaAmendmentRepository implements AmendmentRepository {
-  async countPending(): Promise<number> {
-    return prisma.bookingAmendment.count({ where: { status: 'pending' } });
+  async countPending(hotelSlugs?: string[]): Promise<number> {
+    return prisma.bookingAmendment.count({
+      where: {
+        booking: hotelSlugs ? { hotelSlug: { in: hotelSlugs } } : undefined,
+        status: 'pending',
+      },
+    });
   }
 
   async approve(
@@ -137,13 +144,16 @@ export class PrismaAmendmentRepository implements AmendmentRepository {
   }
 
   async findPending(
-    options: { skip?: number; take?: number } = {},
+    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
   ): Promise<Array<BookingAmendmentRecord & { bookingId: string }>> {
     const amendments = await prisma.bookingAmendment.findMany({
       orderBy: { createdAt: 'asc' },
       skip: options.skip,
       take: options.take,
-      where: { status: 'pending' },
+      where: {
+        booking: options.hotelSlugs ? { hotelSlug: { in: options.hotelSlugs } } : undefined,
+        status: 'pending',
+      },
     });
     return amendments.map((amendment) => ({
       ...mapAmendment(amendment),
@@ -153,9 +163,14 @@ export class PrismaAmendmentRepository implements AmendmentRepository {
 
   async findPendingById(
     id: string,
+    hotelSlugs?: string[],
   ): Promise<(BookingAmendmentRecord & { bookingId: string }) | undefined> {
     const amendment = await prisma.bookingAmendment.findFirst({
-      where: { id, status: 'pending' },
+      where: {
+        booking: hotelSlugs ? { hotelSlug: { in: hotelSlugs } } : undefined,
+        id,
+        status: 'pending',
+      },
     });
     return amendment ? { ...mapAmendment(amendment), bookingId: amendment.bookingId } : undefined;
   }

@@ -16,7 +16,6 @@ function futureDate(days: number): string {
 }
 
 export default function PartnerInventoryPage() {
-  const [partnerKey, setPartnerKey] = useState('');
   const [checkInDate, setCheckInDate] = useState(futureDate(1));
   const [checkOutDate, setCheckOutDate] = useState(futureDate(4));
   const [inventory, setInventory] = useState<PartnerInventoryRecord[]>([]);
@@ -32,9 +31,7 @@ export default function PartnerInventoryPage() {
     setHasLoaded(false);
     try {
       const params = new URLSearchParams({ checkInDate, checkOutDate });
-      const response = await fetch(`/api/v1/partner/inventory?${params}`, {
-        headers: { 'x-partner-key': partnerKey },
-      });
+      const response = await fetch(`/api/v1/partner/inventory?${params}`);
       const result = await readJsonResponse<{ data: PartnerInventoryRecord[] } | ApiErrorResponse>(
         response,
       );
@@ -68,7 +65,7 @@ export default function PartnerInventoryPage() {
           note: String(formData.get('note') ?? ''),
           roomTypeId: String(formData.get('roomTypeId') ?? ''),
         }),
-        headers: { 'Content-Type': 'application/json', 'x-partner-key': partnerKey },
+        headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
       const result = await readJsonResponse<{ data: PartnerInventoryRecord[] } | ApiErrorResponse>(
@@ -103,6 +100,9 @@ export default function PartnerInventoryPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner">
+              Workspace
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/bookings">
               Bookings
             </Link>
@@ -113,14 +113,6 @@ export default function PartnerInventoryPage() {
         </div>
         <Card>
           <form className="booking-page__guest-form" onSubmit={loadInventory}>
-            <Input
-              label="Partner access key"
-              name="partnerKey"
-              onChange={(event) => setPartnerKey(event.target.value)}
-              required
-              type="password"
-              value={partnerKey}
-            />
             <div className="booking-page__payment-fields">
               <Input
                 label="Check-in"

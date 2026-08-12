@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -27,7 +27,6 @@ function money(amount: number, currency: string): string {
 }
 
 export default function PartnerBookingsPage() {
-  const [partnerKey, setPartnerKey] = useState('');
   const [bookings, setBookings] = useState<PartnerBookingRecord[]>([]);
   const [meta, setMeta] = useState<PartnerBookingMeta>();
   const [filter, setFilter] = useState('');
@@ -44,20 +43,18 @@ export default function PartnerBookingsPage() {
     );
   }, [bookings, filter]);
 
-  async function loadPage(page: number) {
+  const loadPage = useCallback(async (page: number) => {
     setError(undefined);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/partner/bookings?page=${page}&pageSize=50`, {
-        headers: { 'x-partner-key': partnerKey },
-      });
+      const response = await fetch(`/api/v1/partner/bookings?page=${page}&pageSize=50`);
       const result = await readJsonResponse<
         { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
       >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(
           response.status === 401
-            ? 'The partner access key is incorrect.'
+            ? 'Sign in with an assigned partner account to open this workspace.'
             : 'Bookings could not be loaded.',
         );
         return;
@@ -70,12 +67,12 @@ export default function PartnerBookingsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  async function loadBookings(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await loadPage(1);
-  }
+  useEffect(() => {
+    const task = window.setTimeout(() => void loadPage(1), 0);
+    return () => window.clearTimeout(task);
+  }, [loadPage]);
 
   return (
     <div className="booking-page partner-bookings">
@@ -89,6 +86,9 @@ export default function PartnerBookingsPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner">
+              Workspace
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/inventory">
               Inventory
             </Link>
@@ -97,26 +97,12 @@ export default function PartnerBookingsPage() {
             </Link>
           </div>
         </div>
-        <Card>
-          <form className="booking-page__guest-form" onSubmit={loadBookings}>
-            <Input
-              label="Partner access key"
-              name="partnerKey"
-              onChange={(event) => setPartnerKey(event.target.value)}
-              required
-              type="password"
-              value={partnerKey}
-            />
-            <Button fullWidth isLoading={isLoading} type="submit" variant="accent">
-              Open booking dashboard
-            </Button>
-            {error ? (
-              <p className="booking-page__payment-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </form>
-        </Card>
+        {isLoading && !meta ? <Card>Loading your assigned booking records…</Card> : null}
+        {error ? (
+          <p className="booking-page__payment-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         {meta ? (
           <>
             <div className="partner-bookings__summary">

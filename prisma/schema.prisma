@@ -35,6 +35,67 @@ model User {
   sentBusinessInvitations OrganizationInvitation[]    @relation("BusinessInvitationSender")
   acceptedInvitations     OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
   createdPolicyVersions   OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
+  supplyPartnerMemberships SupplyPartnerMember[]
+  partnerAuditEntries      PartnerAuditLog[]           @relation("PartnerAuditActor")
+}
+
+model SupplyPartner {
+  id           String                @id @default(cuid())
+  name         String
+  type         String                @default("HOTEL")
+  status       String                @default("ACTIVE")
+  contactEmail String?
+  contactPhone String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  members      SupplyPartnerMember[]
+  properties   PartnerProperty[]
+  auditEntries PartnerAuditLog[]
+
+  @@index([status, createdAt])
+}
+
+model SupplyPartnerMember {
+  id        String        @id @default(cuid())
+  partnerId String
+  userId    String        @unique
+  role      String        @default("ADMIN")
+  createdAt DateTime      @default(now())
+  partner   SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([partnerId, userId])
+  @@index([partnerId, role])
+}
+
+model PartnerProperty {
+  id          String        @id @default(cuid())
+  partnerId   String
+  hotelSlug   String        @unique
+  displayName String
+  status      String        @default("ACTIVE")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  partner     SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId, status])
+}
+
+model PartnerAuditLog {
+  id           String        @id @default(cuid())
+  partnerId    String
+  actorUserId  String?
+  action       String
+  entityType   String
+  entityId     String?
+  summary      String
+  metadataJson String        @default("{}")
+  createdAt    DateTime      @default(now())
+  partner      SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  actor        User?         @relation("PartnerAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId, createdAt])
+  @@index([partnerId, action, createdAt])
 }
 
 model AccountSecurityEvent {

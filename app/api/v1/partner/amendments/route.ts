@@ -1,4 +1,4 @@
-import { isValidPartnerKey } from '@/lib/partnerAuth';
+import { getPartnerAccess } from '@/lib/partnerAuth';
 import { hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -12,7 +12,8 @@ function unauthorized(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  if (!isValidPartnerKey(request.headers.get('x-partner-key'))) return unauthorized();
+  const access = await getPartnerAccess(request);
+  if (!access) return unauthorized();
 
   const url = new URL(request.url);
   const requestedPage = Number(url.searchParams.get('page') ?? '1');
@@ -23,8 +24,12 @@ export async function GET(request: Request): Promise<Response> {
       ? Math.min(requestedPageSize, 100)
       : 50;
   const [amendments, totalCount] = await Promise.all([
-    hotelBookingService.listPendingAmendments({ skip: (page - 1) * pageSize, take: pageSize }),
-    hotelBookingService.getPendingAmendmentCount(),
+    hotelBookingService.listPendingAmendments({
+      hotelSlugs: access.allowedHotelSlugs,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs),
   ]);
 
   return Response.json({

@@ -1,5 +1,5 @@
 import { readJsonObject } from '@/lib/api/request';
-import { isValidPartnerKey } from '@/lib/partnerAuth';
+import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -12,7 +12,8 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export async function PATCH(request: Request, context: ReviewContext): Promise<Response> {
-  if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
+  const access = await getPartnerAccess(request);
+  if (!access) {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const body = await readJsonObject(request);
@@ -34,7 +35,17 @@ export async function PATCH(request: Request, context: ReviewContext): Promise<R
       amendmentId,
       values.decision as 'approved' | 'declined',
       values.reviewNote.trim(),
+      access.allowedHotelSlugs,
     );
+    if (amendment) {
+      await recordPartnerAudit(access, {
+        action: 'BOOKING_AMENDMENT_REVIEWED',
+        entityId: amendmentId,
+        entityType: 'BOOKING_AMENDMENT',
+        metadata: { decision: values.decision },
+        summary: `Hotel amendment ${values.decision}.`,
+      });
+    }
     return amendment
       ? Response.json({ data: amendment })
       : errorResponse('AMENDMENT_NOT_FOUND', 'The pending amendment was not found.', 404);

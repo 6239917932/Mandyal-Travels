@@ -1,5 +1,5 @@
 import { readJsonObject } from '@/lib/api/request';
-import { isValidPartnerKey } from '@/lib/partnerAuth';
+import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -8,7 +8,8 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export async function GET(request: Request): Promise<Response> {
-  if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
+  const access = await getPartnerAccess(request);
+  if (!access) {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const url = new URL(request.url);
@@ -16,7 +17,11 @@ export async function GET(request: Request): Promise<Response> {
   const checkOutDate = url.searchParams.get('checkOutDate') ?? '';
   try {
     return Response.json({
-      data: await hotelBookingService.getPartnerInventory(checkInDate, checkOutDate),
+      data: await hotelBookingService.getPartnerInventory(
+        checkInDate,
+        checkOutDate,
+        access.allowedHotelSlugs,
+      ),
     });
   } catch (error) {
     return error instanceof HotelBookingRuleError
@@ -26,7 +31,8 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (!isValidPartnerKey(request.headers.get('x-partner-key'))) {
+  const access = await getPartnerAccess(request);
+  if (!access) {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const body = await readJsonObject(request);
@@ -50,12 +56,26 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
   try {
-    const data = await hotelBookingService.setPartnerInventoryOverride({
-      availableRooms: values.availableRooms,
-      checkInDate: values.checkInDate,
-      checkOutDate: values.checkOutDate,
-      note: values.note.trim(),
-      roomTypeId: values.roomTypeId,
+    const data = await hotelBookingService.setPartnerInventoryOverride(
+      {
+        availableRooms: values.availableRooms,
+        checkInDate: values.checkInDate,
+        checkOutDate: values.checkOutDate,
+        note: values.note.trim(),
+        roomTypeId: values.roomTypeId,
+      },
+      access.allowedHotelSlugs,
+    );
+    await recordPartnerAudit(access, {
+      action: 'INVENTORY_OVERRIDE_UPDATED',
+      entityId: values.roomTypeId,
+      entityType: 'ROOM_TYPE',
+      metadata: {
+        availableRooms: values.availableRooms,
+        checkInDate: values.checkInDate,
+        checkOutDate: values.checkOutDate,
+      },
+      summary: 'Room inventory limit updated.',
     });
     return Response.json({ data }, { status: 201 });
   } catch (error) {

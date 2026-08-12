@@ -1,6 +1,16 @@
 import { timingSafeEqual } from 'node:crypto';
 
+import { getCurrentUser } from '@/lib/auth/session';
+import { prisma } from '@/lib/prisma';
 import { readConfiguredSecret } from '@/lib/security/configuredSecret';
+
+export type PartnerAccess = {
+  allowedHotelSlugs?: string[];
+  mode: 'integration-key' | 'user-session';
+  partnerId?: string;
+  partnerName?: string;
+  userId?: string;
+};
 
 export function isValidPartnerKey(value: string | null): boolean {
   const expected = readConfiguredSecret('PARTNER_ADMIN_KEY');
@@ -11,4 +21,58 @@ export function isValidPartnerKey(value: string | null): boolean {
     suppliedBuffer.length === expectedBuffer.length &&
     timingSafeEqual(suppliedBuffer, expectedBuffer)
   );
+}
+
+export async function getPartnerAccess(request?: Request): Promise<PartnerAccess | null> {
+  if (request && isValidPartnerKey(request.headers.get('x-partner-key'))) {
+    return { mode: 'integration-key' };
+  }
+
+  const user = await getCurrentUser();
+  if (!user || !['PARTNER_ADMIN', 'PARTNER_OPERATOR'].includes(user.role)) return null;
+  const membership = await prisma.supplyPartnerMember.findUnique({
+    include: {
+      partner: {
+        include: {
+          properties: {
+            select: { hotelSlug: true },
+            where: { status: 'ACTIVE' },
+          },
+        },
+      },
+    },
+    where: { userId: user.id },
+  });
+  if (!membership || membership.partner.status !== 'ACTIVE') return null;
+  return {
+    allowedHotelSlugs: membership.partner.properties.map((property) => property.hotelSlug),
+    mode: 'user-session',
+    partnerId: membership.partnerId,
+    partnerName: membership.partner.name,
+    userId: user.id,
+  };
+}
+
+export async function recordPartnerAudit(
+  access: PartnerAccess,
+  input: {
+    action: string;
+    entityId?: string;
+    entityType: string;
+    metadata?: Record<string, unknown>;
+    summary: string;
+  },
+) {
+  if (!access.partnerId) return;
+  await prisma.partnerAuditLog.create({
+    data: {
+      action: input.action,
+      actorUserId: access.userId,
+      entityId: input.entityId,
+      entityType: input.entityType,
+      metadataJson: JSON.stringify(input.metadata ?? {}),
+      partnerId: access.partnerId,
+      summary: input.summary,
+    },
+  });
 }
