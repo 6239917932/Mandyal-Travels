@@ -55,17 +55,27 @@ npm run admin:grant -- administrator@example.com --confirm
 Sign in with that account to open the read-only operations console at `/admin`. The command refuses
 to replace a business administrator role so company and platform responsibilities remain separate.
 
-## Provision a hotel supply partner
+## Supplier onboarding and inventory
 
-Supplier access is invite-only and limited to explicitly assigned properties. Create a separate
-customer account for the supplier contact, then run this once from the `frontend` folder:
+Hotel owners and car fleet operators first create a normal named account, then submit a supplier
+application from **Partners → Request partner onboarding**. A platform administrator reviews the
+application in `/admin/partners`; inventory access is not granted until it is approved.
+
+After approval, the supplier opens `/partner`:
+
+- Hotel suppliers create their property, first room and rate in `/partner/properties`, then manage
+  dated rates, availability and stop-sell controls in `/partner/inventory`.
+- Car suppliers create vehicles, pricing and fleet availability in `/partner/fleet`.
+
+For controlled internal setup, an administrator may still provision a hotel supplier and assign a
+sample catalog property from the `frontend` folder:
 
 ```powershell
 npm run partner:grant -- partner@example.com "Partner name" hotel-slug[,hotel-slug] --confirm
 ```
 
-The supplier can then sign in normally and open `/partner`. The command refuses to move a property
-that is already assigned to a different supplier. Browser users never need the integration key.
+The command refuses to move a property already assigned to another supplier. Browser users never
+need the integration key.
 
 ## Release checks
 

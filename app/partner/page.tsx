@@ -41,7 +41,11 @@ export default async function PartnerWorkspacePage() {
           orderBy: { createdAt: 'desc' },
           take: 8,
         },
-        properties: { orderBy: { displayName: 'asc' }, where: { status: 'ACTIVE' } },
+        properties: {
+          include: { rooms: { where: { status: 'ACTIVE' } } },
+          orderBy: { displayName: 'asc' },
+          where: { status: 'ACTIVE' },
+        },
         vehicles: {
           include: {
             inventoryDays: {
@@ -81,9 +85,9 @@ export default async function PartnerWorkspacePage() {
             </Link>
             <Link
               className="ui-button ui-button--secondary"
-              href={partner.type === 'CAR' ? '/cars' : '/partner/inventory'}
+              href={partner.type === 'CAR' ? '/cars' : '/partner/properties'}
             >
-              {partner.type === 'CAR' ? 'View live car search' : 'Manage room calendar'}
+              {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
             </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
@@ -117,15 +121,11 @@ export default async function PartnerWorkspacePage() {
         </Card>
         <Card>
           <span>{partner.type === 'CAR' ? 'Reservations' : 'Total bookings'}</span>
-          <strong>
-            {bookingSummary.totalCount}
-          </strong>
+          <strong>{bookingSummary.totalCount}</strong>
         </Card>
         <Card>
           <span>{partner.type === 'CAR' ? 'Confirmed rentals' : 'Confirmed stays'}</span>
-          <strong>
-            {bookingSummary.confirmedCount}
-          </strong>
+          <strong>{bookingSummary.confirmedCount}</strong>
         </Card>
         <Card>
           <span>Captured value</span>
@@ -139,6 +139,14 @@ export default async function PartnerWorkspacePage() {
 
       {partner.type === 'HOTEL' ? (
         <div className="partner-workspace__links">
+          <Card>
+            <p className="hotel-page__eyebrow">Property setup</p>
+            <h2>Rooms and rates</h2>
+            <p>Create properties, room types, opening rates, policies, and public listings.</p>
+            <Link className="home-card__link" href="/partner/properties">
+              Manage properties
+            </Link>
+          </Card>
           <Card>
             <p className="hotel-page__eyebrow">Reservations</p>
             <h2>Booking operations</h2>
@@ -204,14 +212,17 @@ export default async function PartnerWorkspacePage() {
       <div className="partner-workspace__columns">
         <section>
           <p className="hotel-page__eyebrow">Property scope</p>
-          <h2>{partner.type === 'CAR' ? 'Published fleet' : 'Assigned hotels'}</h2>
+          <h2>{partner.type === 'CAR' ? 'Published fleet' : 'Hotel catalogue'}</h2>
           <div className="partner-workspace__properties">
             {partner.type === 'HOTEL'
               ? partner.properties.map((property) => (
                   <Card key={property.id}>
                     <strong>{property.displayName}</strong>
                     <span>{property.hotelSlug}</span>
-                    <small>Active inventory access</small>
+                    <small>
+                      {property.rooms.length} room types ·{' '}
+                      {property.publicationStatus.toLowerCase()}
+                    </small>
                   </Card>
                 ))
               : partner.vehicles.map((vehicle) => (
@@ -227,7 +238,14 @@ export default async function PartnerWorkspacePage() {
                   </Card>
                 ))}
             {partner.properties.length === 0 && partner.vehicles.length === 0 ? (
-              <Card>No inventory has been published.</Card>
+              <Card>
+                <strong>No inventory has been published.</strong>
+                {partner.type === 'HOTEL' ? (
+                  <Link className="home-card__link" href="/partner/properties">
+                    Create the first property
+                  </Link>
+                ) : null}
+              </Card>
             ) : null}
           </div>
         </section>

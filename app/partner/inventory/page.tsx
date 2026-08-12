@@ -110,6 +110,9 @@ export default function PartnerInventoryPage() {
             <Link className="ui-button ui-button--secondary" href="/partner/bookings">
               Bookings
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/partner/properties">
+              Properties
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/amendments">
               Amendments
             </Link>
@@ -250,7 +253,15 @@ export default function PartnerInventoryPage() {
               </Card>
             );
           })}
-          {hasLoaded && inventory.length === 0 ? <p>No room inventory is configured.</p> : null}
+          {hasLoaded && inventory.length === 0 ? (
+            <Card>
+              <strong>No room inventory is configured.</strong>
+              <p>Create a property and its first room type before using the PMS calendar.</p>
+              <Link className="home-card__link" href="/partner/properties">
+                Open property setup
+              </Link>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>

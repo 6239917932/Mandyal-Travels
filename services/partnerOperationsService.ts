@@ -44,6 +44,46 @@ function createVehicleCode(partnerId: string, name: string) {
   return `direct-${partnerId.slice(-6)}-${base || 'vehicle'}-${crypto.randomUUID().slice(0, 6)}`;
 }
 
+function createPropertySlug(partnerId: string, name: string) {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+  return `${base || 'property'}-${partnerId.slice(-6)}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
+function createRoomTypeCode(propertyId: string, name: string) {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 36);
+  return `direct-${propertyId.slice(-6)}-${base || 'room'}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
+function validateImageUrl(value: string, fallback: string) {
+  const candidate = value.trim();
+  if (!candidate) return fallback;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== 'https:' || url.hostname !== 'images.unsplash.com') throw new Error();
+    return candidate.slice(0, 800);
+  } catch {
+    throw new PartnerOperationsError(
+      'INVALID_IMAGE_URL',
+      'Use a secure images.unsplash.com photo URL, or leave the image field blank.',
+    );
+  }
+}
+
+function normalizedList(values: string[], maximumItems = 20) {
+  return values
+    .map((value) => normalizeText(value, 120))
+    .filter(Boolean)
+    .slice(0, maximumItems);
+}
+
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -197,6 +237,208 @@ export const partnerOperationsService = {
         },
         where: { id: application.id },
       });
+    });
+  },
+
+  async createProperty(
+    partnerId: string,
+    input: {
+      amenities: string[];
+      checkInTime: string;
+      checkOutTime: string;
+      city: string;
+      country: string;
+      description: string;
+      displayName: string;
+      imageUrl: string;
+      policies: string[];
+      postalCode: string;
+      starRating: number;
+      state: string;
+      streetAddress: string;
+    },
+  ) {
+    if (
+      input.displayName.trim().length < 2 ||
+      input.description.trim().length < 30 ||
+      input.city.trim().length < 2 ||
+      input.state.trim().length < 2 ||
+      input.country.trim().length < 2 ||
+      input.streetAddress.trim().length < 5
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_PROPERTY',
+        'Complete the property name, description, location, and street address.',
+      );
+    }
+    if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5) {
+      throw new PartnerOperationsError('INVALID_STAR_RATING', 'Star rating must be from 1 to 5.');
+    }
+    if (
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.checkInTime) ||
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.checkOutTime)
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_STAY_TIME',
+        'Enter valid check-in and check-out times.',
+      );
+    }
+    return prisma.partnerProperty.create({
+      data: {
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities)),
+        checkInTime: input.checkInTime,
+        checkOutTime: input.checkOutTime,
+        city: normalizeText(input.city, 80),
+        country: normalizeText(input.country, 80),
+        description: normalizeText(input.description, 1_500),
+        displayName: normalizeText(input.displayName, 140),
+        hotelSlug: createPropertySlug(partnerId, input.displayName),
+        imageUrl: validateImageUrl(
+          input.imageUrl,
+          'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80',
+        ),
+        listingSource: 'MANAGED',
+        partnerId,
+        policiesJson: JSON.stringify(normalizedList(input.policies, 12)),
+        postalCode: normalizeText(input.postalCode, 20),
+        publicationStatus: 'DRAFT',
+        starRating: input.starRating,
+        state: normalizeText(input.state, 80),
+        streetAddress: normalizeText(input.streetAddress, 240),
+      },
+    });
+  },
+
+  async createRoomType(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      amenities: string[];
+      bedDescription: string;
+      cancellationDescription: string;
+      description: string;
+      imageUrl: string;
+      inventoryCount: number;
+      maximumAdults: number;
+      maximumChildren: number;
+      maximumGuests: number;
+      mealPlan: string;
+      name: string;
+      nightlyRate: number;
+      ratePlanName: string;
+      refundable: boolean;
+      taxesAndFees: number;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property)
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    if (
+      input.name.trim().length < 2 ||
+      input.description.trim().length < 20 ||
+      input.bedDescription.trim().length < 2 ||
+      input.ratePlanName.trim().length < 2 ||
+      input.cancellationDescription.trim().length < 10
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_ROOM',
+        'Complete the room, bed, rate, and cancellation details.',
+      );
+    }
+    if (
+      !Number.isInteger(input.inventoryCount) ||
+      input.inventoryCount < 1 ||
+      input.inventoryCount > 500
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_ROOM_COUNT',
+        'Room inventory must be between 1 and 500.',
+      );
+    }
+    if (
+      !Number.isInteger(input.maximumAdults) ||
+      input.maximumAdults < 1 ||
+      input.maximumAdults > 20 ||
+      !Number.isInteger(input.maximumChildren) ||
+      input.maximumChildren < 0 ||
+      input.maximumChildren > 20 ||
+      !Number.isInteger(input.maximumGuests) ||
+      input.maximumGuests < 1 ||
+      input.maximumGuests > 30 ||
+      input.maximumGuests < input.maximumAdults
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_OCCUPANCY',
+        'Enter a valid adult, child, and maximum guest capacity.',
+      );
+    }
+    if (
+      !Number.isInteger(input.nightlyRate) ||
+      input.nightlyRate < 100 ||
+      input.nightlyRate > 5_000_000 ||
+      !Number.isInteger(input.taxesAndFees) ||
+      input.taxesAndFees < 0 ||
+      input.taxesAndFees > 1_000_000
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_RATE',
+        'Enter a valid nightly rate and taxes in INR.',
+      );
+    }
+    if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
+      throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
+    }
+    return prisma.$transaction(async (transaction) => {
+      const room = await transaction.partnerRoomType.create({
+        data: {
+          amenitiesJson: JSON.stringify(normalizedList(input.amenities)),
+          bedDescription: normalizeText(input.bedDescription, 160),
+          cancellationDescription: normalizeText(input.cancellationDescription, 300),
+          description: normalizeText(input.description, 800),
+          imageUrl: validateImageUrl(
+            input.imageUrl,
+            'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+          ),
+          inventoryCount: input.inventoryCount,
+          maximumAdults: input.maximumAdults,
+          maximumChildren: input.maximumChildren,
+          maximumGuests: input.maximumGuests,
+          mealPlan: input.mealPlan,
+          name: normalizeText(input.name, 120),
+          nightlyRate: input.nightlyRate,
+          propertyId,
+          ratePlanName: normalizeText(input.ratePlanName, 100),
+          refundable: input.refundable,
+          roomTypeId: createRoomTypeCode(propertyId, input.name),
+          taxesAndFees: input.taxesAndFees,
+        },
+      });
+      await transaction.partnerProperty.update({
+        data: { publicationStatus: 'PUBLISHED' },
+        where: { id: propertyId },
+      });
+      return room;
+    });
+  },
+
+  async setPropertyPublication(partnerId: string, propertyId: string, action: 'PAUSE' | 'PUBLISH') {
+    const property = await prisma.partnerProperty.findFirst({
+      include: { rooms: { where: { status: 'ACTIVE' } } },
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property)
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    if (action === 'PUBLISH' && property.rooms.length === 0) {
+      throw new PartnerOperationsError(
+        'ROOM_REQUIRED',
+        'Add at least one active room type before publishing.',
+      );
+    }
+    return prisma.partnerProperty.update({
+      data: { publicationStatus: action === 'PUBLISH' ? 'PUBLISHED' : 'PAUSED' },
+      where: { id: property.id },
     });
   },
 
@@ -523,11 +765,7 @@ export const partnerOperationsService = {
     };
   },
 
-  async listVehicleReservations(input: {
-    partnerId: string;
-    skip: number;
-    take: number;
-  }) {
+  async listVehicleReservations(input: { partnerId: string; skip: number; take: number }) {
     return prisma.partnerVehicleReservation.findMany({
       include: {
         vehicle: {

@@ -1,7 +1,10 @@
 import { readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { HotelBookingRuleError, hotelBookingService } from '@/services/hotelBookingService';
-import { partnerOperationsService } from '@/services/partnerOperationsService';
+import {
+  PartnerOperationsError,
+  partnerOperationsService,
+} from '@/services/partnerOperationsService';
 import { prisma } from '@/lib/prisma';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -123,7 +126,7 @@ export async function POST(request: Request): Promise<Response> {
     });
     return Response.json({ data }, { status: 201 });
   } catch (error) {
-    return error instanceof HotelBookingRuleError
+    return error instanceof HotelBookingRuleError || error instanceof PartnerOperationsError
       ? errorResponse(error.code, error.message, 409)
       : errorResponse('INVENTORY_OVERRIDE_FAILED', 'The inventory limit could not be saved.', 500);
   }

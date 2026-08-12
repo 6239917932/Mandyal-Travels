@@ -50,9 +50,11 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Customer support servicing with required resolution notes and append-only case events
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
-- Invite-only supplier accounts with named sign-in, assigned-property access, a scoped operations
-  workspace, booking and inventory dashboards, amendment review, and append-only partner activity
-  history
+- Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
+- Supplier-managed hotel properties, room types, rates, amenities, publication controls, dated
+  availability and stop-sell controls connected to public hotel search and booking
+- Supplier-managed car fleets with vehicle pricing and dated availability controls
+- Booking dashboards, hotel amendment review, and append-only partner activity history
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment

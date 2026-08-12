@@ -25,7 +25,10 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
         members: {
           include: { user: { select: { email: true, firstName: true, lastName: true } } },
         },
-        properties: true,
+        properties: {
+          include: { rooms: { where: { status: 'ACTIVE' } } },
+          orderBy: { createdAt: 'desc' },
+        },
         vehicles: { include: { _count: { select: { inventoryDays: true } } } },
       },
       where: { id: partnerId },
@@ -71,7 +74,8 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
           <p className="hotel-page__eyebrow">Property scope</p>
           <h2>Assign a managed hotel</h2>
           <p>
-            The supplier can only view and change inventory for hotels explicitly assigned here.
+            Platform hotels can be assigned here. Supplier-created properties and rooms are shown
+            below with their publication state.
           </p>
           <AdminPartnerPropertyAssignment
             hotels={hotels
@@ -84,6 +88,13 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
               <Card key={property.id}>
                 <strong>{property.displayName}</strong>
                 <span>{property.hotelSlug}</span>
+                <small>
+                  {property.listingSource === 'MANAGED' ? 'Supplier managed' : 'Platform assigned'}
+                  {' · '}
+                  {property.publicationStatus.toLowerCase()}
+                  {' · '}
+                  {property.rooms.length} room {property.rooms.length === 1 ? 'type' : 'types'}
+                </small>
               </Card>
             ))}
           </div>

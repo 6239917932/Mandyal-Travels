@@ -906,6 +906,104 @@
   gap: 0.6rem;
   min-height: 2.75rem;
 }
+
+.supplier-form__textarea {
+  min-height: 6.5rem;
+  padding: 0.8rem;
+  resize: vertical;
+}
+
+.partner-property-manager__setup,
+.partner-property-manager__catalogue,
+.partner-property-manager__property,
+.partner-property-manager__rooms,
+.partner-property-manager__room-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.partner-property-manager__catalogue {
+  margin-top: 2rem;
+}
+
+.partner-property-manager__property-heading {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.partner-property-manager__property-heading h2 {
+  margin: 0.35rem 0;
+}
+
+.partner-property-manager__status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.65rem;
+}
+
+.partner-property-manager__status--published {
+  background: #e4f7ec;
+  color: #06713b;
+}
+
+.partner-property-manager__status--draft,
+.partner-property-manager__status--paused {
+  background: #fff1df;
+  color: #9b4a00;
+}
+
+.partner-property-manager__rooms {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.partner-property-manager__rooms > div {
+  background: #f5f8fc;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem;
+}
+
+.partner-property-manager__rooms span,
+.partner-property-manager__rooms small {
+  color: #53657a;
+}
+
+.partner-property-manager__add-room {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  justify-self: start;
+  padding: 0;
+}
+
+.partner-property-manager__room-form {
+  background: #f5f8fc;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.partner-property-manager__success {
+  background: #e4f7ec;
+  border-radius: 0.75rem;
+  color: #06713b;
+  font-weight: 700;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+@media (max-width: 720px) {
+  .partner-property-manager__property-heading {
+    display: grid;
+  }
+}
 .partner-fleet__grid {
   margin-top: 1.5rem;
 }
