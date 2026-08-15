@@ -124,6 +124,7 @@ model SupplyPartner {
   busReservations     PartnerBusReservation[]
   channelConnections  HotelChannelConnection[]
   settlements         PartnerSettlement[]
+  flightConnections   FlightSupplierConnection[]
 
   @@index([status, createdAt])
 }
@@ -194,6 +195,46 @@ model PartnerProperty {
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
   @@index([approvalStatus, submittedAt])
+}
+
+model FlightSupplierConnection {
+  id                 String                    @id @default(cuid())
+  partnerId          String
+  providerCode       String
+  displayName        String
+  environment        String                    @default("SANDBOX")
+  credentialRef      String
+  status             String                    @default("DRAFT")
+  lastHealthStatus   String                    @default("NOT_TESTED")
+  lastHealthAt       DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  partner            SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  operations         FlightSupplierOperation[]
+
+  @@unique([partnerId, providerCode, environment])
+  @@index([partnerId, status, updatedAt])
+}
+
+model FlightSupplierOperation {
+  id             String                   @id @default(cuid())
+  connectionId   String
+  operationType  String
+  correlationId  String
+  requestHash    String
+  status         String                   @default("QUEUED")
+  providerRef    String                   @default("")
+  attempts       Int                      @default(0)
+  nextAttemptAt  DateTime                 @default(now())
+  lastError      String                   @default("")
+  completedAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  connection     FlightSupplierConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, correlationId])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([connectionId, createdAt])
 }
 
 model PartnerBusRoute {
