@@ -68,19 +68,32 @@ export default async function FlightBookingReviewPage({
                 </small>
               </div>
             </div>
-            <div className="flight-booking-page__route">
-              <div>
-                <strong>{time(segment.departureAt)}</strong>
-                <span>{segment.departureAirport}</span>
-              </div>
-              <div>
-                <span>{segment.stops === 0 ? 'Non-stop' : `${segment.stops} stop`}</span>
-                <small>{criteria.departureDate}</small>
-              </div>
-              <div>
-                <strong>{time(segment.arrivalAt)}</strong>
-                <span>{segment.arrivalAirport}</span>
-              </div>
+            <div className="flight-booking-page__routes">
+              {offer.segments.map((itinerarySegment) => (
+                <div
+                  className="flight-booking-page__route"
+                  key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}
+                >
+                  <div>
+                    <small>{itinerarySegment.leg === 'outbound' ? 'Outbound' : 'Return'}</small>
+                    <strong>{time(itinerarySegment.departureAt)}</strong>
+                    <span>{itinerarySegment.departureAirport}</span>
+                  </div>
+                  <div>
+                    <span>
+                      {itinerarySegment.stops === 0
+                        ? 'Non-stop'
+                        : `${itinerarySegment.stops} stop`}
+                    </span>
+                    <small>{itinerarySegment.departureAt.slice(0, 10)}</small>
+                  </div>
+                  <div>
+                    <small>{itinerarySegment.flightNumber}</small>
+                    <strong>{time(itinerarySegment.arrivalAt)}</strong>
+                    <span>{itinerarySegment.arrivalAirport}</span>
+                  </div>
+                </div>
+              ))}
             </div>
             <dl className="flight-booking-page__facts">
               <div>

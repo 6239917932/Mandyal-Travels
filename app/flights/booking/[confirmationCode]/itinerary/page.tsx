@@ -26,7 +26,6 @@ export default async function FlightItineraryPage({
         <h1>Itinerary unavailable</h1>
       </main>
     );
-  const segment = offer.segments[0];
   return (
     <main className="flight-itinerary">
       <header>
@@ -43,24 +42,15 @@ export default async function FlightItineraryPage({
       <section>
         <h2>Flight details</h2>
         <dl>
-          <div>
-            <dt>Airline</dt>
-            <dd>{segment.airlineName}</dd>
-          </div>
-          <div>
-            <dt>Flight</dt>
-            <dd>{segment.flightNumber}</dd>
-          </div>
-          <div>
-            <dt>Route</dt>
-            <dd>
-              {segment.departureAirport} → {segment.arrivalAirport}
-            </dd>
-          </div>
-          <div>
-            <dt>Departure date</dt>
-            <dd>{criteria.departureDate}</dd>
-          </div>
+          {offer.segments.map((segment) => (
+            <div key={`${segment.leg}-${segment.flightNumber}`}>
+              <dt>{segment.leg === 'outbound' ? 'Outbound flight' : 'Return flight'}</dt>
+              <dd>
+                {segment.airlineName} {segment.flightNumber} · {segment.departureAirport} →{' '}
+                {segment.arrivalAirport} · {segment.departureAt.slice(0, 10)}
+              </dd>
+            </div>
+          ))}
           <div>
             <dt>Cabin</dt>
             <dd>{criteria.cabinClass}</dd>

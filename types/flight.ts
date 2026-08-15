@@ -19,6 +19,7 @@ export interface FlightSegment {
   departureAt: string;
   durationMinutes: number;
   flightNumber: string;
+  leg: 'outbound' | 'return';
   stops: number;
 }
 

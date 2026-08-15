@@ -32,20 +32,26 @@ export function FlightOfferCard({
           </small>
         </div>
       </div>
-      <div className="flight-offer-card__route">
-        <div>
-          <strong>{time(segment.departureAt)}</strong>
-          <span>{segment.departureAirport}</span>
-        </div>
-        <div className="flight-offer-card__duration">
-          <span>{duration(segment.durationMinutes)}</span>
-          <i />
-          <small>{segment.stops === 0 ? 'Non-stop' : `${segment.stops} stop`}</small>
-        </div>
-        <div>
-          <strong>{time(segment.arrivalAt)}</strong>
-          <span>{segment.arrivalAirport}</span>
-        </div>
+      <div className="flight-offer-card__routes">
+        {offer.segments.map((itinerarySegment) => (
+          <div className="flight-offer-card__route" key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}>
+            <div>
+              <small>{itinerarySegment.leg === 'outbound' ? 'Outbound' : 'Return'}</small>
+              <strong>{time(itinerarySegment.departureAt)}</strong>
+              <span>{itinerarySegment.departureAirport}</span>
+            </div>
+            <div className="flight-offer-card__duration">
+              <span>{duration(itinerarySegment.durationMinutes)}</span>
+              <i />
+              <small>{itinerarySegment.stops === 0 ? 'Non-stop' : `${itinerarySegment.stops} stop`}</small>
+            </div>
+            <div>
+              <small>{itinerarySegment.departureAt.slice(0, 10)}</small>
+              <strong>{time(itinerarySegment.arrivalAt)}</strong>
+              <span>{itinerarySegment.arrivalAirport}</span>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="flight-offer-card__details">
         <span>{offer.baggage}</span>

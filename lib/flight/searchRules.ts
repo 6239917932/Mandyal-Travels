@@ -54,11 +54,15 @@ export function normalizeFlightOffer(
   offer: FlightOffer,
   criteria: FlightSearchCriteria,
 ): FlightOffer | undefined {
-  const firstSegment = offer.segments[0];
-  const lastSegment = offer.segments.at(-1);
+  const outboundSegments = offer.segments.filter((segment) => segment.leg === 'outbound');
+  const returnSegments = offer.segments.filter((segment) => segment.leg === 'return');
+  const firstOutbound = outboundSegments[0];
+  const lastOutbound = outboundSegments.at(-1);
+  const firstReturn = returnSegments[0];
+  const lastReturn = returnSegments.at(-1);
   if (
-    !firstSegment ||
-    !lastSegment ||
+    !firstOutbound ||
+    !lastOutbound ||
     !offer.id.trim() ||
     !offer.supplier.trim() ||
     offer.currency !== 'INR' ||
@@ -67,19 +71,34 @@ export function normalizeFlightOffer(
     !Number.isInteger(offer.seatsRemaining) ||
     offer.seatsRemaining < criteria.adults ||
     offer.cabinClass !== criteria.cabinClass ||
-    firstSegment.departureAirport !== criteria.origin ||
-    lastSegment.arrivalAirport !== criteria.destination ||
-    firstSegment.departureAt.slice(0, 10) !== criteria.departureDate ||
+    firstOutbound.departureAirport !== criteria.origin ||
+    lastOutbound.arrivalAirport !== criteria.destination ||
+    firstOutbound.departureAt.slice(0, 10) !== criteria.departureDate ||
     offer.segments.some((segment) => !isValidSegment(segment))
   ) {
     return undefined;
   }
 
-  for (let index = 1; index < offer.segments.length; index += 1) {
-    const previous = offer.segments[index - 1];
-    const current = offer.segments[index];
-    if (!previous || !current || previous.arrivalAirport !== current.departureAirport) {
-      return undefined;
+  if (criteria.tripType === 'one-way' && returnSegments.length > 0) return undefined;
+  if (
+    criteria.tripType === 'return' &&
+    (!criteria.returnDate ||
+      !firstReturn ||
+      !lastReturn ||
+      firstReturn.departureAirport !== criteria.destination ||
+      lastReturn.arrivalAirport !== criteria.origin ||
+      firstReturn.departureAt.slice(0, 10) !== criteria.returnDate)
+  ) {
+    return undefined;
+  }
+
+  for (const leg of [outboundSegments, returnSegments]) {
+    for (let index = 1; index < leg.length; index += 1) {
+      const previous = leg[index - 1];
+      const current = leg[index];
+      if (!previous || !current || previous.arrivalAirport !== current.departureAirport) {
+        return undefined;
+      }
     }
   }
 

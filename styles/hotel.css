@@ -396,6 +396,14 @@
   gap: var(--space-4);
   text-align: center;
 }
+.flight-offer-card__routes {
+  display: grid;
+  gap: var(--space-4);
+}
+.flight-offer-card__routes > .flight-offer-card__route + .flight-offer-card__route {
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--color-border);
+}
 .flight-offer-card__route strong {
   color: var(--color-brand-900);
   font-size: 1.35rem;
@@ -502,6 +510,13 @@
   gap: var(--space-4);
   margin: var(--space-6) 0;
   text-align: center;
+}
+.flight-booking-page__routes {
+  display: grid;
+}
+.flight-booking-page__routes > .flight-booking-page__route + .flight-booking-page__route {
+  padding-top: var(--space-6);
+  border-top: 1px dashed var(--color-border);
 }
 .flight-booking-page__route strong,
 .flight-booking-page__route span,

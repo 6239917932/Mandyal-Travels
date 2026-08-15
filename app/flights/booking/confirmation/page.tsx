@@ -29,6 +29,7 @@ export default async function FlightConfirmationPage({
       </div>
     );
   const segment = offer.segments[0];
+  const returnSegment = offer.segments.find((item) => item.leg === 'return');
   const itineraryQuery: Record<string, string> = {
     adults: String(criteria.adults),
     cabinClass: criteria.cabinClass,
@@ -58,18 +59,27 @@ export default async function FlightConfirmationPage({
             </div>
             <div>
               <dt>Flight</dt>
-              <dd>{segment.flightNumber}</dd>
+              <dd>{offer.segments.map((item) => item.flightNumber).join(' / ')}</dd>
             </div>
             <div>
               <dt>Route</dt>
               <dd>
                 {segment.departureAirport} → {segment.arrivalAirport}
+                {returnSegment
+                  ? ` / ${returnSegment.departureAirport} → ${returnSegment.arrivalAirport}`
+                  : ''}
               </dd>
             </div>
             <div>
               <dt>Departure</dt>
               <dd>{criteria.departureDate}</dd>
             </div>
+            {criteria.returnDate ? (
+              <div>
+                <dt>Return</dt>
+                <dd>{criteria.returnDate}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Travelers</dt>
               <dd>

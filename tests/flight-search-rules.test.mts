@@ -32,6 +32,7 @@ const offer: FlightOffer = {
       departureAt: '2026-09-15T07:10:00+05:30',
       durationMinutes: 130,
       flightNumber: '6E 201',
+      leg: 'outbound',
       stops: 0,
     },
   ],
@@ -88,4 +89,31 @@ test('supplier connections must form a continuous itinerary', () => {
     ],
   };
   assert.equal(normalizeFlightOffer(disconnected, criteria), undefined);
+});
+
+test('return searches require complete outbound and return legs on the requested dates', () => {
+  const returnOffer: FlightOffer = {
+    ...offer,
+    id: 'return-offer',
+    segments: [
+      offer.segments[0]!,
+      {
+        ...offer.segments[0]!,
+        arrivalAirport: 'DEL',
+        arrivalAt: '2026-09-18T12:00:00+05:30',
+        departureAirport: 'BOM',
+        departureAt: '2026-09-18T10:00:00+05:30',
+        flightNumber: '6E 202',
+        leg: 'return',
+      },
+    ],
+  };
+  const returnCriteria: FlightSearchCriteria = {
+    ...criteria,
+    returnDate: '2026-09-18',
+    tripType: 'return',
+  };
+  assert.equal(normalizeFlightOffer(returnOffer, returnCriteria)?.totalPrice, 10000);
+  assert.equal(normalizeFlightOffer(offer, returnCriteria), undefined);
+  assert.equal(normalizeFlightOffer(returnOffer, criteria), undefined);
 });

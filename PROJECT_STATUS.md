@@ -23,6 +23,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   browser can no longer show a successful confirmation for an unsaved trip
 - Flight booking persistence validates the exact adult count, bounded passenger names, supported
   gender values, email address, and normalized phone length at the API boundary
+- Flight offers distinguish outbound and return legs, reject incomplete or wrong-date round trips,
+  and display both legs before selection; the fixture adapter includes a revalidatable round-trip
+  example without pretending to provide live airline inventory
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
