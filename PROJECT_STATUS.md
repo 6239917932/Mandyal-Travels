@@ -81,7 +81,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries
-- Supplier-scoped hotel booking CSV export with a bounded 1,000-record operational limit
+- Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
+  sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
   captured-value summaries, and pagination
 - Validated arrival-window filters for front-desk arrival lists, combinable with booking search and

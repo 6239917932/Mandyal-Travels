@@ -38,6 +38,13 @@ export default function PartnerBookingsPage() {
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
+  const exportParameters = new URLSearchParams();
+  if (query) exportParameters.set('query', query);
+  if (bookingStatus) exportParameters.set('bookingStatus', bookingStatus);
+  if (stayStatus) exportParameters.set('stayStatus', stayStatus);
+  if (arrivalFrom) exportParameters.set('arrivalFrom', arrivalFrom);
+  if (arrivalThrough) exportParameters.set('arrivalThrough', arrivalThrough);
+  const exportHref = `/api/v1/partner/bookings/export${exportParameters.size ? `?${exportParameters.toString()}` : ''}`;
   const loadPage = useCallback(async (page: number) => {
     setError(undefined);
     setIsLoading(true);
@@ -133,7 +140,7 @@ export default function PartnerBookingsPage() {
             <Link className="ui-button ui-button--secondary" href="/partner/amendments">
               Amendments
             </Link>
-            <Link className="ui-button ui-button--secondary" href="/api/v1/partner/bookings/export" prefetch={false}>
+            <Link className="ui-button ui-button--secondary" href={exportHref} prefetch={false}>
               Export CSV
             </Link>
           </div>
