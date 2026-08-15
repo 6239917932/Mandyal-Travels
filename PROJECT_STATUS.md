@@ -53,6 +53,12 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
   availability and pricing safeguards
+- An explainable, provider-neutral trip planner creates bounded, editable day-by-day suggestions
+  from origin, destination, dates, travellers, and interests, then links customers into the real
+  Hotel, Bus, Car, and optional Flight search journeys for live inventory and final-price checks
+- Trip-planning guidance is explicitly labelled as a recommendation rather than an availability,
+  price, or booking promise; impossible dates, past travel, excessive trip lengths, invalid party
+  sizes, and unsafe airport combinations are rejected at the versioned API boundary
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
 - Flight, Bus, and Car confirmations, tickets, itineraries, and vouchers require the signed-in
@@ -287,7 +293,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 51 regression tests, Prisma Client generation,
+The current travel-domain milestone passes 55 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 97 generated route entries, and
 clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
