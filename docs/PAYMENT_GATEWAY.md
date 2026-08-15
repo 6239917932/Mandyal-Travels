@@ -8,6 +8,22 @@ Provider onboarding must approve the merchant entity, permitted payment methods,
 
 Until a contracted gateway is configured, the current local demonstration booking path remains available only outside production. It must not be represented as a real charge. Production environment validation prevents accidental launch in demonstration mode.
 
+## Capture, allocation, and accounting
+
+A booking is confirmed only after a signed provider webhook marks the exact hosted-checkout intent as captured. The intent must belong to the booking quote and its integer amount and ISO currency must match the server-calculated final total. A captured intent is single-use. Production and live mode reject bookings without this evidence; the sandbox simulator remains explicitly labelled and unreconciled.
+
+Each verified hotel capture is atomically divided into supplier payable, platform commission, and tax payable allocations. Commission uses the contracted supplier basis points and all rounding remainder stays in the supplier payable, so allocations always equal the captured amount exactly. The same transaction writes an immutable balanced journal: payment-provider clearing is debited and the supplier, commission, and tax liabilities are credited. Refund approvals create balanced reversing postings. An unbalanced journal is rejected before database storage.
+
+This is compatible with a payment-split aggregator, but Mandyal Travels remains the source of truth for the commercial split. The provider may execute the collection and payout; it must not recalculate the commission or alter the booking total independently.
+
+## Settlement and supplier payouts
+
+Settlement generation includes only confirmed, checked-out hotel bookings backed by live, matched captures. It applies the supplier settlement delay and stores immutable per-booking settlement lines, preventing the same booking from being settled twice. Bus, car, and flight transactions stay outside this live settlement path until their provider capture records use the same verified payment model.
+
+Supplier payout destinations are provider-tokenized. Mandyal Travels stores the beneficiary token, masked routing information, bank name, and final four account digits only—never a full account number or bank credential. Administrators verify a single default destination before approved settlements can enter an idempotent payout batch. A production payout provider still requires contracted credentials, beneficiary onboarding/KYC, signed callbacks, failure handling, reconciliation files, and operational certification before money is released.
+
+The finance console shows payment environment and reconciliation state, balanced journals and postings, supplier allocations, governed payout batches, and the compatibility ledger used by older reports.
+
 ## Webhooks and refunds
 
 Providers sign `timestamp.raw-body` with HMAC-SHA256 and send the digest in `x-payment-signature` plus the Unix timestamp in `x-payment-timestamp`. Use a random webhook secret of at least 32 characters. Payloads are size-bounded, replay-window checked, field-bounded, and idempotently recorded before intent status changes. Approved refunds can be dispatched through the separately configured refund endpoint; provider credentials and final certification remain deployment responsibilities.

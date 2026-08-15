@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -29,6 +29,15 @@ function getHotelIdempotencyKey(quoteId: string) {
   return created;
 }
 
+function getPaymentIdempotencyKey(quoteId: string) {
+  const storageKey = `mandyal-payment-idempotency-${quoteId}`;
+  const stored = window.sessionStorage.getItem(storageKey);
+  if (stored?.startsWith('payment-')) return stored;
+  const created = `payment-${crypto.randomUUID()}`;
+  window.sessionStorage.setItem(storageKey, created);
+  return created;
+}
+
 function formatCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -48,6 +57,11 @@ interface PromotionResponse {
   error?: { message?: string };
 }
 
+interface CheckoutIntentResponse {
+  data?: { checkoutUrl: string; id: string };
+  error?: { code?: string; message?: string };
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const { booking, confirmBooking } = useBookingContext();
@@ -57,27 +71,10 @@ export default function PaymentPage() {
   const [promotion, setPromotion] = useState<AppliedPromotion>();
   const [promotionError, setPromotionError] = useState<string>();
   const [isValidatingPromotion, setIsValidatingPromotion] = useState(false);
-
-  if (!booking || !booking.guest) {
-    return (
-      <div className="booking-page">
-        <div className="booking-page__container">
-          <Card className="booking-page__empty-state">
-            <p className="hotel-page__eyebrow">Booking details required</p>
-            <h1>Complete the earlier booking steps first.</h1>
-            <p>Select a room and add the lead guest before continuing to payment.</p>
-            <Link className="booking-page__back-link" href="/hotels">
-              Browse hotels
-            </Link>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const paymentReturnHandled = useRef(false);
 
   const bookingDraft = booking;
-  const bookingSlug = bookingDraft.hotel.slug;
-  const originalTotal = bookingDraft.pricing.total.amount;
+  const originalTotal = bookingDraft?.pricing.total.amount ?? 0;
   const finalTotal = promotion?.finalTotal ?? originalTotal;
 
   async function applyPromotion() {
@@ -111,59 +108,143 @@ export default function PaymentPage() {
     }
   }
 
-  async function submitPayment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPaymentError(undefined);
-    setIsProcessing(true);
+  const finalizeBooking = useCallback(
+    async (paymentIntentId?: string, confirmedPromotionCode = promotion?.code) => {
+      if (!bookingDraft?.guest) return;
+      setPaymentError(undefined);
+      setIsProcessing(true);
 
-    const businessRequest = readActiveBusinessTravelRequest();
-    if (businessRequest && businessRequest.productType !== 'HOTEL') {
-      setPaymentError('The active company approval is for a different travel product.');
-      setIsProcessing(false);
-      return;
-    }
-
-    try {
-      const idempotencyKey = getHotelIdempotencyKey(bookingDraft.quoteId);
-      const response = await fetch('/api/v1/hotels/bookings', {
-        body: JSON.stringify({
-          availabilityLockId: bookingDraft.availabilityLock.id,
-          businessTravelRequestId: businessRequest?.id,
-          guest: bookingDraft.guest,
-          hotelSlug: bookingDraft.hotel.slug,
-          promotionCode: promotion?.code,
-          quoteId: bookingDraft.quoteId,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
-        },
-        method: 'POST',
-      });
-
-      const result = await readJsonResponse<{ data: HotelBookingRecord } | ApiErrorResponse>(
-        response,
-      );
-      if (!response.ok || !result || !('data' in result)) {
-        setPaymentError(
-          result && 'error' in result
-            ? result.error.message
-            : 'The booking could not be completed. No payment was captured.',
-        );
+      const businessRequest = readActiveBusinessTravelRequest();
+      if (businessRequest && businessRequest.productType !== 'HOTEL') {
+        setPaymentError('The active company approval is for a different travel product.');
         setIsProcessing(false);
         return;
       }
 
-      const createdBooking = result.data;
-      if (businessRequest) clearActiveBusinessTravelRequest();
-      confirmBooking(
-        createdBooking.confirmationCode,
-        createdBooking.id,
-        createdBooking.totalAmount,
+      try {
+        const idempotencyKey = getHotelIdempotencyKey(bookingDraft.quoteId);
+        const response = await fetch('/api/v1/hotels/bookings', {
+          body: JSON.stringify({
+            availabilityLockId: bookingDraft.availabilityLock.id,
+            businessTravelRequestId: businessRequest?.id,
+            guest: bookingDraft.guest,
+            hotelSlug: bookingDraft.hotel.slug,
+            paymentIntentId,
+            promotionCode: confirmedPromotionCode,
+            quoteId: bookingDraft.quoteId,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey,
+          },
+          method: 'POST',
+        });
+
+        const result = await readJsonResponse<{ data: HotelBookingRecord } | ApiErrorResponse>(
+          response,
+        );
+        if (!response.ok || !result || !('data' in result)) {
+          setPaymentError(
+            result && 'error' in result
+              ? result.error.message
+              : 'The booking could not be completed. No payment was captured.',
+          );
+          setIsProcessing(false);
+          return;
+        }
+
+        const createdBooking = result.data;
+        if (businessRequest) clearActiveBusinessTravelRequest();
+        confirmBooking(
+          createdBooking.confirmationCode,
+          createdBooking.id,
+          createdBooking.totalAmount,
+        );
+        router.push(`/hotels/${bookingDraft.hotel.slug}/booking/confirmation`);
+      } catch {
+        setPaymentError('The booking service is unavailable. No payment was captured.');
+        setIsProcessing(false);
+      }
+    },
+    [bookingDraft, confirmBooking, promotion?.code, router],
+  );
+
+  useEffect(() => {
+    const returned = new URLSearchParams(window.location.search).get('paymentReturn') === '1';
+    if (!bookingDraft?.guest || !returned || paymentReturnHandled.current) return;
+    paymentReturnHandled.current = true;
+    const intentId = window.sessionStorage.getItem(
+      `mandyal-payment-intent-${bookingDraft.quoteId}`,
+    );
+    if (!intentId) {
+      window.setTimeout(
+        () => setPaymentError('The payment return could not be matched to this booking.'),
+        0,
       );
-      router.push(`/hotels/${bookingSlug}/booking/confirmation`);
+      return;
+    }
+    const confirmedPromotionCode = window.sessionStorage.getItem(
+      `mandyal-payment-promotion-${bookingDraft.quoteId}`,
+    );
+    window.setTimeout(() => void finalizeBooking(intentId, confirmedPromotionCode ?? undefined), 0);
+  }, [bookingDraft?.guest, bookingDraft?.quoteId, finalizeBooking]);
+
+  if (!bookingDraft || !bookingDraft.guest) {
+    return (
+      <div className="booking-page">
+        <div className="booking-page__container">
+          <Card className="booking-page__empty-state">
+            <p className="hotel-page__eyebrow">Booking details required</p>
+            <h1>Complete the earlier booking steps first.</h1>
+            <p>Select a room and add the lead guest before continuing to payment.</p>
+            <Link className="booking-page__back-link" href="/hotels">
+              Browse hotels
+            </Link>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  async function submitPayment(event: FormEvent<HTMLFormElement>) {
+    if (!bookingDraft?.guest) {
+      return;
+    }
+    event.preventDefault();
+    setPaymentError(undefined);
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/v1/payments/checkout-intents', {
+        body: JSON.stringify({ quoteId: bookingDraft.quoteId, promotionCode: promotion?.code }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': getPaymentIdempotencyKey(bookingDraft.quoteId),
+        },
+        method: 'POST',
+      });
+      const result = await readJsonResponse<CheckoutIntentResponse>(response);
+      if (response.ok && result?.data) {
+        window.sessionStorage.setItem(
+          `mandyal-payment-intent-${bookingDraft.quoteId}`,
+          result.data.id,
+        );
+        if (promotion?.code) {
+          window.sessionStorage.setItem(
+            `mandyal-payment-promotion-${bookingDraft.quoteId}`,
+            promotion.code,
+          );
+        }
+        window.location.assign(result.data.checkoutUrl);
+        return;
+      }
+      if (result?.error?.code === 'PAYMENT_PROVIDER_NOT_CONFIGURED') {
+        await finalizeBooking();
+        return;
+      }
+      setPaymentError(result?.error?.message ?? 'Secure checkout is temporarily unavailable.');
     } catch {
-      setPaymentError('The booking service is unavailable. No payment was captured.');
+      setPaymentError('Secure checkout is temporarily unavailable. No payment was captured.');
+    } finally {
       setIsProcessing(false);
     }
   }
@@ -174,14 +255,14 @@ export default function PaymentPage() {
         <p className="hotel-page__eyebrow">Secure payment</p>
         <h1>Complete your booking</h1>
         <p className="booking-page__intro">
-          Review the final total and use the demonstration payment form below.
+          Review the final total and continue to our payment provider&apos;s secure hosted checkout.
         </p>
 
         <div className="booking-page__grid">
           <Card className="booking-page__payment-card">
             <div className="booking-page__secure-banner">
               <strong>Protected payment</strong>
-              <span>This prototype does not store or submit card details.</span>
+              <span>Mandyal Travels never collects or stores your card details on this page.</span>
             </div>
 
             <form className="booking-page__guest-form" onSubmit={submitPayment}>
@@ -227,40 +308,9 @@ export default function PaymentPage() {
                   </span>
                 </div>
               ) : null}
-              <Input autoComplete="cc-name" label="Name on card" name="cardholderName" required />
-              <Input
-                autoComplete="cc-number"
-                inputMode="numeric"
-                label="Card number"
-                maxLength={19}
-                name="cardNumber"
-                pattern="[0-9 ]{15,19}"
-                placeholder="4242 4242 4242 4242"
-                required
-              />
-              <div className="booking-page__payment-fields">
-                <Input
-                  autoComplete="cc-exp"
-                  label="Expiry"
-                  name="expiry"
-                  pattern="(0[1-9]|1[0-2])/[0-9]{2}"
-                  placeholder="MM/YY"
-                  required
-                />
-                <Input
-                  autoComplete="cc-csc"
-                  inputMode="numeric"
-                  label="CVV"
-                  maxLength={4}
-                  name="cvv"
-                  pattern="[0-9]{3,4}"
-                  placeholder="123"
-                  required
-                  type="password"
-                />
-              </div>
               <Button fullWidth isLoading={isProcessing} type="submit" variant="accent">
-                Pay {formatCurrency(finalTotal, booking.pricing.total.currency)}
+                Continue to secure payment ·{' '}
+                {formatCurrency(finalTotal, bookingDraft.pricing.total.currency)}
               </Button>
               {paymentError ? (
                 <p className="booking-page__payment-error" role="alert">
@@ -272,41 +322,45 @@ export default function PaymentPage() {
 
           <Card className="booking-page__price-card">
             <p className="booking-page__location">Final booking summary</p>
-            <h2>{booking.hotel.name}</h2>
-            <p>{booking.selectedRoom.name}</p>
+            <h2>{bookingDraft.hotel.name}</h2>
+            <p>{bookingDraft.selectedRoom.name}</p>
             <dl>
               <div>
                 <dt>Lead guest</dt>
                 <dd>
-                  {booking.guest.firstName} {booking.guest.lastName}
+                  {bookingDraft.guest.firstName} {bookingDraft.guest.lastName}
                 </dd>
               </div>
               <div>
                 <dt>Stay</dt>
                 <dd>
-                  {booking.checkInDate} - {booking.checkOutDate}
+                  {bookingDraft.checkInDate} - {bookingDraft.checkOutDate}
                 </dd>
               </div>
               <div className="booking-page__total">
                 <dt>{promotion ? 'Fare before offers' : 'Total'}</dt>
-                <dd>{formatCurrency(originalTotal, booking.pricing.total.currency)}</dd>
+                <dd>{formatCurrency(originalTotal, bookingDraft.pricing.total.currency)}</dd>
               </div>
               {promotion ? (
                 <>
                   <div>
                     <dt>Offer savings</dt>
                     <dd>
-                      -{formatCurrency(promotion.discountAmount, booking.pricing.total.currency)}
+                      -
+                      {formatCurrency(
+                        promotion.discountAmount,
+                        bookingDraft.pricing.total.currency,
+                      )}
                     </dd>
                   </div>
                   <div className="booking-page__total">
                     <dt>Amount to pay</dt>
-                    <dd>{formatCurrency(finalTotal, booking.pricing.total.currency)}</dd>
+                    <dd>{formatCurrency(finalTotal, bookingDraft.pricing.total.currency)}</dd>
                   </div>
                 </>
               ) : null}
             </dl>
-            <p>{booking.ratePlan.cancellationPolicy.description}</p>
+            <p>{bookingDraft.ratePlan.cancellationPolicy.description}</p>
           </Card>
         </div>
       </div>

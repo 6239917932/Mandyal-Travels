@@ -50,30 +50,30 @@ model User {
 }
 
 model UserConsentRecord {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
   purpose       String
   policyVersion String
   status        String
-  source        String   @default("ACCOUNT")
-  recordedAt    DateTime @default(now())
+  source        String    @default("ACCOUNT")
+  recordedAt    DateTime  @default(now())
   withdrawnAt   DateTime?
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose, recordedAt])
   @@index([purpose, status, recordedAt])
 }
 
 model DataPrivacyRequest {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String
   requestType    String
-  status         String   @default("OPEN")
-  requestedAt    DateTime @default(now())
+  status         String    @default("OPEN")
+  requestedAt    DateTime  @default(now())
   dueAt          DateTime
   completedAt    DateTime?
-  resolutionNote String   @default("")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  resolutionNote String    @default("")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([userId, requestType, requestedAt])
   @@index([status, dueAt])
@@ -92,39 +92,45 @@ model UserMfaCredential {
 }
 
 model UserMfaRecoveryCode {
-  id           String             @id @default(cuid())
+  id           String            @id @default(cuid())
   userId       String
   credentialId String
   codeHash     String
   usedAt       DateTime?
-  createdAt    DateTime           @default(now())
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  credential   UserMfaCredential  @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential   UserMfaCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
 
   @@index([userId, usedAt])
   @@index([credentialId, usedAt])
 }
 
 model SupplyPartner {
-  id                  String                      @id @default(cuid())
-  name                String
-  type                String                      @default("HOTEL")
-  status              String                      @default("ACTIVE")
-  contactEmail        String?
-  contactPhone        String?
-  createdAt           DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
-  members             SupplyPartnerMember[]
-  properties          PartnerProperty[]
-  auditEntries        PartnerAuditLog[]
-  applications        PartnerApplication[]
-  vehicles            PartnerVehicle[]
-  vehicleReservations PartnerVehicleReservation[]
-  busRoutes           PartnerBusRoute[]
-  busReservations     PartnerBusReservation[]
-  channelConnections  HotelChannelConnection[]
-  settlements         PartnerSettlement[]
-  flightConnections   FlightSupplierConnection[]
+  id                    String                      @id @default(cuid())
+  name                  String
+  type                  String                      @default("HOTEL")
+  status                String                      @default("ACTIVE")
+  contactEmail          String?
+  contactPhone          String?
+  commissionBasisPoints Int                         @default(1000)
+  settlementDelayDays   Int                         @default(2)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  members               SupplyPartnerMember[]
+  properties            PartnerProperty[]
+  auditEntries          PartnerAuditLog[]
+  applications          PartnerApplication[]
+  vehicles              PartnerVehicle[]
+  vehicleReservations   PartnerVehicleReservation[]
+  busRoutes             PartnerBusRoute[]
+  busReservations       PartnerBusReservation[]
+  channelConnections    HotelChannelConnection[]
+  settlements           PartnerSettlement[]
+  settlementLines       PartnerSettlementLine[]
+  paymentAllocations    PaymentAllocation[]
+  payoutAccounts        PartnerPayoutAccount[]
+  payoutInstructions    PartnerPayoutInstruction[]
+  flightConnections     FlightSupplierConnection[]
 
   @@index([status, createdAt])
 }
@@ -143,54 +149,54 @@ model SupplyPartnerMember {
 }
 
 model PartnerProperty {
-  id                String                     @id @default(cuid())
-  partnerId         String
-  hotelSlug         String                     @unique
-  displayName       String
-  propertyType      String                     @default("HOTEL")
-  contactEmail      String                     @default("")
-  contactPhone      String                     @default("")
-  timezone          String                     @default("Asia/Kolkata")
-  status            String                     @default("ACTIVE")
-  listingSource     String                     @default("ASSIGNED")
-  publicationStatus String                     @default("PUBLISHED")
-  approvalStatus    String                     @default("PENDING_REVIEW")
-  approvalNote      String                     @default("")
-  submittedAt       DateTime?
-  reviewedAt        DateTime?
-  reviewedByUserId  String?
-  description       String                     @default("")
-  locality          String                     @default("")
-  tehsil            String                     @default("")
-  district          String                     @default("")
-  locationAliasesJson String                   @default("[]")
-  city              String                     @default("")
-  state             String                     @default("")
-  country           String                     @default("India")
-  streetAddress     String                     @default("")
-  postalCode        String                     @default("")
-  latitude          Float                      @default(0)
-  longitude         Float                      @default(0)
-  starRating        Int                        @default(3)
-  checkInTime       String                     @default("14:00")
-  checkOutTime      String                     @default("11:00")
-  amenitiesJson     String                     @default("[]")
-  policiesJson      String                     @default("[]")
-  languagesJson     String                     @default("[]")
-  landmarksJson     String                     @default("[]")
-  imageUrlsJson     String                     @default("[]")
-  minimumCheckInAge Int                        @default(18)
-  childrenAllowed   Boolean                    @default(true)
-  petsAllowed       Boolean                    @default(false)
-  smokingAllowed    Boolean                    @default(false)
-  imageUrl          String                     @default("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80")
-  createdAt         DateTime                   @default(now())
-  updatedAt         DateTime                   @updatedAt
-  partner           SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  inventoryDays     PartnerHotelInventoryDay[]
-  physicalRooms     PartnerPhysicalRoom[]
-  rooms             PartnerRoomType[]
-  channelMappings   HotelChannelPropertyMapping[]
+  id                  String                        @id @default(cuid())
+  partnerId           String
+  hotelSlug           String                        @unique
+  displayName         String
+  propertyType        String                        @default("HOTEL")
+  contactEmail        String                        @default("")
+  contactPhone        String                        @default("")
+  timezone            String                        @default("Asia/Kolkata")
+  status              String                        @default("ACTIVE")
+  listingSource       String                        @default("ASSIGNED")
+  publicationStatus   String                        @default("PUBLISHED")
+  approvalStatus      String                        @default("PENDING_REVIEW")
+  approvalNote        String                        @default("")
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  reviewedByUserId    String?
+  description         String                        @default("")
+  locality            String                        @default("")
+  tehsil              String                        @default("")
+  district            String                        @default("")
+  locationAliasesJson String                        @default("[]")
+  city                String                        @default("")
+  state               String                        @default("")
+  country             String                        @default("India")
+  streetAddress       String                        @default("")
+  postalCode          String                        @default("")
+  latitude            Float                         @default(0)
+  longitude           Float                         @default(0)
+  starRating          Int                           @default(3)
+  checkInTime         String                        @default("14:00")
+  checkOutTime        String                        @default("11:00")
+  amenitiesJson       String                        @default("[]")
+  policiesJson        String                        @default("[]")
+  languagesJson       String                        @default("[]")
+  landmarksJson       String                        @default("[]")
+  imageUrlsJson       String                        @default("[]")
+  minimumCheckInAge   Int                           @default(18)
+  childrenAllowed     Boolean                       @default(true)
+  petsAllowed         Boolean                       @default(false)
+  smokingAllowed      Boolean                       @default(false)
+  imageUrl            String                        @default("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80")
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  partner             SupplyPartner                 @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  inventoryDays       PartnerHotelInventoryDay[]
+  physicalRooms       PartnerPhysicalRoom[]
+  rooms               PartnerRoomType[]
+  channelMappings     HotelChannelPropertyMapping[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -198,39 +204,39 @@ model PartnerProperty {
 }
 
 model FlightSupplierConnection {
-  id                 String                    @id @default(cuid())
-  partnerId          String
-  providerCode       String
-  displayName        String
-  environment        String                    @default("SANDBOX")
-  credentialRef      String
-  status             String                    @default("DRAFT")
-  lastHealthStatus   String                    @default("NOT_TESTED")
-  lastHealthAt       DateTime?
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
-  partner            SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  operations         FlightSupplierOperation[]
+  id               String                    @id @default(cuid())
+  partnerId        String
+  providerCode     String
+  displayName      String
+  environment      String                    @default("SANDBOX")
+  credentialRef    String
+  status           String                    @default("DRAFT")
+  lastHealthStatus String                    @default("NOT_TESTED")
+  lastHealthAt     DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  partner          SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  operations       FlightSupplierOperation[]
 
   @@unique([partnerId, providerCode, environment])
   @@index([partnerId, status, updatedAt])
 }
 
 model FlightSupplierOperation {
-  id             String                   @id @default(cuid())
-  connectionId   String
-  operationType  String
-  correlationId  String
-  requestHash    String
-  status         String                   @default("QUEUED")
-  providerRef    String                   @default("")
-  attempts       Int                      @default(0)
-  nextAttemptAt  DateTime                 @default(now())
-  lastError      String                   @default("")
-  completedAt    DateTime?
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
-  connection     FlightSupplierConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  id            String                   @id @default(cuid())
+  connectionId  String
+  operationType String
+  correlationId String
+  requestHash   String
+  status        String                   @default("QUEUED")
+  providerRef   String                   @default("")
+  attempts      Int                      @default(0)
+  nextAttemptAt DateTime                 @default(now())
+  lastError     String                   @default("")
+  completedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  connection    FlightSupplierConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@unique([connectionId, correlationId])
   @@index([status, nextAttemptAt, createdAt])
@@ -238,25 +244,25 @@ model FlightSupplierOperation {
 }
 
 model PartnerBusRoute {
-  id             String           @id @default(cuid())
-  partnerId      String
-  code           String           @unique
-  origin         String
-  destination    String
-  boardingPoint  String
-  droppingPoint  String
-  status         String           @default("ACTIVE")
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  partner        SupplyPartner    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  trips          PartnerBusTrip[]
+  id            String           @id @default(cuid())
+  partnerId     String
+  code          String           @unique
+  origin        String
+  destination   String
+  boardingPoint String
+  droppingPoint String
+  status        String           @default("ACTIVE")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  partner       SupplyPartner    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  trips         PartnerBusTrip[]
 
   @@index([partnerId, status])
   @@index([origin, destination, status])
 }
 
 model PartnerBusTrip {
-  id                 String          @id @default(cuid())
+  id                 String                  @id @default(cuid())
   routeId            String
   serviceDate        String
   departureTime      String
@@ -264,14 +270,14 @@ model PartnerBusTrip {
   busType            String
   seatCapacity       Int
   pricePerSeat       Int
-  currency           String          @default("INR")
-  amenitiesJson      String          @default("[]")
+  currency           String                  @default("INR")
+  amenitiesJson      String                  @default("[]")
   cancellationPolicy String
-  refundable         Boolean         @default(false)
-  status             String          @default("ACTIVE")
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  route              PartnerBusRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  refundable         Boolean                 @default(false)
+  status             String                  @default("ACTIVE")
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  route              PartnerBusRoute         @relation(fields: [routeId], references: [id], onDelete: Cascade)
   reservations       PartnerBusReservation[]
 
   @@unique([routeId, serviceDate, departureTime])
@@ -302,9 +308,9 @@ model PartnerBusReservation {
 }
 
 model PartnerRoomType {
-  id                      String          @id @default(cuid())
+  id                      String                @id @default(cuid())
   propertyId              String
-  roomTypeId              String          @unique
+  roomTypeId              String                @unique
   name                    String
   description             String
   bedDescription          String
@@ -315,15 +321,15 @@ model PartnerRoomType {
   nightlyRate             Int
   taxesAndFees            Int
   ratePlanName            String
-  mealPlan                String          @default("room-only")
-  refundable              Boolean         @default(true)
+  mealPlan                String                @default("room-only")
+  refundable              Boolean               @default(true)
   cancellationDescription String
-  amenitiesJson           String          @default("[]")
-  imageUrl                String          @default("https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80")
-  status                  String          @default("ACTIVE")
-  createdAt               DateTime        @default(now())
-  updatedAt               DateTime        @updatedAt
-  property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenitiesJson           String                @default("[]")
+  imageUrl                String                @default("https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80")
+  status                  String                @default("ACTIVE")
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  property                PartnerProperty       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   physicalRooms           PartnerPhysicalRoom[]
   ratePlans               PartnerRatePlan[]
 
@@ -331,17 +337,17 @@ model PartnerRoomType {
 }
 
 model PartnerApplication {
-  id               String         @id @default(cuid())
-  applicantUserId  String
-  reviewedByUserId String?
-  partnerId        String?
-  businessName     String
-  partnerType      String
-  contactName      String
-  contactEmail     String
-  contactPhone     String
-  city             String
-  inventorySummary String
+  id                String         @id @default(cuid())
+  applicantUserId   String
+  reviewedByUserId  String?
+  partnerId         String?
+  businessName      String
+  partnerType       String
+  contactName       String
+  contactEmail      String
+  contactPhone      String
+  city              String
+  inventorySummary  String
   legalBusinessName String         @default("")
   registeredAddress String         @default("")
   taxIdentifier     String         @default("")
@@ -350,14 +356,14 @@ model PartnerApplication {
   identityReference String         @default("")
   kycStatus         String         @default("SUBMITTED")
   kycConsentAt      DateTime?
-  status           String         @default("PENDING")
-  reviewNote       String?
-  reviewedAt       DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  applicant        User           @relation("PartnerApplicationApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
-  reviewedBy       User?          @relation("PartnerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  partner          SupplyPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  status            String         @default("PENDING")
+  reviewNote        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  applicant         User           @relation("PartnerApplicationApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
+  reviewedBy        User?          @relation("PartnerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  partner           SupplyPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([applicantUserId, createdAt])
@@ -365,22 +371,22 @@ model PartnerApplication {
 }
 
 model PartnerHotelInventoryDay {
-  id             String          @id @default(cuid())
-  propertyId     String
-  roomTypeId     String
-  stayDate       String
-  availableRooms Int
-  nightlyRate    Int?
+  id                String          @id @default(cuid())
+  propertyId        String
+  roomTypeId        String
+  stayDate          String
+  availableRooms    Int
+  nightlyRate       Int?
   minimumStayNights Int?
   maximumStayNights Int?
-  closedToArrival Boolean         @default(false)
-  closedToDeparture Boolean       @default(false)
-  currency       String          @default("INR")
-  stopSell       Boolean         @default(false)
-  note           String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  property       PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  closedToArrival   Boolean         @default(false)
+  closedToDeparture Boolean         @default(false)
+  currency          String          @default("INR")
+  stopSell          Boolean         @default(false)
+  note              String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  property          PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([propertyId, roomTypeId, stayDate])
   @@index([propertyId, stayDate])
@@ -760,59 +766,60 @@ model AvailabilityLock {
 }
 
 model HotelQuote {
-  id                 String           @id
-  hotelSlug          String           @default("")
-  checkInDate        String           @default("")
-  checkOutDate       String           @default("")
-  ratePlanId         String           @default("")
-  rooms              Int              @default(1)
+  id                 String                  @id
+  hotelSlug          String                  @default("")
+  checkInDate        String                  @default("")
+  checkOutDate       String                  @default("")
+  ratePlanId         String                  @default("")
+  rooms              Int                     @default(1)
   currency           String
   totalAmount        Int
   nights             Int
   quotedAt           DateTime
   expiresAt          DateTime
-  availabilityLockId String           @unique
-  availabilityLock   AvailabilityLock @relation(fields: [availabilityLockId], references: [id])
+  availabilityLockId String                  @unique
+  availabilityLock   AvailabilityLock        @relation(fields: [availabilityLockId], references: [id])
   components         PriceComponent[]
   booking            Booking?
   paymentIntents     PaymentCheckoutIntent[]
 }
 
 model PaymentCheckoutIntent {
-  id             String     @id @default(cuid())
+  id             String              @id @default(cuid())
   quoteId        String
-  idempotencyKey String     @unique
+  idempotencyKey String              @unique
   provider       String
-  providerRef    String     @unique
+  providerRef    String              @unique
   amount         Int
   currency       String
-  status         String     @default("CREATED")
+  status         String              @default("CREATED")
   checkoutUrl    String
   expiresAt      DateTime
   capturedAt     DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  quote          HotelQuote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  quote          HotelQuote          @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  payment        PaymentTransaction?
 
   @@index([quoteId, status, createdAt])
   @@index([status, expiresAt])
 }
 
 model PaymentProviderEvent {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   provider        String
   providerEventId String
   eventType       String
   providerRef     String
   payloadHash     String
-  status          String   @default("RECEIVED")
-  errorMessage    String   @default("")
-  receivedAt      DateTime @default(now())
+  status          String    @default("RECEIVED")
+  errorMessage    String    @default("")
+  receivedAt      DateTime  @default(now())
   processedAt     DateTime?
 
+  @@unique([provider, providerEventId])
   @@index([providerRef, receivedAt])
   @@index([status, receivedAt])
-  @@unique([provider, providerEventId])
 }
 
 model LoyaltyAccount {
@@ -847,15 +854,15 @@ model LoyaltyLedger {
 }
 
 model ReferralCode {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   ownerUserId String
-  code        String   @unique
-  status      String   @default("ACTIVE")
-  maxUses     Int      @default(20)
-  usedCount   Int      @default(0)
+  code        String    @unique
+  status      String    @default("ACTIVE")
+  maxUses     Int       @default(20)
+  usedCount   Int       @default(0)
   expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([ownerUserId, status])
 }
@@ -873,31 +880,32 @@ model PriceComponent {
 }
 
 model Booking {
-  id                      String                 @id
-  confirmationCode        String                 @unique
-  idempotencyKey          String                 @unique
-  accessTokenHash         String?                @unique
+  id                      String                   @id
+  confirmationCode        String                   @unique
+  idempotencyKey          String                   @unique
+  accessTokenHash         String?                  @unique
   hotelSlug               String
   status                  String
-  operationalStatus       String                 @default("RESERVED")
-  assignedRoomNumbersJson String                 @default("[]")
-  partnerNote             String                 @default("")
+  operationalStatus       String                   @default("RESERVED")
+  assignedRoomNumbersJson String                   @default("[]")
+  partnerNote             String                   @default("")
   totalAmount             Int
   currency                String
-  createdAt               DateTime               @default(now())
-  quoteId                 String                 @unique
-  availabilityLockId      String                 @unique
-  businessTravelRequestId String?                @unique
-  quote                   HotelQuote             @relation(fields: [quoteId], references: [id])
-  availabilityLock        AvailabilityLock       @relation(fields: [availabilityLockId], references: [id])
+  createdAt               DateTime                 @default(now())
+  quoteId                 String                   @unique
+  availabilityLockId      String                   @unique
+  businessTravelRequestId String?                  @unique
+  quote                   HotelQuote               @relation(fields: [quoteId], references: [id])
+  availabilityLock        AvailabilityLock         @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
   payment                 PaymentTransaction?
   refunds                 RefundRequest[]
   amendments              BookingAmendment[]
-  businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
+  businessTravelRequest   BusinessTravelRequest?   @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
   integrationEvents       IntegrationOutboxEvent[]
+  settlementLine          PartnerSettlementLine?
 
   @@index([hotelSlug, operationalStatus, createdAt])
 }
@@ -1025,27 +1033,29 @@ model RiskSignal {
 }
 
 model PartnerSettlement {
-  id               String        @id @default(cuid())
-  partnerId        String
-  periodStart      String
-  periodEnd        String
-  currency         String        @default("INR")
-  grossAmount      Int
-  commissionAmount Int
-  taxWithheldAmount Int          @default(0)
-  adjustmentAmount Int           @default(0)
-  netAmount        Int
-  bookingCount     Int
-  status           String        @default("DRAFT")
-  calculationJson  String        @default("{}")
-  reviewNote       String        @default("")
-  approvedByUserId String?
-  approvedAt       DateTime?
-  paidAt           DateTime?
-  paymentReference String        @default("")
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  partner          SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  id                String                    @id @default(cuid())
+  partnerId         String
+  periodStart       String
+  periodEnd         String
+  currency          String                    @default("INR")
+  grossAmount       Int
+  commissionAmount  Int
+  taxWithheldAmount Int                       @default(0)
+  adjustmentAmount  Int                       @default(0)
+  netAmount         Int
+  bookingCount      Int
+  status            String                    @default("DRAFT")
+  calculationJson   String                    @default("{}")
+  reviewNote        String                    @default("")
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  paidAt            DateTime?
+  paymentReference  String                    @default("")
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  partner           SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  lines             PartnerSettlementLine[]
+  payoutInstruction PartnerPayoutInstruction?
 
   @@unique([partnerId, periodStart, periodEnd])
   @@index([status, periodEnd, createdAt])
@@ -1099,24 +1109,24 @@ model NotificationTemplate {
 }
 
 model NotificationDelivery {
-  id             String                @id @default(cuid())
-  templateId     String
-  userId         String?
-  recipient      String
-  channel        String
-  status         String                @default("QUEUED")
-  dedupeKey      String                @unique
-  variablesJson  String                @default("{}")
-  providerRef    String                @default("")
-  attempts       Int                   @default(0)
-  maxAttempts    Int                   @default(6)
-  nextAttemptAt  DateTime              @default(now())
-  deliveredAt    DateTime?
-  lastError      String                @default("")
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  template       NotificationTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id            String               @id @default(cuid())
+  templateId    String
+  userId        String?
+  recipient     String
+  channel       String
+  status        String               @default("QUEUED")
+  dedupeKey     String               @unique
+  variablesJson String               @default("{}")
+  providerRef   String               @default("")
+  attempts      Int                  @default(0)
+  maxAttempts   Int                  @default(6)
+  nextAttemptAt DateTime             @default(now())
+  deliveredAt   DateTime?
+  lastError     String               @default("")
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  template      NotificationTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  user          User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([status, nextAttemptAt, createdAt])
   @@index([userId, createdAt])
@@ -1143,22 +1153,22 @@ model PartnerPhysicalRoom {
 }
 
 model PartnerRatePlan {
-  id                      String          @id @default(cuid())
+  id                      String                        @id @default(cuid())
   roomId                  String
-  ratePlanId              String          @unique
+  ratePlanId              String                        @unique
   name                    String
   nightlyRate             Int
   taxesAndFees            Int
-  mealPlan                String          @default("room-only")
-  refundable              Boolean         @default(true)
+  mealPlan                String                        @default("room-only")
+  refundable              Boolean                       @default(true)
   cancellationDescription String
-  freeCancellationHours   Int             @default(48)
-  minimumStayNights       Int             @default(1)
-  maximumStayNights       Int             @default(30)
-  status                  String          @default("ACTIVE")
-  createdAt               DateTime        @default(now())
-  updatedAt               DateTime        @updatedAt
-  room                    PartnerRoomType @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  freeCancellationHours   Int                           @default(48)
+  minimumStayNights       Int                           @default(1)
+  maximumStayNights       Int                           @default(30)
+  status                  String                        @default("ACTIVE")
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
+  room                    PartnerRoomType               @relation(fields: [roomId], references: [id], onDelete: Cascade)
   inventoryDays           PartnerRatePlanInventoryDay[]
 
   @@index([roomId, status])
@@ -1180,24 +1190,24 @@ model PartnerRatePlanInventoryDay {
 }
 
 model HotelReview {
-  id        String   @id @default(cuid())
-  bookingId String   @unique
-  userId    String
-  hotelSlug String
-  rating    Int
-  title     String
-  body      String
-  status    String   @default("PENDING")
-  moderationNote String?
-  moderatedAt DateTime?
+  id                String    @id @default(cuid())
+  bookingId         String    @unique
+  userId            String
+  hotelSlug         String
+  rating            Int
+  title             String
+  body              String
+  status            String    @default("PENDING")
+  moderationNote    String?
+  moderatedAt       DateTime?
   moderatedByUserId String?
-  partnerReply String?
-  partnerRepliedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user      User     @relation("HotelReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  moderatedBy User?  @relation("HotelReviewModerator", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+  partnerReply      String?
+  partnerRepliedAt  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user              User      @relation("HotelReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  moderatedBy       User?     @relation("HotelReviewModerator", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
 
   @@index([hotelSlug, status, createdAt])
   @@index([userId, createdAt])
@@ -1221,14 +1231,14 @@ model BookingAmendment {
 }
 
 model BookingGuest {
-  id        String  @id @default(cuid())
-  bookingId String  @unique
-  firstName String
-  lastName  String
-  email     String
-  phone     String
-  specialRequests String @default("")
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id              String  @id @default(cuid())
+  bookingId       String  @unique
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  specialRequests String  @default("")
+  booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model PaymentTransaction {
@@ -1239,6 +1249,8 @@ model PaymentTransaction {
   currency             String
   provider             String
   providerRef          String                 @unique
+  checkoutIntentId     String?                @unique
+  environment          String                 @default("SANDBOX")
   reconciliationStatus String                 @default("UNRECONCILED")
   providerAmount       Int?
   providerCurrency     String?
@@ -1248,31 +1260,35 @@ model PaymentTransaction {
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   booking              Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  checkoutIntent       PaymentCheckoutIntent? @relation(fields: [checkoutIntentId], references: [id], onDelete: Restrict)
   refunds              RefundRequest[]
   ledgerEntries        FinancialLedgerEntry[]
+  allocations          PaymentAllocation[]
+  journals             FinancialJournal[]
 
   @@index([reconciliationStatus, createdAt])
   @@index([status, createdAt])
 }
 
 model RefundRequest {
-  id               String                 @id @default(cuid())
-  bookingId        String
-  paymentId        String
-  amount           Int
-  currency         String
-  reason           String
-  status           String                 @default("PENDING")
+  id                String                 @id @default(cuid())
+  bookingId         String
+  paymentId         String
+  amount            Int
+  currency          String
+  reason            String
+  status            String                 @default("PENDING")
   providerRefundRef String?                @unique
   requestedByUserId String?
-  reviewedByUserId String?
-  reviewNote       String                 @default("")
-  createdAt        DateTime               @default(now())
-  reviewedAt       DateTime?
-  updatedAt        DateTime               @updatedAt
-  booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
-  payment          PaymentTransaction     @relation(fields: [paymentId], references: [id], onDelete: Restrict)
-  ledgerEntries    FinancialLedgerEntry[]
+  reviewedByUserId  String?
+  reviewNote        String                 @default("")
+  createdAt         DateTime               @default(now())
+  reviewedAt        DateTime?
+  updatedAt         DateTime               @updatedAt
+  booking           Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  payment           PaymentTransaction     @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  ledgerEntries     FinancialLedgerEntry[]
+  journals          FinancialJournal[]
 
   @@index([status, createdAt])
   @@index([bookingId, createdAt])
@@ -1280,23 +1296,167 @@ model RefundRequest {
 }
 
 model FinancialLedgerEntry {
-  id            String              @id @default(cuid())
-  paymentId     String?
-  refundId      String?
-  entryType     String
-  amount        Int
-  currency      String
-  status        String              @default("POSTED")
-  reference     String
-  description   String
+  id              String              @id @default(cuid())
+  paymentId       String?
+  refundId        String?
+  entryType       String
+  amount          Int
+  currency        String
+  status          String              @default("POSTED")
+  reference       String
+  description     String
   createdByUserId String?
-  createdAt     DateTime            @default(now())
-  payment       PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
-  refund        RefundRequest?      @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  createdAt       DateTime            @default(now())
+  payment         PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  refund          RefundRequest?      @relation(fields: [refundId], references: [id], onDelete: Restrict)
 
   @@index([entryType, createdAt])
   @@index([paymentId, createdAt])
   @@index([refundId, createdAt])
+}
+
+model PaymentAllocation {
+  id             String             @id @default(cuid())
+  paymentId      String
+  partnerId      String?
+  allocationKey  String
+  allocationType String
+  amount         Int
+  currency       String
+  status         String             @default("POSTED")
+  createdAt      DateTime           @default(now())
+  payment        PaymentTransaction @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  partner        SupplyPartner?     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  @@unique([paymentId, allocationKey])
+  @@index([partnerId, allocationType, createdAt])
+  @@index([paymentId, status])
+}
+
+model FinancialJournal {
+  id              String                    @id @default(cuid())
+  reference       String                    @unique
+  sourceType      String
+  sourceId        String
+  paymentId       String?
+  refundId        String?
+  currency        String
+  totalDebit      Int
+  totalCredit     Int
+  status          String                    @default("POSTED")
+  description     String
+  createdByUserId String?
+  createdAt       DateTime                  @default(now())
+  payment         PaymentTransaction?       @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  refund          RefundRequest?            @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  postings        FinancialJournalPosting[]
+
+  @@unique([sourceType, sourceId])
+  @@index([paymentId, createdAt])
+  @@index([refundId, createdAt])
+  @@index([status, createdAt])
+}
+
+model FinancialJournalPosting {
+  id          String           @id @default(cuid())
+  journalId   String
+  accountCode String
+  direction   String
+  amount      Int
+  partnerId   String?
+  description String
+  createdAt   DateTime         @default(now())
+  journal     FinancialJournal @relation(fields: [journalId], references: [id], onDelete: Restrict)
+
+  @@index([journalId, direction])
+  @@index([accountCode, createdAt])
+  @@index([partnerId, accountCode, createdAt])
+}
+
+model PartnerSettlementLine {
+  id                String            @id @default(cuid())
+  settlementId      String
+  partnerId         String
+  bookingId         String?           @unique
+  sourceType        String
+  sourceId          String
+  reference         String
+  grossAmount       Int
+  commissionAmount  Int
+  taxWithheldAmount Int               @default(0)
+  adjustmentAmount  Int               @default(0)
+  netAmount         Int
+  currency          String
+  eligibleAt        DateTime
+  createdAt         DateTime          @default(now())
+  settlement        PartnerSettlement @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+  partner           SupplyPartner     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  booking           Booking?          @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceType, sourceId])
+  @@index([settlementId, createdAt])
+  @@index([partnerId, eligibleAt])
+}
+
+model PartnerPayoutAccount {
+  id                     String                     @id @default(cuid())
+  partnerId              String
+  provider               String
+  providerBeneficiaryRef String                     @unique
+  accountHolderName      String
+  bankName               String
+  accountLast4           String
+  routingCodeMasked      String                     @default("")
+  status                 String                     @default("PENDING_VERIFICATION")
+  isDefault              Boolean                    @default(false)
+  verifiedAt             DateTime?
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  partner                SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  payoutInstructions     PartnerPayoutInstruction[]
+
+  @@index([partnerId, status, isDefault])
+}
+
+model PartnerPayoutBatch {
+  id               String                     @id @default(cuid())
+  idempotencyKey   String                     @unique
+  currency         String
+  totalAmount      Int
+  instructionCount Int
+  status           String                     @default("DRAFT")
+  providerBatchRef String?                    @unique
+  approvedByUserId String?
+  approvedAt       DateTime?
+  submittedAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  instructions     PartnerPayoutInstruction[]
+
+  @@index([status, createdAt])
+}
+
+model PartnerPayoutInstruction {
+  id                String               @id @default(cuid())
+  batchId           String
+  settlementId      String               @unique
+  payoutAccountId   String
+  partnerId         String
+  amount            Int
+  currency          String
+  status            String               @default("QUEUED")
+  providerPayoutRef String?              @unique
+  failureCode       String               @default("")
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  batch             PartnerPayoutBatch   @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  settlement        PartnerSettlement    @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+  payoutAccount     PartnerPayoutAccount @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict)
+  partner           SupplyPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  @@index([batchId, status])
+  @@index([partnerId, status, createdAt])
 }
 
 model PromotionCampaign {

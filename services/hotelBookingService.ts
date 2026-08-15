@@ -12,6 +12,10 @@ import {
 import { hotelService, type HotelService } from '@/services/hotelService';
 import { resolvePromotionRule } from '@/services/promotionService';
 import {
+  confirmPaymentForBooking,
+  PaymentConfirmationError,
+} from '@/services/paymentConfirmationService';
+import {
   bookingRepository,
   BusinessBookingRequestUnavailableError,
   type BookingRepository,
@@ -363,6 +367,23 @@ export class HotelBookingService {
       );
     }
 
+    const bookingId = crypto.randomUUID();
+    let paymentContext;
+    try {
+      paymentContext = await confirmPaymentForBooking({
+        amount: totalAmount,
+        bookingId,
+        currency: quote.currency,
+        paymentIntentId: request.paymentIntentId,
+        quoteId: quote.id,
+      });
+    } catch (error) {
+      if (error instanceof PaymentConfirmationError) {
+        throw new HotelBookingRuleError(error.code, error.message);
+      }
+      throw error;
+    }
+
     const convertedLock = await this.locks.convert(lock.id);
     if (!convertedLock) {
       throw new HotelBookingRuleError(
@@ -381,7 +402,7 @@ export class HotelBookingService {
       currency: quote.currency,
       guest: request.guest,
       hotelSlug: request.hotelSlug,
-      id: crypto.randomUUID(),
+      id: bookingId,
       operationalStatus: 'RESERVED',
       paymentAmount: totalAmount,
       paymentStatus: 'captured',
@@ -393,7 +414,13 @@ export class HotelBookingService {
     const accessToken = createBookingAccessToken(idempotencyKey);
     const accessTokenHash = hashBookingAccessToken(accessToken);
     try {
-      await this.bookings.save(booking, idempotencyKey, accessTokenHash, businessContext);
+      await this.bookings.save(
+        booking,
+        idempotencyKey,
+        accessTokenHash,
+        paymentContext,
+        businessContext,
+      );
     } catch (error) {
       try {
         await this.locks.release(convertedLock.id);
