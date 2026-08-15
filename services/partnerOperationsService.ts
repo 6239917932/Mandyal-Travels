@@ -609,6 +609,37 @@ export const partnerOperationsService = {
     });
   },
 
+  async setRoomTypeStatus(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    action: 'PAUSE' | 'RESTORE',
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      include: { rooms: { where: { status: 'ACTIVE' } } },
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    const room = await prisma.partnerRoomType.findFirst({ where: { id: roomId, propertyId } });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (action === 'PAUSE') {
+      if (room.status !== 'ACTIVE') throw new PartnerOperationsError('ROOM_ALREADY_PAUSED', 'The room type is already paused.');
+      if (property.publicationStatus === 'PUBLISHED' && property.rooms.length === 1) {
+        throw new PartnerOperationsError(
+          'LAST_ACTIVE_ROOM',
+          'Pause property sales or restore another room before pausing its final active room.',
+        );
+      }
+      return prisma.partnerRoomType.update({ data: { status: 'PAUSED' }, where: { id: room.id } });
+    }
+    if (room.status !== 'PAUSED') throw new PartnerOperationsError('ROOM_NOT_PAUSED', 'The room type is not paused.');
+    const activeRateCount = await prisma.partnerRatePlan.count({ where: { roomId: room.id, status: 'ACTIVE' } });
+    if (activeRateCount === 0) {
+      throw new PartnerOperationsError('ACTIVE_RATE_REQUIRED', 'Restore or add an active rate before restoring this room.');
+    }
+    return prisma.partnerRoomType.update({ data: { status: 'ACTIVE' }, where: { id: room.id } });
+  },
+
   async pauseRatePlan(partnerId: string, propertyId: string, roomId: string, ratePlanRecordId: string) {
     const room = await prisma.partnerRoomType.findFirst({
       include: { ratePlans: { where: { status: 'ACTIVE' } } },

@@ -14,16 +14,23 @@ export async function PATCH(request: Request, context: { params: Promise<{ prope
   if (!body) return failure('INVALID_JSON', 'Enter valid room details.', 400);
   try {
     const { propertyId, roomId } = await context.params;
-    const data = await partnerOperationsService.updateRoomType(access.partnerId, propertyId, roomId, {
-      bedDescription: String(body.bedDescription ?? ''),
-      description: String(body.description ?? ''),
-      inventoryCount: Number(body.inventoryCount),
-      maximumAdults: Number(body.maximumAdults),
-      maximumChildren: Number(body.maximumChildren),
-      maximumGuests: Number(body.maximumGuests),
-      name: String(body.name ?? ''),
-    });
-    await recordPartnerAudit(access, { action: 'ROOM_TYPE_UPDATED', entityId: data.id, entityType: 'ROOM_TYPE', metadata: { propertyId }, summary: `${data.name} room details updated.` });
+    const action = String(body.action ?? 'UPDATE');
+    const data = action === 'PAUSE' || action === 'RESTORE'
+      ? await partnerOperationsService.setRoomTypeStatus(access.partnerId, propertyId, roomId, action)
+      : action === 'UPDATE'
+        ? await partnerOperationsService.updateRoomType(access.partnerId, propertyId, roomId, {
+            bedDescription: String(body.bedDescription ?? ''),
+            description: String(body.description ?? ''),
+            inventoryCount: Number(body.inventoryCount),
+            maximumAdults: Number(body.maximumAdults),
+            maximumChildren: Number(body.maximumChildren),
+            maximumGuests: Number(body.maximumGuests),
+            name: String(body.name ?? ''),
+          })
+        : null;
+    if (!data) return failure('INVALID_ROOM_ACTION', 'Choose update, pause, or restore.', 400);
+    const auditAction = action === 'PAUSE' ? 'ROOM_TYPE_PAUSED' : action === 'RESTORE' ? 'ROOM_TYPE_RESTORED' : 'ROOM_TYPE_UPDATED';
+    await recordPartnerAudit(access, { action: auditAction, entityId: data.id, entityType: 'ROOM_TYPE', metadata: { propertyId }, summary: `${data.name} was ${action.toLowerCase()}d.` });
     return Response.json({ data });
   } catch (error) {
     return error instanceof PartnerOperationsError ? failure(error.code, error.message, 409) : failure('ROOM_UPDATE_FAILED', 'The room type could not be updated.', 500);

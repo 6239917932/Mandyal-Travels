@@ -277,6 +277,31 @@ export function PartnerPropertyManager({
     }
   }
 
+  async function changeRoomStatus(property: ManagedProperty, room: RoomType) {
+    const action = room.status === 'ACTIVE' ? 'PAUSE' : 'RESTORE';
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}`, {
+        body: JSON.stringify({ action }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RoomType } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room status could not be updated.'));
+        return;
+      }
+      setSuccess(`${room.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}.`);
+      await loadProperties();
+    } catch {
+      setError('The room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function changeRatePlanStatus(property: ManagedProperty, room: RoomType, rate: RatePlan) {
     setError(undefined);
     setSuccess(undefined);
@@ -581,7 +606,7 @@ export function PartnerPropertyManager({
               <div className="partner-property-manager__rooms">
                 {property.rooms.map((room) => (
                   <div key={room.id}>
-                    <strong>{room.name}</strong>
+                    <strong>{room.name} · {room.status.toLowerCase()}</strong>
                     <span>
                       {room.inventoryCount} rooms · ₹{room.nightlyRate.toLocaleString('en-IN')} + ₹
                       {room.taxesAndFees.toLocaleString('en-IN')} taxes
@@ -620,9 +645,14 @@ export function PartnerPropertyManager({
                       </div>
                     ))}
                     {canManage ? (
-                      <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">
-                        {activeRoomEditor === room.id ? 'Close room editor' : 'Edit room details'}
-                      </button>
+                      <div className="manage-booking__document-actions">
+                        <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">
+                          {activeRoomEditor === room.id ? 'Close room editor' : 'Edit room details'}
+                        </button>
+                        <button className="home-card__link" disabled={isSaving} onClick={() => void changeRoomStatus(property, room)} type="button">
+                          {room.status === 'ACTIVE' ? 'Pause room' : 'Restore room'}
+                        </button>
+                      </div>
                     ) : null}
                     {activeRoomEditor === room.id ? (
                       <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRoom(event, property, room)}>
