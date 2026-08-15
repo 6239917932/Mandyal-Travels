@@ -59,6 +59,8 @@ type RoomType = {
 };
 
 export type ManagedProperty = {
+  approvalNote: string;
+  approvalStatus: string;
   amenitiesJson: string;
   checkInTime: string;
   checkOutTime: string;
@@ -215,7 +217,9 @@ export function PartnerPropertyManager({
       form.reset();
       setActiveRoomForm(undefined);
       setSuccess(
-        `${result.data.name} was added. ${property.displayName} is now visible in hotel search.`,
+        property.approvalStatus === 'APPROVED'
+          ? `${result.data.name} was added. ${property.displayName} is now visible in hotel search.`
+          : `${result.data.name} was added. ${property.displayName} was submitted for platform review.`,
       );
       await loadProperties();
     } catch {
@@ -226,7 +230,11 @@ export function PartnerPropertyManager({
   }
 
   async function changePublication(property: ManagedProperty) {
-    const action = property.publicationStatus === 'PUBLISHED' ? 'PAUSE' : 'PUBLISH';
+    const action = property.publicationStatus === 'PUBLISHED'
+      ? 'PAUSE'
+      : property.approvalStatus === 'APPROVED'
+        ? 'PUBLISH'
+        : 'SUBMIT_REVIEW';
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
@@ -242,7 +250,9 @@ export function PartnerPropertyManager({
         return;
       }
       setSuccess(
-        action === 'PUBLISH'
+        action === 'SUBMIT_REVIEW'
+          ? `${property.displayName} was submitted for platform review.`
+          : action === 'PUBLISH'
           ? `${property.displayName} is now visible in hotel search.`
           : `${property.displayName} has been paused from new sales.`,
       );
@@ -755,6 +765,10 @@ export function PartnerPropertyManager({
                     {property.locality}, {property.district} · {property.starRating} star ·{' '}
                     {property.rooms.length} room types
                   </p>
+                  <small>
+                    Platform review: {property.approvalStatus.toLowerCase().replaceAll('_', ' ')}
+                  </small>
+                  {property.approvalNote ? <p>{property.approvalNote}</p> : null}
                 </div>
                 <div className="manage-booking__document-actions">
                   {property.publicationStatus === 'PUBLISHED' ? (
@@ -768,13 +782,17 @@ export function PartnerPropertyManager({
                   {canManage ? (
                     <button
                       className="ui-button ui-button--secondary"
-                      disabled={isSaving}
+                      disabled={isSaving || property.approvalStatus === 'PENDING_REVIEW'}
                       onClick={() => void changePublication(property)}
                       type="button"
                     >
                       {property.publicationStatus === 'PUBLISHED'
                         ? 'Pause sales'
-                        : 'Publish property'}
+                        : property.approvalStatus === 'APPROVED'
+                          ? 'Publish property'
+                          : property.approvalStatus === 'PENDING_REVIEW'
+                            ? 'Review pending'
+                            : 'Submit for review'}
                     </button>
                   ) : null}
                 </div>

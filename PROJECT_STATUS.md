@@ -92,6 +92,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   audit records; notes remain excluded from customer records and operational CSV exports
 - Guest special requests captured before payment, persisted with the lead guest, shown on customer
   confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
+- Platform property review workflow for supplier-created listings with pending, approved, and
+  rejected states, correction notes, administrator decisions, audit history, and approval-gated search publication
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
@@ -182,7 +184,11 @@ Guests can submit bounded accessibility, dietary, arrival, and room-preference r
 payment. The request is persisted with the booking and handed to the assigned property while the UI
 clearly states that fulfilment depends on availability.
 
+Supplier-created properties enter a platform review queue after an active room is added. Only an
+administrator-approved property can publish to hotel search; rejected listings remain private with
+correction guidance, while the additive migration preserves existing published inventory as approved.
+
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 generated route entries, and clean-database verification of all 41 migrations
+a Next.js production build with all 85 generated route entries, and clean-database verification of all 42 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

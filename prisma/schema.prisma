@@ -87,6 +87,11 @@ model PartnerProperty {
   status            String                     @default("ACTIVE")
   listingSource     String                     @default("ASSIGNED")
   publicationStatus String                     @default("PUBLISHED")
+  approvalStatus    String                     @default("PENDING_REVIEW")
+  approvalNote      String                     @default("")
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  reviewedByUserId  String?
   description       String                     @default("")
   locality          String                     @default("")
   tehsil            String                     @default("")
@@ -121,6 +126,7 @@ model PartnerProperty {
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
+  @@index([approvalStatus, submittedAt])
 }
 
 model PartnerRoomType {

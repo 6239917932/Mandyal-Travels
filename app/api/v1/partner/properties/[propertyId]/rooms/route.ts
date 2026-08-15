@@ -48,7 +48,7 @@ export async function POST(request: Request, context: { params: Promise<{ proper
       entityId: data.id,
       entityType: 'ROOM_TYPE',
       metadata: { propertyId },
-      summary: `${data.name} added with ${data.inventoryCount} rooms; property published.`,
+      summary: `${data.name} added with ${data.inventoryCount} rooms; property review state refreshed.`,
     });
     return Response.json({ data }, { status: 201 });
   } catch (error) {

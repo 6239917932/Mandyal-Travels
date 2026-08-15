@@ -24,7 +24,14 @@ export async function PATCH(request: Request, { params }: Context) {
   try {
     const data = await prisma.$transaction(async (transaction) => {
       const property = await transaction.partnerProperty.create({
-        data: { displayName: hotel.name, hotelSlug: hotel.slug, partnerId },
+        data: {
+          approvalStatus: 'APPROVED',
+          displayName: hotel.name,
+          hotelSlug: hotel.slug,
+          partnerId,
+          reviewedAt: new Date(),
+          reviewedByUserId: admin.id,
+        },
       });
       await transaction.partnerAuditLog.create({
         data: {

@@ -712,7 +712,14 @@ export const partnerOperationsService = {
         },
       });
       await transaction.partnerProperty.update({
-        data: { publicationStatus: 'PUBLISHED' },
+        data: property.approvalStatus === 'APPROVED'
+          ? { publicationStatus: 'PUBLISHED' }
+          : {
+              approvalNote: '',
+              approvalStatus: 'PENDING_REVIEW',
+              publicationStatus: 'DRAFT',
+              submittedAt: new Date(),
+            },
         where: { id: propertyId },
       });
       return transaction.partnerRoomType.findUniqueOrThrow({
@@ -1085,6 +1092,12 @@ export const partnerOperationsService = {
         'Add at least one active room type before publishing.',
       );
     }
+    if (action === 'PUBLISH' && property.approvalStatus !== 'APPROVED') {
+      throw new PartnerOperationsError(
+        'PROPERTY_APPROVAL_REQUIRED',
+        'Submit this property for platform review before publishing it to hotel search.',
+      );
+    }
     return prisma.partnerProperty.update({
       data: { publicationStatus: action === 'PUBLISH' ? 'PUBLISHED' : 'PAUSED' },
       where: { id: property.id },
@@ -1122,12 +1135,45 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.update({
       data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
         city: normalizeText(input.city, 80),
         district: normalizeText(input.district, 80),
         locality: normalizeText(input.locality, 100),
         locationAliasesJson: JSON.stringify(normalizedList(input.locationAliases, 20)),
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
         state: normalizeText(input.state, 80),
+        submittedAt: null,
         tehsil: normalizeText(input.tehsil, 80),
+      },
+      where: { id: property.id },
+    });
+  },
+
+  async submitPropertyForReview(partnerId: string, propertyId: string) {
+    const property = await prisma.partnerProperty.findFirst({
+      include: { rooms: { where: { status: 'ACTIVE' } } },
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    }
+    if (property.rooms.length === 0) {
+      throw new PartnerOperationsError('ROOM_REQUIRED', 'Add at least one active room type before review.');
+    }
+    if (property.approvalStatus === 'APPROVED') {
+      throw new PartnerOperationsError('PROPERTY_ALREADY_APPROVED', 'This property is already approved.');
+    }
+    return prisma.partnerProperty.update({
+      data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
+        submittedAt: new Date(),
       },
       where: { id: property.id },
     });
@@ -1172,6 +1218,8 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.update({
       data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
         checkInTime: input.checkInTime,
         checkOutTime: input.checkOutTime,
         contactEmail: normalizeText(input.contactEmail, 254).toLowerCase(),
@@ -1179,8 +1227,12 @@ export const partnerOperationsService = {
         description: normalizeText(input.description, 1500),
         displayName: normalizeText(input.displayName, 140),
         minimumCheckInAge: input.minimumCheckInAge,
+        publicationStatus: 'DRAFT',
         propertyType: input.propertyType,
+        reviewedAt: null,
+        reviewedByUserId: null,
         starRating: input.starRating,
+        submittedAt: null,
       },
       where: { id: property.id },
     });
@@ -1209,6 +1261,8 @@ export const partnerOperationsService = {
     const imageUrls = normalizedList(input.imageUrls, 12).map((url) => validateImageUrl(url, property.imageUrl));
     return prisma.partnerProperty.update({
       data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
         amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
         childrenAllowed: input.childrenAllowed,
         imageUrl,
@@ -1217,7 +1271,11 @@ export const partnerOperationsService = {
         landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
         petsAllowed: input.petsAllowed,
         policiesJson: JSON.stringify(normalizedList(input.policies, 20)),
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
         smokingAllowed: input.smokingAllowed,
+        submittedAt: null,
       },
       where: { id: property.id },
     });
