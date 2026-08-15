@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
+import {
+  availablePhysicalRooms,
+  evaluateStayTiming,
+  evaluateStayTransition,
+  normalizeRoomAssignments,
+} from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 
 const DAY_MS = 86_400_000;
@@ -184,8 +190,7 @@ export const partnerOperationsService = {
     const occupiedRooms = new Set(
       activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
     );
-    return ratePlan.room.physicalRooms
-      .filter((room) => !occupiedRooms.has(room.roomNumber))
+    return availablePhysicalRooms(ratePlan.room.physicalRooms, occupiedRooms)
       .map((room) => ({ floorLabel: room.floorLabel, roomNumber: room.roomNumber }));
   },
 
@@ -218,44 +223,27 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
     }
     const localDate = dateInTimezone(property.timezone);
-    if (
-      ['CHECKED_IN', 'NO_SHOW'].includes(nextStatus) &&
-      localDate < booking.quote.checkInDate
-    ) {
+    const timingViolation = evaluateStayTiming({
+      checkInDate: booking.quote.checkInDate,
+      checkOutDate: booking.quote.checkOutDate,
+      localDate,
+      nextStatus,
+    });
+    if (timingViolation) throw new PartnerOperationsError(timingViolation.code, timingViolation.message);
+    const transitionViolation = evaluateStayTransition(booking.operationalStatus, nextStatus);
+    if (transitionViolation) {
+      throw new PartnerOperationsError(transitionViolation.code, transitionViolation.message);
+    }
+    const assignmentResult = nextStatus === 'CHECKED_IN'
+      ? normalizeRoomAssignments(assignedRoomNumbers, booking.quote.rooms)
+      : { roomNumbers: [] as string[] };
+    if (assignmentResult.violation) {
       throw new PartnerOperationsError(
-        'ARRIVAL_NOT_DUE',
-        `This stay cannot be marked ${nextStatus.toLowerCase().replaceAll('_', ' ')} before ${booking.quote.checkInDate} in the property's timezone.`,
+        assignmentResult.violation.code,
+        assignmentResult.violation.message,
       );
     }
-    if (nextStatus === 'CHECKED_IN' && localDate >= booking.quote.checkOutDate) {
-      throw new PartnerOperationsError(
-        'STAY_DATE_PASSED',
-        'The scheduled stay has already ended and cannot be checked in.',
-      );
-    }
-    const permittedTransitions: Record<string, readonly string[]> = {
-      CHECKED_IN: ['CHECKED_OUT'],
-      RESERVED: ['CHECKED_IN', 'NO_SHOW'],
-    };
-    if (!permittedTransitions[booking.operationalStatus]?.includes(nextStatus)) {
-      throw new PartnerOperationsError(
-        'INVALID_STAY_TRANSITION',
-        `The stay cannot move from ${booking.operationalStatus} to ${nextStatus}.`,
-      );
-    }
-    const normalizedRoomNumbers = [...new Set(
-      assignedRoomNumbers.map((roomNumber) => normalizeText(roomNumber, 20)).filter(Boolean),
-    )];
-    if (
-      nextStatus === 'CHECKED_IN' &&
-      (normalizedRoomNumbers.length !== booking.quote.rooms ||
-        normalizedRoomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber)))
-    ) {
-      throw new PartnerOperationsError(
-        'INVALID_ROOM_ASSIGNMENT',
-        `Assign ${booking.quote.rooms} unique physical room number${booking.quote.rooms === 1 ? '' : 's'} before check-in.`,
-      );
-    }
+    const normalizedRoomNumbers = assignmentResult.roomNumbers;
     const bookedRatePlan = await prisma.partnerRatePlan.findUnique({
       include: { room: { include: { physicalRooms: true } } },
       where: { ratePlanId: booking.quote.ratePlanId },
