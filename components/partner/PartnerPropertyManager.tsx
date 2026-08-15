@@ -6,6 +6,8 @@ import { useCallback, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { AmenityChecklist } from '@/components/partner/AmenityChecklist';
+import { propertyAmenityGroups, roomAmenityGroups } from '@/constants/hotelAmenities';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -91,6 +93,7 @@ export function PartnerPropertyManager({
     const formData = new FormData(form);
     const data = {
       ...Object.fromEntries(formData),
+      amenities: formData.getAll('amenities').map(String).join(','),
       childrenAllowed: formData.get('childrenAllowed') === 'on',
       petsAllowed: formData.get('petsAllowed') === 'on',
       smokingAllowed: formData.get('smokingAllowed') === 'on',
@@ -126,7 +129,10 @@ export function PartnerPropertyManager({
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
+    const data = {
+      ...Object.fromEntries(formData),
+      amenities: formData.getAll('amenities').map(String).join(','),
+    };
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
@@ -336,13 +342,9 @@ export function PartnerPropertyManager({
                   required
                   type="time"
                 />
-                <Input
-                  label="Property amenities"
-                  name="amenities"
-                  placeholder="Wi-Fi, Parking, Restaurant, Pool"
-                />
                 <Input label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
               </div>
+              <AmenityChecklist groups={propertyAmenityGroups} legend="Property amenities" name="amenities" />
 
               <div className="supplier-form__section-heading">
                 <span>04</span>
@@ -575,17 +577,13 @@ export function PartnerPropertyManager({
                       </select>
                     </label>
                     <Input
-                      label="Room amenities"
-                      name="amenities"
-                      placeholder="Air conditioning, TV, Balcony"
-                    />
-                    <Input
                       label="Room photo URL (optional)"
                       name="imageUrl"
                       placeholder="Secure images.unsplash.com URL"
                       type="url"
                     />
                   </div>
+                  <AmenityChecklist groups={roomAmenityGroups} legend="Room amenities" name="amenities" />
                   <label className="ui-field">
                     <span className="ui-field__label">Room description</span>
                     <textarea

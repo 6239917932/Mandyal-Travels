@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { searchableHotelAmenities } from '@/constants/hotelAmenities';
 import type { HotelSearchCriteria, HotelSearchFilters } from '@/types/hotel';
 
 interface HotelSearchFormProps {
@@ -31,11 +32,9 @@ export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
         <span>Amenity</span>
         <select defaultValue={filters.amenity} name="amenity">
           <option value="">Any amenity</option>
-          <option value="Free Wi-Fi">Free Wi-Fi</option>
-          <option value="Free parking">Free parking</option>
-          <option value="Restaurant">Restaurant</option>
-          <option value="Swimming pool">Swimming pool</option>
-          <option value="Spa">Spa</option>
+          {searchableHotelAmenities.map((amenity) => (
+            <option key={amenity} value={amenity}>{amenity}</option>
+          ))}
         </select>
       </label>
 

@@ -78,10 +78,10 @@ function validateImageUrl(value: string, fallback: string) {
 }
 
 function normalizedList(values: string[], maximumItems = 20) {
-  return values
-    .map((value) => normalizeText(value, 120))
-    .filter(Boolean)
-    .slice(0, maximumItems);
+  return [...new Set(values.map((value) => normalizeText(value, 120)).filter(Boolean))].slice(
+    0,
+    maximumItems,
+  );
 }
 
 function reservationUnitsForDate(
@@ -313,7 +313,7 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.create({
       data: {
-        amenitiesJson: JSON.stringify(normalizedList(input.amenities)),
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
         checkInTime: input.checkInTime,
         checkOutTime: input.checkOutTime,
         city: normalizeText(input.city, 80),
@@ -440,7 +440,7 @@ export const partnerOperationsService = {
     return prisma.$transaction(async (transaction) => {
       const room = await transaction.partnerRoomType.create({
         data: {
-          amenitiesJson: JSON.stringify(normalizedList(input.amenities)),
+          amenitiesJson: JSON.stringify(normalizedList(input.amenities, 50)),
           bedDescription: normalizeText(input.bedDescription, 160),
           cancellationDescription: normalizeText(input.cancellationDescription, 300),
           description: normalizeText(input.description, 800),
