@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 12 August 2026
+Last reviewed: 15 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -120,7 +120,14 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Explicit row limits for company travel, statement, and audit CSV exports with filter guidance when
   a report is too large
 - Health/readiness endpoint at `/api/v1/health` verifies database access and core customer,
-  organization, booking, and company-request schema availability
+  organization, booking, and company-request schema availability, plus pending and dead-letter
+  integration-event health
+- Transactional hotel-booking integration outbox with deduplication, worker leases, bounded
+  exponential retry, dead-letter handling, and a provider-neutral delivery adapter
+- Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
+  stay timing, physical-room assignment, housekeeping readiness, and integration retries
+- On-demand SQLite backups with SHA-256 sidecars and bounded retention, plus a production release
+  environment preflight that rejects missing, short, or placeholder secrets
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
@@ -152,7 +159,8 @@ credentials, contracts, or signed-off business rules:
 3. Transactional email, SMS, and WhatsApp delivery providers
 4. Statutory GST tax invoices, tax component rules, credit notes, and invoice numbering
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
-6. Production database, encrypted backups, monitoring, alerting, domain/DNS, TLS, and hosting
+6. Production database, off-site encrypted backup storage, monitoring, alerting, domain/DNS, TLS,
+   hosting, and a scheduler/worker for the prepared integration outbox
 7. Legal pages and approved customer communications: privacy, terms, cancellation, refunds, and
    consent wording
 
@@ -161,12 +169,13 @@ tax invoices.
 
 ## Release procedure
 
-1. Back up the database.
+1. Run `npm run db:backup` and copy the backup plus checksum to approved encrypted storage.
 2. Run `UPDATE-PORTAL.cmd`. Never approve a Prisma data-loss warning without review.
 3. Run `npm run check`.
-4. Start the portal with `START-PORTAL.cmd`.
-5. Confirm `/api/v1/health` reports ready.
-6. Smoke-test one customer journey and one company approval-to-booking journey.
+4. Run `npm run release:verify-env` with the production environment loaded.
+5. Start the portal with `START-PORTAL.cmd`.
+6. Confirm `/api/v1/health` reports ready and has no unexplained dead-letter events.
+7. Smoke-test one customer journey and one company approval-to-booking journey.
 
 ## Current quality gate
 
@@ -194,7 +203,7 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 generated route entries, and clean-database verification of all 42 migrations
-with foreign-key integrity enabled. Provider integration work must preserve those checks and add
-provider-specific automated tests before going live.
+The current Hotel supplier milestone passes 16 domain regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 86 generated route entries, and
+clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
+integration work must preserve those checks and add provider-specific automated tests before going live.
