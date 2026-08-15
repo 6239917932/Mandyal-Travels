@@ -89,6 +89,11 @@ export default async function PartnerWorkspacePage() {
             >
               {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
             </Link>
+            {partner.type === 'HOTEL' ? (
+              <Link className="ui-button ui-button--secondary" href="/partner/reports">
+                Performance reports
+              </Link>
+            ) : null}
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out
