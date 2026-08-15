@@ -166,6 +166,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/promotions">
               Promotions and coupons
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/operations">
+              Exception queues
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out

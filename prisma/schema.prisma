@@ -729,6 +729,28 @@ model IntegrationOutboxEvent {
   @@index([bookingId, createdAt])
 }
 
+model RiskSignal {
+  id               String    @id @default(cuid())
+  source           String
+  signalType       String
+  severity         String
+  subjectType      String
+  subjectId        String
+  summary          String
+  evidenceJson     String    @default("{}")
+  status           String    @default("OPEN")
+  assignedToUserId String?
+  reviewedByUserId String?
+  resolutionNote   String    @default("")
+  createdAt        DateTime  @default(now())
+  reviewedAt       DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, severity, createdAt])
+  @@index([subjectType, subjectId, createdAt])
+  @@index([signalType, createdAt])
+}
+
 model PartnerPhysicalRoom {
   id                 String          @id @default(cuid())
   propertyId         String
