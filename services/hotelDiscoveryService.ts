@@ -38,8 +38,21 @@ export class RuleBasedHotelDiscoveryAdapter implements HotelDiscoveryAdapter {
     const intent = rawIntent.trim().replace(/\s+/g, ' ').slice(0, 300);
     const normalizedIntent = intent.toLowerCase();
     const hotels = await hotelService.getHotels();
-    const destinations = [...new Set(hotels.map((hotel) => hotel.location.address.city))];
-    const destination = destinations.find((city) => normalizedIntent.includes(city.toLowerCase())) ?? '';
+    const destinations = [
+      ...new Set(
+        hotels
+          .flatMap((hotel) => [
+            hotel.location.address.locality,
+            hotel.location.address.city,
+            hotel.location.address.tehsil,
+            hotel.location.address.district,
+            ...(hotel.propertyProfile?.locationAliases ?? []),
+          ])
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ].sort((left, right) => right.length - left.length);
+    const destination =
+      destinations.find((place) => normalizedIntent.includes(place.toLowerCase())) ?? '';
     const amenity =
       AMENITY_TERMS.find((candidate) =>
         candidate.aliases.some((alias) => normalizedIntent.includes(alias)),

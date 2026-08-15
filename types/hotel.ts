@@ -22,9 +22,12 @@ export interface Money {
 export interface HotelAddress {
   city: string;
   country: string;
+  district?: string;
+  locality?: string;
   postalCode?: string;
   state?: string;
   streetAddress?: string;
+  tehsil?: string;
 }
 
 export interface HotelLocation {
@@ -108,6 +111,7 @@ export interface HotelPropertyProfile {
   contactPhone: string;
   languages: string[];
   landmarks: string[];
+  locationAliases: string[];
   minimumCheckInAge: number;
   petsAllowed: boolean;
   propertyType: string;

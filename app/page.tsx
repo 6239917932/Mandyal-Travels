@@ -93,8 +93,8 @@ export default function Home() {
 
               <div className="home-search-preview__fields">
                 <div className="home-preview-field">
-                  <span>Destination</span>
-                  <strong>Where do you want to go?</strong>
+                  <span>City, area, locality, or property</span>
+                  <strong>Search Bir Billing, Suja, Mandi, or a hotel</strong>
                 </div>
 
                 <div className="home-preview-field">

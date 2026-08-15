@@ -40,7 +40,13 @@ export function HotelResultCard({ criteria, result }: HotelResultCardProps) {
         <div>
           <div className="hotel-result-card__heading">
             <div>
-              <p className="hotel-result-card__location">{hotel.location.address.city}, India</p>
+              <p className="hotel-result-card__location">
+                {hotel.location.address.locality ?? hotel.location.address.city}
+                {hotel.location.address.district &&
+                hotel.location.address.district !== hotel.location.address.locality
+                  ? `, ${hotel.location.address.district}`
+                  : ''}
+              </p>
               <h2>{hotel.name}</h2>
             </div>
 
