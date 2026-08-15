@@ -927,6 +927,20 @@ model AnalyticsEvent {
   @@index([userId, occurredAt])
 }
 
+model SearchProjectionDocument {
+  id            String   @id @default(cuid())
+  entityType    String
+  entityId      String
+  searchTerms   String
+  facetsJson    String   @default("{}")
+  payloadJson   String   @default("{}")
+  sourceVersion String
+  projectedAt   DateTime @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([entityType, projectedAt])
+}
+
 model NotificationTemplate {
   id          String                 @id @default(cuid())
   templateKey String                 @unique
