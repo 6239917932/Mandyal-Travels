@@ -65,6 +65,10 @@ export default async function CarBookingPage({
                 <dd>{rentalDays(criteria.pickupDate, criteria.dropoffDate)} days</dd>
               </div>
               <div>
+                <dt>Rental type</dt>
+                <dd>{offer.rentalMode === 'chauffeur' ? 'With chauffeur' : 'Self-drive'}</dd>
+              </div>
+              <div>
                 <dt>Transmission</dt>
                 <dd>{offer.transmission}</dd>
               </div>

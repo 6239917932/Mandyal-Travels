@@ -39,6 +39,15 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         required
         type="number"
       />
+      <div className="ui-field">
+        <label className="ui-field__label" htmlFor="rentalMode">
+          Rental type
+        </label>
+        <select className="ui-input" defaultValue={criteria.rentalMode} id="rentalMode" name="rentalMode">
+          <option value="self-drive">Self-drive</option>
+          <option value="chauffeur">With chauffeur</option>
+        </select>
+      </div>
       <Button className="car-search-form__button" type="submit">
         Search cars
       </Button>

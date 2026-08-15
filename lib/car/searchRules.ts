@@ -12,6 +12,9 @@ export function rentalDurationDays(pickupDate: string, dropoffDate: string): num
 }
 
 export function validateCarSearchCriteria(criteria: CarSearchCriteria, today: string): void {
+  if (criteria.rentalMode !== 'self-drive' && criteria.rentalMode !== 'chauffeur') {
+    throw new Error('Choose self-drive or chauffeur service.');
+  }
   if (criteria.pickupLocation.length < 2 || criteria.pickupLocation.length > 100) {
     throw new Error('Enter a valid pickup location.');
   }
@@ -39,6 +42,7 @@ export function normalizeCarOffer(
     !offer.source.trim() ||
     offer.pickupLocation.localeCompare(criteria.pickupLocation, undefined, { sensitivity: 'base' }) !== 0 ||
     offer.dropoffLocation.localeCompare(criteria.dropoffLocation, undefined, { sensitivity: 'base' }) !== 0 ||
+    offer.rentalMode !== criteria.rentalMode ||
     offer.currency !== 'INR' ||
     !Number.isFinite(offer.pricePerDay) ||
     offer.pricePerDay <= 0 ||

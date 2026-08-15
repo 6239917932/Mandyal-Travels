@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hasValidCarDriverDetails, parseCarDriverDetails } from '../lib/car/bookingRules.ts';
+import {
+  hasValidCarBookingParty,
+  hasValidCarDriverDetails,
+  parseCarDriverDetails,
+  parseCarTravellerDetails,
+} from '../lib/car/bookingRules.ts';
 
 const validDetails = {
   driver: {
@@ -37,4 +42,23 @@ test('car booking rejects missing, underage and malformed driver details', () =>
     hasValidCarDriverDetails({ driver: { ...validDetails.driver, phone: '123' } }),
     false,
   );
+});
+
+test('chauffeur bookings require a valid lead traveller without driver credentials', () => {
+  const details = {
+    traveller: {
+      email: 'Guest@Example.com',
+      firstName: 'Divya',
+      lastName: 'Sharma',
+      phone: '+91 98765 43210',
+    },
+  };
+  assert.equal(hasValidCarBookingParty(details, 'chauffeur'), true);
+  assert.equal(hasValidCarBookingParty(details, 'self-drive'), false);
+  assert.deepEqual(parseCarTravellerDetails(details), {
+    email: 'guest@example.com',
+    firstName: 'Divya',
+    lastName: 'Sharma',
+    phone: '919876543210',
+  });
 });

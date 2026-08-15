@@ -73,6 +73,10 @@ export default async function CarVoucherPage({
               </dd>
             </div>
             <div>
+              <dt>Rental type</dt>
+              <dd>{offer.rentalMode === 'chauffeur' ? 'With chauffeur' : 'Self-drive'}</dd>
+            </div>
+            <div>
               <dt>Transmission</dt>
               <dd>{offer.transmission}</dd>
             </div>
@@ -95,8 +99,10 @@ export default async function CarVoucherPage({
           />
         </div>
         <footer className="booking-document__footer">
-          Present this voucher, the primary driver&apos;s original licence, payment card, and
-          government-issued identification at pickup. This is a prototype voucher.
+          {offer.rentalMode === 'chauffeur'
+            ? 'Present this voucher and the lead traveller’s government-issued identification at pickup. Chauffeur assignment is confirmed by the provider.'
+            : 'Present this voucher, the primary driver’s original licence, payment card, and government-issued identification at pickup.'}{' '}
+          This is a prototype voucher.
         </footer>
       </article>
     </div>

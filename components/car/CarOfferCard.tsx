@@ -21,6 +21,7 @@ export function CarOfferCard({
         <span>{offer.category}</span>
         <strong>{offer.vehicleName}</strong>
         <small>{offer.providerName}</small>
+        <small>{offer.rentalMode === 'chauffeur' ? 'Chauffeur included' : 'Self-drive rental'}</small>
       </div>
       <div className="car-offer-card__facts">
         <strong>{offer.seats} seats</strong>

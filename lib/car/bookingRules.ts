@@ -7,6 +7,13 @@ export interface CarDriverDetails {
   phone: string;
 }
 
+export interface CarTravellerDetails {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 const PERSON_NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}' .-]{1,79}$/u;
 const LICENSE_PATTERN = /^[A-Z0-9][A-Z0-9 -]{4,38}[A-Z0-9]$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,4 +67,38 @@ export function parseCarDriverDetails(details: unknown): CarDriverDetails | unde
 
 export function hasValidCarDriverDetails(details: unknown): boolean {
   return parseCarDriverDetails(details) !== undefined;
+}
+
+export function parseCarTravellerDetails(details: unknown): CarTravellerDetails | undefined {
+  const detailRecord = readRecord(details);
+  const traveller = detailRecord ? readRecord(detailRecord.traveller) : undefined;
+  if (!traveller) return undefined;
+  const firstName = readText(traveller, 'firstName');
+  const lastName = readText(traveller, 'lastName');
+  const email = readText(traveller, 'email')?.toLowerCase();
+  const phone = readText(traveller, 'phone')?.replace(/\D/g, '');
+  if (
+    !firstName ||
+    !PERSON_NAME_PATTERN.test(firstName) ||
+    !lastName ||
+    !PERSON_NAME_PATTERN.test(lastName) ||
+    !email ||
+    email.length > 254 ||
+    !EMAIL_PATTERN.test(email) ||
+    !phone ||
+    phone.length < 10 ||
+    phone.length > 15
+  ) {
+    return undefined;
+  }
+  return { email, firstName, lastName, phone };
+}
+
+export function hasValidCarBookingParty(
+  details: unknown,
+  rentalMode: 'self-drive' | 'chauffeur',
+): boolean {
+  return rentalMode === 'chauffeur'
+    ? parseCarTravellerDetails(details) !== undefined
+    : parseCarDriverDetails(details) !== undefined;
 }

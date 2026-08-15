@@ -43,6 +43,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   shared by direct partner and future external supplier inventory
 - Car checkout validates the primary driver's age, name, driving licence, email, and phone again at
   the server boundary before any personal or approved-company trip can be confirmed
+- Car discovery and checkout distinguish self-drive from chauffeur service end to end; self-drive
+  retains licence and age validation while chauffeur bookings require a bounded lead-traveller contact
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
@@ -235,7 +237,7 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current travel-domain milestone passes 36 regression tests, Prisma Client generation,
+The current travel-domain milestone passes 37 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 89 generated route entries, and
 clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

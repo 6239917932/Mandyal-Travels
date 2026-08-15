@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
 import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
-import { hasValidCarDriverDetails } from '@/lib/car/bookingRules';
+import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
 import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
 import { prisma } from '@/lib/prisma';
 import {
@@ -49,9 +49,9 @@ function readCarOfferId(value: unknown): string | undefined {
 }
 
 function readCustomerName(details: Record<string, unknown>, fallback: string): string {
-  const driver = details.driver;
-  if (!driver || typeof driver !== 'object' || Array.isArray(driver)) return fallback;
-  const record = driver as Record<string, unknown>;
+  const party = details.driver ?? details.traveller;
+  if (!party || typeof party !== 'object' || Array.isArray(party)) return fallback;
+  const record = party as Record<string, unknown>;
   const firstName = isText(record.firstName) ? record.firstName.trim() : '';
   const lastName = isText(record.lastName) ? record.lastName.trim() : '';
   return `${firstName} ${lastName}`.trim() || fallback;
@@ -82,6 +82,14 @@ export async function POST(request: Request) {
       : {};
   const detailsJson = JSON.stringify(details);
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
+  const carRentalMode =
+    productType === 'CAR' &&
+    body.businessSelection &&
+    typeof body.businessSelection === 'object' &&
+    !Array.isArray(body.businessSelection) &&
+    (body.businessSelection as Record<string, unknown>).rentalMode === 'chauffeur'
+      ? 'chauffeur'
+      : 'self-drive';
   const flightAdults =
     productType === 'FLIGHT'
       ? createFlightSearchCriteria(
@@ -132,10 +140,12 @@ export async function POST(request: Request) {
       400,
     );
   }
-  if (productType === 'CAR' && !hasValidCarDriverDetails(details)) {
+  if (productType === 'CAR' && !hasValidCarBookingParty(details, carRentalMode)) {
     return errorResponse(
       'INVALID_CAR_DRIVER',
-      'Complete and valid primary-driver and booking-contact details are required.',
+      carRentalMode === 'chauffeur'
+        ? 'Complete lead-traveller and booking-contact details are required.'
+        : 'Complete and valid primary-driver and booking-contact details are required.',
       400,
     );
   }

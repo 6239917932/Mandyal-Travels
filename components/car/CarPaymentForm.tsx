@@ -97,14 +97,18 @@ export function CarPaymentForm({
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) next.expiry = 'Use MM/YY format.';
     if (cvv.length < 3 || cvv.length > 4) next.cvv = 'Enter 3 or 4 digits.';
     const draft = sessionStorage.getItem('mandyal-car-driver');
-    if (!draft) next.payment = 'Driver details are missing. Please return and enter them again.';
+    if (!draft) next.payment = 'Booking-party details are missing. Please return and enter them again.';
     setErrors(next);
     if (Object.keys(next).length) return;
-    let driver: unknown;
+    let bookingParty: unknown;
     try {
-      driver = JSON.parse(draft!);
+      bookingParty = JSON.parse(draft!);
     } catch {
-      setErrors({ payment: 'Driver details are invalid. Please enter them again.' });
+      setErrors({ payment: 'Booking-party details are invalid. Please enter them again.' });
+      return;
+    }
+    if (!bookingParty || typeof bookingParty !== 'object' || Array.isArray(bookingParty)) {
+      setErrors({ payment: 'Booking-party details are invalid. Please enter them again.' });
       return;
     }
     const businessRequest = readActiveBusinessTravelRequest();
@@ -123,7 +127,7 @@ export function CarPaymentForm({
       promotionRuleVersion: promotion?.ruleVersion,
       total: finalTotal,
       confirmationCode,
-      driver,
+      ...(bookingParty as Record<string, unknown>),
       paymentStatus: 'captured',
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };

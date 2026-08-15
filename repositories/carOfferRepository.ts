@@ -11,13 +11,15 @@ export class FixtureCarSupplierAdapter implements CarSupplierAdapter {
     return mockCarOffers.filter(
       (offer) =>
         offer.pickupLocation.toLowerCase() === criteria.pickupLocation.toLowerCase() &&
-        offer.dropoffLocation.toLowerCase() === criteria.dropoffLocation.toLowerCase(),
+        offer.dropoffLocation.toLowerCase() === criteria.dropoffLocation.toLowerCase() &&
+        offer.rentalMode === criteria.rentalMode,
     );
   }
 }
 
 export class DirectCarSupplierAdapter implements CarSupplierAdapter {
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
+    if (criteria.rentalMode !== 'self-drive') return [];
     return partnerOperationsService.searchDirectVehicles(criteria);
   }
 }

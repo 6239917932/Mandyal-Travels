@@ -1797,6 +1797,7 @@ export const partnerOperationsService = {
           pickupLocation: vehicle.pickupLocation,
           pricePerDay,
           providerName: vehicle.partner.name,
+          rentalMode: 'self-drive' as const,
           seats: vehicle.seats,
           source: 'Mandyal Direct Supplier',
           totalPrice: 0,
@@ -1805,6 +1806,6 @@ export const partnerOperationsService = {
           vehicleName: vehicle.vehicleName,
         } satisfies CarOffer;
       })
-      .filter((offer): offer is CarOffer => offer !== null);
+      .filter((offer) => offer !== null);
   },
 };

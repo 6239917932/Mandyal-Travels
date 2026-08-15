@@ -14,6 +14,7 @@ const criteria: CarSearchCriteria = {
   dropoffLocation: 'Delhi',
   pickupDate: '2026-10-10',
   pickupLocation: 'Delhi',
+  rentalMode: 'self-drive',
 };
 const offer: CarOffer = {
   bags: 2,
@@ -27,6 +28,7 @@ const offer: CarOffer = {
   id: 'car-1',
   mileagePolicy: 'Unlimited kilometres',
   pickupLocation: 'Delhi',
+  rentalMode: 'self-drive',
   pricePerDay: 2000,
   providerName: 'Mandyal Drive',
   seats: 5,
@@ -51,4 +53,5 @@ test('car offers must match locations, inventory, capacity and positive pricing'
   assert.equal(normalizeCarOffer({ ...offer, carsRemaining: 0 }, criteria), undefined);
   assert.equal(normalizeCarOffer({ ...offer, pricePerDay: 0 }, criteria), undefined);
   assert.equal(normalizeCarOffer({ ...offer, pickupLocation: 'Mumbai' }, criteria), undefined);
+  assert.equal(normalizeCarOffer({ ...offer, rentalMode: 'chauffeur' }, criteria), undefined);
 });
