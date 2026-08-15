@@ -15,6 +15,7 @@ import {
   BusinessBookingRequestUnavailableError,
   type BookingRepository,
   type BusinessBookingContext,
+  type PartnerBookingQuery,
 } from '@/repositories/bookingRepository';
 import { quoteRepository, type QuoteRepository } from '@/repositories/quoteRepository';
 import { amendmentRepository, type AmendmentRepository } from '@/repositories/amendmentRepository';
@@ -560,7 +561,7 @@ export class HotelBookingService {
   }
 
   async listPartnerBookings(
-    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
+    options: PartnerBookingQuery = {},
   ): Promise<PartnerBookingRecord[]> {
     const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
@@ -596,8 +597,8 @@ export class HotelBookingService {
     return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
   }
 
-  async getPartnerBookingSummary(hotelSlugs?: string[]) {
-    return this.bookings.getPartnerSummary(hotelSlugs);
+  async getPartnerBookingSummary(options: PartnerBookingQuery = {}) {
+    return this.bookings.getPartnerSummary(options);
   }
 
   async getPartnerInventory(

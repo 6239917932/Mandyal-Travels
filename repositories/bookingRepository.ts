@@ -1,4 +1,5 @@
 import type { HotelBookingRecord } from '@/types/commerce';
+import type { Prisma } from '@/generated/prisma/client';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
@@ -7,6 +8,52 @@ export type BusinessBookingContext = {
   requestId: string;
   requesterId: string;
 };
+
+export type PartnerBookingQuery = {
+  bookingStatus?: HotelBookingRecord['status'];
+  hotelSlugs?: string[];
+  operationalStatus?: HotelBookingRecord['operationalStatus'];
+  query?: string;
+  skip?: number;
+  take?: number;
+};
+
+function matchesPartnerQuery(booking: HotelBookingRecord, options: PartnerBookingQuery): boolean {
+  const query = options.query?.trim().toLowerCase();
+  return (
+    (!options.hotelSlugs || options.hotelSlugs.includes(booking.hotelSlug)) &&
+    (!options.bookingStatus || booking.status === options.bookingStatus) &&
+    (!options.operationalStatus || booking.operationalStatus === options.operationalStatus) &&
+    (!query ||
+      [
+        booking.confirmationCode,
+        booking.guest.email,
+        booking.guest.firstName,
+        booking.guest.lastName,
+        booking.hotelSlug,
+      ].some((value) => value.toLowerCase().includes(query)))
+  );
+}
+
+function createPartnerBookingWhere(options: PartnerBookingQuery): Prisma.BookingWhereInput {
+  const query = options.query?.trim();
+  return {
+    hotelSlug: options.hotelSlugs ? { in: options.hotelSlugs } : undefined,
+    operationalStatus: options.operationalStatus,
+    status: options.bookingStatus,
+    ...(query
+      ? {
+          OR: [
+            { confirmationCode: { contains: query } },
+            { guest: { is: { email: { contains: query } } } },
+            { guest: { is: { firstName: { contains: query } } } },
+            { guest: { is: { lastName: { contains: query } } } },
+            { hotelSlug: { contains: query } },
+          ],
+        }
+      : {}),
+  };
+}
 
 export class BusinessBookingRequestUnavailableError extends Error {
   constructor() {
@@ -27,12 +74,8 @@ export interface BookingRepository {
   ): Promise<HotelBookingRecord | undefined>;
   findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined>;
   findById(id: string): Promise<HotelBookingRecord | undefined>;
-  findAll(options?: {
-    hotelSlugs?: string[];
-    skip?: number;
-    take?: number;
-  }): Promise<HotelBookingRecord[]>;
-  getPartnerSummary(hotelSlugs?: string[]): Promise<{
+  findAll(options?: PartnerBookingQuery): Promise<HotelBookingRecord[]>;
+  getPartnerSummary(options?: PartnerBookingQuery): Promise<{
     capturedInrValue: number;
     confirmedCount: number;
     totalCount: number;
@@ -95,19 +138,19 @@ export class InMemoryBookingRepository implements BookingRepository {
   }
 
   async findAll(
-    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
+    options: PartnerBookingQuery = {},
   ): Promise<HotelBookingRecord[]> {
     const skip = options.skip ?? 0;
     const take = options.take ?? Number.POSITIVE_INFINITY;
     return [...this.bookingsByIdempotencyKey.values()]
-      .filter((booking) => !options.hotelSlugs || options.hotelSlugs.includes(booking.hotelSlug))
+      .filter((booking) => matchesPartnerQuery(booking, options))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(skip, skip + take);
   }
 
-  async getPartnerSummary(hotelSlugs?: string[]) {
-    const bookings = [...this.bookingsByIdempotencyKey.values()].filter(
-      (booking) => !hotelSlugs || hotelSlugs.includes(booking.hotelSlug),
+  async getPartnerSummary(options: PartnerBookingQuery = {}) {
+    const bookings = [...this.bookingsByIdempotencyKey.values()].filter((booking) =>
+      matchesPartnerQuery(booking, options),
     );
     return {
       capturedInrValue: bookings
@@ -233,22 +276,22 @@ export class PrismaBookingRepository implements BookingRepository {
   }
 
   async findAll(
-    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
+    options: PartnerBookingQuery = {},
   ): Promise<HotelBookingRecord[]> {
     const bookings = await prisma.booking.findMany({
       include: { guest: true, payment: true },
       orderBy: { createdAt: 'desc' },
       skip: options.skip,
       take: options.take,
-      where: options.hotelSlugs ? { hotelSlug: { in: options.hotelSlugs } } : undefined,
+      where: createPartnerBookingWhere(options),
     });
     return bookings
       .map(mapBooking)
       .filter((booking): booking is HotelBookingRecord => booking !== undefined);
   }
 
-  async getPartnerSummary(hotelSlugs?: string[]) {
-    const bookingWhere = hotelSlugs ? { hotelSlug: { in: hotelSlugs } } : undefined;
+  async getPartnerSummary(options: PartnerBookingQuery = {}) {
+    const bookingWhere = createPartnerBookingWhere(options);
     const [totalCount, confirmedCount, capturedValue] = await Promise.all([
       prisma.booking.count({ where: bookingWhere }),
       prisma.booking.count({

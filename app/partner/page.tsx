@@ -58,7 +58,7 @@ export default async function PartnerWorkspacePage() {
       where: { id: access.partnerId },
     }),
     access.partnerType === 'HOTEL'
-      ? hotelBookingService.getPartnerBookingSummary(access.allowedHotelSlugs)
+      ? hotelBookingService.getPartnerBookingSummary({ hotelSlugs: access.allowedHotelSlugs })
       : partnerOperationsService.getVehicleReservationSummary(access.partnerId),
     access.partnerType === 'HOTEL'
       ? hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs)

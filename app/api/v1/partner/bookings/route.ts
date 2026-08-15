@@ -21,13 +21,28 @@ export async function GET(request: Request): Promise<Response> {
     Number.isInteger(requestedPageSize) && requestedPageSize > 0
       ? Math.min(requestedPageSize, 100)
       : 50;
+  const query = (url.searchParams.get('query') ?? '').trim().slice(0, 120);
+  const requestedBookingStatus = url.searchParams.get('bookingStatus');
+  const bookingStatus = ['confirmed', 'cancelled'].includes(requestedBookingStatus ?? '')
+    ? (requestedBookingStatus as 'confirmed' | 'cancelled')
+    : undefined;
+  const requestedStayStatus = url.searchParams.get('stayStatus');
+  const stayStatus = ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW'].includes(requestedStayStatus ?? '')
+    ? (requestedStayStatus as 'RESERVED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW')
+    : undefined;
+  const filters = {
+    bookingStatus,
+    hotelSlugs: access.allowedHotelSlugs,
+    operationalStatus: stayStatus,
+    query: query || undefined,
+  };
   const [bookings, summary] = await Promise.all([
     hotelBookingService.listPartnerBookings({
-      hotelSlugs: access.allowedHotelSlugs,
+      ...filters,
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    hotelBookingService.getPartnerBookingSummary(access.allowedHotelSlugs),
+    hotelBookingService.getPartnerBookingSummary(filters),
   ]);
 
   return Response.json({

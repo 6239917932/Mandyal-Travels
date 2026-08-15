@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -30,25 +30,21 @@ export default function PartnerBookingsPage() {
   const [bookings, setBookings] = useState<PartnerBookingRecord[]>([]);
   const [meta, setMeta] = useState<PartnerBookingMeta>();
   const [filter, setFilter] = useState('');
+  const [query, setQuery] = useState('');
+  const [bookingStatus, setBookingStatus] = useState('');
+  const [stayStatus, setStayStatus] = useState('');
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
-  const filteredBookings = useMemo(() => {
-    const query = filter.trim().toLowerCase();
-    if (!query) return bookings;
-    return bookings.filter((booking) =>
-      [booking.confirmationCode, booking.guestName, booking.guestEmail, booking.hotelName]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [bookings, filter]);
-
   const loadPage = useCallback(async (page: number) => {
     setError(undefined);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/partner/bookings?page=${page}&pageSize=50`);
+      const parameters = new URLSearchParams({ page: String(page), pageSize: '50' });
+      if (query) parameters.set('query', query);
+      if (bookingStatus) parameters.set('bookingStatus', bookingStatus);
+      if (stayStatus) parameters.set('stayStatus', stayStatus);
+      const response = await fetch(`/api/v1/partner/bookings?${parameters.toString()}`);
       const result = await readJsonResponse<
         { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
       >(response);
@@ -62,18 +58,22 @@ export default function PartnerBookingsPage() {
       }
       setBookings(result.data);
       setMeta(result.meta);
-      setFilter('');
     } catch {
       setError('The partner service could not be reached.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [bookingStatus, query, stayStatus]);
 
   useEffect(() => {
     const task = window.setTimeout(() => void loadPage(1), 0);
     return () => window.clearTimeout(task);
   }, [loadPage]);
+
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setQuery(filter.trim());
+  }
 
   async function updateStayStatus(
     confirmationCode: string,
@@ -157,16 +157,37 @@ export default function PartnerBookingsPage() {
               </Card>
             </div>
             <Card className="partner-bookings__search">
+              <form className="supplier-form__grid" onSubmit={applyFilters}>
               <Input
-                label="Search this page"
+                label="Search all bookings"
                 name="filter"
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Reference, guest, email, or hotel"
                 value={filter}
               />
+              <label className="ui-field">
+                <span className="ui-field__label">Booking status</span>
+                <select className="ui-input" onChange={(event) => setBookingStatus(event.target.value)} value={bookingStatus}>
+                  <option value="">All bookings</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </label>
+              <label className="ui-field">
+                <span className="ui-field__label">Stay status</span>
+                <select className="ui-input" onChange={(event) => setStayStatus(event.target.value)} value={stayStatus}>
+                  <option value="">All stay statuses</option>
+                  <option value="RESERVED">Reserved</option>
+                  <option value="CHECKED_IN">Checked in</option>
+                  <option value="CHECKED_OUT">Checked out</option>
+                  <option value="NO_SHOW">No-show</option>
+                </select>
+              </label>
+              <Button type="submit">Apply search</Button>
+              </form>
             </Card>
             <div className="partner-bookings__list" aria-live="polite">
-              {filteredBookings.map((booking) => (
+              {bookings.map((booking) => (
                 <Card className="partner-bookings__booking" key={booking.confirmationCode}>
                   <div className="booking-confirmation__reference">
                     <span>{booking.hotelName}</span>
@@ -220,7 +241,7 @@ export default function PartnerBookingsPage() {
                   ) : null}
                 </Card>
               ))}
-              {filteredBookings.length === 0 ? <p>No bookings match your search.</p> : null}
+              {bookings.length === 0 ? <p>No bookings match these filters.</p> : null}
             </div>
             <Card className="business-report__pagination">
               <p>
