@@ -24,6 +24,7 @@ const offer: BusOffer = {
   operatorName: 'Himalayan Roadways',
   origin: 'Chandigarh',
   pricePerSeat: 1000,
+  refundable: true,
   rating: 4.5,
   seatsRemaining: 3,
   source: 'Test adapter',

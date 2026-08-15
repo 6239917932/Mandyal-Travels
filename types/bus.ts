@@ -19,8 +19,19 @@ export interface BusOffer {
   operatorName: string;
   origin: string;
   pricePerSeat: number;
+  refundable: boolean;
   rating: number;
   seatsRemaining: number;
   source: string;
   totalPrice: number;
+}
+
+export type BusSortOrder = 'price-ascending' | 'duration-ascending' | 'departure-ascending' | 'rating-descending';
+
+export interface BusResultControls {
+  busType?: string;
+  maximumTotalPrice?: number;
+  operator?: string;
+  refundableOnly: boolean;
+  sort: BusSortOrder;
 }

@@ -23,3 +23,7 @@ export function createBusSearchCriteria(
     travelDate: first(params.travelDate) ?? defaultBusSearchCriteria.travelDate,
   };
 }
+
+export function busSearchCriteriaToQuery(criteria: BusSearchCriteria): Record<string, string> {
+  return { destination: criteria.destination, origin: criteria.origin, passengers: String(criteria.passengers), travelDate: criteria.travelDate };
+}

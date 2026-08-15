@@ -34,6 +34,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Provider-neutral Bus validation rejects wrong-date, wrong-route, over-capacity, malformed-timing,
   invalid-rating, and non-positive-price offers while normalizing bounded amenity data; personal
   Bus checkout also fails safely if its server-side booking cannot be saved
+- Bus discovery adds governed operator, bus-type, refundable-only, maximum-fare, price, duration,
+  departure, and rating controls without weakening supplier revalidation.
 - Versioned, no-store Bus offer search and revalidation APIs reuse that supplier boundary for
   future mobile, partner, B2B, and corporate clients
 - Bus checkout validates the exact passenger roster, booking contact, and a unique seat assignment
