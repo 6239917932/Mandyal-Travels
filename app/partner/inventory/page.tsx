@@ -26,6 +26,7 @@ export default function PartnerInventoryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState<string>();
+  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
 
   async function loadInventory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +82,7 @@ export default function PartnerInventoryPage() {
             : undefined,
           closedToArrival: formData.get('closedToArrival') === 'on',
           closedToDeparture: formData.get('closedToDeparture') === 'on',
+          clearNightlyRate: formData.get('clearNightlyRate') === 'on',
           roomTypeId: String(formData.get('roomTypeId') ?? ''),
           stopSell: formData.get('stopSell') === 'on',
         }),
@@ -177,7 +179,13 @@ export default function PartnerInventoryPage() {
             <form className="booking-page__guest-form" onSubmit={saveOverride}>
               <label className="ui-field">
                 <span className="ui-field__label">Room type</span>
-                <select className="ui-input" name="roomTypeId" required>
+                <select
+                  className="ui-input"
+                  name="roomTypeId"
+                  onChange={(event) => setSelectedRoomTypeId(event.target.value)}
+                  required
+                  value={selectedRoomTypeId}
+                >
                   <option value="">Select a room</option>
                   {inventory.map((room) => (
                     <option key={room.roomTypeId} value={room.roomTypeId}>
@@ -221,7 +229,7 @@ export default function PartnerInventoryPage() {
                   <span className="ui-field__label">Rate plan for seasonal price</span>
                   <select className="ui-input" name="ratePlanRecordId">
                     <option value="">No price change</option>
-                    {ratePlans.map((ratePlan) => (
+                    {ratePlans.filter((ratePlan) => ratePlan.roomTypeId === selectedRoomTypeId).map((ratePlan) => (
                       <option key={ratePlan.id} value={ratePlan.id}>
                         {ratePlan.name} ({inventory.find((room) => room.roomTypeId === ratePlan.roomTypeId)?.roomName ?? ratePlan.roomTypeId})
                       </option>
@@ -237,6 +245,10 @@ export default function PartnerInventoryPage() {
                   type="number"
                 />
               </div>
+              <label className="supplier-form__check">
+                <input name="clearNightlyRate" type="checkbox" /> Clear the selected rate plan
+                seasonal price and return to its base price
+              </label>
               <label className="supplier-form__check">
                 <input name="closedToArrival" type="checkbox" /> Do not allow check-in on these
                 dates

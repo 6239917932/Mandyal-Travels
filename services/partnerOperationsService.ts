@@ -968,6 +968,7 @@ export const partnerOperationsService = {
     availableRooms: number;
     closedToArrival: boolean;
     closedToDeparture: boolean;
+    clearNightlyRate: boolean;
     endDate: string;
     nightlyRate?: number;
     maximumStayNights?: number;
@@ -1020,7 +1021,7 @@ export const partnerOperationsService = {
     const ratePlan = input.ratePlanRecordId
       ? room.ratePlans.find((candidate) => candidate.id === input.ratePlanRecordId && candidate.status === 'ACTIVE')
       : undefined;
-    if (input.nightlyRate !== undefined && !ratePlan) {
+    if ((input.nightlyRate !== undefined || input.clearNightlyRate) && !ratePlan) {
       throw new PartnerOperationsError(
         'RATE_PLAN_REQUIRED',
         'Select an active rate plan before setting a seasonal nightly rate.',
@@ -1091,6 +1092,11 @@ export const partnerOperationsService = {
           }),
         ),
       );
+    }
+    if (ratePlan && input.clearNightlyRate) {
+      await prisma.partnerRatePlanInventoryDay.deleteMany({
+        where: { ratePlanId: ratePlan.id, stayDate: { in: dates } },
+      });
     }
     return dates.length;
   },

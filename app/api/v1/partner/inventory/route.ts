@@ -144,6 +144,14 @@ export async function POST(request: Request): Promise<Response> {
       : undefined;
   const closedToArrival = values.closedToArrival === true;
   const closedToDeparture = values.closedToDeparture === true;
+  const clearNightlyRate = values.clearNightlyRate === true;
+  if (clearNightlyRate && nightlyRate !== undefined) {
+    return errorResponse(
+      'CONFLICTING_RATE_ACTION',
+      'Enter a seasonal price or clear the saved price, but do not select both.',
+      400,
+    );
+  }
   const stopSell = values.stopSell === true || availableRooms === 0;
   try {
     const data = await hotelBookingService.setPartnerInventoryOverride(
@@ -177,6 +185,7 @@ export async function POST(request: Request): Promise<Response> {
           availableRooms,
           closedToArrival,
           closedToDeparture,
+          clearNightlyRate,
           endDate: checkOutDate,
           nightlyRate,
           maximumStayNights,
@@ -204,6 +213,7 @@ export async function POST(request: Request): Promise<Response> {
         minimumStayNights,
         closedToArrival,
         closedToDeparture,
+        clearNightlyRate,
         stopSell,
       },
       summary: 'Room inventory limit updated.',
