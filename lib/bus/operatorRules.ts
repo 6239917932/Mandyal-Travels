@@ -22,3 +22,8 @@ export function normalizeBusTripControls(input: BusTripControls): BusTripControl
   if (!Number.isInteger(input.pricePerSeat) || input.pricePerSeat < 100 || input.pricePerSeat > 100000) throw new Error('Seat price must be between ₹100 and ₹1,00,000.');
   return { pricePerSeat: input.pricePerSeat, seatCapacity: input.seatCapacity, status };
 }
+export function normalizeBusRouteStatus(value: string): 'ACTIVE' | 'PAUSED' {
+  const status = value.trim().toUpperCase();
+  if (status !== 'ACTIVE' && status !== 'PAUSED') throw new Error('Route status must be active or paused.');
+  return status;
+}
