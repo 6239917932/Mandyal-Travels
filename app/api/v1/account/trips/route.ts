@@ -2,12 +2,15 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
+import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
+  revalidateTravelSelection,
   validateBusinessCheckout,
 } from '@/services/businessCheckoutService';
 import type { PromotionProduct } from '@/constants/promotionRules';
+import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import {
   PartnerOperationsError,
@@ -77,6 +80,20 @@ export async function POST(request: Request) {
       : {};
   const detailsJson = JSON.stringify(details);
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
+  const flightAdults =
+    productType === 'FLIGHT'
+      ? createFlightSearchCriteria(
+          body.businessSelection &&
+            typeof body.businessSelection === 'object' &&
+            !Array.isArray(body.businessSelection)
+            ? Object.fromEntries(
+                Object.entries(body.businessSelection).filter(
+                  (entry): entry is [string, string] => typeof entry[1] === 'string',
+                ),
+              )
+            : {},
+        ).adults
+      : undefined;
 
   if (
     !isProductType(productType) ||
@@ -94,6 +111,16 @@ export async function POST(request: Request) {
     (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
+  }
+  if (
+    productType === 'FLIGHT' &&
+    (flightAdults === undefined || !hasValidFlightPassengerDetails(details, flightAdults))
+  ) {
+    return errorResponse(
+      'INVALID_FLIGHT_PASSENGERS',
+      'Complete passenger names and booking contact details are required.',
+      400,
+    );
   }
 
   let existingTrip;
@@ -153,6 +180,35 @@ export async function POST(request: Request) {
         'BUSINESS_TOTAL_MISMATCH',
         'The company booking total changed. Please review the fare again.',
         409,
+      );
+    }
+  } else {
+    try {
+      const validatedSelection = await revalidateTravelSelection(
+        productType,
+        body.businessSelection,
+        isText(body.promotionCode) ? body.promotionCode : undefined,
+      );
+      if (
+        validatedSelection.startDate !== startDate ||
+        validatedSelection.endDate !== endDate ||
+        validatedSelection.finalTotal !== totalAmount
+      ) {
+        return errorResponse(
+          'TRIP_SELECTION_CHANGED',
+          'The selected itinerary or total changed. Please review it again before payment.',
+          409,
+        );
+      }
+    } catch (error) {
+      if (error instanceof BusinessCheckoutError) {
+        return errorResponse('TRIP_SELECTION_UNAVAILABLE', error.message, error.status);
+      }
+      console.error('Personal checkout validation failed.', error);
+      return errorResponse(
+        'TRIP_SELECTION_CHECK_FAILED',
+        'The selected itinerary could not be checked. No payment has been captured.',
+        500,
       );
     }
   }

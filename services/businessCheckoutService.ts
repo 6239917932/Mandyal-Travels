@@ -85,7 +85,7 @@ function readApprovedCabin(policySnapshotJson: string) {
   );
 }
 
-async function revalidateSelection(
+export async function revalidateTravelSelection(
   productType: CheckoutProduct,
   selection: unknown,
   promotionCode?: string,
@@ -220,7 +220,7 @@ export async function validateBusinessCheckout({
     throw new BusinessCheckoutError('BUSINESS_REQUEST_NOT_APPROVED', message);
   }
 
-  const selectionResult = await revalidateSelection(productType, selection, promotionCode);
+  const selectionResult = await revalidateTravelSelection(productType, selection, promotionCode);
   if (selectionResult.startDate !== travelRequest.startDate) {
     throw new BusinessCheckoutError(
       'BUSINESS_DATE_MISMATCH',

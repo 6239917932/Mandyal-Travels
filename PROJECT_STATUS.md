@@ -18,6 +18,11 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   segment timing, and continuous connections before supplier offers can enter checkout
 - Versioned, no-store Flight offer search and revalidation APIs expose the same governed service
   boundary to future web, Android, iOS, B2B, and corporate clients
+- Personal Flight, Bus, and Car checkout now revalidates the selected inventory, travel dates,
+  promotion, and final total on the server and fails safely when persistence is unavailable; the
+  browser can no longer show a successful confirmation for an unsaved trip
+- Flight booking persistence validates the exact adult count, bounded passenger names, supported
+  gender values, email address, and normalized phone length at the API boundary
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
