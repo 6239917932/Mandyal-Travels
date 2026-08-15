@@ -272,6 +272,11 @@ without deleting inventory or reservations. Restoration is audited and requires 
 number plus complete, non-expired compliance dates, preventing non-compliant vehicles from
 returning to sale.
 
+Car partners have bounded pickup-date performance reports with reservation, confirmed-value,
+rental-day, average-value, vehicle-utilization, and per-vehicle rollups. Every query is scoped to
+the authenticated fleet partner and refuses unbounded result sets rather than returning partial
+financial totals.
+
 The current travel-domain milestone passes 48 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 96 generated route entries, and
 clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider

@@ -90,7 +90,7 @@ export default async function PartnerWorkspacePage() {
             >
               {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
             </Link>
-            {partner.type === 'HOTEL' ? (
+            {partner.type === 'HOTEL' || partner.type === 'CAR' ? (
               <Link className="ui-button ui-button--secondary" href="/partner/reports">
                 Performance reports
               </Link>

@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
-export const metadata: Metadata = { title: 'Hotel performance reports' };
+export const metadata: Metadata = { title: 'Partner performance reports' };
 
 type PartnerReportsPageProps = {
   searchParams: Promise<{ from?: string | string[]; through?: string | string[] }>;
@@ -45,7 +45,7 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
   const user = await getCurrentUser();
   if (!user) redirect('/login?returnTo=/partner/reports');
   const access = await getPartnerAccess();
-  if (!access?.partnerId || !access.userId || access.partnerType !== 'HOTEL') redirect('/partner');
+  if (!access?.partnerId || !access.userId || (access.partnerType !== 'CAR' && access.partnerType !== 'HOTEL')) redirect('/partner');
 
   const values = await searchParams;
   const requestedFrom = firstValue(values.from);
@@ -54,6 +54,75 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
   const through = validDate(requestedThrough) ? requestedThrough : today();
   const rangeDays = Math.floor((Date.parse(`${through}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS) + 1;
   const validRange = rangeDays >= 1 && rangeDays <= 366;
+  if (access.partnerType === 'CAR') {
+    const where = { partnerId: access.partnerId, pickupDate: { gte: from, lte: through } };
+    const matchingCount = validRange ? await prisma.partnerVehicleReservation.count({ where }) : 0;
+    const isBounded = matchingCount <= MAX_REPORT_ROWS;
+    const reservations = validRange && isBounded && matchingCount
+      ? await prisma.partnerVehicleReservation.findMany({
+          include: { vehicle: { select: { id: true, registrationNumber: true, vehicleName: true } } },
+          orderBy: { pickupDate: 'desc' },
+          where,
+        })
+      : [];
+    const confirmed = reservations.filter((reservation) => reservation.status === 'CONFIRMED');
+    const confirmedValue = confirmed.reduce((total, reservation) => total + reservation.totalAmount, 0);
+    const rentalDays = confirmed.reduce(
+      (total, reservation) =>
+        total + Math.max(1, Math.ceil((Date.parse(`${reservation.dropoffDate}T00:00:00Z`) - Date.parse(`${reservation.pickupDate}T00:00:00Z`)) / DAY_MS)),
+      0,
+    );
+    const vehicleRows = [...new Set(reservations.map((reservation) => reservation.vehicle.id))].map((vehicleId) => {
+      const rows = reservations.filter((reservation) => reservation.vehicle.id === vehicleId);
+      const vehicle = rows[0]?.vehicle;
+      const confirmedRows = rows.filter((reservation) => reservation.status === 'CONFIRMED');
+      return {
+        confirmedValue: confirmedRows.reduce((total, reservation) => total + reservation.totalAmount, 0),
+        registrationNumber: vehicle?.registrationNumber,
+        reservations: rows.length,
+        vehicleId,
+        vehicleName: vehicle?.vehicleName ?? 'Vehicle',
+      };
+    });
+    return (
+      <section className="account-page partner-workspace">
+        <div className="account-page__container">
+          <header className="account-trips__heading">
+            <p className="hotel-page__eyebrow">Car performance</p>
+            <h1>Fleet reports</h1>
+            <p>Review pickup-based rental performance across only your supplier fleet.</p>
+            <Link className="ui-button ui-button--secondary" href="/partner">Back to workspace</Link>
+          </header>
+          <Card>
+            <form className="supplier-form__grid" method="get">
+              <label className="ui-field"><span className="ui-field__label">Pickup from</span><input className="ui-input" defaultValue={from} name="from" required type="date" /></label>
+              <label className="ui-field"><span className="ui-field__label">Pickup through</span><input className="ui-input" defaultValue={through} min={from} name="through" required type="date" /></label>
+              <button className="ui-button ui-button--primary" type="submit">Run report</button>
+            </form>
+            {!validRange ? <p className="booking-page__payment-error" role="alert">Choose a valid reporting period of no more than 366 days.</p> : null}
+            {!isBounded ? <p className="booking-page__payment-error" role="alert">This period contains more than {MAX_REPORT_ROWS.toLocaleString('en-IN')} reservations. Choose a shorter period for an exact report.</p> : null}
+          </Card>
+          {validRange && isBounded ? <>
+            <div className="partner-inventory__metrics">
+              <Card><span>Reservations</span><strong>{matchingCount.toLocaleString('en-IN')}</strong></Card>
+              <Card><span>Confirmed rentals</span><strong>{confirmed.length.toLocaleString('en-IN')}</strong></Card>
+              <Card><span>Confirmed value</span><strong>{money(confirmedValue)}</strong></Card>
+              <Card><span>Rental days</span><strong>{rentalDays.toLocaleString('en-IN')}</strong></Card>
+              <Card><span>Average rental value</span><strong>{money(confirmed.length ? confirmedValue / confirmed.length : 0)}</strong></Card>
+              <Card><span>Vehicles used</span><strong>{vehicleRows.length.toLocaleString('en-IN')}</strong></Card>
+            </div>
+            <Card>
+              <h2>Vehicle performance</h2>
+              <div className="partner-workspace__audit">
+                {vehicleRows.map((row) => <div key={row.vehicleId}><strong>{row.vehicleName}</strong><span>{row.registrationNumber ?? 'Registration not assigned'} · {row.reservations} reservations · {money(row.confirmedValue)} confirmed</span></div>)}
+                {!vehicleRows.length ? <p>No rentals begin during this period.</p> : null}
+              </div>
+            </Card>
+          </> : null}
+        </div>
+      </section>
+    );
+  }
   const hotelSlugs = access.allowedHotelSlugs ?? [];
   const bookingWhere = {
     hotelSlug: { in: hotelSlugs },
