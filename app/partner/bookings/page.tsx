@@ -32,6 +32,7 @@ export default function PartnerBookingsPage() {
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+  const [updatingBooking, setUpdatingBooking] = useState<string>();
   const filteredBookings = useMemo(() => {
     const query = filter.trim().toLowerCase();
     if (!query) return bookings;
@@ -73,6 +74,39 @@ export default function PartnerBookingsPage() {
     const task = window.setTimeout(() => void loadPage(1), 0);
     return () => window.clearTimeout(task);
   }, [loadPage]);
+
+  async function updateStayStatus(
+    confirmationCode: string,
+    status: 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW',
+  ) {
+    setError(undefined);
+    setUpdatingBooking(confirmationCode);
+    try {
+      const response = await fetch(`/api/v1/partner/bookings/${confirmationCode}`, {
+        body: JSON.stringify({ status }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<
+        { data: { operationalStatus: PartnerBookingRecord['operationalStatus'] } } | ApiErrorResponse
+      >(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(result && 'error' in result ? result.error.message : 'The stay status could not be updated.');
+        return;
+      }
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.confirmationCode === confirmationCode
+            ? { ...booking, operationalStatus: result.data.operationalStatus }
+            : booking,
+        ),
+      );
+    } catch {
+      setError('The partner service could not be reached.');
+    } finally {
+      setUpdatingBooking(undefined);
+    }
+  }
 
   return (
     <div className="booking-page partner-bookings">
@@ -159,6 +193,7 @@ export default function PartnerBookingsPage() {
                       <strong className={`partner-status partner-status--${booking.status}`}>
                         {booking.status}
                       </strong>
+                      <small>{booking.operationalStatus.replaceAll('_', ' ').toLowerCase()}</small>
                     </div>
                     <div>
                       <span>Payment</span>
@@ -169,6 +204,17 @@ export default function PartnerBookingsPage() {
                       <strong>{money(booking.totalAmount, booking.currency)}</strong>
                     </div>
                   </div>
+                  {booking.status === 'confirmed' && booking.operationalStatus === 'RESERVED' ? (
+                    <div className="manage-booking__document-actions">
+                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'CHECKED_IN')} variant="secondary">Check in guest</Button>
+                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'NO_SHOW')} variant="secondary">Mark no-show</Button>
+                    </div>
+                  ) : null}
+                  {booking.status === 'confirmed' && booking.operationalStatus === 'CHECKED_IN' ? (
+                    <div className="manage-booking__document-actions">
+                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'CHECKED_OUT')} variant="secondary">Check out guest</Button>
+                    </div>
+                  ) : null}
                 </Card>
               ))}
               {filteredBookings.length === 0 ? <p>No bookings match your search.</p> : null}

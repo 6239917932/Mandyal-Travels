@@ -138,6 +138,7 @@ function mapBooking(booking: {
   guest: { email: string; firstName: string; lastName: string; phone: string } | null;
   hotelSlug: string;
   id: string;
+  operationalStatus: string;
   payment: { amount: number; status: string } | null;
   quoteId: string;
   status: string;
@@ -155,6 +156,7 @@ function mapBooking(booking: {
     guest: booking.guest,
     hotelSlug: booking.hotelSlug,
     id: booking.id,
+    operationalStatus: booking.operationalStatus as HotelBookingRecord['operationalStatus'],
     paymentAmount: booking.payment.amount,
     paymentStatus: booking.payment.status as HotelBookingRecord['paymentStatus'],
     quoteId: booking.quoteId,

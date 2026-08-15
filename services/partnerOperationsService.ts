@@ -106,6 +106,64 @@ function reservationUnitsForDate(
 }
 
 export const partnerOperationsService = {
+  async updateHotelStayStatus(
+    partnerId: string,
+    confirmationCode: string,
+    nextStatus: 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW',
+    actorUserId?: string,
+  ) {
+    const booking = await prisma.booking.findFirst({
+      include: { quote: true },
+      where: {
+        confirmationCode,
+        hotelSlug: {
+          in: await prisma.partnerProperty
+            .findMany({
+              select: { hotelSlug: true },
+              where: { partnerId, status: 'ACTIVE' },
+            })
+            .then((properties) => properties.map((property) => property.hotelSlug)),
+        },
+      },
+    });
+    if (!booking) {
+      throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The hotel booking was not found.');
+    }
+    if (booking.status !== 'confirmed') {
+      throw new PartnerOperationsError('BOOKING_CANCELLED', 'A cancelled booking cannot be updated.');
+    }
+    const permittedTransitions: Record<string, readonly string[]> = {
+      CHECKED_IN: ['CHECKED_OUT'],
+      RESERVED: ['CHECKED_IN', 'NO_SHOW'],
+    };
+    if (!permittedTransitions[booking.operationalStatus]?.includes(nextStatus)) {
+      throw new PartnerOperationsError(
+        'INVALID_STAY_TRANSITION',
+        `The stay cannot move from ${booking.operationalStatus} to ${nextStatus}.`,
+      );
+    }
+    return prisma.$transaction(async (transaction) => {
+      const updated = await transaction.booking.update({
+        data: { operationalStatus: nextStatus },
+        where: { id: booking.id },
+      });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: `HOTEL_STAY_${nextStatus}`,
+          actorUserId,
+          entityId: booking.id,
+          entityType: 'HOTEL_BOOKING',
+          metadataJson: JSON.stringify({
+            confirmationCode,
+            previousStatus: booking.operationalStatus,
+          }),
+          partnerId,
+          summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
+        },
+      });
+      return updated;
+    });
+  },
   async createApplication(input: {
     applicantUserId: string;
     businessName: string;

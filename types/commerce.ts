@@ -83,6 +83,7 @@ export interface PartnerBookingRecord {
   guestEmail: string;
   guestName: string;
   hotelName: string;
+  operationalStatus: HotelBookingRecord['operationalStatus'];
   checkInDate: string;
   checkOutDate: string;
   paymentStatus: PaymentStatus;
@@ -133,6 +134,7 @@ export interface HotelBookingRecord {
   };
   hotelSlug: string;
   id: string;
+  operationalStatus: 'RESERVED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW';
   paymentStatus: PaymentStatus;
   paymentAmount: number;
   quoteId: string;

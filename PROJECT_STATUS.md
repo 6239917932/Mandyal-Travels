@@ -75,6 +75,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   and booking quote validation
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
+- Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
+  supplier audit entries
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment

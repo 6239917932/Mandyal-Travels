@@ -583,6 +583,7 @@ model Booking {
   accessTokenHash         String?                @unique
   hotelSlug               String
   status                  String
+  operationalStatus       String                 @default("RESERVED")
   totalAmount             Int
   currency                String
   createdAt               DateTime               @default(now())
@@ -597,6 +598,8 @@ model Booking {
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
+
+  @@index([hotelSlug, operationalStatus, createdAt])
 }
 
 model PartnerRatePlan {
