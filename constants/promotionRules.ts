@@ -54,21 +54,12 @@ export function findPromotionRule(
 ): PromotionRule | undefined {
   const normalizedCode = code.trim().toUpperCase();
   return promotionRules.find(
-    (rule) =>
-      rule.active &&
-      rule.code === normalizedCode &&
-      rule.products.includes(productType),
+    (rule) => rule.active && rule.code === normalizedCode && rule.products.includes(productType),
   );
 }
 
-export function calculatePromotion(
-  rule: PromotionRule,
-  subtotal: number,
-): PromotionApplication {
-  const discountAmount = Math.min(
-    Math.floor((subtotal * rule.percentOff) / 100),
-    rule.maxDiscount,
-  );
+export function calculatePromotion(rule: PromotionRule, subtotal: number): PromotionApplication {
+  const discountAmount = Math.min(Math.floor((subtotal * rule.percentOff) / 100), rule.maxDiscount);
 
   return {
     code: rule.code,

@@ -35,7 +35,10 @@ export function FlightOfferCard({
       </div>
       <div className="flight-offer-card__routes">
         {offer.segments.map((itinerarySegment) => (
-          <div className="flight-offer-card__route" key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}>
+          <div
+            className="flight-offer-card__route"
+            key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}
+          >
             <div>
               <small>
                 {itinerarySegment.leg === 'outbound'
@@ -50,7 +53,9 @@ export function FlightOfferCard({
             <div className="flight-offer-card__duration">
               <span>{duration(itinerarySegment.durationMinutes)}</span>
               <i />
-              <small>{itinerarySegment.stops === 0 ? 'Non-stop' : `${itinerarySegment.stops} stop`}</small>
+              <small>
+                {itinerarySegment.stops === 0 ? 'Non-stop' : `${itinerarySegment.stops} stop`}
+              </small>
             </div>
             <div>
               <small>{itinerarySegment.departureAt.slice(0, 10)}</small>

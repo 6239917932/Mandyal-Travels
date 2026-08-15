@@ -149,9 +149,7 @@ export class InMemoryBookingRepository implements BookingRepository {
     return [...this.bookingsByIdempotencyKey.values()].find((booking) => booking.id === id);
   }
 
-  async findAll(
-    options: PartnerBookingQuery = {},
-  ): Promise<HotelBookingRecord[]> {
+  async findAll(options: PartnerBookingQuery = {}): Promise<HotelBookingRecord[]> {
     const skip = options.skip ?? 0;
     const take = options.take ?? Number.POSITIVE_INFINITY;
     return [...this.bookingsByIdempotencyKey.values()]
@@ -311,9 +309,7 @@ export class PrismaBookingRepository implements BookingRepository {
     return booking ? mapBooking(booking) : undefined;
   }
 
-  async findAll(
-    options: PartnerBookingQuery = {},
-  ): Promise<HotelBookingRecord[]> {
+  async findAll(options: PartnerBookingQuery = {}): Promise<HotelBookingRecord[]> {
     const bookings = await prisma.booking.findMany({
       include: { guest: true, payment: true, quote: true },
       orderBy: { createdAt: 'desc' },

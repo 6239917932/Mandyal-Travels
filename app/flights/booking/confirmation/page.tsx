@@ -4,7 +4,10 @@ import { FlightConfirmationDetails } from '@/components/flight/FlightConfirmatio
 import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
+import {
+  createFlightSearchCriteria,
+  flightSearchCriteriaToQuery,
+} from '@/utils/flightSearchCriteria';
 import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight confirmed' };

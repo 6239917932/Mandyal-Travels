@@ -19,18 +19,39 @@ export default async function AdminHotelReviewsPage() {
   });
   return (
     <section className="account-page platform-admin-page review-governance">
-      <Link className="hotel-details-page__back-link" href="/admin">Back to operations</Link>
-      <header className="account-trips__heading"><p className="hotel-page__eyebrow">Trust and safety</p><h1>Hotel review moderation</h1><p>Publish genuine, relevant verified-stay feedback or reject abusive and inappropriate content.</p></header>
+      <Link className="hotel-details-page__back-link" href="/admin">
+        Back to operations
+      </Link>
+      <header className="account-trips__heading">
+        <p className="hotel-page__eyebrow">Trust and safety</p>
+        <h1>Hotel review moderation</h1>
+        <p>
+          Publish genuine, relevant verified-stay feedback or reject abusive and inappropriate
+          content.
+        </p>
+      </header>
       <div className="review-governance__list">
         {reviews.map((review) => (
           <Card key={review.id}>
-            <div className="review-governance__heading"><div><strong>{review.title}</strong><span>{review.hotelSlug}</span></div><strong>{review.rating}/5</strong></div>
+            <div className="review-governance__heading">
+              <div>
+                <strong>{review.title}</strong>
+                <span>{review.hotelSlug}</span>
+              </div>
+              <strong>{review.rating}/5</strong>
+            </div>
             <p>{review.body}</p>
-            <small>{review.user.firstName} {review.user.lastName} · {review.user.email}</small>
+            <small>
+              {review.user.firstName} {review.user.lastName} · {review.user.email}
+            </small>
             <AdminHotelReviewAction reviewId={review.id} />
           </Card>
         ))}
-        {reviews.length === 0 ? <Card><strong>No hotel reviews are awaiting moderation.</strong></Card> : null}
+        {reviews.length === 0 ? (
+          <Card>
+            <strong>No hotel reviews are awaiting moderation.</strong>
+          </Card>
+        ) : null}
       </div>
     </section>
   );

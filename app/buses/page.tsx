@@ -43,7 +43,12 @@ export default async function BusesPage({
       <section className="bus-page__content">
         <div className="bus-page__container">
           <BusSearchForm criteria={criteria} />
-          <BusResultControls busTypes={busTypes} controls={controls} criteria={criteria} operators={operators} />
+          <BusResultControls
+            busTypes={busTypes}
+            controls={controls}
+            criteria={criteria}
+            operators={operators}
+          />
           {error ? (
             <p className="flight-page__error" role="alert">
               {error}

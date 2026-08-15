@@ -17,9 +17,7 @@ function mapReview(review: {
     createdAt: review.createdAt.toISOString(),
     id: review.id,
     ...(review.partnerReply ? { partnerReply: review.partnerReply } : {}),
-    ...(review.partnerRepliedAt
-      ? { partnerRepliedAt: review.partnerRepliedAt.toISOString() }
-      : {}),
+    ...(review.partnerRepliedAt ? { partnerRepliedAt: review.partnerRepliedAt.toISOString() } : {}),
     rating: review.rating,
     reviewerName: `${review.user.firstName}${lastInitial ? ` ${lastInitial}.` : ''}`,
     title: review.title,

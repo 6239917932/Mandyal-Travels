@@ -30,7 +30,11 @@ export function AdminPropertyReviewActions({
       });
       const result = await readJsonResponse<{ data: { id: string } } | ApiErrorResponse>(response);
       if (!response.ok || !result || !('data' in result)) {
-        setError(result && 'error' in result ? result.error.message : 'The property review could not be saved.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'The property review could not be saved.',
+        );
         return;
       }
       router.refresh();
@@ -55,8 +59,12 @@ export function AdminPropertyReviewActions({
       </label>
       {error ? <p className="ui-field__error">{error}</p> : null}
       <div className="manage-booking__document-actions">
-        <Button disabled={isSaving} onClick={() => void review('APPROVE')}>Approve and publish</Button>
-        <Button disabled={isSaving} onClick={() => void review('REJECT')} variant="secondary">Return for corrections</Button>
+        <Button disabled={isSaving} onClick={() => void review('APPROVE')}>
+          Approve and publish
+        </Button>
+        <Button disabled={isSaving} onClick={() => void review('REJECT')} variant="secondary">
+          Return for corrections
+        </Button>
       </div>
     </div>
   );

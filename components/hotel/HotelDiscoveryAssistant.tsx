@@ -28,7 +28,9 @@ export function HotelDiscoveryAssistant({ criteria }: { criteria: HotelSearchCri
       });
       const result = (await response.json()) as DiscoveryResponse;
       if (!response.ok || !result.data) {
-        setMessage(result.error?.message ?? 'The discovery assistant could not interpret that request.');
+        setMessage(
+          result.error?.message ?? 'The discovery assistant could not interpret that request.',
+        );
         return;
       }
       const query = new URLSearchParams({
@@ -63,12 +65,29 @@ export function HotelDiscoveryAssistant({ criteria }: { criteria: HotelSearchCri
       <div className="hotel-discovery__controls">
         <label className="ui-field">
           <span className="ui-field__label">Travel intent</span>
-          <input className="ui-input" maxLength={300} minLength={3} onChange={(event) => setIntent(event.target.value)} placeholder="Tell us your destination, budget, rating, or amenities" required value={intent} />
+          <input
+            className="ui-input"
+            maxLength={300}
+            minLength={3}
+            onChange={(event) => setIntent(event.target.value)}
+            placeholder="Tell us your destination, budget, rating, or amenities"
+            required
+            value={intent}
+          />
         </label>
-        <button className="ui-button ui-button--primary" disabled={busy} type="submit">{busy ? 'Interpreting...' : 'Find matching stays'}</button>
+        <button className="ui-button ui-button--primary" disabled={busy} type="submit">
+          {busy ? 'Interpreting...' : 'Find matching stays'}
+        </button>
       </div>
-      <small>Recommendations only set search filters. Availability and prices always come from the live inventory and quote engines.</small>
-      {message ? <p aria-live="polite" className="hotel-discovery__message">{message}</p> : null}
+      <small>
+        Recommendations only set search filters. Availability and prices always come from the live
+        inventory and quote engines.
+      </small>
+      {message ? (
+        <p aria-live="polite" className="hotel-discovery__message">
+          {message}
+        </p>
+      ) : null}
     </form>
   );
 }

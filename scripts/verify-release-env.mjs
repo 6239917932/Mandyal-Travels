@@ -1,8 +1,55 @@
 import process from 'node:process';
+import { isIP } from 'node:net';
 
 import 'dotenv/config';
 
 const failures = [];
+const HOST_PATTERN = /^(?=.{1,253}$)(?!-)(?:[a-z0-9-]{1,63}\.)*[a-z0-9][a-z0-9-]{0,62}$/;
+
+function isPublicDomainName(host) {
+  return (
+    HOST_PATTERN.test(host) &&
+    host.includes('.') &&
+    !host.includes('..') &&
+    host !== 'localhost' &&
+    !host.endsWith('.localhost') &&
+    !host.endsWith('.local') &&
+    isIP(host) === 0
+  );
+}
+
+function parseAllowedHosts(value) {
+  return (value ?? '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase().replace(/\.$/, ''))
+    .filter(isPublicDomainName);
+}
+
+function endpointUsesAllowedHost(endpointName, hostsName) {
+  const endpointValue = (process.env[endpointName] ?? '').trim();
+  if (!endpointValue) return;
+  const allowedHosts = parseAllowedHosts(process.env[hostsName]);
+  if (!allowedHosts.length) {
+    failures.push(`${hostsName} must explicitly list the approved provider hosts.`);
+    return;
+  }
+  try {
+    const url = new URL(endpointValue);
+    const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      (url.port && url.port !== '443') ||
+      !allowedHosts.some((host) => hostname === host || hostname.endsWith(`.${host}`))
+    ) {
+      failures.push(`${endpointName} must use HTTPS on an approved ${hostsName} host.`);
+    }
+  } catch {
+    failures.push(`${endpointName} must contain a valid absolute URL.`);
+  }
+}
+
 if (!process.env.DATABASE_URL) failures.push('DATABASE_URL is required.');
 if ((process.env.DATABASE_URL ?? '').startsWith('file:')) {
   failures.push('Production DATABASE_URL must use a managed relational database, not SQLite.');
@@ -16,12 +63,50 @@ for (const name of ['BOOKING_TOKEN_SECRET', 'PARTNER_ADMIN_KEY', 'MFA_ENCRYPTION
 if (process.env.PAYMENT_GATEWAY_MODE !== 'live')
   failures.push('PAYMENT_GATEWAY_MODE must be live.');
 for (const name of [
+  'PUBLIC_APP_ORIGIN',
   'PAYMENT_GATEWAY_ENDPOINT',
   'PAYMENT_GATEWAY_API_KEY',
+  'PAYMENT_PROVIDER_ALLOWED_HOSTS',
   'PAYMENT_WEBHOOK_SECRET',
 ]) {
   if (!(process.env[name] ?? '').trim())
     failures.push(`${name} is required for production checkout.`);
+}
+try {
+  const publicOrigin = new URL(process.env.PUBLIC_APP_ORIGIN ?? '');
+  if (
+    publicOrigin.protocol !== 'https:' ||
+    publicOrigin.username ||
+    publicOrigin.password ||
+    publicOrigin.pathname !== '/' ||
+    publicOrigin.search ||
+    publicOrigin.hash
+  ) {
+    failures.push('PUBLIC_APP_ORIGIN must be an HTTPS origin without a path or credentials.');
+  }
+} catch {
+  failures.push('PUBLIC_APP_ORIGIN must contain a valid absolute HTTPS origin.');
+}
+const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
+if (webhookSecret.length < 32)
+  failures.push('PAYMENT_WEBHOOK_SECRET must contain at least 32 characters.');
+if (/replace|example|change-me/i.test(webhookSecret))
+  failures.push('PAYMENT_WEBHOOK_SECRET still contains a placeholder value.');
+const paymentApiKey = process.env.PAYMENT_GATEWAY_API_KEY ?? '';
+if (paymentApiKey.length < 16)
+  failures.push('PAYMENT_GATEWAY_API_KEY must contain at least 16 characters.');
+if (/replace|example|change-me/i.test(paymentApiKey))
+  failures.push('PAYMENT_GATEWAY_API_KEY still contains a placeholder value.');
+
+for (const [endpointName, hostsName] of [
+  ['PAYMENT_GATEWAY_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['PAYMENT_GATEWAY_REFUND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['MEDIA_SIGNING_ENDPOINT', 'MEDIA_PROVIDER_ALLOWED_HOSTS'],
+  ['EMAIL_PROVIDER_ENDPOINT', 'EMAIL_PROVIDER_ALLOWED_HOSTS'],
+  ['MOBILE_MESSAGING_ENDPOINT', 'MOBILE_MESSAGING_ALLOWED_HOSTS'],
+  ['PUSH_PROVIDER_ENDPOINT', 'PUSH_PROVIDER_ALLOWED_HOSTS'],
+]) {
+  endpointUsesAllowedHost(endpointName, hostsName);
 }
 if (
   !['postgresql:', 'postgres:'].some((prefix) =>

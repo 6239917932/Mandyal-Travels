@@ -35,10 +35,7 @@ export function CarPaidAmount({
 
       try {
         const booking = JSON.parse(value) as StoredCarBooking;
-        if (
-          booking.confirmationCode === confirmationCode &&
-          typeof booking.total === 'number'
-        ) {
+        if (booking.confirmationCode === confirmationCode && typeof booking.total === 'number') {
           return booking.total;
         }
       } catch {

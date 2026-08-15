@@ -26,7 +26,13 @@ export const hotelReviewService = {
   }): Promise<HotelReview> {
     const title = normalizeText(input.title, 100);
     const body = normalizeText(input.body, 2_000);
-    if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5 || title.length < 3 || body.length < 20) {
+    if (
+      !Number.isInteger(input.rating) ||
+      input.rating < 1 ||
+      input.rating > 5 ||
+      title.length < 3 ||
+      body.length < 20
+    ) {
       throw new HotelReviewRuleError(
         'INVALID_REVIEW',
         'Choose a rating and enter a title plus at least 20 characters about your stay.',
@@ -62,7 +68,9 @@ export const hotelReviewService = {
     });
   },
 
-  async getHotelReviews(hotelSlug: string): Promise<{ reviews: HotelReview[]; summary: HotelReviewSummary }> {
+  async getHotelReviews(
+    hotelSlug: string,
+  ): Promise<{ reviews: HotelReview[]; summary: HotelReviewSummary }> {
     const reviews = await hotelReviewRepository.findPublishedByHotel(hotelSlug);
     const total = reviews.reduce((sum, review) => sum + review.rating, 0);
     return {

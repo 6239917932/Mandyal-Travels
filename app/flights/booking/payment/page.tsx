@@ -4,7 +4,10 @@ import type { Metadata } from 'next';
 import { FlightPaymentForm } from '@/components/flight/FlightPaymentForm';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
+import {
+  createFlightSearchCriteria,
+  flightSearchCriteriaToQuery,
+} from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Flight payment' };
 

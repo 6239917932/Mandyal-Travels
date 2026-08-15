@@ -35,10 +35,7 @@ export function BusPaidAmount({
 
       try {
         const booking = JSON.parse(value) as StoredBusBooking;
-        if (
-          booking.confirmationCode === confirmationCode &&
-          typeof booking.total === 'number'
-        ) {
+        if (booking.confirmationCode === confirmationCode && typeof booking.total === 'number') {
           return booking.total;
         }
       } catch {

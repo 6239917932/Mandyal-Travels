@@ -51,17 +51,24 @@ test('car criteria enforce driver and rental-duration bounds', () => {
     3,
   );
   assert.doesNotThrow(() => validateCarSearchCriteria(criteria, '2026-08-15'));
-  assert.throws(() => validateCarSearchCriteria({ ...criteria, drivers: 5 }, '2026-08-15'), /between 1 and 4/);
-  assert.throws(() => validateCarSearchCriteria({ ...criteria, dropoffDate: criteria.pickupDate }, '2026-08-15'), /after pickup/);
-  assert.throws(() => validateCarSearchCriteria({ ...criteria, dropoffDate: '2027-01-20' }, '2026-08-15'), /limited to 90 days/);
+  assert.throws(
+    () => validateCarSearchCriteria({ ...criteria, drivers: 5 }, '2026-08-15'),
+    /between 1 and 4/,
+  );
+  assert.throws(
+    () =>
+      validateCarSearchCriteria({ ...criteria, dropoffDate: criteria.pickupDate }, '2026-08-15'),
+    /after pickup/,
+  );
+  assert.throws(
+    () => validateCarSearchCriteria({ ...criteria, dropoffDate: '2027-01-20' }, '2026-08-15'),
+    /limited to 90 days/,
+  );
   assert.throws(
     () => validateCarSearchCriteria({ ...criteria, pickupTime: '25:00' }, '2026-08-15'),
     /valid pickup and drop-off times/,
   );
-  assert.equal(
-    rentalDurationDays('2026-10-10', '2026-10-13', '10:00', '18:00'),
-    4,
-  );
+  assert.equal(rentalDurationDays('2026-10-10', '2026-10-13', '10:00', '18:00'), 4);
 });
 
 test('car offers must match locations, inventory, capacity and positive pricing', () => {

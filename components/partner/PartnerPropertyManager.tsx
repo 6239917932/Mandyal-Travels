@@ -230,11 +230,12 @@ export function PartnerPropertyManager({
   }
 
   async function changePublication(property: ManagedProperty) {
-    const action = property.publicationStatus === 'PUBLISHED'
-      ? 'PAUSE'
-      : property.approvalStatus === 'APPROVED'
-        ? 'PUBLISH'
-        : 'SUBMIT_REVIEW';
+    const action =
+      property.publicationStatus === 'PUBLISHED'
+        ? 'PAUSE'
+        : property.approvalStatus === 'APPROVED'
+          ? 'PUBLISH'
+          : 'SUBMIT_REVIEW';
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
@@ -253,8 +254,8 @@ export function PartnerPropertyManager({
         action === 'SUBMIT_REVIEW'
           ? `${property.displayName} was submitted for platform review.`
           : action === 'PUBLISH'
-          ? `${property.displayName} is now visible in hotel search.`
-          : `${property.displayName} has been paused from new sales.`,
+            ? `${property.displayName} is now visible in hotel search.`
+            : `${property.displayName} has been paused from new sales.`,
       );
       await loadProperties();
     } catch {
@@ -371,7 +372,11 @@ export function PartnerPropertyManager({
     }
   }
 
-  async function updateRoom(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType) {
+  async function updateRoom(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+  ) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     setError(undefined);
@@ -432,17 +437,22 @@ export function PartnerPropertyManager({
     setIsSaving(true);
     try {
       const action = rate.status === 'ACTIVE' ? 'PAUSE' : 'RESTORE';
-      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
-        body: JSON.stringify({ action }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'PATCH',
-      });
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`,
+        {
+          body: JSON.stringify({ action }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+        },
+      );
       const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(messageFrom(result, 'The rate plan could not be paused.'));
         return;
       }
-      setSuccess(`${rate.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}. Existing history was retained.`);
+      setSuccess(
+        `${rate.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}. Existing history was retained.`,
+      );
       await loadProperties();
     } catch {
       setError('The rate service could not be reached.');
@@ -451,18 +461,30 @@ export function PartnerPropertyManager({
     }
   }
 
-  async function updateRatePlan(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType, rate: RatePlan) {
+  async function updateRatePlan(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+    rate: RatePlan,
+  ) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
-        body: JSON.stringify({ ...Object.fromEntries(formData), action: 'UPDATE', refundable: formData.get('refundable') === 'on' }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'PATCH',
-      });
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`,
+        {
+          body: JSON.stringify({
+            ...Object.fromEntries(formData),
+            action: 'UPDATE',
+            refundable: formData.get('refundable') === 'on',
+          }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+        },
+      );
       const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(messageFrom(result, 'The rate plan could not be updated.'));
@@ -496,7 +518,9 @@ export function PartnerPropertyManager({
         return;
       }
       setActiveLocationForm(undefined);
-      setSuccess(`${property.displayName} can now be found using its updated locality and aliases.`);
+      setSuccess(
+        `${property.displayName} can now be found using its updated locality and aliases.`,
+      );
       await loadProperties();
     } catch {
       setError('The property service could not be reached.');
@@ -604,7 +628,10 @@ export function PartnerPropertyManager({
             <form className="supplier-form" onSubmit={createProperty}>
               <div className="supplier-form__section-heading">
                 <span>01</span>
-                <div><strong>Property identity</strong><small>Public name, category, classification, and description</small></div>
+                <div>
+                  <strong>Property identity</strong>
+                  <small>Public name, category, classification, and description</small>
+                </div>
               </div>
               <div className="supplier-form__grid">
                 <Input
@@ -628,21 +655,42 @@ export function PartnerPropertyManager({
                 <label className="ui-field">
                   <span className="ui-field__label">Star rating</span>
                   <select className="ui-input" defaultValue="3" name="starRating" required>
-                    {[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} star</option>)}
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <option key={rating} value={rating}>
+                        {rating} star
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
               <label className="ui-field">
                 <span className="ui-field__label">Property description</span>
-                <textarea className="ui-input supplier-form__textarea" maxLength={1500} minLength={30} name="description" placeholder="Describe the property, setting, ideal guests, signature experiences, and key selling points." required />
+                <textarea
+                  className="ui-input supplier-form__textarea"
+                  maxLength={1500}
+                  minLength={30}
+                  name="description"
+                  placeholder="Describe the property, setting, ideal guests, signature experiences, and key selling points."
+                  required
+                />
               </label>
 
               <div className="supplier-form__section-heading">
                 <span>02</span>
-                <div><strong>Location and map coordinates</strong><small>Complete address and precise map position used by hotel discovery</small></div>
+                <div>
+                  <strong>Location and map coordinates</strong>
+                  <small>Complete address and precise map position used by hotel discovery</small>
+                </div>
               </div>
               <div className="supplier-form__grid">
-                <Input label="Area / locality" maxLength={100} minLength={2} name="locality" placeholder="Bir Billing, Suja, Old Manali" required />
+                <Input
+                  label="Area / locality"
+                  maxLength={100}
+                  minLength={2}
+                  name="locality"
+                  placeholder="Bir Billing, Suja, Old Manali"
+                  required
+                />
                 <Input label="Town / city" maxLength={80} minLength={2} name="city" required />
                 <Input label="Tehsil (optional)" maxLength={80} name="tehsil" />
                 <Input label="District" maxLength={80} minLength={2} name="district" required />
@@ -662,23 +710,74 @@ export function PartnerPropertyManager({
                   required
                 />
                 <Input label="Postal code" maxLength={20} name="postalCode" />
-                <Input label="Other searchable names (comma separated)" maxLength={300} name="locationAliases" placeholder="Bir, Upper Bir, Billing" />
-                <Input label="Latitude" max="90" min="-90" name="latitude" placeholder="28.6139" required step="0.000001" type="number" />
-                <Input label="Longitude" max="180" min="-180" name="longitude" placeholder="77.2090" required step="0.000001" type="number" />
-                <label className="ui-field"><span className="ui-field__label">Timezone</span><select className="ui-input" defaultValue="Asia/Kolkata" name="timezone" required><option value="Asia/Kolkata">India Standard Time (Asia/Kolkata)</option><option value="Asia/Dubai">Gulf Standard Time (Asia/Dubai)</option><option value="Europe/London">United Kingdom (Europe/London)</option><option value="America/New_York">US Eastern (America/New_York)</option></select></label>
+                <Input
+                  label="Other searchable names (comma separated)"
+                  maxLength={300}
+                  name="locationAliases"
+                  placeholder="Bir, Upper Bir, Billing"
+                />
+                <Input
+                  label="Latitude"
+                  max="90"
+                  min="-90"
+                  name="latitude"
+                  placeholder="28.6139"
+                  required
+                  step="0.000001"
+                  type="number"
+                />
+                <Input
+                  label="Longitude"
+                  max="180"
+                  min="-180"
+                  name="longitude"
+                  placeholder="77.2090"
+                  required
+                  step="0.000001"
+                  type="number"
+                />
+                <label className="ui-field">
+                  <span className="ui-field__label">Timezone</span>
+                  <select className="ui-input" defaultValue="Asia/Kolkata" name="timezone" required>
+                    <option value="Asia/Kolkata">India Standard Time (Asia/Kolkata)</option>
+                    <option value="Asia/Dubai">Gulf Standard Time (Asia/Dubai)</option>
+                    <option value="Europe/London">United Kingdom (Europe/London)</option>
+                    <option value="America/New_York">US Eastern (America/New_York)</option>
+                  </select>
+                </label>
                 <label className="ui-field">
                   <span className="ui-field__label">Nearby landmarks (one per line)</span>
-                  <textarea className="ui-input supplier-form__compact-textarea" name="landmarks" placeholder={'Railway station - 2 km\nCity Palace - 4 km'} />
+                  <textarea
+                    className="ui-input supplier-form__compact-textarea"
+                    name="landmarks"
+                    placeholder={'Railway station - 2 km\nCity Palace - 4 km'}
+                  />
                 </label>
               </div>
 
               <div className="supplier-form__section-heading">
                 <span>03</span>
-                <div><strong>Property contact and operations</strong><small>Guest-facing contact, arrival times, languages, and facilities</small></div>
+                <div>
+                  <strong>Property contact and operations</strong>
+                  <small>Guest-facing contact, arrival times, languages, and facilities</small>
+                </div>
               </div>
               <div className="supplier-form__grid">
-                <Input label="Property contact email" maxLength={254} name="contactEmail" required type="email" />
-                <Input label="Property contact phone" maxLength={30} name="contactPhone" placeholder="+91 98765 43210" required type="tel" />
+                <Input
+                  label="Property contact email"
+                  maxLength={254}
+                  name="contactEmail"
+                  required
+                  type="email"
+                />
+                <Input
+                  label="Property contact phone"
+                  maxLength={30}
+                  name="contactPhone"
+                  placeholder="+91 98765 43210"
+                  required
+                  type="tel"
+                />
                 <Input
                   defaultValue="14:00"
                   label="Check-in time"
@@ -693,20 +792,46 @@ export function PartnerPropertyManager({
                   required
                   type="time"
                 />
-                <Input label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
+                <Input
+                  label="Languages spoken"
+                  name="languages"
+                  placeholder="Hindi, English, Punjabi"
+                />
               </div>
-              <AmenityChecklist groups={propertyAmenityGroups} legend="Property amenities" name="amenities" />
+              <AmenityChecklist
+                groups={propertyAmenityGroups}
+                legend="Property amenities"
+                name="amenities"
+              />
 
               <div className="supplier-form__section-heading">
                 <span>04</span>
-                <div><strong>Guest policies</strong><small>Eligibility and house rules shown before booking</small></div>
+                <div>
+                  <strong>Guest policies</strong>
+                  <small>Eligibility and house rules shown before booking</small>
+                </div>
               </div>
               <div className="supplier-form__grid">
-                <Input defaultValue="18" label="Minimum check-in age" max="30" min="16" name="minimumCheckInAge" required type="number" />
+                <Input
+                  defaultValue="18"
+                  label="Minimum check-in age"
+                  max="30"
+                  min="16"
+                  name="minimumCheckInAge"
+                  required
+                  type="number"
+                />
                 <div className="supplier-form__policy-checks">
-                  <label><input defaultChecked name="childrenAllowed" type="checkbox" /> Children are welcome</label>
-                  <label><input name="petsAllowed" type="checkbox" /> Pets are allowed</label>
-                  <label><input name="smokingAllowed" type="checkbox" /> Smoking areas are available</label>
+                  <label>
+                    <input defaultChecked name="childrenAllowed" type="checkbox" /> Children are
+                    welcome
+                  </label>
+                  <label>
+                    <input name="petsAllowed" type="checkbox" /> Pets are allowed
+                  </label>
+                  <label>
+                    <input name="smokingAllowed" type="checkbox" /> Smoking areas are available
+                  </label>
                 </div>
               </div>
               <label className="ui-field">
@@ -719,7 +844,10 @@ export function PartnerPropertyManager({
               </label>
               <div className="supplier-form__section-heading">
                 <span>05</span>
-                <div><strong>Property media</strong><small>Add a cover image and gallery URLs; uploads can be connected later</small></div>
+                <div>
+                  <strong>Property media</strong>
+                  <small>Add a cover image and gallery URLs; uploads can be connected later</small>
+                </div>
               </div>
               <Input
                 label="Cover photo URL (optional)"
@@ -727,7 +855,16 @@ export function PartnerPropertyManager({
                 placeholder="Secure images.unsplash.com URL"
                 type="url"
               />
-              <label className="ui-field"><span className="ui-field__label">Gallery photo URLs (one per line, maximum 12)</span><textarea className="ui-input supplier-form__textarea" name="imageUrls" placeholder={'https://images.unsplash.com/...\nhttps://images.unsplash.com/...'} /></label>
+              <label className="ui-field">
+                <span className="ui-field__label">
+                  Gallery photo URLs (one per line, maximum 12)
+                </span>
+                <textarea
+                  className="ui-input supplier-form__textarea"
+                  name="imageUrls"
+                  placeholder={'https://images.unsplash.com/...\nhttps://images.unsplash.com/...'}
+                />
+              </label>
               <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                 Save draft property
               </Button>
@@ -798,61 +935,240 @@ export function PartnerPropertyManager({
                 </div>
               </div>
               {canManage ? (
-                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveProfileForm(activeProfileForm === property.id ? undefined : property.id)} type="button">
-                  {activeProfileForm === property.id ? 'Close profile editor' : 'Edit property profile'}
+                <button
+                  className="home-card__link partner-property-manager__add-room"
+                  onClick={() =>
+                    setActiveProfileForm(
+                      activeProfileForm === property.id ? undefined : property.id,
+                    )
+                  }
+                  type="button"
+                >
+                  {activeProfileForm === property.id
+                    ? 'Close profile editor'
+                    : 'Edit property profile'}
                 </button>
               ) : null}
               {activeProfileForm === property.id ? (
-                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateProfile(event, property)}>
-                  <div className="booking-confirmation__reference"><span>Profile</span><strong>Public identity and operations</strong></div>
-                  <div className="supplier-form__grid">
-                    <Input defaultValue={property.displayName} label="Property name" maxLength={140} minLength={2} name="displayName" required />
-                    <label className="ui-field"><span className="ui-field__label">Property type</span><select className="ui-input" defaultValue={property.propertyType} name="propertyType" required><option value="HOTEL">Hotel</option><option value="RESORT">Resort</option><option value="HOMESTAY">Homestay</option><option value="GUEST_HOUSE">Guest house</option><option value="APARTMENT">Serviced apartment</option><option value="HOSTEL">Hostel</option></select></label>
-                    <label className="ui-field"><span className="ui-field__label">Star rating</span><select className="ui-input" defaultValue={property.starRating} name="starRating" required>{[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} star</option>)}</select></label>
-                    <Input defaultValue={property.contactEmail} label="Guest contact email" maxLength={254} name="contactEmail" required type="email" />
-                    <Input defaultValue={property.contactPhone} label="Guest contact phone" maxLength={30} name="contactPhone" required type="tel" />
-                    <Input defaultValue={property.checkInTime} label="Check-in time" name="checkInTime" required type="time" />
-                    <Input defaultValue={property.checkOutTime} label="Check-out time" name="checkOutTime" required type="time" />
-                    <Input defaultValue={property.minimumCheckInAge} label="Minimum check-in age" max={30} min={16} name="minimumCheckInAge" required type="number" />
+                <form
+                  className="supplier-form partner-property-manager__room-form"
+                  onSubmit={(event) => void updateProfile(event, property)}
+                >
+                  <div className="booking-confirmation__reference">
+                    <span>Profile</span>
+                    <strong>Public identity and operations</strong>
                   </div>
-                  <label className="ui-field"><span className="ui-field__label">Property description</span><textarea className="ui-input supplier-form__textarea" defaultValue={property.description} maxLength={1500} minLength={30} name="description" required /></label>
-                  <Button fullWidth isLoading={isSaving} type="submit">Save property profile</Button>
+                  <div className="supplier-form__grid">
+                    <Input
+                      defaultValue={property.displayName}
+                      label="Property name"
+                      maxLength={140}
+                      minLength={2}
+                      name="displayName"
+                      required
+                    />
+                    <label className="ui-field">
+                      <span className="ui-field__label">Property type</span>
+                      <select
+                        className="ui-input"
+                        defaultValue={property.propertyType}
+                        name="propertyType"
+                        required
+                      >
+                        <option value="HOTEL">Hotel</option>
+                        <option value="RESORT">Resort</option>
+                        <option value="HOMESTAY">Homestay</option>
+                        <option value="GUEST_HOUSE">Guest house</option>
+                        <option value="APARTMENT">Serviced apartment</option>
+                        <option value="HOSTEL">Hostel</option>
+                      </select>
+                    </label>
+                    <label className="ui-field">
+                      <span className="ui-field__label">Star rating</span>
+                      <select
+                        className="ui-input"
+                        defaultValue={property.starRating}
+                        name="starRating"
+                        required
+                      >
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <option key={rating} value={rating}>
+                            {rating} star
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Input
+                      defaultValue={property.contactEmail}
+                      label="Guest contact email"
+                      maxLength={254}
+                      name="contactEmail"
+                      required
+                      type="email"
+                    />
+                    <Input
+                      defaultValue={property.contactPhone}
+                      label="Guest contact phone"
+                      maxLength={30}
+                      name="contactPhone"
+                      required
+                      type="tel"
+                    />
+                    <Input
+                      defaultValue={property.checkInTime}
+                      label="Check-in time"
+                      name="checkInTime"
+                      required
+                      type="time"
+                    />
+                    <Input
+                      defaultValue={property.checkOutTime}
+                      label="Check-out time"
+                      name="checkOutTime"
+                      required
+                      type="time"
+                    />
+                    <Input
+                      defaultValue={property.minimumCheckInAge}
+                      label="Minimum check-in age"
+                      max={30}
+                      min={16}
+                      name="minimumCheckInAge"
+                      required
+                      type="number"
+                    />
+                  </div>
+                  <label className="ui-field">
+                    <span className="ui-field__label">Property description</span>
+                    <textarea
+                      className="ui-input supplier-form__textarea"
+                      defaultValue={property.description}
+                      maxLength={1500}
+                      minLength={30}
+                      name="description"
+                      required
+                    />
+                  </label>
+                  <Button fullWidth isLoading={isSaving} type="submit">
+                    Save property profile
+                  </Button>
                 </form>
               ) : null}
               {canManage ? (
-                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveContentForm(activeContentForm === property.id ? undefined : property.id)} type="button">
-                  {activeContentForm === property.id ? 'Close content editor' : 'Edit amenities, policies, and media'}
+                <button
+                  className="home-card__link partner-property-manager__add-room"
+                  onClick={() =>
+                    setActiveContentForm(
+                      activeContentForm === property.id ? undefined : property.id,
+                    )
+                  }
+                  type="button"
+                >
+                  {activeContentForm === property.id
+                    ? 'Close content editor'
+                    : 'Edit amenities, policies, and media'}
                 </button>
               ) : null}
               {activeContentForm === property.id ? (
-                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateContent(event, property)}>
-                  <div className="booking-confirmation__reference"><span>Content</span><strong>Facilities, guest rules, and gallery</strong></div>
+                <form
+                  className="supplier-form partner-property-manager__room-form"
+                  onSubmit={(event) => void updateContent(event, property)}
+                >
+                  <div className="booking-confirmation__reference">
+                    <span>Content</span>
+                    <strong>Facilities, guest rules, and gallery</strong>
+                  </div>
                   <div className="supplier-form__grid">
-                    <Input defaultValue={stringListFromJson(property.languagesJson).join(', ')} label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
-                    <label className="ui-field"><span className="ui-field__label">Nearby landmarks (one per line)</span><textarea className="ui-input supplier-form__compact-textarea" defaultValue={stringListFromJson(property.landmarksJson).join('\n')} name="landmarks" /></label>
+                    <Input
+                      defaultValue={stringListFromJson(property.languagesJson).join(', ')}
+                      label="Languages spoken"
+                      name="languages"
+                      placeholder="Hindi, English, Punjabi"
+                    />
+                    <label className="ui-field">
+                      <span className="ui-field__label">Nearby landmarks (one per line)</span>
+                      <textarea
+                        className="ui-input supplier-form__compact-textarea"
+                        defaultValue={stringListFromJson(property.landmarksJson).join('\n')}
+                        name="landmarks"
+                      />
+                    </label>
                   </div>
-                  <AmenityChecklist defaultValues={stringListFromJson(property.amenitiesJson)} groups={propertyAmenityGroups} legend="Property amenities" name="amenities" />
+                  <AmenityChecklist
+                    defaultValues={stringListFromJson(property.amenitiesJson)}
+                    groups={propertyAmenityGroups}
+                    legend="Property amenities"
+                    name="amenities"
+                  />
                   <div className="supplier-form__policy-checks">
-                    <label><input defaultChecked={property.childrenAllowed} name="childrenAllowed" type="checkbox" /> Children are welcome</label>
-                    <label><input defaultChecked={property.petsAllowed} name="petsAllowed" type="checkbox" /> Pets are allowed</label>
-                    <label><input defaultChecked={property.smokingAllowed} name="smokingAllowed" type="checkbox" /> Smoking areas are available</label>
+                    <label>
+                      <input
+                        defaultChecked={property.childrenAllowed}
+                        name="childrenAllowed"
+                        type="checkbox"
+                      />{' '}
+                      Children are welcome
+                    </label>
+                    <label>
+                      <input
+                        defaultChecked={property.petsAllowed}
+                        name="petsAllowed"
+                        type="checkbox"
+                      />{' '}
+                      Pets are allowed
+                    </label>
+                    <label>
+                      <input
+                        defaultChecked={property.smokingAllowed}
+                        name="smokingAllowed"
+                        type="checkbox"
+                      />{' '}
+                      Smoking areas are available
+                    </label>
                   </div>
-                  <label className="ui-field"><span className="ui-field__label">Guest policies (one per line)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.policiesJson).join('\n')} name="policies" /></label>
-                  <Input defaultValue={property.imageUrl} label="Cover photo URL" name="imageUrl" required type="url" />
-                  <label className="ui-field"><span className="ui-field__label">Gallery photo URLs (one per line, maximum 12)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.imageUrlsJson).join('\n')} name="imageUrls" /></label>
-                  <Button fullWidth isLoading={isSaving} type="submit">Save property content</Button>
+                  <label className="ui-field">
+                    <span className="ui-field__label">Guest policies (one per line)</span>
+                    <textarea
+                      className="ui-input supplier-form__textarea"
+                      defaultValue={stringListFromJson(property.policiesJson).join('\n')}
+                      name="policies"
+                    />
+                  </label>
+                  <Input
+                    defaultValue={property.imageUrl}
+                    label="Cover photo URL"
+                    name="imageUrl"
+                    required
+                    type="url"
+                  />
+                  <label className="ui-field">
+                    <span className="ui-field__label">
+                      Gallery photo URLs (one per line, maximum 12)
+                    </span>
+                    <textarea
+                      className="ui-input supplier-form__textarea"
+                      defaultValue={stringListFromJson(property.imageUrlsJson).join('\n')}
+                      name="imageUrls"
+                    />
+                  </label>
+                  <Button fullWidth isLoading={isSaving} type="submit">
+                    Save property content
+                  </Button>
                 </form>
               ) : null}
               <div className="partner-property-manager__rooms">
                 {property.rooms.map((room) => (
                   <div key={room.id}>
-                    <strong>{room.name} · {room.status.toLowerCase()}</strong>
+                    <strong>
+                      {room.name} · {room.status.toLowerCase()}
+                    </strong>
                     <span>
                       {room.inventoryCount} rooms · ₹{room.nightlyRate.toLocaleString('en-IN')} + ₹
                       {room.taxesAndFees.toLocaleString('en-IN')} taxes
                     </span>
                     <small>
-                      {room.ratePlans.filter((rate) => rate.status === 'ACTIVE').length || 1} active rate plan(s)
+                      {room.ratePlans.filter((rate) => rate.status === 'ACTIVE').length || 1} active
+                      rate plan(s)
                     </small>
                     <div className="partner-property-manager__rate">
                       <strong>Physical rooms</strong>
@@ -884,7 +1200,11 @@ export function PartnerPropertyManager({
                                 }
                                 type="button"
                               >
-                                {status === 'READY' ? 'Mark ready' : status === 'DIRTY' ? 'Mark dirty' : 'Start cleaning'}
+                                {status === 'READY'
+                                  ? 'Mark ready'
+                                  : status === 'DIRTY'
+                                    ? 'Mark dirty'
+                                    : 'Start cleaning'}
                               </button>
                             ))}
                             <button
@@ -896,12 +1216,16 @@ export function PartnerPropertyManager({
                                   room,
                                   physicalRoom,
                                   housekeepingStatus(physicalRoom.housekeepingStatus),
-                                  physicalRoom.operationalStatus === 'ACTIVE' ? 'OUT_OF_SERVICE' : 'ACTIVE',
+                                  physicalRoom.operationalStatus === 'ACTIVE'
+                                    ? 'OUT_OF_SERVICE'
+                                    : 'ACTIVE',
                                 )
                               }
                               type="button"
                             >
-                              {physicalRoom.operationalStatus === 'ACTIVE' ? 'Take out of service' : 'Return to service'}
+                              {physicalRoom.operationalStatus === 'ACTIVE'
+                                ? 'Take out of service'
+                                : 'Return to service'}
                             </button>
                           </div>
                         </div>
@@ -916,7 +1240,9 @@ export function PartnerPropertyManager({
                           }
                           type="button"
                         >
-                          {activePhysicalRoomForm === room.id ? 'Close room registry' : 'Register physical room'}
+                          {activePhysicalRoomForm === room.id
+                            ? 'Close room registry'
+                            : 'Register physical room'}
                         </button>
                       ) : null}
                       {activePhysicalRoomForm === room.id ? (
@@ -930,9 +1256,15 @@ export function PartnerPropertyManager({
                           </div>
                           <label className="ui-field">
                             <span className="ui-field__label">Housekeeping notes (optional)</span>
-                            <textarea className="ui-input supplier-form__textarea" maxLength={300} name="notes" />
+                            <textarea
+                              className="ui-input supplier-form__textarea"
+                              maxLength={300}
+                              name="notes"
+                            />
                           </label>
-                          <Button fullWidth isLoading={isSaving} type="submit">Register room</Button>
+                          <Button fullWidth isLoading={isSaving} type="submit">
+                            Register room
+                          </Button>
                         </form>
                       ) : null}
                     </div>
@@ -945,75 +1277,346 @@ export function PartnerPropertyManager({
                         </small>
                         {canManage ? (
                           <div className="manage-booking__document-actions">
-                            <button className="home-card__link" onClick={() => setActiveRateEditor(activeRateEditor === rate.id ? undefined : rate.id)} type="button">{activeRateEditor === rate.id ? 'Close editor' : 'Edit rate'}</button>
-                            <button className="home-card__link" disabled={isSaving || (rate.status === 'ACTIVE' && room.ratePlans.filter((candidate) => candidate.status === 'ACTIVE').length === 1)} onClick={() => void changeRatePlanStatus(property, room, rate)} type="button">{rate.status === 'ACTIVE' ? 'Pause rate' : 'Restore rate'}</button>
+                            <button
+                              className="home-card__link"
+                              onClick={() =>
+                                setActiveRateEditor(
+                                  activeRateEditor === rate.id ? undefined : rate.id,
+                                )
+                              }
+                              type="button"
+                            >
+                              {activeRateEditor === rate.id ? 'Close editor' : 'Edit rate'}
+                            </button>
+                            <button
+                              className="home-card__link"
+                              disabled={
+                                isSaving ||
+                                (rate.status === 'ACTIVE' &&
+                                  room.ratePlans.filter(
+                                    (candidate) => candidate.status === 'ACTIVE',
+                                  ).length === 1)
+                              }
+                              onClick={() => void changeRatePlanStatus(property, room, rate)}
+                              type="button"
+                            >
+                              {rate.status === 'ACTIVE' ? 'Pause rate' : 'Restore rate'}
+                            </button>
                           </div>
                         ) : null}
                         {activeRateEditor === rate.id ? (
-                          <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRatePlan(event, property, room, rate)}>
+                          <form
+                            className="supplier-form partner-property-manager__room-form"
+                            onSubmit={(event) => void updateRatePlan(event, property, room, rate)}
+                          >
                             <div className="supplier-form__grid">
-                              <Input defaultValue={rate.name} label="Rate plan name" maxLength={100} minLength={2} name="name" required />
-                              <Input defaultValue={rate.nightlyRate} label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
-                              <Input defaultValue={rate.taxesAndFees} label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
-                              <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue={rate.mealPlan} name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
-                              <Input defaultValue={rate.minimumStayNights} label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
-                              <Input defaultValue={rate.maximumStayNights} label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
-                              <Input defaultValue={rate.freeCancellationHours} label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
+                              <Input
+                                defaultValue={rate.name}
+                                label="Rate plan name"
+                                maxLength={100}
+                                minLength={2}
+                                name="name"
+                                required
+                              />
+                              <Input
+                                defaultValue={rate.nightlyRate}
+                                label="Nightly rate (INR)"
+                                max={5000000}
+                                min={100}
+                                name="nightlyRate"
+                                required
+                                type="number"
+                              />
+                              <Input
+                                defaultValue={rate.taxesAndFees}
+                                label="Taxes and fees (INR)"
+                                max={1000000}
+                                min={0}
+                                name="taxesAndFees"
+                                required
+                                type="number"
+                              />
+                              <label className="ui-field">
+                                <span className="ui-field__label">Meal plan</span>
+                                <select
+                                  className="ui-input"
+                                  defaultValue={rate.mealPlan}
+                                  name="mealPlan"
+                                >
+                                  <option value="room-only">Room only</option>
+                                  <option value="breakfast-included">Breakfast included</option>
+                                  <option value="half-board">Half board</option>
+                                  <option value="full-board">Full board</option>
+                                </select>
+                              </label>
+                              <Input
+                                defaultValue={rate.minimumStayNights}
+                                label="Minimum stay (nights)"
+                                max={30}
+                                min={1}
+                                name="minimumStayNights"
+                                required
+                                type="number"
+                              />
+                              <Input
+                                defaultValue={rate.maximumStayNights}
+                                label="Maximum stay (nights)"
+                                max={90}
+                                min={1}
+                                name="maximumStayNights"
+                                required
+                                type="number"
+                              />
+                              <Input
+                                defaultValue={rate.freeCancellationHours}
+                                label="Free cancellation cutoff (hours before check-in)"
+                                max={720}
+                                min={0}
+                                name="freeCancellationHours"
+                                required
+                                type="number"
+                              />
                             </div>
-                            <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" defaultValue={rate.cancellationDescription} maxLength={300} minLength={10} name="cancellationDescription" required /></label>
-                            <label className="supplier-form__check"><input defaultChecked={rate.refundable} name="refundable" type="checkbox" /> Refundable under the stated policy</label>
-                            <Button fullWidth isLoading={isSaving} type="submit">Save rate plan</Button>
+                            <label className="ui-field">
+                              <span className="ui-field__label">Cancellation policy</span>
+                              <textarea
+                                className="ui-input supplier-form__textarea"
+                                defaultValue={rate.cancellationDescription}
+                                maxLength={300}
+                                minLength={10}
+                                name="cancellationDescription"
+                                required
+                              />
+                            </label>
+                            <label className="supplier-form__check">
+                              <input
+                                defaultChecked={rate.refundable}
+                                name="refundable"
+                                type="checkbox"
+                              />{' '}
+                              Refundable under the stated policy
+                            </label>
+                            <Button fullWidth isLoading={isSaving} type="submit">
+                              Save rate plan
+                            </Button>
                           </form>
                         ) : null}
                       </div>
                     ))}
                     {canManage ? (
                       <div className="manage-booking__document-actions">
-                        <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">
+                        <button
+                          className="home-card__link"
+                          onClick={() =>
+                            setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)
+                          }
+                          type="button"
+                        >
                           {activeRoomEditor === room.id ? 'Close room editor' : 'Edit room details'}
                         </button>
-                        <button className="home-card__link" disabled={isSaving} onClick={() => void changeRoomStatus(property, room)} type="button">
+                        <button
+                          className="home-card__link"
+                          disabled={isSaving}
+                          onClick={() => void changeRoomStatus(property, room)}
+                          type="button"
+                        >
                           {room.status === 'ACTIVE' ? 'Pause room' : 'Restore room'}
                         </button>
                       </div>
                     ) : null}
                     {activeRoomEditor === room.id ? (
-                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRoom(event, property, room)}>
-                        <div className="booking-confirmation__reference"><span>Room</span><strong>Room definition and occupancy</strong></div>
-                        <div className="supplier-form__grid">
-                          <Input defaultValue={room.name} label="Room name" maxLength={120} minLength={2} name="name" required />
-                          <Input defaultValue={room.bedDescription} label="Bed configuration" maxLength={160} minLength={2} name="bedDescription" required />
-                          <Input defaultValue={room.inventoryCount} label="Number of rooms" max={500} min={1} name="inventoryCount" required type="number" />
-                          <Input defaultValue={room.maximumAdults} label="Maximum adults" max={20} min={1} name="maximumAdults" required type="number" />
-                          <Input defaultValue={room.maximumChildren} label="Maximum children" max={20} min={0} name="maximumChildren" required type="number" />
-                          <Input defaultValue={room.maximumGuests} label="Maximum guests" max={30} min={1} name="maximumGuests" required type="number" />
-                          <Input defaultValue={room.imageUrl} label="Room photo URL" name="imageUrl" required type="url" />
+                      <form
+                        className="supplier-form partner-property-manager__room-form"
+                        onSubmit={(event) => void updateRoom(event, property, room)}
+                      >
+                        <div className="booking-confirmation__reference">
+                          <span>Room</span>
+                          <strong>Room definition and occupancy</strong>
                         </div>
-                        <AmenityChecklist defaultValues={stringListFromJson(room.amenitiesJson)} groups={roomAmenityGroups} legend="Room amenities" name="amenities" />
-                        <label className="ui-field"><span className="ui-field__label">Room description</span><textarea className="ui-input supplier-form__textarea" defaultValue={room.description} maxLength={800} minLength={20} name="description" required /></label>
-                        <Button fullWidth isLoading={isSaving} type="submit">Save room details</Button>
+                        <div className="supplier-form__grid">
+                          <Input
+                            defaultValue={room.name}
+                            label="Room name"
+                            maxLength={120}
+                            minLength={2}
+                            name="name"
+                            required
+                          />
+                          <Input
+                            defaultValue={room.bedDescription}
+                            label="Bed configuration"
+                            maxLength={160}
+                            minLength={2}
+                            name="bedDescription"
+                            required
+                          />
+                          <Input
+                            defaultValue={room.inventoryCount}
+                            label="Number of rooms"
+                            max={500}
+                            min={1}
+                            name="inventoryCount"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue={room.maximumAdults}
+                            label="Maximum adults"
+                            max={20}
+                            min={1}
+                            name="maximumAdults"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue={room.maximumChildren}
+                            label="Maximum children"
+                            max={20}
+                            min={0}
+                            name="maximumChildren"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue={room.maximumGuests}
+                            label="Maximum guests"
+                            max={30}
+                            min={1}
+                            name="maximumGuests"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue={room.imageUrl}
+                            label="Room photo URL"
+                            name="imageUrl"
+                            required
+                            type="url"
+                          />
+                        </div>
+                        <AmenityChecklist
+                          defaultValues={stringListFromJson(room.amenitiesJson)}
+                          groups={roomAmenityGroups}
+                          legend="Room amenities"
+                          name="amenities"
+                        />
+                        <label className="ui-field">
+                          <span className="ui-field__label">Room description</span>
+                          <textarea
+                            className="ui-input supplier-form__textarea"
+                            defaultValue={room.description}
+                            maxLength={800}
+                            minLength={20}
+                            name="description"
+                            required
+                          />
+                        </label>
+                        <Button fullWidth isLoading={isSaving} type="submit">
+                          Save room details
+                        </Button>
                       </form>
                     ) : null}
                     {canManage ? (
-                      <button className="home-card__link" onClick={() => setActiveRatePlanRoom(activeRatePlanRoom === room.id ? undefined : room.id)} type="button">
+                      <button
+                        className="home-card__link"
+                        onClick={() =>
+                          setActiveRatePlanRoom(
+                            activeRatePlanRoom === room.id ? undefined : room.id,
+                          )
+                        }
+                        type="button"
+                      >
                         {activeRatePlanRoom === room.id ? 'Close rate form' : 'Add rate plan'}
                       </button>
                     ) : null}
                     {activeRatePlanRoom === room.id ? (
-                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void createRatePlan(event, property, room)}>
-                        <div className="booking-confirmation__reference"><span>Rate</span><strong>New sellable rate plan</strong></div>
-                        <div className="supplier-form__grid">
-                          <Input label="Rate plan name" maxLength={100} minLength={2} name="name" required />
-                          <Input label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
-                          <Input defaultValue="0" label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
-                          <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue="room-only" name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
-                          <Input defaultValue="1" label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
-                          <Input defaultValue="30" label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
-                          <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
+                      <form
+                        className="supplier-form partner-property-manager__room-form"
+                        onSubmit={(event) => void createRatePlan(event, property, room)}
+                      >
+                        <div className="booking-confirmation__reference">
+                          <span>Rate</span>
+                          <strong>New sellable rate plan</strong>
                         </div>
-                        <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" maxLength={300} minLength={10} name="cancellationDescription" required /></label>
-                        <label className="supplier-form__check"><input defaultChecked name="refundable" type="checkbox" /> Refundable under the stated policy</label>
-                        <Button fullWidth isLoading={isSaving} type="submit">Add rate plan</Button>
+                        <div className="supplier-form__grid">
+                          <Input
+                            label="Rate plan name"
+                            maxLength={100}
+                            minLength={2}
+                            name="name"
+                            required
+                          />
+                          <Input
+                            label="Nightly rate (INR)"
+                            max={5000000}
+                            min={100}
+                            name="nightlyRate"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue="0"
+                            label="Taxes and fees (INR)"
+                            max={1000000}
+                            min={0}
+                            name="taxesAndFees"
+                            required
+                            type="number"
+                          />
+                          <label className="ui-field">
+                            <span className="ui-field__label">Meal plan</span>
+                            <select className="ui-input" defaultValue="room-only" name="mealPlan">
+                              <option value="room-only">Room only</option>
+                              <option value="breakfast-included">Breakfast included</option>
+                              <option value="half-board">Half board</option>
+                              <option value="full-board">Full board</option>
+                            </select>
+                          </label>
+                          <Input
+                            defaultValue="1"
+                            label="Minimum stay (nights)"
+                            max={30}
+                            min={1}
+                            name="minimumStayNights"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue="30"
+                            label="Maximum stay (nights)"
+                            max={90}
+                            min={1}
+                            name="maximumStayNights"
+                            required
+                            type="number"
+                          />
+                          <Input
+                            defaultValue="48"
+                            label="Free cancellation cutoff (hours before check-in)"
+                            max={720}
+                            min={0}
+                            name="freeCancellationHours"
+                            required
+                            type="number"
+                          />
+                        </div>
+                        <label className="ui-field">
+                          <span className="ui-field__label">Cancellation policy</span>
+                          <textarea
+                            className="ui-input supplier-form__textarea"
+                            maxLength={300}
+                            minLength={10}
+                            name="cancellationDescription"
+                            required
+                          />
+                        </label>
+                        <label className="supplier-form__check">
+                          <input defaultChecked name="refundable" type="checkbox" /> Refundable
+                          under the stated policy
+                        </label>
+                        <Button fullWidth isLoading={isSaving} type="submit">
+                          Add rate plan
+                        </Button>
                       </form>
                     ) : null}
                   </div>
@@ -1025,24 +1628,53 @@ export function PartnerPropertyManager({
               {canManage ? (
                 <button
                   className="home-card__link partner-property-manager__add-room"
-                  onClick={() => setActiveLocationForm(activeLocationForm === property.id ? undefined : property.id)}
+                  onClick={() =>
+                    setActiveLocationForm(
+                      activeLocationForm === property.id ? undefined : property.id,
+                    )
+                  }
                   type="button"
                 >
-                  {activeLocationForm === property.id ? 'Close location editor' : 'Edit searchable location'}
+                  {activeLocationForm === property.id
+                    ? 'Close location editor'
+                    : 'Edit searchable location'}
                 </button>
               ) : null}
               {activeLocationForm === property.id ? (
-                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateLocation(event, property)}>
-                  <div className="booking-confirmation__reference"><span>Location</span><strong>Searchable destination details</strong></div>
+                <form
+                  className="supplier-form partner-property-manager__room-form"
+                  onSubmit={(event) => void updateLocation(event, property)}
+                >
+                  <div className="booking-confirmation__reference">
+                    <span>Location</span>
+                    <strong>Searchable destination details</strong>
+                  </div>
                   <div className="supplier-form__grid">
-                    <Input defaultValue={property.locality} label="Area / locality" name="locality" required />
+                    <Input
+                      defaultValue={property.locality}
+                      label="Area / locality"
+                      name="locality"
+                      required
+                    />
                     <Input defaultValue={property.city} label="Town / city" name="city" required />
                     <Input defaultValue={property.tehsil} label="Tehsil (optional)" name="tehsil" />
-                    <Input defaultValue={property.district} label="District" name="district" required />
+                    <Input
+                      defaultValue={property.district}
+                      label="District"
+                      name="district"
+                      required
+                    />
                     <Input defaultValue={property.state} label="State" name="state" required />
-                    <Input defaultValue={stringListFromJson(property.locationAliasesJson).join(', ')} label="Other searchable names" name="locationAliases" placeholder="Bir, Upper Bir, Billing" />
+                    <Input
+                      defaultValue={stringListFromJson(property.locationAliasesJson).join(', ')}
+                      label="Other searchable names"
+                      name="locationAliases"
+                      placeholder="Bir, Upper Bir, Billing"
+                    />
                   </div>
-                  <Button fullWidth isLoading={isSaving} type="submit">Save searchable location</Button>
+                  <Button fullWidth isLoading={isSaving} type="submit">
+                    Save searchable location
+                  </Button>
                 </form>
               ) : null}
               {canManage ? (
@@ -1150,7 +1782,11 @@ export function PartnerPropertyManager({
                       type="url"
                     />
                   </div>
-                  <AmenityChecklist groups={roomAmenityGroups} legend="Room amenities" name="amenities" />
+                  <AmenityChecklist
+                    groups={roomAmenityGroups}
+                    legend="Room amenities"
+                    name="amenities"
+                  />
                   <label className="ui-field">
                     <span className="ui-field__label">Room description</span>
                     <textarea
@@ -1175,7 +1811,15 @@ export function PartnerPropertyManager({
                     <input defaultChecked name="refundable" type="checkbox" /> This rate is
                     refundable under the stated policy
                   </label>
-                  <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
+                  <Input
+                    defaultValue="48"
+                    label="Free cancellation cutoff (hours before check-in)"
+                    max={720}
+                    min={0}
+                    name="freeCancellationHours"
+                    required
+                    type="number"
+                  />
                   <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                     Add room and publish property
                   </Button>

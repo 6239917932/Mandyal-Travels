@@ -3,7 +3,10 @@ import type { Metadata } from 'next';
 
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
+import {
+  createFlightSearchCriteria,
+  flightSearchCriteriaToQuery,
+} from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Review flight' };
 
@@ -87,9 +90,7 @@ export default async function FlightBookingReviewPage({
                   </div>
                   <div>
                     <span>
-                      {itinerarySegment.stops === 0
-                        ? 'Non-stop'
-                        : `${itinerarySegment.stops} stop`}
+                      {itinerarySegment.stops === 0 ? 'Non-stop' : `${itinerarySegment.stops} stop`}
                     </span>
                     <small>{itinerarySegment.departureAt.slice(0, 10)}</small>
                   </div>

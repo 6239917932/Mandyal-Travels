@@ -2,11 +2,12 @@
 import { useState } from 'react';
 export function CarConfirmationDetails({ confirmationCode }: { confirmationCode: string }) {
   const [booking] = useState<
-    {
-      confirmationCode?: string;
-      driver?: { firstName?: string; lastName?: string };
-      traveller?: { firstName?: string; lastName?: string };
-    } | undefined
+    | {
+        confirmationCode?: string;
+        driver?: { firstName?: string; lastName?: string };
+        traveller?: { firstName?: string; lastName?: string };
+      }
+    | undefined
   >(() => {
     if (typeof window === 'undefined') return undefined;
     try {
@@ -21,7 +22,9 @@ export function CarConfirmationDetails({ confirmationCode }: { confirmationCode:
   const traveller = matchingBooking?.traveller;
   const party = driver ?? traveller;
   const partyName =
-    party?.firstName && party?.lastName ? `${party.firstName} ${party.lastName}` : 'Booking contact';
+    party?.firstName && party?.lastName
+      ? `${party.firstName} ${party.lastName}`
+      : 'Booking contact';
   return (
     <>
       <dt>{driver ? 'Primary driver' : 'Lead traveller'}</dt>

@@ -34,7 +34,8 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
   }
 
   const reviewData = await hotelReviewService.getHotelReviews(slug);
-  const reviewSummary = reviewData.summary.reviewCount > 0 ? reviewData.summary : hotel.reviewSummary;
+  const reviewSummary =
+    reviewData.summary.reviewCount > 0 ? reviewData.summary : hotel.reviewSummary;
 
   const primaryImage = hotel.images.find((image) => image.isPrimary) ?? hotel.images[0];
 
@@ -184,7 +185,9 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                         </div>
                       ) : null}
                       <time dateTime={review.createdAt}>
-                        {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(review.createdAt))}
+                        {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(
+                          new Date(review.createdAt),
+                        )}
                       </time>
                     </Card>
                   ))}
@@ -215,15 +218,59 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                 <>
                   <h2>Property information</h2>
                   <dl className="hotel-property-profile">
-                    <div><dt>Property type</dt><dd>{hotel.propertyProfile.propertyType.replaceAll('_', ' ').toLowerCase()}</dd></div>
-                    <div><dt>Minimum check-in age</dt><dd>{hotel.propertyProfile.minimumCheckInAge}</dd></div>
-                    <div><dt>Children</dt><dd>{hotel.propertyProfile.childrenAllowed ? 'Welcome' : 'Not accommodated'}</dd></div>
-                    <div><dt>Pets</dt><dd>{hotel.propertyProfile.petsAllowed ? 'Allowed' : 'Not allowed'}</dd></div>
-                    <div><dt>Smoking</dt><dd>{hotel.propertyProfile.smokingAllowed ? 'Designated areas' : 'Non-smoking property'}</dd></div>
-                    {hotel.propertyProfile.languages.length ? <div><dt>Languages</dt><dd>{hotel.propertyProfile.languages.join(', ')}</dd></div> : null}
+                    <div>
+                      <dt>Property type</dt>
+                      <dd>
+                        {hotel.propertyProfile.propertyType.replaceAll('_', ' ').toLowerCase()}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Minimum check-in age</dt>
+                      <dd>{hotel.propertyProfile.minimumCheckInAge}</dd>
+                    </div>
+                    <div>
+                      <dt>Children</dt>
+                      <dd>
+                        {hotel.propertyProfile.childrenAllowed ? 'Welcome' : 'Not accommodated'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Pets</dt>
+                      <dd>{hotel.propertyProfile.petsAllowed ? 'Allowed' : 'Not allowed'}</dd>
+                    </div>
+                    <div>
+                      <dt>Smoking</dt>
+                      <dd>
+                        {hotel.propertyProfile.smokingAllowed
+                          ? 'Designated areas'
+                          : 'Non-smoking property'}
+                      </dd>
+                    </div>
+                    {hotel.propertyProfile.languages.length ? (
+                      <div>
+                        <dt>Languages</dt>
+                        <dd>{hotel.propertyProfile.languages.join(', ')}</dd>
+                      </div>
+                    ) : null}
                   </dl>
-                  {hotel.propertyProfile.landmarks.length ? <><h2>Nearby landmarks</h2><ul>{hotel.propertyProfile.landmarks.map((landmark) => <li key={landmark}>{landmark}</li>)}</ul></> : null}
-                  <a className="home-card__link" href={`https://www.openstreetmap.org/?mlat=${hotel.location.latitude}&mlon=${hotel.location.longitude}#map=15/${hotel.location.latitude}/${hotel.location.longitude}`} rel="noreferrer" target="_blank">View location on map</a>
+                  {hotel.propertyProfile.landmarks.length ? (
+                    <>
+                      <h2>Nearby landmarks</h2>
+                      <ul>
+                        {hotel.propertyProfile.landmarks.map((landmark) => (
+                          <li key={landmark}>{landmark}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                  <a
+                    className="home-card__link"
+                    href={`https://www.openstreetmap.org/?mlat=${hotel.location.latitude}&mlon=${hotel.location.longitude}#map=15/${hotel.location.latitude}/${hotel.location.longitude}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    View location on map
+                  </a>
                 </>
               ) : null}
             </Card>

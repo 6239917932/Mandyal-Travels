@@ -97,7 +97,8 @@ export function CarPaymentForm({
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) next.expiry = 'Use MM/YY format.';
     if (cvv.length < 3 || cvv.length > 4) next.cvv = 'Enter 3 or 4 digits.';
     const draft = sessionStorage.getItem('mandyal-car-driver');
-    if (!draft) next.payment = 'Booking-party details are missing. Please return and enter them again.';
+    if (!draft)
+      next.payment = 'Booking-party details are missing. Please return and enter them again.';
     setErrors(next);
     if (Object.keys(next).length) return;
     let bookingParty: unknown;

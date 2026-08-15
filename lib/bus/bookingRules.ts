@@ -14,7 +14,8 @@ function validName(value: unknown): boolean {
 }
 
 export function parseBusSeats(value: unknown, passengers: number): string[] | undefined {
-  if (typeof value !== 'string' || !Number.isInteger(passengers) || passengers < 1) return undefined;
+  if (typeof value !== 'string' || !Number.isInteger(passengers) || passengers < 1)
+    return undefined;
   const seats = value
     .split(',')
     .map((seat) => seat.trim().toUpperCase())
@@ -65,13 +66,13 @@ export function hasValidBusPassengerDetails(details: unknown, passengers: number
     const traveler = readRecord(value);
     return Boolean(
       traveler &&
-        validName(traveler.firstName) &&
-        validName(traveler.lastName) &&
-        Number.isInteger(traveler.age) &&
-        (traveler.age as number) >= 1 &&
-        (traveler.age as number) <= 120 &&
-        typeof traveler.gender === 'string' &&
-        GENDERS.has(traveler.gender),
+      validName(traveler.firstName) &&
+      validName(traveler.lastName) &&
+      Number.isInteger(traveler.age) &&
+      (traveler.age as number) >= 1 &&
+      (traveler.age as number) <= 120 &&
+      typeof traveler.gender === 'string' &&
+      GENDERS.has(traveler.gender),
     );
   });
 }

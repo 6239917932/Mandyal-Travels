@@ -29,7 +29,11 @@ export function validateCarSearchCriteria(criteria: CarSearchCriteria, today: st
   if (criteria.dropoffLocation.length < 2 || criteria.dropoffLocation.length > 100) {
     throw new Error('Enter a valid drop-off location.');
   }
-  if (!Number.isInteger(criteria.drivers) || criteria.drivers < 1 || criteria.drivers > MAX_DRIVERS) {
+  if (
+    !Number.isInteger(criteria.drivers) ||
+    criteria.drivers < 1 ||
+    criteria.drivers > MAX_DRIVERS
+  ) {
     throw new Error(`Drivers must be between 1 and ${MAX_DRIVERS}.`);
   }
   if (criteria.pickupDate < today) throw new Error('Pickup date cannot be in the past.');
@@ -43,7 +47,8 @@ export function validateCarSearchCriteria(criteria: CarSearchCriteria, today: st
     criteria.dropoffTime,
   );
   if (days < 1) throw new Error('Drop-off date must be after pickup date.');
-  if (days > MAX_RENTAL_DAYS) throw new Error(`Car rentals are limited to ${MAX_RENTAL_DAYS} days.`);
+  if (days > MAX_RENTAL_DAYS)
+    throw new Error(`Car rentals are limited to ${MAX_RENTAL_DAYS} days.`);
 }
 
 export function normalizeCarOffer(
@@ -61,8 +66,12 @@ export function normalizeCarOffer(
     !offer.providerName.trim() ||
     !offer.vehicleName.trim() ||
     !offer.source.trim() ||
-    offer.pickupLocation.localeCompare(criteria.pickupLocation, undefined, { sensitivity: 'base' }) !== 0 ||
-    offer.dropoffLocation.localeCompare(criteria.dropoffLocation, undefined, { sensitivity: 'base' }) !== 0 ||
+    offer.pickupLocation.localeCompare(criteria.pickupLocation, undefined, {
+      sensitivity: 'base',
+    }) !== 0 ||
+    offer.dropoffLocation.localeCompare(criteria.dropoffLocation, undefined, {
+      sensitivity: 'base',
+    }) !== 0 ||
     offer.rentalMode !== criteria.rentalMode ||
     offer.currency !== 'INR' ||
     !Number.isFinite(offer.pricePerDay) ||
@@ -80,7 +89,10 @@ export function normalizeCarOffer(
   }
   return {
     ...offer,
-    features: [...new Set(offer.features.map((value) => value.trim()).filter(Boolean))].slice(0, 30),
+    features: [...new Set(offer.features.map((value) => value.trim()).filter(Boolean))].slice(
+      0,
+      30,
+    ),
     totalPrice: offer.pricePerDay * days,
   };
 }

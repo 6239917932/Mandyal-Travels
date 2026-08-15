@@ -33,9 +33,18 @@ const offer: BusOffer = {
 
 test('bus criteria enforce routes, passenger bounds and dates', () => {
   assert.doesNotThrow(() => validateBusSearchCriteria(criteria, '2026-08-15'));
-  assert.throws(() => validateBusSearchCriteria({ ...criteria, passengers: 7 }, '2026-08-15'), /between 1 and 6/);
-  assert.throws(() => validateBusSearchCriteria({ ...criteria, destination: 'chandigarh' }, '2026-08-15'), /must be different/);
-  assert.throws(() => validateBusSearchCriteria({ ...criteria, travelDate: '2026-08-14' }, '2026-08-15'), /cannot be in the past/);
+  assert.throws(
+    () => validateBusSearchCriteria({ ...criteria, passengers: 7 }, '2026-08-15'),
+    /between 1 and 6/,
+  );
+  assert.throws(
+    () => validateBusSearchCriteria({ ...criteria, destination: 'chandigarh' }, '2026-08-15'),
+    /must be different/,
+  );
+  assert.throws(
+    () => validateBusSearchCriteria({ ...criteria, travelDate: '2026-08-14' }, '2026-08-15'),
+    /cannot be in the past/,
+  );
 });
 
 test('bus offers must match route, date, inventory, timing and price', () => {

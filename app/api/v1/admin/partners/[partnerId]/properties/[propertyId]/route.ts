@@ -29,7 +29,10 @@ export async function PATCH(
     reviewNote,
   });
   if (!decision.valid) {
-    const status = decision.code === 'INVALID_REVIEW_ACTION' || decision.code === 'REVIEW_NOTE_REQUIRED' ? 400 : 409;
+    const status =
+      decision.code === 'INVALID_REVIEW_ACTION' || decision.code === 'REVIEW_NOTE_REQUIRED'
+        ? 400
+        : 409;
     return failure(decision.code, decision.message, status);
   }
   const data = await prisma.$transaction(async (transaction) => {

@@ -36,7 +36,10 @@ export async function PATCH(request: Request, { params }: Context) {
   const { tripId } = await params;
   const trip = await prisma.partnerBusTrip.findFirst({
     include: {
-      reservations: { select: { passengerCount: true, seatNumbersJson: true }, where: { status: 'CONFIRMED' } },
+      reservations: {
+        select: { passengerCount: true, seatNumbersJson: true },
+        where: { status: 'CONFIRMED' },
+      },
       route: { select: { destination: true, origin: true, partnerId: true } },
     },
     where: { id: tripId, route: { partnerId: access.partnerId } },
@@ -52,10 +55,16 @@ export async function PATCH(request: Request, { params }: Context) {
       status: String(body.status ?? trip.status),
     });
   } catch (error) {
-    return failure('INVALID_BUS_TRIP_CONTROLS', error instanceof Error ? error.message : 'Enter valid trip controls.', 400);
+    return failure(
+      'INVALID_BUS_TRIP_CONTROLS',
+      error instanceof Error ? error.message : 'Enter valid trip controls.',
+      400,
+    );
   }
   const { pricePerSeat, seatCapacity, status } = controls;
-  const occupiedSeats = trip.reservations.flatMap((reservation) => readSeats(reservation.seatNumbersJson));
+  const occupiedSeats = trip.reservations.flatMap((reservation) =>
+    readSeats(reservation.seatNumbersJson),
+  );
   const reservedPassengers = trip.reservations.reduce(
     (total, reservation) => total + reservation.passengerCount,
     0,

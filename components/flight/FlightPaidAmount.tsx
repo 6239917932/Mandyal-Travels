@@ -21,10 +21,7 @@ const money = (amount: number) =>
 
 const subscribe = () => () => undefined;
 
-export function FlightPaidAmount({
-  confirmationCode,
-  fallbackTotal,
-}: FlightPaidAmountProps) {
+export function FlightPaidAmount({ confirmationCode, fallbackTotal }: FlightPaidAmountProps) {
   const amountPaid = useSyncExternalStore(
     subscribe,
     () => {
@@ -33,10 +30,7 @@ export function FlightPaidAmount({
 
       try {
         const booking = JSON.parse(value) as StoredFlightBooking;
-        if (
-          booking.confirmationCode === confirmationCode &&
-          typeof booking.total === 'number'
-        ) {
+        if (booking.confirmationCode === confirmationCode && typeof booking.total === 'number') {
           return booking.total;
         }
       } catch {

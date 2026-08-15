@@ -9,10 +9,16 @@ export function validateBusSearchCriteria(criteria: BusSearchCriteria, today: st
   if (criteria.destination.length < 2 || criteria.destination.length > 100) {
     throw new Error('Enter a valid destination.');
   }
-  if (criteria.origin.localeCompare(criteria.destination, undefined, { sensitivity: 'base' }) === 0) {
+  if (
+    criteria.origin.localeCompare(criteria.destination, undefined, { sensitivity: 'base' }) === 0
+  ) {
     throw new Error('Origin and destination must be different.');
   }
-  if (!Number.isInteger(criteria.passengers) || criteria.passengers < 1 || criteria.passengers > MAX_PASSENGERS) {
+  if (
+    !Number.isInteger(criteria.passengers) ||
+    criteria.passengers < 1 ||
+    criteria.passengers > MAX_PASSENGERS
+  ) {
     throw new Error(`Passengers must be between 1 and ${MAX_PASSENGERS}.`);
   }
   if (criteria.travelDate < today) throw new Error('Travel date cannot be in the past.');
@@ -29,7 +35,8 @@ export function normalizeBusOffer(
     !offer.operatorName.trim() ||
     !offer.source.trim() ||
     offer.origin.localeCompare(criteria.origin, undefined, { sensitivity: 'base' }) !== 0 ||
-    offer.destination.localeCompare(criteria.destination, undefined, { sensitivity: 'base' }) !== 0 ||
+    offer.destination.localeCompare(criteria.destination, undefined, { sensitivity: 'base' }) !==
+      0 ||
     offer.departureAt.slice(0, 10) !== criteria.travelDate ||
     !Number.isFinite(departure) ||
     !Number.isFinite(arrival) ||
@@ -47,7 +54,10 @@ export function normalizeBusOffer(
   }
   return {
     ...offer,
-    amenities: [...new Set(offer.amenities.map((value) => value.trim()).filter(Boolean))].slice(0, 30),
+    amenities: [...new Set(offer.amenities.map((value) => value.trim()).filter(Boolean))].slice(
+      0,
+      30,
+    ),
     totalPrice: offer.pricePerSeat * criteria.passengers,
   };
 }

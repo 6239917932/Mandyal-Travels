@@ -15,7 +15,10 @@ export interface IntegrationEventAdapter {
 }
 
 export const integrationOutboxService = {
-  async deliverPending(adapter: IntegrationEventAdapter, batchSize = 25): Promise<{ delivered: number; failed: number }> {
+  async deliverPending(
+    adapter: IntegrationEventAdapter,
+    batchSize = 25,
+  ): Promise<{ delivered: number; failed: number }> {
     const boundedBatchSize = Math.max(1, Math.min(100, Math.trunc(batchSize)));
     const now = new Date();
     const expiredLease = new Date(now.getTime() - 15 * 60_000);
@@ -47,12 +50,22 @@ export const integrationOutboxService = {
           payload: JSON.parse(event.payloadJson) as unknown,
         });
         await prisma.integrationOutboxEvent.update({
-          data: { attempts: { increment: 1 }, lastError: '', lockedAt: null, processedAt: new Date(), status: 'DELIVERED' },
+          data: {
+            attempts: { increment: 1 },
+            lastError: '',
+            lockedAt: null,
+            processedAt: new Date(),
+            status: 'DELIVERED',
+          },
           where: { id: event.id },
         });
         delivered += 1;
       } catch (error) {
-        const retry = outboxRetryDecision({ attempts: event.attempts, maxAttempts: event.maxAttempts, now: new Date() });
+        const retry = outboxRetryDecision({
+          attempts: event.attempts,
+          maxAttempts: event.maxAttempts,
+          now: new Date(),
+        });
         await prisma.integrationOutboxEvent.update({
           data: {
             attempts: { increment: 1 },

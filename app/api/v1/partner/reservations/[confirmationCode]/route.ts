@@ -1,5 +1,8 @@
 import { readJsonObject } from '@/lib/api/request';
-import { nextCarReservationState, type CarReservationAction } from '@/lib/car/reservationOperations';
+import {
+  nextCarReservationState,
+  type CarReservationAction,
+} from '@/lib/car/reservationOperations';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -25,7 +28,8 @@ export async function PATCH(
     include: { vehicle: { select: { vehicleName: true } } },
     where: { confirmationCode, partnerId: access.partnerId },
   });
-  if (!reservation) return failure('RESERVATION_NOT_FOUND', 'The scoped rental was not found.', 404);
+  if (!reservation)
+    return failure('RESERVATION_NOT_FOUND', 'The scoped rental was not found.', 404);
   try {
     const status = nextCarReservationState({
       action,

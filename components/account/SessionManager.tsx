@@ -41,8 +41,9 @@ export function SessionManager({ sessions }: SessionManagerProps) {
     try {
       const response = await fetch('/api/v1/account/sessions', { method: 'DELETE' });
       const result =
-        (await readJsonResponse<{ data?: { revokedSessions?: number }; error?: string }>(response)) ??
-        {};
+        (await readJsonResponse<{ data?: { revokedSessions?: number }; error?: string }>(
+          response,
+        )) ?? {};
 
       if (!response.ok) {
         setError(result.error ?? 'Other sessions could not be signed out.');

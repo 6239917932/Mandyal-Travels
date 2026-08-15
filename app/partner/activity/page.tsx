@@ -114,23 +114,39 @@ export default async function PartnerActivityPage({ searchParams }: PartnerActiv
           <form className="supplier-form__grid" method="get">
             <label className="ui-field">
               <span className="ui-field__label">Search activity</span>
-              <input className="ui-input" defaultValue={query} maxLength={100} name="q" placeholder="Summary, action, record type, or ID" />
+              <input
+                className="ui-input"
+                defaultValue={query}
+                maxLength={100}
+                name="q"
+                placeholder="Summary, action, record type, or ID"
+              />
             </label>
             <label className="ui-field">
               <span className="ui-field__label">Action</span>
               <select className="ui-input" defaultValue={action} name="action">
                 <option value="">All actions</option>
-                {actionRows.map((row) => <option key={row.action} value={row.action}>{row.action.replaceAll('_', ' ')}</option>)}
+                {actionRows.map((row) => (
+                  <option key={row.action} value={row.action}>
+                    {row.action.replaceAll('_', ' ')}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="ui-field">
               <span className="ui-field__label">Record type</span>
               <select className="ui-input" defaultValue={entityType} name="entityType">
                 <option value="">All record types</option>
-                {entityRows.map((row) => <option key={row.entityType} value={row.entityType}>{row.entityType.replaceAll('_', ' ')}</option>)}
+                {entityRows.map((row) => (
+                  <option key={row.entityType} value={row.entityType}>
+                    {row.entityType.replaceAll('_', ' ')}
+                  </option>
+                ))}
               </select>
             </label>
-            <button className="ui-button ui-button--primary" type="submit">Apply filters</button>
+            <button className="ui-button ui-button--primary" type="submit">
+              Apply filters
+            </button>
           </form>
         </Card>
 
@@ -139,7 +155,9 @@ export default async function PartnerActivityPage({ searchParams }: PartnerActiv
             <p className="hotel-page__eyebrow">Accountability</p>
             <h2>{totalEntries.toLocaleString('en-IN')} recorded activities</h2>
           </div>
-          <span>Page {page} of {totalPages}</span>
+          <span>
+            Page {page} of {totalPages}
+          </span>
         </div>
 
         <Card className="partner-workspace__audit">
@@ -151,7 +169,10 @@ export default async function PartnerActivityPage({ searchParams }: PartnerActiv
                 {entry.entityId ? ` · ${entry.entityId}` : ''}
               </span>
               <span>
-                {entry.actor ? `${entry.actor.firstName} ${entry.actor.lastName}` : 'Platform integration'} · {formatDate(entry.createdAt)}
+                {entry.actor
+                  ? `${entry.actor.firstName} ${entry.actor.lastName}`
+                  : 'Platform integration'}{' '}
+                · {formatDate(entry.createdAt)}
               </span>
             </div>
           ))}
@@ -159,8 +180,22 @@ export default async function PartnerActivityPage({ searchParams }: PartnerActiv
         </Card>
 
         <nav className="manage-booking__document-actions" aria-label="Activity pages">
-          {page > 1 ? <Link className="ui-button ui-button--secondary" href={activityPath(page - 1, query, action, entityType)}>Previous</Link> : null}
-          {page < totalPages ? <Link className="ui-button ui-button--secondary" href={activityPath(page + 1, query, action, entityType)}>Next</Link> : null}
+          {page > 1 ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={activityPath(page - 1, query, action, entityType)}
+            >
+              Previous
+            </Link>
+          ) : null}
+          {page < totalPages ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={activityPath(page + 1, query, action, entityType)}
+            >
+              Next
+            </Link>
+          ) : null}
         </nav>
       </div>
     </section>

@@ -79,10 +79,7 @@ export default async function BusConfirmationPage({
             </div>
             <div>
               <dt>Amount paid</dt>
-              <BusPaidAmount
-                confirmationCode={confirmationCode}
-                fallbackTotal={offer.totalPrice}
-              />
+              <BusPaidAmount confirmationCode={confirmationCode} fallbackTotal={offer.totalPrice} />
             </div>
             <div>
               <dt>Payment status</dt>

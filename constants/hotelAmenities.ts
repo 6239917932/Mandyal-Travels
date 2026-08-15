@@ -16,7 +16,10 @@ export const propertyAmenityGroups = [
     options: [
       option('Free on-site parking'),
       option('Swimming pool'),
-      option('Indoor games', 'Indoor games (board games, carrom, darts, pool table, puzzles, table tennis)'),
+      option(
+        'Indoor games',
+        'Indoor games (board games, carrom, darts, pool table, puzzles, table tennis)',
+      ),
       option('Halal restaurant'),
       option('Steam and sauna'),
     ],
@@ -73,7 +76,12 @@ export const propertyAmenityGroups = [
   },
   {
     name: 'Safety and security',
-    options: [option('CCTV'), option('Fire extinguishers'), option('Security alarms'), option('Security guard')],
+    options: [
+      option('CCTV'),
+      option('Fire extinguishers'),
+      option('Security alarms'),
+      option('Security guard'),
+    ],
   },
   {
     name: 'Entertainment',
@@ -89,12 +97,18 @@ export const propertyAmenityGroups = [
   },
   {
     name: 'Outdoor activities and sports',
-    options: [option('Bonfire on request'), option('Outdoor sports', 'Outdoor sports (badminton, swings)')],
+    options: [
+      option('Bonfire on request'),
+      option('Outdoor sports', 'Outdoor sports (badminton, swings)'),
+    ],
   },
   {
     name: 'Indoor activities and sports',
     options: [
-      option('Indoor games', 'Indoor games (board games, carrom, darts, pool table, puzzles, table tennis)'),
+      option(
+        'Indoor games',
+        'Indoor games (board games, carrom, darts, pool table, puzzles, table tennis)',
+      ),
       option('Billiards / pool table'),
       option('Indoor games room'),
     ],
@@ -137,7 +151,10 @@ export const roomAmenityGroups = [
       option('Bubble bath'),
       option('Mini fridge'),
       option('Geyser / water heater'),
-      option('Toiletries', 'Toiletries (comb, conditioner, moisturiser, shampoo, shower gel, soap)'),
+      option(
+        'Toiletries',
+        'Toiletries (comb, conditioner, moisturiser, shampoo, shower gel, soap)',
+      ),
       option('Work desk'),
       option('Centralized air conditioning'),
       option('Free mineral water'),

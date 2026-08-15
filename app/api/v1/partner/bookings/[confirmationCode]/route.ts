@@ -40,9 +40,17 @@ export async function GET(
     return Response.json({ data: rooms });
   } catch (error) {
     if (error instanceof PartnerOperationsError) {
-      return errorResponse(error.code, error.message, error.code === 'BOOKING_NOT_FOUND' ? 404 : 409);
+      return errorResponse(
+        error.code,
+        error.message,
+        error.code === 'BOOKING_NOT_FOUND' ? 404 : 409,
+      );
     }
-    return errorResponse('ROOM_AVAILABILITY_FAILED', 'Available physical rooms could not be loaded.', 500);
+    return errorResponse(
+      'ROOM_AVAILABILITY_FAILED',
+      'Available physical rooms could not be loaded.',
+      500,
+    );
   }
 }
 
@@ -67,9 +75,17 @@ export async function PATCH(
       return Response.json({ data: { partnerNote: booking.partnerNote } });
     } catch (error) {
       if (error instanceof PartnerOperationsError) {
-        return errorResponse(error.code, error.message, error.code === 'BOOKING_NOT_FOUND' ? 404 : 409);
+        return errorResponse(
+          error.code,
+          error.message,
+          error.code === 'BOOKING_NOT_FOUND' ? 404 : 409,
+        );
       }
-      return errorResponse('BOOKING_NOTE_UPDATE_FAILED', 'The front-desk note could not be updated.', 500);
+      return errorResponse(
+        'BOOKING_NOTE_UPDATE_FAILED',
+        'The front-desk note could not be updated.',
+        500,
+      );
     }
   }
   const nextStatus = String(body?.status ?? '') as StayStatus;
@@ -95,7 +111,11 @@ export async function PATCH(
     });
   } catch (error) {
     if (error instanceof PartnerOperationsError) {
-      return errorResponse(error.code, error.message, error.code === 'BOOKING_NOT_FOUND' ? 404 : 409);
+      return errorResponse(
+        error.code,
+        error.message,
+        error.code === 'BOOKING_NOT_FOUND' ? 404 : 409,
+      );
     }
     return errorResponse('STAY_UPDATE_FAILED', 'The hotel stay status could not be updated.', 500);
   }

@@ -59,9 +59,7 @@ test('flight filters and sorting operate on normalized offers', () => {
   const vistara = offer({
     id: 'vistara',
     refundable: true,
-    segments: [
-      { ...baseSegment, airlineCode: 'UK', airlineName: 'Vistara', durationMinutes: 90 },
-    ],
+    segments: [{ ...baseSegment, airlineCode: 'UK', airlineName: 'Vistara', durationMinutes: 90 }],
     totalPrice: 7_000,
   });
   const airIndia = offer({ id: 'air-india', refundable: true });
@@ -71,5 +69,8 @@ test('flight filters and sorting operate on normalized offers', () => {
     refundableOnly: true,
     sort: 'duration-ascending',
   });
-  assert.deepEqual(result.map((item) => item.id), ['air-india']);
+  assert.deepEqual(
+    result.map((item) => item.id),
+    ['air-india'],
+  );
 });

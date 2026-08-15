@@ -24,7 +24,12 @@ export function FlightResultControls({
         <label className="ui-field__label" htmlFor="airline">
           Airline
         </label>
-        <select className="ui-input" defaultValue={controls.airline ?? ''} id="airline" name="airline">
+        <select
+          className="ui-input"
+          defaultValue={controls.airline ?? ''}
+          id="airline"
+          name="airline"
+        >
           <option value="">All airlines</option>
           {airlines.map((airline) => (
             <option key={airline.code} value={airline.code}>

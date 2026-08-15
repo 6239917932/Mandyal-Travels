@@ -21,7 +21,12 @@ export function AmenityChecklist({
           <div className="amenity-checklist__options">
             {group.options.map((amenity) => (
               <label key={`${group.name}-${amenity.value}`}>
-                <input defaultChecked={selected.has(amenity.value)} name={name} type="checkbox" value={amenity.value} />
+                <input
+                  defaultChecked={selected.has(amenity.value)}
+                  name={name}
+                  type="checkbox"
+                  value={amenity.value}
+                />
                 <span>{amenity.label}</span>
               </label>
             ))}

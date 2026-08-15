@@ -34,12 +34,13 @@ export class PartnerHotelInventoryRepository {
     if (!activeDays.length) return { stopSell: false };
     const stayDays = activeDays.filter((day) => day.stayDate < endDate);
     const inventory = evaluateHotelStayInventory(activeDays, startDate, endDate);
-    const rateDays = ratePlanId && fallbackNightlyRate !== undefined
-      ? await prisma.partnerRatePlanInventoryDay.findMany({
-          orderBy: { stayDate: 'asc' },
-          where: { ratePlan: { ratePlanId }, stayDate: { gte: startDate, lt: endDate } },
-        })
-      : [];
+    const rateDays =
+      ratePlanId && fallbackNightlyRate !== undefined
+        ? await prisma.partnerRatePlanInventoryDay.findMany({
+            orderBy: { stayDate: 'asc' },
+            where: { ratePlan: { ratePlanId }, stayDate: { gte: startDate, lt: endDate } },
+          })
+        : [];
     const nightlyCharge =
       fallbackNightlyRate === undefined
         ? undefined

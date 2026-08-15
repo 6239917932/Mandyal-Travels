@@ -124,32 +124,37 @@ export class InMemoryHotelRepository implements HotelRepository {
               maximumChildren: room.maximumChildren,
               maximumGuests: room.maximumGuests,
             },
-            ratePlans: (room.ratePlans.length > 0 ? room.ratePlans : [{
-              cancellationDescription: room.cancellationDescription,
-              freeCancellationHours: 48,
-              mealPlan: room.mealPlan,
-              maximumStayNights: 30,
-              minimumStayNights: 1,
-              name: room.ratePlanName,
-              nightlyRate: room.nightlyRate,
-              ratePlanId: `rate-${room.roomTypeId}`,
-              refundable: room.refundable,
-              taxesAndFees: room.taxesAndFees,
-            }]).map((ratePlan) => ({
-                cancellationPolicy: {
-                  description: ratePlan.cancellationDescription,
-                  freeCancellationUntilHoursBeforeCheckIn: ratePlan.freeCancellationHours,
-                  refundable: ratePlan.refundable,
-                },
-                id: ratePlan.ratePlanId,
-                mealPlan: ratePlan.mealPlan as
-                  'room-only' | 'breakfast-included' | 'half-board' | 'full-board',
-                maximumStayNights: ratePlan.maximumStayNights,
-                minimumStayNights: ratePlan.minimumStayNights,
-                name: ratePlan.name,
-                nightlyRate: { amount: ratePlan.nightlyRate, currency: 'INR' },
-                taxesAndFees: { amount: ratePlan.taxesAndFees, currency: 'INR' },
-              })),
+            ratePlans: (room.ratePlans.length > 0
+              ? room.ratePlans
+              : [
+                  {
+                    cancellationDescription: room.cancellationDescription,
+                    freeCancellationHours: 48,
+                    mealPlan: room.mealPlan,
+                    maximumStayNights: 30,
+                    minimumStayNights: 1,
+                    name: room.ratePlanName,
+                    nightlyRate: room.nightlyRate,
+                    ratePlanId: `rate-${room.roomTypeId}`,
+                    refundable: room.refundable,
+                    taxesAndFees: room.taxesAndFees,
+                  },
+                ]
+            ).map((ratePlan) => ({
+              cancellationPolicy: {
+                description: ratePlan.cancellationDescription,
+                freeCancellationUntilHoursBeforeCheckIn: ratePlan.freeCancellationHours,
+                refundable: ratePlan.refundable,
+              },
+              id: ratePlan.ratePlanId,
+              mealPlan: ratePlan.mealPlan as
+                'room-only' | 'breakfast-included' | 'half-board' | 'full-board',
+              maximumStayNights: ratePlan.maximumStayNights,
+              minimumStayNights: ratePlan.minimumStayNights,
+              name: ratePlan.name,
+              nightlyRate: { amount: ratePlan.nightlyRate, currency: 'INR' },
+              taxesAndFees: { amount: ratePlan.taxesAndFees, currency: 'INR' },
+            })),
             roomTypeId: room.roomTypeId,
           })),
           slug: property.hotelSlug,

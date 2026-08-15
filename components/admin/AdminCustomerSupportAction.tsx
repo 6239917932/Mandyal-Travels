@@ -22,14 +22,11 @@ export function AdminCustomerSupportAction({ caseId, status }: AdminCustomerSupp
     setError('');
     setIsUpdating(true);
     try {
-      const response = await fetch(
-        `/api/v1/admin/customer-support/${encodeURIComponent(caseId)}`,
-        {
-          body: JSON.stringify({ action, resolutionNote }),
-          headers: { 'Content-Type': 'application/json' },
-          method: 'PATCH',
-        },
-      );
+      const response = await fetch(`/api/v1/admin/customer-support/${encodeURIComponent(caseId)}`, {
+        body: JSON.stringify({ action, resolutionNote }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
       const result = (await readJsonResponse<{ error?: string }>(response)) ?? {};
       if (!response.ok) {
         setError(result.error ?? 'The support case could not be updated.');

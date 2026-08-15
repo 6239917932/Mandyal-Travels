@@ -1,4 +1,9 @@
-import { isAllowedProviderEndpoint } from '@/lib/integrations/providerEndpoint';
+import 'server-only';
+
+import {
+  isAllowedProviderEndpoint,
+  parseAllowedProviderHosts,
+} from '@/lib/integrations/providerEndpoint';
 
 export type MobileMessagingChannel = 'SMS' | 'WHATSAPP';
 
@@ -12,13 +17,8 @@ export async function sendMobileMessage(input: {
   const endpoint = process.env.MOBILE_MESSAGING_ENDPOINT ?? '';
   const apiKey = process.env.MOBILE_MESSAGING_API_KEY;
   const sender = input.channel === 'SMS' ? process.env.SMS_SENDER_ID : process.env.WHATSAPP_SENDER;
-  let host = '';
-  try {
-    host = new URL(endpoint).hostname;
-  } catch {
-    throw new Error('MOBILE_MESSAGING_NOT_CONFIGURED');
-  }
-  if (!apiKey || !sender || !isAllowedProviderEndpoint(endpoint, [host]))
+  const allowedHosts = parseAllowedProviderHosts(process.env.MOBILE_MESSAGING_ALLOWED_HOSTS);
+  if (!apiKey || !sender || !isAllowedProviderEndpoint(endpoint, allowedHosts))
     throw new Error('MOBILE_MESSAGING_NOT_CONFIGURED');
   const response = await fetch(endpoint, {
     method: 'POST',

@@ -41,17 +41,26 @@ export async function GET(request: Request): Promise<Response> {
     ? (requestedBookingStatus as 'confirmed' | 'cancelled')
     : undefined;
   const requestedStayStatus = url.searchParams.get('stayStatus');
-  const operationalStatus = ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW'].includes(requestedStayStatus ?? '')
+  const operationalStatus = ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW'].includes(
+    requestedStayStatus ?? '',
+  )
     ? (requestedStayStatus as 'RESERVED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW')
     : undefined;
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   const requestedArrivalFrom = url.searchParams.get('arrivalFrom') ?? '';
   const requestedArrivalThrough = url.searchParams.get('arrivalThrough') ?? '';
   const arrivalFrom = datePattern.test(requestedArrivalFrom) ? requestedArrivalFrom : undefined;
-  const arrivalThrough = datePattern.test(requestedArrivalThrough) ? requestedArrivalThrough : undefined;
+  const arrivalThrough = datePattern.test(requestedArrivalThrough)
+    ? requestedArrivalThrough
+    : undefined;
   if (arrivalFrom && arrivalThrough && arrivalFrom > arrivalThrough) {
     return Response.json(
-      { error: { code: 'INVALID_ARRIVAL_RANGE', message: 'Arrival end date must be on or after the start date.' } },
+      {
+        error: {
+          code: 'INVALID_ARRIVAL_RANGE',
+          message: 'Arrival end date must be on or after the start date.',
+        },
+      },
       { status: 400 },
     );
   }
@@ -81,9 +90,22 @@ export async function GET(request: Request): Promise<Response> {
     take: EXPORT_LIMIT,
   });
   const header = [
-    'Confirmation code', 'Hotel', 'Guest name', 'Guest email', 'Check-in', 'Check-out',
-    'Room type', 'Assigned physical rooms', 'Rate plan', 'Rooms', 'Booking status', 'Stay status', 'Payment status',
-    'Currency', 'Total amount', 'Created at',
+    'Confirmation code',
+    'Hotel',
+    'Guest name',
+    'Guest email',
+    'Check-in',
+    'Check-out',
+    'Room type',
+    'Assigned physical rooms',
+    'Rate plan',
+    'Rooms',
+    'Booking status',
+    'Stay status',
+    'Payment status',
+    'Currency',
+    'Total amount',
+    'Created at',
   ];
   const csv = createCsv([header, ...bookings.map(bookingRow)]);
   return new Response(`${csv}\r\n`, {

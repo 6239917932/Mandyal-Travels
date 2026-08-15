@@ -21,5 +21,8 @@ export function outboxRetryDecision(input: {
 
 export function safeOutboxError(error: unknown): string {
   const message = error instanceof Error ? error.message : 'Unknown integration delivery failure.';
-  return message.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 500);
+  return message
+    .replace(/[\r\n\t]+/g, ' ')
+    .trim()
+    .slice(0, 500);
 }

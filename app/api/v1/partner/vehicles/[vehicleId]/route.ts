@@ -9,10 +9,7 @@ import type { ApiErrorResponse } from '@/types/commerce';
 const failure = (code: string, message: string, status: number) =>
   Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 
-export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ vehicleId: string }> },
-) {
+export async function PATCH(request: Request, context: { params: Promise<{ vehicleId: string }> }) {
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'CAR')
     return failure('CAR_PARTNER_REQUIRED', 'An active car supplier account is required.', 403);

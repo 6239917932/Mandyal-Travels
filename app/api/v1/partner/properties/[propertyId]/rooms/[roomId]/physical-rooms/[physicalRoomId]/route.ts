@@ -1,6 +1,9 @@
 import { readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
-import { PartnerOperationsError, partnerOperationsService } from '@/services/partnerOperationsService';
+import {
+  PartnerOperationsError,
+  partnerOperationsService,
+} from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 const failure = (code: string, message: string, status: number) =>
@@ -50,6 +53,10 @@ export async function PATCH(
   } catch (error) {
     return error instanceof PartnerOperationsError
       ? failure(error.code, error.message, 409)
-      : failure('PHYSICAL_ROOM_UPDATE_FAILED', 'The physical room status could not be updated.', 500);
+      : failure(
+          'PHYSICAL_ROOM_UPDATE_FAILED',
+          'The physical room status could not be updated.',
+          500,
+        );
   }
 }

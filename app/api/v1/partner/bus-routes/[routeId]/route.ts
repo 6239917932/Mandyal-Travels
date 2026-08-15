@@ -13,9 +13,15 @@ export async function PATCH(request: Request, { params }: Context) {
   if (!access?.partnerId || access.partnerType !== 'BUS')
     return failure('BUS_PARTNER_REQUIRED', 'An active bus operator account is required.', 403);
   if (access.memberRole !== 'ADMIN')
-    return failure('PARTNER_ADMIN_REQUIRED', 'Only an operator administrator can control routes.', 403);
+    return failure(
+      'PARTNER_ADMIN_REQUIRED',
+      'Only an operator administrator can control routes.',
+      403,
+    );
   const { routeId } = await params;
-  const route = await prisma.partnerBusRoute.findFirst({ where: { id: routeId, partnerId: access.partnerId } });
+  const route = await prisma.partnerBusRoute.findFirst({
+    where: { id: routeId, partnerId: access.partnerId },
+  });
   if (!route) return failure('BUS_ROUTE_NOT_FOUND', 'The operator route was not found.', 404);
   const body = await readJsonObject(request);
   if (!body) return failure('INVALID_JSON', 'Enter valid route controls.', 400);
@@ -23,7 +29,11 @@ export async function PATCH(request: Request, { params }: Context) {
   try {
     status = normalizeBusRouteStatus(String(body.status ?? ''));
   } catch (error) {
-    return failure('INVALID_BUS_ROUTE_STATUS', error instanceof Error ? error.message : 'Enter a valid route status.', 400);
+    return failure(
+      'INVALID_BUS_ROUTE_STATUS',
+      error instanceof Error ? error.message : 'Enter a valid route status.',
+      400,
+    );
   }
   const data = await prisma.partnerBusRoute.update({ data: { status }, where: { id: route.id } });
   await recordPartnerAudit(access, {

@@ -9,14 +9,16 @@ const offers = [
   {
     code: 'STAYMORE',
     title: 'Hotel stay savings',
-    description: 'Use STAYMORE for 12% off eligible hotel bookings of ₹8,000 or more, up to ₹1,500.',
+    description:
+      'Use STAYMORE for 12% off eligible hotel bookings of ₹8,000 or more, up to ₹1,500.',
     href: '/hotels',
     action: 'Search hotels',
   },
   {
     code: 'FLYSMART',
     title: 'Flight booking offers',
-    description: 'Use FLYSMART for 10% off eligible flight bookings of ₹4,000 or more, up to ₹1,000.',
+    description:
+      'Use FLYSMART for 10% off eligible flight bookings of ₹4,000 or more, up to ₹1,000.',
     href: '/flights',
     action: 'Search flights',
   },
