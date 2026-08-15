@@ -144,7 +144,7 @@ export const partnerOperationsService = {
     actorUserId?: string,
   ) {
     const properties = await prisma.partnerProperty.findMany({
-      select: { hotelSlug: true, timezone: true },
+      select: { hotelSlug: true, id: true, timezone: true },
       where: { partnerId, status: 'ACTIVE' },
     });
     const booking = await prisma.booking.findFirst({
@@ -203,6 +203,30 @@ export const partnerOperationsService = {
         `Assign ${booking.quote.rooms} unique physical room number${booking.quote.rooms === 1 ? '' : 's'} before check-in.`,
       );
     }
+    const bookedRatePlan = await prisma.partnerRatePlan.findUnique({
+      include: { room: { include: { physicalRooms: true } } },
+      where: { ratePlanId: booking.quote.ratePlanId },
+    });
+    const registeredRooms = bookedRatePlan?.room.physicalRooms ?? [];
+    if (nextStatus === 'CHECKED_IN' && registeredRooms.length) {
+      const registeredByNumber = new Map(
+        registeredRooms.map((physicalRoom) => [physicalRoom.roomNumber, physicalRoom]),
+      );
+      const unavailableRooms = normalizedRoomNumbers.filter((roomNumber) => {
+        const registeredRoom = registeredByNumber.get(roomNumber);
+        return (
+          !registeredRoom ||
+          registeredRoom.operationalStatus !== 'ACTIVE' ||
+          registeredRoom.housekeepingStatus !== 'READY'
+        );
+      });
+      if (unavailableRooms.length) {
+        throw new PartnerOperationsError(
+          'PHYSICAL_ROOM_UNAVAILABLE',
+          `Use registered, ready rooms for this room type. Unavailable: ${unavailableRooms.join(', ')}.`,
+        );
+      }
+    }
     return prisma.$transaction(async (transaction) => {
       if (nextStatus === 'CHECKED_IN') {
         const activeStays = await transaction.booking.findMany({
@@ -239,6 +263,15 @@ export const partnerOperationsService = {
         },
         where: { id: booking.id },
       });
+      if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
+        await transaction.partnerPhysicalRoom.updateMany({
+          data: { housekeepingStatus: 'DIRTY' },
+          where: {
+            propertyId: property.id,
+            roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+          },
+        });
+      }
       await transaction.partnerAuditLog.create({
         data: {
           action: `HOTEL_STAY_${nextStatus}`,
@@ -719,6 +752,93 @@ export const partnerOperationsService = {
     });
   },
 
+  async createPhysicalRoom(
+    partnerId: string,
+    propertyId: string,
+    roomTypeId: string,
+    input: { floorLabel: string; notes: string; roomNumber: string },
+  ) {
+    const roomType = await prisma.partnerRoomType.findFirst({
+      include: { physicalRooms: { where: { operationalStatus: 'ACTIVE' } } },
+      where: {
+        id: roomTypeId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!roomType) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    const roomNumber = normalizeText(input.roomNumber, 20);
+    if (!/^[A-Za-z0-9][A-Za-z0-9 ._/-]{0,19}$/.test(roomNumber)) {
+      throw new PartnerOperationsError('INVALID_ROOM_NUMBER', 'Use a valid room number up to 20 characters.');
+    }
+    if (roomType.physicalRooms.length >= roomType.inventoryCount) {
+      throw new PartnerOperationsError(
+        'PHYSICAL_ROOM_LIMIT',
+        'Registered physical rooms cannot exceed this room type inventory.',
+      );
+    }
+    const duplicate = await prisma.partnerPhysicalRoom.findUnique({
+      where: { propertyId_roomNumber: { propertyId, roomNumber } },
+    });
+    if (duplicate) {
+      throw new PartnerOperationsError('ROOM_NUMBER_EXISTS', 'That room number is already registered at this property.');
+    }
+    return prisma.partnerPhysicalRoom.create({
+      data: {
+        floorLabel: normalizeText(input.floorLabel, 40),
+        notes: normalizeText(input.notes, 300),
+        propertyId,
+        roomNumber,
+        roomTypeId,
+      },
+    });
+  },
+
+  async updatePhysicalRoom(
+    partnerId: string,
+    propertyId: string,
+    roomTypeId: string,
+    physicalRoomId: string,
+    input: {
+      housekeepingStatus: 'CLEANING' | 'DIRTY' | 'READY';
+      operationalStatus: 'ACTIVE' | 'OUT_OF_SERVICE';
+    },
+  ) {
+    const physicalRoom = await prisma.partnerPhysicalRoom.findFirst({
+      where: {
+        id: physicalRoomId,
+        propertyId,
+        roomTypeId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+      },
+    });
+    if (!physicalRoom) {
+      throw new PartnerOperationsError('PHYSICAL_ROOM_NOT_FOUND', 'The registered room was not found.');
+    }
+    if (physicalRoom.operationalStatus !== 'ACTIVE' && input.operationalStatus === 'ACTIVE') {
+      const [roomType, activeRoomCount] = await Promise.all([
+        prisma.partnerRoomType.findUnique({ where: { id: roomTypeId } }),
+        prisma.partnerPhysicalRoom.count({
+          where: { operationalStatus: 'ACTIVE', roomTypeId },
+        }),
+      ]);
+      if (!roomType || activeRoomCount >= roomType.inventoryCount) {
+        throw new PartnerOperationsError(
+          'PHYSICAL_ROOM_LIMIT',
+          'Increase the room type inventory before returning this physical room to service.',
+        );
+      }
+    }
+    return prisma.partnerPhysicalRoom.update({
+      data: {
+        housekeepingStatus: input.housekeepingStatus,
+        operationalStatus: input.operationalStatus,
+      },
+      where: { id: physicalRoom.id },
+    });
+  },
+
   async updateRoomType(
     partnerId: string,
     propertyId: string,
@@ -749,6 +869,15 @@ export const partnerOperationsService = {
     }
     if (!Number.isInteger(input.inventoryCount) || input.inventoryCount < 1 || input.inventoryCount > 500) {
       throw new PartnerOperationsError('INVALID_ROOM_COUNT', 'Room inventory must be between 1 and 500.');
+    }
+    const registeredRoomCount = await prisma.partnerPhysicalRoom.count({
+      where: { operationalStatus: 'ACTIVE', roomTypeId: room.id },
+    });
+    if (input.inventoryCount < registeredRoomCount) {
+      throw new PartnerOperationsError(
+        'REGISTERED_ROOM_COUNT_EXCEEDED',
+        `Inventory cannot be lower than the ${registeredRoomCount} active physical rooms already registered.`,
+      );
     }
     if (
       !Number.isInteger(input.maximumAdults) || input.maximumAdults < 1 || input.maximumAdults > 20 ||

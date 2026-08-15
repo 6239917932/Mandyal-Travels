@@ -26,6 +26,17 @@ type RatePlan = {
   taxesAndFees: number;
 };
 
+type PhysicalRoom = {
+  floorLabel: string;
+  housekeepingStatus: string;
+  id: string;
+  operationalStatus: string;
+  roomNumber: string;
+};
+
+type HousekeepingStatus = 'CLEANING' | 'DIRTY' | 'READY';
+type PhysicalRoomOperationalStatus = 'ACTIVE' | 'OUT_OF_SERVICE';
+
 type RoomType = {
   amenitiesJson: string;
   bedDescription: string;
@@ -39,6 +50,7 @@ type RoomType = {
   mealPlan: string;
   name: string;
   nightlyRate: number;
+  physicalRooms: PhysicalRoom[];
   ratePlanName: string;
   ratePlans: RatePlan[];
   roomTypeId: string;
@@ -92,6 +104,14 @@ function stringListFromJson(value: string): string[] {
   }
 }
 
+function physicalRoomOperationalStatus(value: string): PhysicalRoomOperationalStatus {
+  return value === 'OUT_OF_SERVICE' ? 'OUT_OF_SERVICE' : 'ACTIVE';
+}
+
+function housekeepingStatus(value: string): HousekeepingStatus {
+  return value === 'CLEANING' || value === 'DIRTY' ? value : 'READY';
+}
+
 export function PartnerPropertyManager({
   canManage,
   initialProperties,
@@ -104,6 +124,7 @@ export function PartnerPropertyManager({
   const [activeLocationForm, setActiveLocationForm] = useState<string>();
   const [activeRatePlanRoom, setActiveRatePlanRoom] = useState<string>();
   const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
+  const [activePhysicalRoomForm, setActivePhysicalRoomForm] = useState<string>();
   const [activeRateEditor, setActiveRateEditor] = useState<string>();
   const [activeProfileForm, setActiveProfileForm] = useState<string>();
   const [activeContentForm, setActiveContentForm] = useState<string>();
@@ -228,6 +249,74 @@ export function PartnerPropertyManager({
       await loadProperties();
     } catch {
       setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createPhysicalRoom(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+  ) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/physical-rooms`,
+        {
+          body: JSON.stringify(Object.fromEntries(formData)),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        },
+      );
+      const result = await readJsonResponse<{ data: PhysicalRoom } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The physical room could not be registered.'));
+        return;
+      }
+      form.reset();
+      setSuccess(`Room ${result.data.roomNumber} was registered under ${room.name}.`);
+      await loadProperties();
+    } catch {
+      setError('The physical room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updatePhysicalRoom(
+    property: ManagedProperty,
+    room: RoomType,
+    physicalRoom: PhysicalRoom,
+    housekeepingStatus: HousekeepingStatus,
+    operationalStatus: PhysicalRoomOperationalStatus,
+  ) {
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/physical-rooms/${physicalRoom.id}`,
+        {
+          body: JSON.stringify({ housekeepingStatus, operationalStatus }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+        },
+      );
+      const result = await readJsonResponse<{ data: PhysicalRoom } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room status could not be updated.'));
+        return;
+      }
+      setSuccess(`Room ${physicalRoom.roomNumber} status was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The physical room service could not be reached.');
     } finally {
       setIsSaving(false);
     }
@@ -747,6 +836,88 @@ export function PartnerPropertyManager({
                     <small>
                       {room.ratePlans.filter((rate) => rate.status === 'ACTIVE').length || 1} active rate plan(s)
                     </small>
+                    <div className="partner-property-manager__rate">
+                      <strong>Physical rooms</strong>
+                      <small>
+                        {room.physicalRooms.length} of {room.inventoryCount} registered
+                      </small>
+                      {room.physicalRooms.map((physicalRoom) => (
+                        <div key={physicalRoom.id}>
+                          <small>
+                            {physicalRoom.roomNumber}
+                            {physicalRoom.floorLabel ? ` · ${physicalRoom.floorLabel}` : ''} ·{' '}
+                            {physicalRoom.housekeepingStatus.toLowerCase()} ·{' '}
+                            {physicalRoom.operationalStatus.toLowerCase().replaceAll('_', ' ')}
+                          </small>
+                          <div className="manage-booking__document-actions">
+                            {(['READY', 'DIRTY', 'CLEANING'] as const).map((status) => (
+                              <button
+                                className="home-card__link"
+                                disabled={isSaving || physicalRoom.housekeepingStatus === status}
+                                key={status}
+                                onClick={() =>
+                                  void updatePhysicalRoom(
+                                    property,
+                                    room,
+                                    physicalRoom,
+                                    status,
+                                    physicalRoomOperationalStatus(physicalRoom.operationalStatus),
+                                  )
+                                }
+                                type="button"
+                              >
+                                {status === 'READY' ? 'Mark ready' : status === 'DIRTY' ? 'Mark dirty' : 'Start cleaning'}
+                              </button>
+                            ))}
+                            <button
+                              className="home-card__link"
+                              disabled={isSaving}
+                              onClick={() =>
+                                void updatePhysicalRoom(
+                                  property,
+                                  room,
+                                  physicalRoom,
+                                  housekeepingStatus(physicalRoom.housekeepingStatus),
+                                  physicalRoom.operationalStatus === 'ACTIVE' ? 'OUT_OF_SERVICE' : 'ACTIVE',
+                                )
+                              }
+                              type="button"
+                            >
+                              {physicalRoom.operationalStatus === 'ACTIVE' ? 'Take out of service' : 'Return to service'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {canManage && room.physicalRooms.length < room.inventoryCount ? (
+                        <button
+                          className="home-card__link"
+                          onClick={() =>
+                            setActivePhysicalRoomForm(
+                              activePhysicalRoomForm === room.id ? undefined : room.id,
+                            )
+                          }
+                          type="button"
+                        >
+                          {activePhysicalRoomForm === room.id ? 'Close room registry' : 'Register physical room'}
+                        </button>
+                      ) : null}
+                      {activePhysicalRoomForm === room.id ? (
+                        <form
+                          className="supplier-form partner-property-manager__room-form"
+                          onSubmit={(event) => void createPhysicalRoom(event, property, room)}
+                        >
+                          <div className="supplier-form__grid">
+                            <Input label="Room number" maxLength={20} name="roomNumber" required />
+                            <Input label="Floor / wing" maxLength={40} name="floorLabel" />
+                          </div>
+                          <label className="ui-field">
+                            <span className="ui-field__label">Housekeeping notes (optional)</span>
+                            <textarea className="ui-input supplier-form__textarea" maxLength={300} name="notes" />
+                          </label>
+                          <Button fullWidth isLoading={isSaving} type="submit">Register room</Button>
+                        </form>
+                      ) : null}
+                    </div>
                     {room.ratePlans.map((rate) => (
                       <div className="partner-property-manager__rate" key={rate.id}>
                         <small>

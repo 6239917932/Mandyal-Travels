@@ -17,7 +17,10 @@ export async function GET(request: Request) {
   const data = await prisma.partnerProperty.findMany({
     include: {
       rooms: {
-        include: { ratePlans: { orderBy: { createdAt: 'asc' } } },
+        include: {
+          physicalRooms: { orderBy: { roomNumber: 'asc' } },
+          ratePlans: { orderBy: { createdAt: 'asc' } },
+        },
         orderBy: { createdAt: 'asc' },
       },
     },

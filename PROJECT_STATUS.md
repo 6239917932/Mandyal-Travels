@@ -85,6 +85,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   no-shows, and prevent check-in after the scheduled stay has ended
 - Persisted physical room assignments required at check-in, validated against booked quantity and
   overlapping checked-in stays, displayed to front-desk users, audited, and included in exports
+- Supplier-owned physical room registry with room-type inventory caps, unique room numbers,
+  ready/dirty/cleaning and active/out-of-service controls, audited changes, ready-room enforcement
+  at check-in, and automatic dirty status after checkout
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
@@ -163,7 +166,11 @@ supplier-scoped.
 Front-desk stay transitions are evaluated using the property's configured timezone. Future arrivals
 cannot be checked in or marked as no-shows, and an expired stay cannot be checked in.
 
+Managed properties can register their physical rooms and operate a basic housekeeping lifecycle.
+When a room type has registered rooms, check-in accepts only registered rooms that are ready and in
+service; checkout marks the assigned rooms dirty for housekeeping follow-up.
+
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 routes, and clean-database verification of all 38 migrations
+a Next.js production build with all 85 generated route entries, and clean-database verification of all 39 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

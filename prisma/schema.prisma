@@ -116,6 +116,7 @@ model PartnerProperty {
   updatedAt         DateTime                   @updatedAt
   partner           SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   inventoryDays     PartnerHotelInventoryDay[]
+  physicalRooms     PartnerPhysicalRoom[]
   rooms             PartnerRoomType[]
 
   @@index([partnerId, status])
@@ -145,6 +146,7 @@ model PartnerRoomType {
   createdAt               DateTime        @default(now())
   updatedAt               DateTime        @updatedAt
   property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  physicalRooms           PartnerPhysicalRoom[]
   ratePlans               PartnerRatePlan[]
 
   @@index([propertyId, status])
@@ -601,6 +603,25 @@ model Booking {
   review                  HotelReview?
 
   @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model PartnerPhysicalRoom {
+  id                 String          @id @default(cuid())
+  propertyId         String
+  roomTypeId         String
+  roomNumber         String
+  floorLabel         String          @default("")
+  housekeepingStatus String          @default("READY")
+  operationalStatus  String          @default("ACTIVE")
+  notes              String          @default("")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomType           PartnerRoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, roomNumber])
+  @@index([propertyId, housekeepingStatus, operationalStatus])
+  @@index([roomTypeId, operationalStatus])
 }
 
 model PartnerRatePlan {
