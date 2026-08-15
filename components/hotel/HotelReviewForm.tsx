@@ -68,7 +68,11 @@ export function HotelReviewForm({ hotelSlug }: HotelReviewFormProps) {
       <button className="ui-button ui-button--primary" disabled={submitting} type="submit">
         {submitting ? 'Publishing...' : 'Publish verified review'}
       </button>
-      {message ? <p aria-live="polite" className="hotel-review-form__message">{message}</p> : null}
+      {message ? (
+        <p aria-live="polite" className="hotel-review-form__message">
+          {message}
+        </p>
+      ) : null}
     </form>
   );
 }

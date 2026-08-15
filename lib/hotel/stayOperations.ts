@@ -53,11 +53,13 @@ export function normalizeRoomAssignments(
   assignedRoomNumbers: readonly string[],
   requiredRooms: number,
 ): { roomNumbers: string[]; violation?: StayRuleViolation } {
-  const roomNumbers = [...new Set(
-    assignedRoomNumbers
-      .map((roomNumber) => roomNumber.trim().replace(/\s+/g, ' ').slice(0, 20))
-      .filter(Boolean),
-  )];
+  const roomNumbers = [
+    ...new Set(
+      assignedRoomNumbers
+        .map((roomNumber) => roomNumber.trim().replace(/\s+/g, ' ').slice(0, 20))
+        .filter(Boolean),
+    ),
+  ];
   if (
     roomNumbers.length !== requiredRooms ||
     roomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber))

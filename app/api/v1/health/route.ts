@@ -17,18 +17,25 @@ export async function GET() {
         where: { status: { in: ['DEAD_LETTER', 'PENDING', 'PROCESSING'] } },
       }),
     ]);
-    const deadLetterCount = outbox.find((entry) => entry.status === 'DEAD_LETTER')?._count._all ?? 0;
+    const deadLetterCount =
+      outbox.find((entry) => entry.status === 'DEAD_LETTER')?._count._all ?? 0;
     const pendingCount = outbox
       .filter((entry) => entry.status === 'PENDING' || entry.status === 'PROCESSING')
       .reduce((total, entry) => total + entry._count._all, 0);
     return Response.json(
-      { data: {
-        checkedAt,
-        database: 'ready',
-        integrations: { deadLetterCount, pendingCount, status: deadLetterCount ? 'attention' : 'ready' },
-        schema: 'ready',
-        status: 'ready',
-      } },
+      {
+        data: {
+          checkedAt,
+          database: 'ready',
+          integrations: {
+            deadLetterCount,
+            pendingCount,
+            status: deadLetterCount ? 'attention' : 'ready',
+          },
+          schema: 'ready',
+          status: 'ready',
+        },
+      },
       { headers: RESPONSE_HEADERS },
     );
   } catch (error) {

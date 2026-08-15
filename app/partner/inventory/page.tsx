@@ -7,7 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
-import type { ApiErrorResponse, PartnerHotelCalendarRecord, PartnerInventoryRatePlanRecord, PartnerInventoryRecord } from '@/types/commerce';
+import type {
+  ApiErrorResponse,
+  PartnerHotelCalendarRecord,
+  PartnerInventoryRatePlanRecord,
+  PartnerInventoryRecord,
+} from '@/types/commerce';
 
 function futureDate(days: number): string {
   const date = new Date();
@@ -36,9 +41,14 @@ export default function PartnerInventoryPage() {
     try {
       const params = new URLSearchParams({ checkInDate, checkOutDate });
       const response = await fetch(`/api/v1/partner/inventory?${params}`);
-      const result = await readJsonResponse<{ calendar: PartnerHotelCalendarRecord[]; data: PartnerInventoryRecord[]; ratePlans: PartnerInventoryRatePlanRecord[] } | ApiErrorResponse>(
-        response,
-      );
+      const result = await readJsonResponse<
+        | {
+            calendar: PartnerHotelCalendarRecord[];
+            data: PartnerInventoryRecord[];
+            ratePlans: PartnerInventoryRatePlanRecord[];
+          }
+        | ApiErrorResponse
+      >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(
           result && 'error' in result ? result.error.message : 'Inventory could not be loaded.',
@@ -102,7 +112,9 @@ export default function PartnerInventoryPage() {
       }
       setInventory(result.data);
       form.reset();
-      setSuccess('The PMS calendar controls were saved. Check inventory again to view each daily control.');
+      setSuccess(
+        'The PMS calendar controls were saved. Check inventory again to view each daily control.',
+      );
     } catch {
       setError('The partner service could not be reached.');
     } finally {
@@ -166,7 +178,11 @@ export default function PartnerInventoryPage() {
                 {error}
               </p>
             ) : null}
-            {success ? <p className="booking-page__success" role="status">{success}</p> : null}
+            {success ? (
+              <p className="booking-page__success" role="status">
+                {success}
+              </p>
+            ) : null}
           </form>
         </Card>
         {inventory.length > 0 ? (
@@ -229,11 +245,16 @@ export default function PartnerInventoryPage() {
                   <span className="ui-field__label">Rate plan for seasonal price</span>
                   <select className="ui-input" name="ratePlanRecordId">
                     <option value="">No price change</option>
-                    {ratePlans.filter((ratePlan) => ratePlan.roomTypeId === selectedRoomTypeId).map((ratePlan) => (
-                      <option key={ratePlan.id} value={ratePlan.id}>
-                        {ratePlan.name} ({inventory.find((room) => room.roomTypeId === ratePlan.roomTypeId)?.roomName ?? ratePlan.roomTypeId})
-                      </option>
-                    ))}
+                    {ratePlans
+                      .filter((ratePlan) => ratePlan.roomTypeId === selectedRoomTypeId)
+                      .map((ratePlan) => (
+                        <option key={ratePlan.id} value={ratePlan.id}>
+                          {ratePlan.name} (
+                          {inventory.find((room) => room.roomTypeId === ratePlan.roomTypeId)
+                            ?.roomName ?? ratePlan.roomTypeId}
+                          )
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <Input
@@ -272,8 +293,13 @@ export default function PartnerInventoryPage() {
             <h2>Saved daily controls</h2>
             <div className="partner-inventory__list">
               {calendar.map((day) => (
-                <div className="partner-inventory__room" key={`${day.roomTypeId}-${day.ratePlanName ?? 'room'}-${day.stayDate}`}>
-                  <strong>{day.stayDate} · {day.hotelName} · {day.roomName}</strong>
+                <div
+                  className="partner-inventory__room"
+                  key={`${day.roomTypeId}-${day.ratePlanName ?? 'room'}-${day.stayDate}`}
+                >
+                  <strong>
+                    {day.stayDate} · {day.hotelName} · {day.roomName}
+                  </strong>
                   <small>
                     {day.availableRooms} rooms
                     {day.ratePlanName ? ` · ${day.ratePlanName}` : ''}

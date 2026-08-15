@@ -31,8 +31,21 @@ export function PartnerHotelReviewReply({ reviewId }: { reviewId: string }) {
 
   return (
     <div className="review-governance__action">
-      <textarea maxLength={1000} minLength={10} onChange={(event) => setReply(event.target.value)} placeholder="Write a professional property response" value={reply} />
-      <button className="ui-button ui-button--primary ui-button--small" disabled={busy} onClick={submit} type="button">Publish response</button>
+      <textarea
+        maxLength={1000}
+        minLength={10}
+        onChange={(event) => setReply(event.target.value)}
+        placeholder="Write a professional property response"
+        value={reply}
+      />
+      <button
+        className="ui-button ui-button--primary ui-button--small"
+        disabled={busy}
+        onClick={submit}
+        type="button"
+      >
+        Publish response
+      </button>
       {message ? <p aria-live="polite">{message}</p> : null}
     </div>
   );

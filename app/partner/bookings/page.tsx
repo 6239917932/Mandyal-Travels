@@ -53,36 +53,39 @@ export default function PartnerBookingsPage() {
   if (arrivalFrom) exportParameters.set('arrivalFrom', arrivalFrom);
   if (arrivalThrough) exportParameters.set('arrivalThrough', arrivalThrough);
   const exportHref = `/api/v1/partner/bookings/export${exportParameters.size ? `?${exportParameters.toString()}` : ''}`;
-  const loadPage = useCallback(async (page: number) => {
-    setError(undefined);
-    setIsLoading(true);
-    try {
-      const parameters = new URLSearchParams({ page: String(page), pageSize: '50' });
-      if (query) parameters.set('query', query);
-      if (bookingStatus) parameters.set('bookingStatus', bookingStatus);
-      if (stayStatus) parameters.set('stayStatus', stayStatus);
-      if (arrivalFrom) parameters.set('arrivalFrom', arrivalFrom);
-      if (arrivalThrough) parameters.set('arrivalThrough', arrivalThrough);
-      const response = await fetch(`/api/v1/partner/bookings?${parameters.toString()}`);
-      const result = await readJsonResponse<
-        { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
-      >(response);
-      if (!response.ok || !result || !('data' in result)) {
-        setError(
-          response.status === 401
-            ? 'Sign in with an assigned partner account to open this workspace.'
-            : 'Bookings could not be loaded.',
-        );
-        return;
+  const loadPage = useCallback(
+    async (page: number) => {
+      setError(undefined);
+      setIsLoading(true);
+      try {
+        const parameters = new URLSearchParams({ page: String(page), pageSize: '50' });
+        if (query) parameters.set('query', query);
+        if (bookingStatus) parameters.set('bookingStatus', bookingStatus);
+        if (stayStatus) parameters.set('stayStatus', stayStatus);
+        if (arrivalFrom) parameters.set('arrivalFrom', arrivalFrom);
+        if (arrivalThrough) parameters.set('arrivalThrough', arrivalThrough);
+        const response = await fetch(`/api/v1/partner/bookings?${parameters.toString()}`);
+        const result = await readJsonResponse<
+          { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
+        >(response);
+        if (!response.ok || !result || !('data' in result)) {
+          setError(
+            response.status === 401
+              ? 'Sign in with an assigned partner account to open this workspace.'
+              : 'Bookings could not be loaded.',
+          );
+          return;
+        }
+        setBookings(result.data);
+        setMeta(result.meta);
+      } catch {
+        setError('The partner service could not be reached.');
+      } finally {
+        setIsLoading(false);
       }
-      setBookings(result.data);
-      setMeta(result.meta);
-    } catch {
-      setError('The partner service could not be reached.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [arrivalFrom, arrivalThrough, bookingStatus, query, stayStatus]);
+    },
+    [arrivalFrom, arrivalThrough, bookingStatus, query, stayStatus],
+  );
 
   useEffect(() => {
     const task = window.setTimeout(() => void loadPage(1), 0);
@@ -99,9 +102,15 @@ export default function PartnerBookingsPage() {
     setUpdatingBooking(confirmationCode);
     try {
       const response = await fetch(`/api/v1/partner/bookings/${confirmationCode}`);
-      const result = await readJsonResponse<{ data: AvailablePhysicalRoom[] } | ApiErrorResponse>(response);
+      const result = await readJsonResponse<{ data: AvailablePhysicalRoom[] } | ApiErrorResponse>(
+        response,
+      );
       if (!response.ok || !result || !('data' in result)) {
-        setError(result && 'error' in result ? result.error.message : 'Available rooms could not be loaded.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'Available rooms could not be loaded.',
+        );
         return;
       }
       setAvailableRooms((current) => ({ ...current, [confirmationCode]: result.data }));
@@ -117,7 +126,10 @@ export default function PartnerBookingsPage() {
     setRoomAssignments((current) => {
       const selected = current[confirmationCode] ?? [];
       if (selected.includes(roomNumber)) {
-        return { ...current, [confirmationCode]: selected.filter((candidate) => candidate !== roomNumber) };
+        return {
+          ...current,
+          [confirmationCode]: selected.filter((candidate) => candidate !== roomNumber),
+        };
       }
       if (selected.length >= maximumRooms) return current;
       return { ...current, [confirmationCode]: [...selected, roomNumber] };
@@ -138,10 +150,20 @@ export default function PartnerBookingsPage() {
         method: 'PATCH',
       });
       const result = await readJsonResponse<
-        { data: { assignedRoomNumbers: string[]; operationalStatus: PartnerBookingRecord['operationalStatus'] } } | ApiErrorResponse
+        | {
+            data: {
+              assignedRoomNumbers: string[];
+              operationalStatus: PartnerBookingRecord['operationalStatus'];
+            };
+          }
+        | ApiErrorResponse
       >(response);
       if (!response.ok || !result || !('data' in result)) {
-        setError(result && 'error' in result ? result.error.message : 'The stay status could not be updated.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'The stay status could not be updated.',
+        );
         return;
       }
       setBookings((current) =>
@@ -172,17 +194,28 @@ export default function PartnerBookingsPage() {
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
-      const result = await readJsonResponse<{ data: { partnerNote: string } } | ApiErrorResponse>(response);
+      const result = await readJsonResponse<{ data: { partnerNote: string } } | ApiErrorResponse>(
+        response,
+      );
       if (!response.ok || !result || !('data' in result)) {
-        setError(result && 'error' in result ? result.error.message : 'The front-desk note could not be saved.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'The front-desk note could not be saved.',
+        );
         return;
       }
-      setBookings((current) => current.map((candidate) =>
-        candidate.confirmationCode === booking.confirmationCode
-          ? { ...candidate, partnerNote: result.data.partnerNote }
-          : candidate,
-      ));
-      setPartnerNotes((current) => ({ ...current, [booking.confirmationCode]: result.data.partnerNote }));
+      setBookings((current) =>
+        current.map((candidate) =>
+          candidate.confirmationCode === booking.confirmationCode
+            ? { ...candidate, partnerNote: result.data.partnerNote }
+            : candidate,
+        ),
+      );
+      setPartnerNotes((current) => ({
+        ...current,
+        [booking.confirmationCode]: result.data.partnerNote,
+      }));
     } catch {
       setError('The partner service could not be reached.');
     } finally {
@@ -240,34 +273,55 @@ export default function PartnerBookingsPage() {
             </div>
             <Card className="partner-bookings__search">
               <form className="supplier-form__grid" onSubmit={applyFilters}>
-              <Input
-                label="Search all bookings"
-                name="filter"
-                onChange={(event) => setFilter(event.target.value)}
-                placeholder="Reference, guest, email, or hotel"
-                value={filter}
-              />
-              <label className="ui-field">
-                <span className="ui-field__label">Booking status</span>
-                <select className="ui-input" onChange={(event) => setBookingStatus(event.target.value)} value={bookingStatus}>
-                  <option value="">All bookings</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </label>
-              <label className="ui-field">
-                <span className="ui-field__label">Stay status</span>
-                <select className="ui-input" onChange={(event) => setStayStatus(event.target.value)} value={stayStatus}>
-                  <option value="">All stay statuses</option>
-                  <option value="RESERVED">Reserved</option>
-                  <option value="CHECKED_IN">Checked in</option>
-                  <option value="CHECKED_OUT">Checked out</option>
-                  <option value="NO_SHOW">No-show</option>
-                </select>
-              </label>
-              <Input label="Arriving from" name="arrivalFrom" onChange={(event) => setArrivalFrom(event.target.value)} type="date" value={arrivalFrom} />
-              <Input label="Arriving through" min={arrivalFrom || undefined} name="arrivalThrough" onChange={(event) => setArrivalThrough(event.target.value)} type="date" value={arrivalThrough} />
-              <Button type="submit">Apply search</Button>
+                <Input
+                  label="Search all bookings"
+                  name="filter"
+                  onChange={(event) => setFilter(event.target.value)}
+                  placeholder="Reference, guest, email, or hotel"
+                  value={filter}
+                />
+                <label className="ui-field">
+                  <span className="ui-field__label">Booking status</span>
+                  <select
+                    className="ui-input"
+                    onChange={(event) => setBookingStatus(event.target.value)}
+                    value={bookingStatus}
+                  >
+                    <option value="">All bookings</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </label>
+                <label className="ui-field">
+                  <span className="ui-field__label">Stay status</span>
+                  <select
+                    className="ui-input"
+                    onChange={(event) => setStayStatus(event.target.value)}
+                    value={stayStatus}
+                  >
+                    <option value="">All stay statuses</option>
+                    <option value="RESERVED">Reserved</option>
+                    <option value="CHECKED_IN">Checked in</option>
+                    <option value="CHECKED_OUT">Checked out</option>
+                    <option value="NO_SHOW">No-show</option>
+                  </select>
+                </label>
+                <Input
+                  label="Arriving from"
+                  name="arrivalFrom"
+                  onChange={(event) => setArrivalFrom(event.target.value)}
+                  type="date"
+                  value={arrivalFrom}
+                />
+                <Input
+                  label="Arriving through"
+                  min={arrivalFrom || undefined}
+                  name="arrivalThrough"
+                  onChange={(event) => setArrivalThrough(event.target.value)}
+                  type="date"
+                  value={arrivalThrough}
+                />
+                <Button type="submit">Apply search</Button>
               </form>
             </Card>
             <div className="partner-bookings__list" aria-live="polite">
@@ -319,21 +373,29 @@ export default function PartnerBookingsPage() {
                     <div className="booking-confirmation__note">
                       <strong>Guest special requests</strong>
                       <p>{booking.specialRequests}</p>
-                      <small>Requests are preferences and are not guaranteed until the property confirms them.</small>
+                      <small>
+                        Requests are preferences and are not guaranteed until the property confirms
+                        them.
+                      </small>
                     </div>
                   ) : null}
                   <div className="ui-field">
-                    <label className="ui-field__label" htmlFor={`partner-note-${booking.confirmationCode}`}>
+                    <label
+                      className="ui-field__label"
+                      htmlFor={`partner-note-${booking.confirmationCode}`}
+                    >
                       Private front-desk note
                     </label>
                     <textarea
                       className="ui-input supplier-form__textarea"
                       id={`partner-note-${booking.confirmationCode}`}
                       maxLength={1000}
-                      onChange={(event) => setPartnerNotes((current) => ({
-                        ...current,
-                        [booking.confirmationCode]: event.target.value,
-                      }))}
+                      onChange={(event) =>
+                        setPartnerNotes((current) => ({
+                          ...current,
+                          [booking.confirmationCode]: event.target.value,
+                        }))
+                      }
                       placeholder="Arrival preferences, accessibility support, or internal handover notes"
                       value={partnerNotes[booking.confirmationCode] ?? booking.partnerNote}
                     />
@@ -349,25 +411,45 @@ export default function PartnerBookingsPage() {
                     <div>
                       {availableRooms[booking.confirmationCode] ? (
                         <fieldset className="supplier-amenities__group">
-                          <legend>Select {booking.rooms} ready physical room{booking.rooms === 1 ? '' : 's'}</legend>
+                          <legend>
+                            Select {booking.rooms} ready physical room
+                            {booking.rooms === 1 ? '' : 's'}
+                          </legend>
                           <div className="supplier-amenities__grid">
                             {availableRooms[booking.confirmationCode].map((room) => (
                               <label className="supplier-amenities__option" key={room.roomNumber}>
                                 <input
-                                  checked={(roomAssignments[booking.confirmationCode] ?? []).includes(room.roomNumber)}
+                                  checked={(
+                                    roomAssignments[booking.confirmationCode] ?? []
+                                  ).includes(room.roomNumber)}
                                   disabled={
-                                    !(roomAssignments[booking.confirmationCode] ?? []).includes(room.roomNumber) &&
-                                    (roomAssignments[booking.confirmationCode] ?? []).length >= booking.rooms
+                                    !(roomAssignments[booking.confirmationCode] ?? []).includes(
+                                      room.roomNumber,
+                                    ) &&
+                                    (roomAssignments[booking.confirmationCode] ?? []).length >=
+                                      booking.rooms
                                   }
-                                  onChange={() => toggleRoom(booking.confirmationCode, room.roomNumber, booking.rooms)}
+                                  onChange={() =>
+                                    toggleRoom(
+                                      booking.confirmationCode,
+                                      room.roomNumber,
+                                      booking.rooms,
+                                    )
+                                  }
                                   type="checkbox"
                                 />
-                                <span>Room {room.roomNumber}{room.floorLabel ? ` · ${room.floorLabel}` : ''}</span>
+                                <span>
+                                  Room {room.roomNumber}
+                                  {room.floorLabel ? ` · ${room.floorLabel}` : ''}
+                                </span>
                               </label>
                             ))}
                           </div>
                           {availableRooms[booking.confirmationCode].length === 0 ? (
-                            <p>No registered ready rooms are available for this room type. Update housekeeping first.</p>
+                            <p>
+                              No registered ready rooms are available for this room type. Update
+                              housekeeping first.
+                            </p>
                           ) : null}
                         </fieldset>
                       ) : (
@@ -380,21 +462,42 @@ export default function PartnerBookingsPage() {
                         </Button>
                       )}
                       <div className="manage-booking__document-actions">
-                      <Button disabled={
-                        updatingBooking === booking.confirmationCode ||
-                        (roomAssignments[booking.confirmationCode] ?? []).length !== booking.rooms
-                      } onClick={() => updateStayStatus(
-                        booking.confirmationCode,
-                        'CHECKED_IN',
-                        roomAssignments[booking.confirmationCode] ?? [],
-                      )} variant="secondary">Assign rooms and check in</Button>
-                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'NO_SHOW')} variant="secondary">Mark no-show</Button>
+                        <Button
+                          disabled={
+                            updatingBooking === booking.confirmationCode ||
+                            (roomAssignments[booking.confirmationCode] ?? []).length !==
+                              booking.rooms
+                          }
+                          onClick={() =>
+                            updateStayStatus(
+                              booking.confirmationCode,
+                              'CHECKED_IN',
+                              roomAssignments[booking.confirmationCode] ?? [],
+                            )
+                          }
+                          variant="secondary"
+                        >
+                          Assign rooms and check in
+                        </Button>
+                        <Button
+                          disabled={updatingBooking === booking.confirmationCode}
+                          onClick={() => updateStayStatus(booking.confirmationCode, 'NO_SHOW')}
+                          variant="secondary"
+                        >
+                          Mark no-show
+                        </Button>
                       </div>
                     </div>
                   ) : null}
                   {booking.status === 'confirmed' && booking.operationalStatus === 'CHECKED_IN' ? (
                     <div className="manage-booking__document-actions">
-                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'CHECKED_OUT')} variant="secondary">Check out guest</Button>
+                      <Button
+                        disabled={updatingBooking === booking.confirmationCode}
+                        onClick={() => updateStayStatus(booking.confirmationCode, 'CHECKED_OUT')}
+                        variant="secondary"
+                      >
+                        Check out guest
+                      </Button>
                     </div>
                   ) : null}
                 </Card>

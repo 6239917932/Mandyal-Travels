@@ -8,13 +8,25 @@ export async function GET(request: Request) {
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'BUS')
     return Response.json(
-      { error: { code: 'BUS_PARTNER_REQUIRED', message: 'An active bus operator account is required.' } },
+      {
+        error: {
+          code: 'BUS_PARTNER_REQUIRED',
+          message: 'An active bus operator account is required.',
+        },
+      },
       { status: 403 },
     );
-  const totalCount = await prisma.partnerBusReservation.count({ where: { partnerId: access.partnerId } });
+  const totalCount = await prisma.partnerBusReservation.count({
+    where: { partnerId: access.partnerId },
+  });
   if (totalCount > EXPORT_LIMIT)
     return Response.json(
-      { error: { code: 'EXPORT_LIMIT_EXCEEDED', message: `This export contains ${totalCount.toLocaleString('en-IN')} reservations. Use reporting filters before exporting more than ${EXPORT_LIMIT.toLocaleString('en-IN')} records.` } },
+      {
+        error: {
+          code: 'EXPORT_LIMIT_EXCEEDED',
+          message: `This export contains ${totalCount.toLocaleString('en-IN')} reservations. Use reporting filters before exporting more than ${EXPORT_LIMIT.toLocaleString('en-IN')} records.`,
+        },
+      },
       { headers: { 'Cache-Control': 'private, no-store' }, status: 422 },
     );
   const reservations = await prisma.partnerBusReservation.findMany({
@@ -23,11 +35,25 @@ export async function GET(request: Request) {
     take: EXPORT_LIMIT,
     where: { partnerId: access.partnerId },
   });
-  const rows: Array<Array<string | number>> = [[
-    'Confirmation code', 'Status', 'Passenger name', 'Passenger email', 'Passengers', 'Seats',
-    'Origin', 'Destination', 'Service date', 'Departure', 'Arrival', 'Bus type', 'Currency',
-    'Total amount', 'Created at',
-  ]];
+  const rows: Array<Array<string | number>> = [
+    [
+      'Confirmation code',
+      'Status',
+      'Passenger name',
+      'Passenger email',
+      'Passengers',
+      'Seats',
+      'Origin',
+      'Destination',
+      'Service date',
+      'Departure',
+      'Arrival',
+      'Bus type',
+      'Currency',
+      'Total amount',
+      'Created at',
+    ],
+  ];
   for (const reservation of reservations) {
     let seatNumbers = '';
     try {
@@ -39,11 +65,20 @@ export async function GET(request: Request) {
       seatNumbers = '';
     }
     rows.push([
-      reservation.confirmationCode, reservation.status, reservation.customerName,
-      reservation.customerEmail, reservation.passengerCount, seatNumbers,
-      reservation.trip.route.origin, reservation.trip.route.destination,
-      reservation.trip.serviceDate, reservation.trip.departureTime, reservation.trip.arrivalTime,
-      reservation.trip.busType, reservation.currency, reservation.totalAmount,
+      reservation.confirmationCode,
+      reservation.status,
+      reservation.customerName,
+      reservation.customerEmail,
+      reservation.passengerCount,
+      seatNumbers,
+      reservation.trip.route.origin,
+      reservation.trip.route.destination,
+      reservation.trip.serviceDate,
+      reservation.trip.departureTime,
+      reservation.trip.arrivalTime,
+      reservation.trip.busType,
+      reservation.currency,
+      reservation.totalAmount,
       reservation.createdAt.toISOString(),
     ]);
   }

@@ -39,7 +39,8 @@ export default async function CarDriverPage({
         <p className="hotel-page__eyebrow">Booking party</p>
         <h1>{criteria.rentalMode === 'chauffeur' ? 'Who is travelling?' : 'Who is driving?'}</h1>
         <p className="flight-booking-page__intro">
-          Enter the {criteria.rentalMode === 'chauffeur' ? 'lead traveller' : 'primary driver'} and booking contact information.
+          Enter the {criteria.rentalMode === 'chauffeur' ? 'lead traveller' : 'primary driver'} and
+          booking contact information.
         </p>
         <div className="car-booking-page__grid">
           <Card>

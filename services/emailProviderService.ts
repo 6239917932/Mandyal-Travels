@@ -1,4 +1,9 @@
-import { isAllowedProviderEndpoint } from '@/lib/integrations/providerEndpoint';
+import 'server-only';
+
+import {
+  isAllowedProviderEndpoint,
+  parseAllowedProviderHosts,
+} from '@/lib/integrations/providerEndpoint';
 
 export interface TransactionalEmailInput {
   dedupeKey: string;
@@ -12,13 +17,8 @@ export async function sendTransactionalEmail(input: TransactionalEmailInput) {
   const endpoint = process.env.EMAIL_PROVIDER_ENDPOINT ?? '';
   const apiKey = process.env.EMAIL_PROVIDER_API_KEY;
   const from = process.env.EMAIL_FROM_ADDRESS;
-  let configuredHost = '';
-  try {
-    configuredHost = new URL(endpoint).hostname;
-  } catch {
-    throw new Error('EMAIL_PROVIDER_NOT_CONFIGURED');
-  }
-  if (!apiKey || !from || !configuredHost || !isAllowedProviderEndpoint(endpoint, [configuredHost]))
+  const allowedHosts = parseAllowedProviderHosts(process.env.EMAIL_PROVIDER_ALLOWED_HOSTS);
+  if (!apiKey || !from || !isAllowedProviderEndpoint(endpoint, allowedHosts))
     throw new Error('EMAIL_PROVIDER_NOT_CONFIGURED');
   const response = await fetch(endpoint, {
     method: 'POST',

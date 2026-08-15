@@ -93,7 +93,10 @@ export default function PartnerReservationsPage() {
     return () => window.clearTimeout(task);
   }, [loadPage]);
 
-  async function updateStatus(confirmationCode: string, action: 'COMPLETE' | 'MARK_NO_SHOW' | 'PICK_UP') {
+  async function updateStatus(
+    confirmationCode: string,
+    action: 'COMPLETE' | 'MARK_NO_SHOW' | 'PICK_UP',
+  ) {
     setError(undefined);
     setUpdating(confirmationCode);
     try {
@@ -103,7 +106,12 @@ export default function PartnerReservationsPage() {
         method: 'PATCH',
       });
       const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
-      if (!response.ok) setError(result && 'error' in result ? result.error.message : 'Rental status could not be updated.');
+      if (!response.ok)
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'Rental status could not be updated.',
+        );
       else await loadPage(meta?.page ?? 1);
     } catch {
       setError('The rental operations service could not be reached.');
@@ -124,7 +132,10 @@ export default function PartnerReservationsPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
-            <Link className="ui-button ui-button--secondary" href="/api/v1/partner/reservations/export">
+            <Link
+              className="ui-button ui-button--secondary"
+              href="/api/v1/partner/reservations/export"
+            >
               Export CSV
             </Link>
             <Link className="ui-button ui-button--secondary" href="/partner">
@@ -140,9 +151,18 @@ export default function PartnerReservationsPage() {
         {meta ? (
           <>
             <div className="partner-bookings__summary">
-              <Card><span>Total reservations</span><strong>{meta.totalCount}</strong></Card>
-              <Card><span>Confirmed</span><strong>{meta.confirmedCount}</strong></Card>
-              <Card><span>Captured value</span><strong>{money(meta.capturedInrValue)}</strong></Card>
+              <Card>
+                <span>Total reservations</span>
+                <strong>{meta.totalCount}</strong>
+              </Card>
+              <Card>
+                <span>Confirmed</span>
+                <strong>{meta.confirmedCount}</strong>
+              </Card>
+              <Card>
+                <span>Captured value</span>
+                <strong>{money(meta.capturedInrValue)}</strong>
+              </Card>
             </div>
             <Card className="partner-bookings__search">
               <Input
@@ -161,29 +181,90 @@ export default function PartnerReservationsPage() {
                     <strong>{reservation.confirmationCode}</strong>
                   </div>
                   <div className="booking-confirmation__details">
-                    <div><span>Driver</span><strong>{reservation.customerName}</strong><small>{reservation.customerEmail}</small></div>
-                    <div><span>Route</span><strong>{reservation.vehicle.pickupLocation} → {reservation.vehicle.dropoffLocation}</strong></div>
-                    <div><span>Rental</span><strong>{reservation.pickupDate} – {reservation.dropoffDate}</strong></div>
-                    <div><span>Registration</span><strong>{reservation.vehicle.registrationNumber ?? 'Supplier assigned'}</strong></div>
-                    <div><span>Status</span><strong>{reservation.status}</strong></div>
-                    <div><span>Total</span><strong>{money(reservation.totalAmount)}</strong></div>
+                    <div>
+                      <span>Driver</span>
+                      <strong>{reservation.customerName}</strong>
+                      <small>{reservation.customerEmail}</small>
+                    </div>
+                    <div>
+                      <span>Route</span>
+                      <strong>
+                        {reservation.vehicle.pickupLocation} → {reservation.vehicle.dropoffLocation}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Rental</span>
+                      <strong>
+                        {reservation.pickupDate} – {reservation.dropoffDate}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Registration</span>
+                      <strong>
+                        {reservation.vehicle.registrationNumber ?? 'Supplier assigned'}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Status</span>
+                      <strong>{reservation.status}</strong>
+                    </div>
+                    <div>
+                      <span>Total</span>
+                      <strong>{money(reservation.totalAmount)}</strong>
+                    </div>
                   </div>
                   <div className="manage-booking__document-actions">
-                    {reservation.status === 'CONFIRMED' ? <>
-                      <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'PICK_UP')} variant="primary">Confirm pickup</Button>
-                      <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'MARK_NO_SHOW')} variant="secondary">Mark no-show</Button>
-                    </> : null}
-                    {reservation.status === 'PICKED_UP' ? <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'COMPLETE')} variant="primary">Complete rental</Button> : null}
+                    {reservation.status === 'CONFIRMED' ? (
+                      <>
+                        <Button
+                          disabled={updating === reservation.confirmationCode}
+                          onClick={() => updateStatus(reservation.confirmationCode, 'PICK_UP')}
+                          variant="primary"
+                        >
+                          Confirm pickup
+                        </Button>
+                        <Button
+                          disabled={updating === reservation.confirmationCode}
+                          onClick={() => updateStatus(reservation.confirmationCode, 'MARK_NO_SHOW')}
+                          variant="secondary"
+                        >
+                          Mark no-show
+                        </Button>
+                      </>
+                    ) : null}
+                    {reservation.status === 'PICKED_UP' ? (
+                      <Button
+                        disabled={updating === reservation.confirmationCode}
+                        onClick={() => updateStatus(reservation.confirmationCode, 'COMPLETE')}
+                        variant="primary"
+                      >
+                        Complete rental
+                      </Button>
+                    ) : null}
                   </div>
                 </Card>
               ))}
               {filtered.length === 0 ? <Card>No vehicle reservations match this view.</Card> : null}
             </div>
             <Card className="business-report__pagination">
-              <p>Page {meta.page} of {meta.totalPages} · showing up to {meta.pageSize} reservations</p>
+              <p>
+                Page {meta.page} of {meta.totalPages} · showing up to {meta.pageSize} reservations
+              </p>
               <div className="manage-booking__document-actions">
-                <Button disabled={isLoading || meta.page <= 1} onClick={() => loadPage(meta.page - 1)} variant="secondary">Previous page</Button>
-                <Button disabled={isLoading || meta.page >= meta.totalPages} onClick={() => loadPage(meta.page + 1)} variant="secondary">Next page</Button>
+                <Button
+                  disabled={isLoading || meta.page <= 1}
+                  onClick={() => loadPage(meta.page - 1)}
+                  variant="secondary"
+                >
+                  Previous page
+                </Button>
+                <Button
+                  disabled={isLoading || meta.page >= meta.totalPages}
+                  onClick={() => loadPage(meta.page + 1)}
+                  variant="secondary"
+                >
+                  Next page
+                </Button>
               </div>
             </Card>
           </>

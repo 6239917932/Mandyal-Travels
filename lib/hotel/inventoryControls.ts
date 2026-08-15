@@ -20,8 +20,7 @@ export type HotelStayInventoryEvaluation = {
 
 export function hotelStayNights(startDate: string, endDate: string): number {
   return Math.ceil(
-    (new Date(`${endDate}T00:00:00Z`).getTime() -
-      new Date(`${startDate}T00:00:00Z`).getTime()) /
+    (new Date(`${endDate}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) /
       DAY_MS,
   );
 }

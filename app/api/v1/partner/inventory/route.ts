@@ -22,10 +22,10 @@ export async function GET(request: Request): Promise<Response> {
   const checkOutDate = url.searchParams.get('checkOutDate') ?? '';
   try {
     const data = await hotelBookingService.getPartnerInventory(
-        checkInDate,
-        checkOutDate,
-        access.allowedHotelSlugs,
-      );
+      checkInDate,
+      checkOutDate,
+      access.allowedHotelSlugs,
+    );
     const calendarDays = access.partnerId
       ? await prisma.partnerHotelInventoryDay.findMany({
           include: { property: { select: { displayName: true } } },
@@ -56,38 +56,43 @@ export async function GET(request: Request): Promise<Response> {
     });
     const roomNames = new Map(roomTypes.map((room) => [room.roomTypeId, room.name]));
     return Response.json({
-      calendar: [...calendarDays.map((day) => ({
-        availableRooms: day.availableRooms,
-        closedToArrival: day.closedToArrival,
-        closedToDeparture: day.closedToDeparture,
-        hotelName: day.property.displayName,
-        maximumStayNights: day.maximumStayNights ?? undefined,
-        minimumStayNights: day.minimumStayNights ?? undefined,
-        nightlyRate: day.nightlyRate ?? undefined,
-        note: day.note,
-        roomName: roomNames.get(day.roomTypeId) ?? day.roomTypeId,
-        roomTypeId: day.roomTypeId,
-        stayDate: day.stayDate,
-        stopSell: day.stopSell,
-      })), ...ratePlanDays.map((day) => ({
-        availableRooms: day.ratePlan.room.inventoryCount,
-        closedToArrival: false,
-        closedToDeparture: false,
-        hotelName: day.ratePlan.room.property.displayName,
-        nightlyRate: day.nightlyRate,
-        note: day.note,
-        ratePlanName: day.ratePlan.name,
-        roomName: day.ratePlan.room.name,
-        roomTypeId: day.ratePlan.room.roomTypeId,
-        stayDate: day.stayDate,
-        stopSell: false,
-      }))],
+      calendar: [
+        ...calendarDays.map((day) => ({
+          availableRooms: day.availableRooms,
+          closedToArrival: day.closedToArrival,
+          closedToDeparture: day.closedToDeparture,
+          hotelName: day.property.displayName,
+          maximumStayNights: day.maximumStayNights ?? undefined,
+          minimumStayNights: day.minimumStayNights ?? undefined,
+          nightlyRate: day.nightlyRate ?? undefined,
+          note: day.note,
+          roomName: roomNames.get(day.roomTypeId) ?? day.roomTypeId,
+          roomTypeId: day.roomTypeId,
+          stayDate: day.stayDate,
+          stopSell: day.stopSell,
+        })),
+        ...ratePlanDays.map((day) => ({
+          availableRooms: day.ratePlan.room.inventoryCount,
+          closedToArrival: false,
+          closedToDeparture: false,
+          hotelName: day.ratePlan.room.property.displayName,
+          nightlyRate: day.nightlyRate,
+          note: day.note,
+          ratePlanName: day.ratePlan.name,
+          roomName: day.ratePlan.room.name,
+          roomTypeId: day.ratePlan.room.roomTypeId,
+          stayDate: day.stayDate,
+          stopSell: false,
+        })),
+      ],
       data,
-      ratePlans: managedRooms.flatMap((room) => room.ratePlans.map((ratePlan) => ({
-        id: ratePlan.id,
-        name: ratePlan.name,
-        roomTypeId: room.roomTypeId,
-      }))),
+      ratePlans: managedRooms.flatMap((room) =>
+        room.ratePlans.map((ratePlan) => ({
+          id: ratePlan.id,
+          name: ratePlan.name,
+          roomTypeId: room.roomTypeId,
+        })),
+      ),
     });
   } catch (error) {
     return error instanceof HotelBookingRuleError

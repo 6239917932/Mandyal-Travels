@@ -44,7 +44,11 @@ export function HousekeepingRoomActions({
       );
       const result = await readJsonResponse<{ data: { id: string } } | ApiErrorResponse>(response);
       if (!response.ok || !result || !('data' in result)) {
-        setError(result && 'error' in result ? result.error.message : 'The room status could not be saved.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'The room status could not be saved.',
+        );
         return;
       }
       router.refresh();
@@ -60,32 +64,50 @@ export function HousekeepingRoomActions({
     <div>
       <div className="manage-booking__document-actions">
         {housekeepingStatus !== 'CLEANING' ? (
-          <Button disabled={isSaving || !active} onClick={() => void update('CLEANING', 'ACTIVE')} variant="secondary">
+          <Button
+            disabled={isSaving || !active}
+            onClick={() => void update('CLEANING', 'ACTIVE')}
+            variant="secondary"
+          >
             Start cleaning
           </Button>
         ) : null}
         {housekeepingStatus !== 'READY' ? (
-          <Button disabled={isSaving || !active} onClick={() => void update('READY', 'ACTIVE')} variant="secondary">
+          <Button
+            disabled={isSaving || !active}
+            onClick={() => void update('READY', 'ACTIVE')}
+            variant="secondary"
+          >
             Mark ready
           </Button>
         ) : null}
         {housekeepingStatus !== 'DIRTY' ? (
-          <Button disabled={isSaving || !active} onClick={() => void update('DIRTY', 'ACTIVE')} variant="secondary">
+          <Button
+            disabled={isSaving || !active}
+            onClick={() => void update('DIRTY', 'ACTIVE')}
+            variant="secondary"
+          >
             Mark dirty
           </Button>
         ) : null}
         <Button
           disabled={isSaving}
-          onClick={() => void update(
-            housekeepingStatus as HousekeepingStatus,
-            active ? 'OUT_OF_SERVICE' : 'ACTIVE',
-          )}
+          onClick={() =>
+            void update(
+              housekeepingStatus as HousekeepingStatus,
+              active ? 'OUT_OF_SERVICE' : 'ACTIVE',
+            )
+          }
           variant="secondary"
         >
           {active ? 'Take out of service' : 'Return to service'}
         </Button>
       </div>
-      {error ? <p className="ui-field__error" role="alert">{error}</p> : null}
+      {error ? (
+        <p className="ui-field__error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

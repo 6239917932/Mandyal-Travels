@@ -16,7 +16,11 @@ const day = (stayDate: string, overrides: Partial<HotelInventoryDay> = {}): Hote
 
 test('inventory returns the lowest room availability across the stay', () => {
   const result = evaluateHotelStayInventory(
-    [day('2026-10-18'), day('2026-10-19', { availableRooms: 2 }), day('2026-10-20', { availableRooms: 4 })],
+    [
+      day('2026-10-18'),
+      day('2026-10-19', { availableRooms: 2 }),
+      day('2026-10-20', { availableRooms: 4 }),
+    ],
     '2026-10-18',
     '2026-10-21',
   );
@@ -26,17 +30,24 @@ test('inventory returns the lowest room availability across the stay', () => {
 
 test('stop-sell and closed arrival or departure make the stay unavailable', () => {
   assert.equal(
-    evaluateHotelStayInventory([day('2026-10-18', { stopSell: true })], '2026-10-18', '2026-10-19').availableRooms,
+    evaluateHotelStayInventory([day('2026-10-18', { stopSell: true })], '2026-10-18', '2026-10-19')
+      .availableRooms,
     0,
   );
   assert.match(
-    evaluateHotelStayInventory([day('2026-10-18', { closedToArrival: true })], '2026-10-18', '2026-10-19')
-      .restrictionMessage ?? '',
+    evaluateHotelStayInventory(
+      [day('2026-10-18', { closedToArrival: true })],
+      '2026-10-18',
+      '2026-10-19',
+    ).restrictionMessage ?? '',
     /Arrivals are closed/,
   );
   assert.match(
-    evaluateHotelStayInventory([day('2026-10-18'), day('2026-10-19', { closedToDeparture: true })], '2026-10-18', '2026-10-19')
-      .restrictionMessage ?? '',
+    evaluateHotelStayInventory(
+      [day('2026-10-18'), day('2026-10-19', { closedToDeparture: true })],
+      '2026-10-18',
+      '2026-10-19',
+    ).restrictionMessage ?? '',
     /Departures are closed/,
   );
 });

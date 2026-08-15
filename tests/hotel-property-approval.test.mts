@@ -8,19 +8,28 @@ import {
 
 test('only pending properties can be reviewed', () => {
   const result = evaluatePropertyReview({
-    action: 'APPROVE', activeRoomCount: 1, approvalStatus: 'APPROVED', reviewNote: '',
+    action: 'APPROVE',
+    activeRoomCount: 1,
+    approvalStatus: 'APPROVED',
+    reviewNote: '',
   });
   assert.deepEqual(result.valid ? undefined : result.code, 'PROPERTY_NOT_PENDING');
 });
 
 test('approval requires active inventory and publishes the property', () => {
   const missingRoom = evaluatePropertyReview({
-    action: 'APPROVE', activeRoomCount: 0, approvalStatus: 'PENDING_REVIEW', reviewNote: '',
+    action: 'APPROVE',
+    activeRoomCount: 0,
+    approvalStatus: 'PENDING_REVIEW',
+    reviewNote: '',
   });
   assert.deepEqual(missingRoom.valid ? undefined : missingRoom.code, 'ROOM_REQUIRED');
 
   const approved = evaluatePropertyReview({
-    action: 'APPROVE', activeRoomCount: 1, approvalStatus: 'PENDING_REVIEW', reviewNote: 'Verified',
+    action: 'APPROVE',
+    activeRoomCount: 1,
+    approvalStatus: 'PENDING_REVIEW',
+    reviewNote: 'Verified',
   });
   assert.equal(approved.valid, true);
   if (approved.valid) {
@@ -31,12 +40,18 @@ test('approval requires active inventory and publishes the property', () => {
 
 test('rejection requires useful correction notes and returns the listing to draft', () => {
   const tooShort = evaluatePropertyReview({
-    action: 'REJECT', activeRoomCount: 1, approvalStatus: 'PENDING_REVIEW', reviewNote: 'Fix it',
+    action: 'REJECT',
+    activeRoomCount: 1,
+    approvalStatus: 'PENDING_REVIEW',
+    reviewNote: 'Fix it',
   });
   assert.deepEqual(tooShort.valid ? undefined : tooShort.code, 'REVIEW_NOTE_REQUIRED');
 
   const rejected = evaluatePropertyReview({
-    action: 'REJECT', activeRoomCount: 1, approvalStatus: 'PENDING_REVIEW', reviewNote: '  Add a verified street address.  ',
+    action: 'REJECT',
+    activeRoomCount: 1,
+    approvalStatus: 'PENDING_REVIEW',
+    reviewNote: '  Add a verified street address.  ',
   });
   assert.equal(rejected.valid, true);
   if (rejected.valid) {
@@ -48,7 +63,11 @@ test('rejection requires useful correction notes and returns the listing to draf
 
 test('material edits clear prior review state', () => {
   assert.deepEqual(propertyMaterialEditReviewReset(), {
-    approvalNote: '', approvalStatus: 'PENDING_REVIEW', publicationStatus: 'DRAFT',
-    reviewedAt: null, reviewedByUserId: null, submittedAt: null,
+    approvalNote: '',
+    approvalStatus: 'PENDING_REVIEW',
+    publicationStatus: 'DRAFT',
+    reviewedAt: null,
+    reviewedByUserId: null,
+    submittedAt: null,
   });
 });

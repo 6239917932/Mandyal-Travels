@@ -16,12 +16,12 @@ export async function GET() {
   try {
     const [tripCount, hotelCount, requestCount, supportCount, securityEventCount] =
       await Promise.all([
-      prisma.customerTrip.count({ where: tripFilter }),
-      prisma.bookingGuest.count({ where: { email: user.email } }),
-      prisma.businessTravelRequest.count({ where: { requesterId: user.id } }),
-      prisma.customerSupportCase.count({ where: { userId: user.id } }),
-      prisma.accountSecurityEvent.count({ where: { userId: user.id } }),
-    ]);
+        prisma.customerTrip.count({ where: tripFilter }),
+        prisma.bookingGuest.count({ where: { email: user.email } }),
+        prisma.businessTravelRequest.count({ where: { requesterId: user.id } }),
+        prisma.customerSupportCase.count({ where: { userId: user.id } }),
+        prisma.accountSecurityEvent.count({ where: { userId: user.id } }),
+      ]);
     const exportRecordCount =
       tripCount + hotelCount + requestCount + supportCount + securityEventCount;
     if (exportRecordCount > MAX_EXPORT_RECORDS) {
@@ -33,8 +33,15 @@ export async function GET() {
       );
     }
 
-    const [account, trips, hotelBookings, companyRequests, supportCases, membership, securityEvents] =
-      await Promise.all([
+    const [
+      account,
+      trips,
+      hotelBookings,
+      companyRequests,
+      supportCases,
+      membership,
+      securityEvents,
+    ] = await Promise.all([
       prisma.user.findUnique({ select: { createdAt: true }, where: { id: user.id } }),
       prisma.customerTrip.findMany({
         orderBy: { createdAt: 'desc' },

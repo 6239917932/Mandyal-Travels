@@ -1,12 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { isAllowedProviderEndpoint } from '../integrations/providerEndpoint.ts';
 
-export function isSafeHostedCheckoutUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname);
-  } catch {
-    return false;
-  }
+export function isSafeHostedCheckoutUrl(value: string, allowedHosts: readonly string[]): boolean {
+  return isAllowedProviderEndpoint(value, allowedHosts);
 }
 
 export function paymentIntentExpiry(now = new Date()): Date {

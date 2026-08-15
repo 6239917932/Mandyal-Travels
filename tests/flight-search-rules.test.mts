@@ -51,7 +51,11 @@ test('flight criteria enforce airports, passenger bounds and travel dates', () =
     /three-letter airport code/,
   );
   assert.throws(
-    () => validateFlightSearchCriteria({ ...criteria, departureDate: '2026-08-14' }, { today: '2026-08-15' }),
+    () =>
+      validateFlightSearchCriteria(
+        { ...criteria, departureDate: '2026-08-14' },
+        { today: '2026-08-15' },
+      ),
     /cannot be in the past/,
   );
 });
@@ -69,9 +73,15 @@ test('return searches require a return after departure', () => {
 
 test('supplier offers are normalized only when route, date, cabin and inventory match', () => {
   assert.equal(normalizeFlightOffer(offer, criteria)?.totalPrice, 10000);
-  assert.equal(normalizeFlightOffer(offer, { ...criteria, departureDate: '2026-09-16' }), undefined);
+  assert.equal(
+    normalizeFlightOffer(offer, { ...criteria, departureDate: '2026-09-16' }),
+    undefined,
+  );
   assert.equal(normalizeFlightOffer({ ...offer, seatsRemaining: 1 }, criteria), undefined);
-  assert.equal(normalizeFlightOffer({ ...offer, currency: 'INR', pricePerAdult: -1 }, criteria), undefined);
+  assert.equal(
+    normalizeFlightOffer({ ...offer, currency: 'INR', pricePerAdult: -1 }, criteria),
+    undefined,
+  );
 });
 
 test('supplier connections must form a continuous itinerary', () => {

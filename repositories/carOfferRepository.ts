@@ -19,7 +19,8 @@ export class FixtureCarSupplierAdapter implements CarSupplierAdapter {
 
 export class DirectCarSupplierAdapter implements CarSupplierAdapter {
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
-    if (criteria.rentalMode !== 'self-drive' || criteria.pickupTime !== criteria.dropoffTime) return [];
+    if (criteria.rentalMode !== 'self-drive' || criteria.pickupTime !== criteria.dropoffTime)
+      return [];
     return partnerOperationsService.searchDirectVehicles(criteria);
   }
 }

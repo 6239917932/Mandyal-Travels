@@ -132,7 +132,9 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
     });
     const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
     if (!response.ok) {
-      setError(result && 'error' in result ? result.error.message : 'Maintenance could not be recorded.');
+      setError(
+        result && 'error' in result ? result.error.message : 'Maintenance could not be recorded.',
+      );
     } else {
       event.currentTarget.reset();
       setMessage('Maintenance recorded. Active work dates are stopped from sale.');
@@ -152,10 +154,21 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
         method: 'PATCH',
       });
       const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
-      if (!response.ok) setError(result && 'error' in result ? result.error.message : 'Compliance records could not be saved.');
-      else { setMessage('Vehicle compliance dates saved and audited.'); setVehicles(await fetchVehicles()); }
-    } catch { setError('The compliance service could not be reached.'); }
-    finally { setBusy(false); }
+      if (!response.ok)
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'Compliance records could not be saved.',
+        );
+      else {
+        setMessage('Vehicle compliance dates saved and audited.');
+        setVehicles(await fetchVehicles());
+      }
+    } catch {
+      setError('The compliance service could not be reached.');
+    } finally {
+      setBusy(false);
+    }
   }
   async function updateVehicleStatus(vehicle: Vehicle) {
     setBusy(true);
@@ -170,9 +183,17 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
       });
       const result = await readJsonResponse<{ data: Vehicle } | ApiErrorResponse>(response);
       if (!response.ok) {
-        setError(result && 'error' in result ? result.error.message : 'Vehicle status could not be updated.');
+        setError(
+          result && 'error' in result
+            ? result.error.message
+            : 'Vehicle status could not be updated.',
+        );
       } else {
-        setMessage(status === 'ACTIVE' ? 'Vehicle restored to customer search.' : 'Vehicle paused. Existing reservations remain unchanged.');
+        setMessage(
+          status === 'ACTIVE'
+            ? 'Vehicle restored to customer search.'
+            : 'Vehicle paused. Existing reservations remain unchanged.',
+        );
         setVehicles(await fetchVehicles());
       }
     } catch {
@@ -198,47 +219,47 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
           <p className="hotel-page__eyebrow">Fleet setup</p>
           <h2>Add a vehicle or vehicle group</h2>
           <form className="supplier-form" onSubmit={createVehicle}>
-          <div className="supplier-form__grid">
-            <Input
-              label="Vehicle name"
-              name="vehicleName"
-              placeholder="Maruti Suzuki Swift or similar"
-              required
-            />
-            <Input label="Registration (optional)" name="registrationNumber" />
-            <Input label="Category" name="category" placeholder="Economy" required />
-            <label className="ui-field">
-              <span className="ui-field__label">Transmission</span>
-              <select className="ui-input" name="transmission">
-                <option>Manual</option>
-                <option>Automatic</option>
-              </select>
-            </label>
-            <Input label="Seats" min={1} name="seats" required type="number" />
-            <Input label="Bags" min={0} name="bags" required type="number" />
-            <Input label="Pickup location" name="pickupLocation" required />
-            <Input label="Drop-off location" name="dropoffLocation" required />
-            <Input label="Daily price (INR)" min={1} name="pricePerDay" required type="number" />
-            <Input label="Fleet units" min={1} name="totalUnits" required type="number" />
-            <Input label="Fuel policy" name="fuelPolicy" placeholder="Full to full" required />
-            <Input
-              label="Mileage policy"
-              name="mileagePolicy"
-              placeholder="Unlimited kilometres"
-              required
-            />
-            <Input
-              label="Cancellation policy"
-              name="cancellationPolicy"
-              placeholder="Free cancellation up to 24 hours"
-              required
-            />
-            <Input
-              label="Features (comma separated)"
-              name="features"
-              placeholder="AC, GPS, roadside support"
-            />
-          </div>
+            <div className="supplier-form__grid">
+              <Input
+                label="Vehicle name"
+                name="vehicleName"
+                placeholder="Maruti Suzuki Swift or similar"
+                required
+              />
+              <Input label="Registration (optional)" name="registrationNumber" />
+              <Input label="Category" name="category" placeholder="Economy" required />
+              <label className="ui-field">
+                <span className="ui-field__label">Transmission</span>
+                <select className="ui-input" name="transmission">
+                  <option>Manual</option>
+                  <option>Automatic</option>
+                </select>
+              </label>
+              <Input label="Seats" min={1} name="seats" required type="number" />
+              <Input label="Bags" min={0} name="bags" required type="number" />
+              <Input label="Pickup location" name="pickupLocation" required />
+              <Input label="Drop-off location" name="dropoffLocation" required />
+              <Input label="Daily price (INR)" min={1} name="pricePerDay" required type="number" />
+              <Input label="Fleet units" min={1} name="totalUnits" required type="number" />
+              <Input label="Fuel policy" name="fuelPolicy" placeholder="Full to full" required />
+              <Input
+                label="Mileage policy"
+                name="mileagePolicy"
+                placeholder="Unlimited kilometres"
+                required
+              />
+              <Input
+                label="Cancellation policy"
+                name="cancellationPolicy"
+                placeholder="Free cancellation up to 24 hours"
+                required
+              />
+              <Input
+                label="Features (comma separated)"
+                name="features"
+                placeholder="AC, GPS, roadside support"
+              />
+            </div>
             <Button fullWidth isLoading={busy} type="submit" variant="accent">
               Add to fleet
             </Button>
@@ -269,7 +290,9 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
               {vehicle.seats} seats · {vehicle.bags} bags · {vehicle.totalUnits} units
             </p>
             <strong>₹{vehicle.pricePerDay.toLocaleString('en-IN')} / day</strong>
-            <p>Distribution status: <strong>{vehicle.status}</strong></p>
+            <p>
+              Distribution status: <strong>{vehicle.status}</strong>
+            </p>
             <Button
               disabled={!canCreateVehicles || busy}
               onClick={() => updateVehicleStatus(vehicle)}
@@ -279,15 +302,50 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
             </Button>
             <form className="supplier-form" onSubmit={(event) => saveCompliance(event, vehicle.id)}>
               <h3>Compliance and document expiries</h3>
-              <p>Status: <strong>{vehicleComplianceState(vehicle, date(0))}</strong>. Empty or expired records require supplier review before production operation.</p>
+              <p>
+                Status: <strong>{vehicleComplianceState(vehicle, date(0))}</strong>. Empty or
+                expired records require supplier review before production operation.
+              </p>
               <div className="supplier-form__grid">
-                <Input defaultValue={vehicle.registrationExpiry} label="Registration / RC expiry" name="registrationExpiry" type="date" />
-                <Input defaultValue={vehicle.insuranceExpiry} label="Insurance expiry" name="insuranceExpiry" type="date" />
-                <Input defaultValue={vehicle.permitExpiry} label="Commercial permit expiry" name="permitExpiry" type="date" />
-                <Input defaultValue={vehicle.fitnessExpiry} label="Fitness certificate expiry" name="fitnessExpiry" type="date" />
-                <Input defaultValue={vehicle.pollutionExpiry} label="Pollution certificate expiry" name="pollutionExpiry" type="date" />
+                <Input
+                  defaultValue={vehicle.registrationExpiry}
+                  label="Registration / RC expiry"
+                  name="registrationExpiry"
+                  type="date"
+                />
+                <Input
+                  defaultValue={vehicle.insuranceExpiry}
+                  label="Insurance expiry"
+                  name="insuranceExpiry"
+                  type="date"
+                />
+                <Input
+                  defaultValue={vehicle.permitExpiry}
+                  label="Commercial permit expiry"
+                  name="permitExpiry"
+                  type="date"
+                />
+                <Input
+                  defaultValue={vehicle.fitnessExpiry}
+                  label="Fitness certificate expiry"
+                  name="fitnessExpiry"
+                  type="date"
+                />
+                <Input
+                  defaultValue={vehicle.pollutionExpiry}
+                  label="Pollution certificate expiry"
+                  name="pollutionExpiry"
+                  type="date"
+                />
               </div>
-              <Button disabled={!canCreateVehicles} isLoading={busy} type="submit" variant="secondary">Save compliance dates</Button>
+              <Button
+                disabled={!canCreateVehicles}
+                isLoading={busy}
+                type="submit"
+                variant="secondary"
+              >
+                Save compliance dates
+              </Button>
             </form>
             <form className="supplier-form" onSubmit={(event) => saveCalendar(event, vehicle.id)}>
               <div className="supplier-form__grid">
@@ -342,37 +400,74 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
             ) : (
               <small>Base fleet availability is active.</small>
             )}
-            <form className="supplier-form" onSubmit={(event) => saveMaintenance(event, vehicle.id)}>
+            <form
+              className="supplier-form"
+              onSubmit={(event) => saveMaintenance(event, vehicle.id)}
+            >
               <h3>Maintenance register</h3>
-              <p>Scheduled or in-progress work automatically stops this vehicle from sale for the selected dates.</p>
+              <p>
+                Scheduled or in-progress work automatically stops this vehicle from sale for the
+                selected dates.
+              </p>
               <div className="supplier-form__grid">
                 <label className="ui-field">
                   <span className="ui-field__label">Maintenance category</span>
                   <select className="ui-input" name="category" required>
-                    <option>Inspection</option><option>Preventive service</option><option>Repair</option><option>Tyres</option><option>Cleaning</option><option>Compliance</option>
+                    <option>Inspection</option>
+                    <option>Preventive service</option>
+                    <option>Repair</option>
+                    <option>Tyres</option>
+                    <option>Cleaning</option>
+                    <option>Compliance</option>
                   </select>
                 </label>
                 <label className="ui-field">
                   <span className="ui-field__label">Status</span>
                   <select className="ui-input" name="status" required>
-                    <option value="SCHEDULED">Scheduled</option><option value="IN_PROGRESS">In progress</option><option value="COMPLETED">Completed</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="IN_PROGRESS">In progress</option>
+                    <option value="COMPLETED">Completed</option>
                   </select>
                 </label>
                 <Input label="Start date" min={date(0)} name="startDate" required type="date" />
                 <Input label="End date" min={date(0)} name="endDate" required type="date" />
                 <Input label="Service vendor (optional)" maxLength={120} name="vendor" />
-                <Input label="Cost (INR, optional)" max={10000000} min={0} name="costAmount" type="number" />
-                <Input label="Work description" maxLength={300} minLength={5} name="description" required />
+                <Input
+                  label="Cost (INR, optional)"
+                  max={10000000}
+                  min={0}
+                  name="costAmount"
+                  type="number"
+                />
+                <Input
+                  label="Work description"
+                  maxLength={300}
+                  minLength={5}
+                  name="description"
+                  required
+                />
               </div>
-              <Button fullWidth isLoading={busy} type="submit" variant="secondary">Record maintenance</Button>
+              <Button fullWidth isLoading={busy} type="submit" variant="secondary">
+                Record maintenance
+              </Button>
             </form>
             {vehicle.maintenanceRecords.length ? (
               <div className="partner-workspace__properties">
                 {vehicle.maintenanceRecords.map((record) => (
                   <div className="partner-fleet__maintenance" key={record.id}>
-                    <strong>{record.category} · {record.status.toLowerCase().replace('_', ' ')}</strong>
-                    <span>{record.startDate} to {record.endDate}</span>
-                    <small>{record.description}{record.vendor ? ` · ${record.vendor}` : ''}{record.costAmount !== null ? ` · ₹${record.costAmount.toLocaleString('en-IN')}` : ''}</small>
+                    <strong>
+                      {record.category} · {record.status.toLowerCase().replace('_', ' ')}
+                    </strong>
+                    <span>
+                      {record.startDate} to {record.endDate}
+                    </span>
+                    <small>
+                      {record.description}
+                      {record.vendor ? ` · ${record.vendor}` : ''}
+                      {record.costAmount !== null
+                        ? ` · ₹${record.costAmount.toLocaleString('en-IN')}`
+                        : ''}
+                    </small>
                   </div>
                 ))}
               </div>

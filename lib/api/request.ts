@@ -1,4 +1,12 @@
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 64 * 1024;
+export const DEFAULT_TEXT_BODY_LIMIT_BYTES = 256 * 1024;
+
+function hasAcceptableDeclaredLength(request: Request, maximumBytes: number): boolean {
+  const declaredLength = request.headers.get('content-length');
+  return (
+    !declaredLength || (/^\d+$/.test(declaredLength) && Number(declaredLength) <= maximumBytes)
+  );
+}
 
 async function readLimitedBody(request: Request, maximumBytes: number) {
   if (!request.body) return '';
@@ -40,10 +48,11 @@ export async function readJsonObject(
 ) {
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1) return null;
 
-  const declaredLength = request.headers.get('content-length');
-  if (declaredLength) {
-    if (!/^\d+$/.test(declaredLength) || Number(declaredLength) > maximumBytes) return null;
-  }
+  const contentType = request.headers.get('content-type');
+  if (contentType && !/^application\/(?:[a-z0-9!#$&^_.+-]+\+)?json(?:\s*;|$)/i.test(contentType))
+    return null;
+
+  if (!hasAcceptableDeclaredLength(request, maximumBytes)) return null;
 
   try {
     const text = await readLimitedBody(request, maximumBytes);
@@ -52,6 +61,20 @@ export async function readJsonObject(
     const body: unknown = JSON.parse(text);
     if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
     return body as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export async function readTextBody(
+  request: Request,
+  maximumBytes = DEFAULT_TEXT_BODY_LIMIT_BYTES,
+): Promise<string | null> {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1) return null;
+  if (!hasAcceptableDeclaredLength(request, maximumBytes)) return null;
+
+  try {
+    return await readLimitedBody(request, maximumBytes);
   } catch {
     return null;
   }

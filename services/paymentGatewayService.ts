@@ -1,4 +1,18 @@
+import 'server-only';
+
+import {
+  isAllowedProviderEndpoint,
+  parseAllowedProviderHosts,
+} from '@/lib/integrations/providerEndpoint';
 import { isSafeHostedCheckoutUrl, paymentIntentExpiry } from '@/lib/payments/gateway';
+
+function paymentProviderConfiguration(endpoint: string | undefined) {
+  const allowedHosts = parseAllowedProviderHosts(process.env.PAYMENT_PROVIDER_ALLOWED_HOSTS);
+  if (!endpoint || !isAllowedProviderEndpoint(endpoint, allowedHosts)) {
+    throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  }
+  return { allowedHosts, endpoint };
+}
 
 export async function createHostedPaymentIntent(input: {
   amount: number;
@@ -7,9 +21,11 @@ export async function createHostedPaymentIntent(input: {
   reference: string;
   returnUrl: string;
 }) {
-  const endpoint = process.env.PAYMENT_GATEWAY_ENDPOINT;
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
-  if (!endpoint || !apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  if (!apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  const { allowedHosts, endpoint } = paymentProviderConfiguration(
+    process.env.PAYMENT_GATEWAY_ENDPOINT,
+  );
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -31,7 +47,7 @@ export async function createHostedPaymentIntent(input: {
   if (
     typeof payload.id !== 'string' ||
     typeof payload.checkoutUrl !== 'string' ||
-    !isSafeHostedCheckoutUrl(payload.checkoutUrl)
+    !isSafeHostedCheckoutUrl(payload.checkoutUrl, allowedHosts)
   )
     throw new Error('PAYMENT_PROVIDER_INVALID_RESPONSE');
   return {
@@ -48,9 +64,9 @@ export async function dispatchProviderRefund(input: {
   providerPaymentRef: string;
   reason: string;
 }) {
-  const endpoint = process.env.PAYMENT_GATEWAY_REFUND_ENDPOINT;
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
-  if (!endpoint || !apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  if (!apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  const { endpoint } = paymentProviderConfiguration(process.env.PAYMENT_GATEWAY_REFUND_ENDPOINT);
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {

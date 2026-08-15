@@ -20,7 +20,11 @@ export function validateFlightSearchCriteria(
   if (criteria.origin === criteria.destination) {
     throw new Error('Origin and destination must be different.');
   }
-  if (!Number.isInteger(criteria.adults) || criteria.adults < 1 || criteria.adults > MAX_ADULTS_PER_SEARCH) {
+  if (
+    !Number.isInteger(criteria.adults) ||
+    criteria.adults < 1 ||
+    criteria.adults > MAX_ADULTS_PER_SEARCH
+  ) {
     throw new Error(`Adults must be between 1 and ${MAX_ADULTS_PER_SEARCH}.`);
   }
   if (criteria.departureDate < clock.today) {
@@ -38,7 +42,10 @@ export function validateFlightSearchCriteria(
       throw new Error('Multi-city searches require two or three flight segments.');
     }
     journeys.forEach((journey, index) => {
-      if (!AIRPORT_CODE_PATTERN.test(journey.origin) || !AIRPORT_CODE_PATTERN.test(journey.destination)) {
+      if (
+        !AIRPORT_CODE_PATTERN.test(journey.origin) ||
+        !AIRPORT_CODE_PATTERN.test(journey.destination)
+      ) {
         throw new Error(`Multi-city segment ${index + 1} requires valid airport codes.`);
       }
       if (journey.origin === journey.destination) {
@@ -49,7 +56,9 @@ export function validateFlightSearchCriteria(
       }
       const previous = journeys[index - 1];
       if (previous && journey.origin !== previous.destination) {
-        throw new Error(`Multi-city segment ${index + 1} must continue from the previous destination.`);
+        throw new Error(
+          `Multi-city segment ${index + 1} must continue from the previous destination.`,
+        );
       }
       if (previous && journey.departureDate < previous.departureDate) {
         throw new Error('Multi-city segment dates must be chronological.');
@@ -114,12 +123,16 @@ export function normalizeFlightOffer(
         return undefined;
       }
       for (let index = 1; index < journeySegments.length; index += 1) {
-        if (journeySegments[index - 1]?.arrivalAirport !== journeySegments[index]?.departureAirport) {
+        if (
+          journeySegments[index - 1]?.arrivalAirport !== journeySegments[index]?.departureAirport
+        ) {
           return undefined;
         }
       }
     }
-    if (new Set(multiCitySegments.map((segment) => segment.journeyIndex)).size !== journeys.length) {
+    if (
+      new Set(multiCitySegments.map((segment) => segment.journeyIndex)).size !== journeys.length
+    ) {
       return undefined;
     }
     return {

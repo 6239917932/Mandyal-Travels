@@ -70,10 +70,7 @@ export default async function CarConfirmationPage({
             </div>
             <div>
               <dt>Amount paid</dt>
-              <CarPaidAmount
-                confirmationCode={confirmationCode}
-                fallbackTotal={offer.totalPrice}
-              />
+              <CarPaidAmount confirmationCode={confirmationCode} fallbackTotal={offer.totalPrice} />
             </div>
             <div>
               <dt>Payment status</dt>

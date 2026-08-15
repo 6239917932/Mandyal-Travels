@@ -801,7 +801,7 @@ model PaymentCheckoutIntent {
 model PaymentProviderEvent {
   id              String   @id @default(cuid())
   provider        String
-  providerEventId String   @unique
+  providerEventId String
   eventType       String
   providerRef     String
   payloadHash     String
@@ -812,6 +812,7 @@ model PaymentProviderEvent {
 
   @@index([providerRef, receivedAt])
   @@index([status, receivedAt])
+  @@unique([provider, providerEventId])
 }
 
 model LoyaltyAccount {

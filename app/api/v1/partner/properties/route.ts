@@ -58,11 +58,20 @@ export async function POST(request: Request) {
       description: String(body.description ?? ''),
       displayName: String(body.displayName ?? ''),
       imageUrl: String(body.imageUrl ?? ''),
-      imageUrls: String(body.imageUrls ?? '').split('\n').map((value) => value.trim()).filter(Boolean),
-      languages: String(body.languages ?? '').split(',').map((value) => value.trim()),
-      landmarks: String(body.landmarks ?? '').split('\n').map((value) => value.trim()),
+      imageUrls: String(body.imageUrls ?? '')
+        .split('\n')
+        .map((value) => value.trim())
+        .filter(Boolean),
+      languages: String(body.languages ?? '')
+        .split(',')
+        .map((value) => value.trim()),
+      landmarks: String(body.landmarks ?? '')
+        .split('\n')
+        .map((value) => value.trim()),
       locality: String(body.locality ?? ''),
-      locationAliases: String(body.locationAliases ?? '').split(',').map((value) => value.trim()),
+      locationAliases: String(body.locationAliases ?? '')
+        .split(',')
+        .map((value) => value.trim()),
       latitude: Number(body.latitude),
       longitude: Number(body.longitude),
       minimumCheckInAge: Number(body.minimumCheckInAge),

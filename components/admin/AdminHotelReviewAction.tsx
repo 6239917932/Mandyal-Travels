@@ -39,8 +39,22 @@ export function AdminHotelReviewAction({ reviewId }: { reviewId: string }) {
         value={note}
       />
       <div>
-        <button className="ui-button ui-button--primary ui-button--small" disabled={busy} onClick={() => moderate('PUBLISH')} type="button">Publish</button>
-        <button className="ui-button ui-button--secondary ui-button--small" disabled={busy} onClick={() => moderate('REJECT')} type="button">Reject</button>
+        <button
+          className="ui-button ui-button--primary ui-button--small"
+          disabled={busy}
+          onClick={() => moderate('PUBLISH')}
+          type="button"
+        >
+          Publish
+        </button>
+        <button
+          className="ui-button ui-button--secondary ui-button--small"
+          disabled={busy}
+          onClick={() => moderate('REJECT')}
+          type="button"
+        >
+          Reject
+        </button>
       </div>
       {message ? <p aria-live="polite">{message}</p> : null}
     </div>

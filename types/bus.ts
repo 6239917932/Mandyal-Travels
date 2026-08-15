@@ -26,7 +26,8 @@ export interface BusOffer {
   totalPrice: number;
 }
 
-export type BusSortOrder = 'price-ascending' | 'duration-ascending' | 'departure-ascending' | 'rating-descending';
+export type BusSortOrder =
+  'price-ascending' | 'duration-ascending' | 'departure-ascending' | 'rating-descending';
 
 export interface BusResultControls {
   busType?: string;

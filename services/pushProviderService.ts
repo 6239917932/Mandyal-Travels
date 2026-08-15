@@ -1,4 +1,9 @@
-import { isAllowedProviderEndpoint } from '@/lib/integrations/providerEndpoint';
+import 'server-only';
+
+import {
+  isAllowedProviderEndpoint,
+  parseAllowedProviderHosts,
+} from '@/lib/integrations/providerEndpoint';
 
 export async function sendPushNotification(input: {
   dedupeKey: string;
@@ -9,13 +14,8 @@ export async function sendPushNotification(input: {
 }) {
   const endpoint = process.env.PUSH_PROVIDER_ENDPOINT ?? '';
   const apiKey = process.env.PUSH_PROVIDER_API_KEY;
-  let host = '';
-  try {
-    host = new URL(endpoint).hostname;
-  } catch {
-    throw new Error('PUSH_PROVIDER_NOT_CONFIGURED');
-  }
-  if (!apiKey || !isAllowedProviderEndpoint(endpoint, [host]))
+  const allowedHosts = parseAllowedProviderHosts(process.env.PUSH_PROVIDER_ALLOWED_HOSTS);
+  if (!apiKey || !isAllowedProviderEndpoint(endpoint, allowedHosts))
     throw new Error('PUSH_PROVIDER_NOT_CONFIGURED');
   const response = await fetch(endpoint, {
     method: 'POST',

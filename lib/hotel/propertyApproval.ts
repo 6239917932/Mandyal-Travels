@@ -8,7 +8,8 @@ export type PropertyReviewDecision =
       valid: true;
     }
   | {
-      code: 'INVALID_REVIEW_ACTION' | 'PROPERTY_NOT_PENDING' | 'REVIEW_NOTE_REQUIRED' | 'ROOM_REQUIRED';
+      code:
+        'INVALID_REVIEW_ACTION' | 'PROPERTY_NOT_PENDING' | 'REVIEW_NOTE_REQUIRED' | 'ROOM_REQUIRED';
       message: string;
       valid: false;
     };

@@ -25,5 +25,10 @@ export function createBusSearchCriteria(
 }
 
 export function busSearchCriteriaToQuery(criteria: BusSearchCriteria): Record<string, string> {
-  return { destination: criteria.destination, origin: criteria.origin, passengers: String(criteria.passengers), travelDate: criteria.travelDate };
+  return {
+    destination: criteria.destination,
+    origin: criteria.origin,
+    passengers: String(criteria.passengers),
+    travelDate: criteria.travelDate,
+  };
 }

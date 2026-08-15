@@ -8,9 +8,11 @@ import {
 } from '../lib/payments/gateway.ts';
 
 test('hosted payment URLs require remote HTTPS origins', () => {
-  assert.equal(isSafeHostedCheckoutUrl('https://checkout.example.com/pay/123'), true);
-  assert.equal(isSafeHostedCheckoutUrl('http://checkout.example.com/pay/123'), false);
-  assert.equal(isSafeHostedCheckoutUrl('https://localhost/pay/123'), false);
+  const hosts = ['checkout.example.com'];
+  assert.equal(isSafeHostedCheckoutUrl('https://checkout.example.com/pay/123', hosts), true);
+  assert.equal(isSafeHostedCheckoutUrl('https://evil.example.com/pay/123', hosts), false);
+  assert.equal(isSafeHostedCheckoutUrl('http://checkout.example.com/pay/123', hosts), false);
+  assert.equal(isSafeHostedCheckoutUrl('https://localhost/pay/123', hosts), false);
 });
 
 test('payment checkout intents expire after twenty minutes', () => {

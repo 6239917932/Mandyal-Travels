@@ -35,7 +35,13 @@ export function createFlightSearchCriteria(
           { departureDate, destination, origin },
           { departureDate: segment2Date, destination: segment2Destination, origin: segment2Origin },
           ...(segment3Origin && segment3Destination && segment3Date
-            ? [{ departureDate: segment3Date, destination: segment3Destination, origin: segment3Origin }]
+            ? [
+                {
+                  departureDate: segment3Date,
+                  destination: segment3Destination,
+                  origin: segment3Origin,
+                },
+              ]
             : []),
         ]
       : undefined;
@@ -54,7 +60,9 @@ export function createFlightSearchCriteria(
   };
 }
 
-export function flightSearchCriteriaToQuery(criteria: FlightSearchCriteria): Record<string, string> {
+export function flightSearchCriteriaToQuery(
+  criteria: FlightSearchCriteria,
+): Record<string, string> {
   const query: Record<string, string> = {
     adults: String(criteria.adults),
     cabinClass: criteria.cabinClass,

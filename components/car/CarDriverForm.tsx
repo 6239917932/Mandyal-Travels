@@ -51,7 +51,14 @@ export function CarDriverForm({
         <Input error={errors.lastName} label="Last name" name="lastName" />
         {rentalMode === 'self-drive' ? (
           <>
-            <Input error={errors.age} label="Driver age" min="21" max="80" name="age" type="number" />
+            <Input
+              error={errors.age}
+              label="Driver age"
+              min="21"
+              max="80"
+              name="age"
+              type="number"
+            />
             <Input error={errors.license} label="Driving licence number" name="license" />
           </>
         ) : null}
