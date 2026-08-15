@@ -609,6 +609,25 @@ export const partnerOperationsService = {
     });
   },
 
+  async pauseRatePlan(partnerId: string, propertyId: string, roomId: string, ratePlanRecordId: string) {
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { ratePlans: { where: { status: 'ACTIVE' } } },
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    const ratePlan = room.ratePlans.find((candidate) => candidate.id === ratePlanRecordId);
+    if (!ratePlan) throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The active rate plan was not found.');
+    if (room.ratePlans.length === 1) {
+      throw new PartnerOperationsError('LAST_RATE_PLAN', 'Add another active rate plan before pausing this one.');
+    }
+    return prisma.partnerRatePlan.update({ data: { status: 'PAUSED' }, where: { id: ratePlan.id } });
+  },
+
   async setPropertyPublication(partnerId: string, propertyId: string, action: 'PAUSE' | 'PUBLISH') {
     const property = await prisma.partnerProperty.findFirst({
       include: { rooms: { where: { status: 'ACTIVE' } } },

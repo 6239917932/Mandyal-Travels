@@ -276,6 +276,26 @@ export function PartnerPropertyManager({
     }
   }
 
+  async function pauseRatePlan(property: ManagedProperty, room: RoomType, rate: RatePlan) {
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, { method: 'PATCH' });
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be paused.'));
+        return;
+      }
+      setSuccess(`${rate.name} was paused. Existing history was retained.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function updateLocation(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
@@ -541,6 +561,9 @@ export function PartnerPropertyManager({
                         {rate.name} · ₹{rate.nightlyRate.toLocaleString('en-IN')} + ₹
                         {rate.taxesAndFees.toLocaleString('en-IN')} · {rate.minimumStayNights}–
                         {rate.maximumStayNights} nights
+                        {canManage && room.ratePlans.length > 1 ? (
+                          <button className="home-card__link" disabled={isSaving} onClick={() => void pauseRatePlan(property, room, rate)} type="button">Pause rate</button>
+                        ) : null}
                       </small>
                     ))}
                     {canManage ? (
