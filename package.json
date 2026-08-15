@@ -18,6 +18,8 @@
     "db:verify-migrations": "node scripts/verify-migrations.mjs",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
+    "db:backup": "node scripts/backup-database.mjs",
+    "release:verify-env": "node scripts/verify-release-env.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
