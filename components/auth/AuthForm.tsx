@@ -17,6 +17,7 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
   const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,15 +35,19 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
           marketingConsent: form.get('marketingConsent') === 'on',
           organizationName: form.get('organizationName'),
           password: form.get('password'),
+          mfaCode: form.get('mfaCode'),
           returnTo,
         }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
       const result =
-        (await readJsonResponse<{ error?: string; redirectTo?: string }>(response)) ?? {};
+        (await readJsonResponse<{ error?: string; mfaRequired?: boolean; redirectTo?: string }>(
+          response,
+        )) ?? {};
 
       if (!response.ok) {
+        setMfaRequired(Boolean(result.mfaRequired));
         setError(result.error ?? 'We could not complete your request. Please try again.');
         return;
       }
@@ -115,6 +120,19 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
           type="email"
         />
       </label>
+
+      {!isRegister && mfaRequired ? (
+        <label className="ui-field">
+          <span className="ui-field__label">Authenticator or recovery code</span>
+          <input
+            autoComplete="one-time-code"
+            className="ui-input"
+            maxLength={20}
+            name="mfaCode"
+            required
+          />
+        </label>
+      ) : null}
       <label className="ui-field">
         <span className="ui-field__label">Password</span>
         <input

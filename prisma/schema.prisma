@@ -43,6 +43,34 @@ model User {
   moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
   analyticsEvents             AnalyticsEvent[]
   notificationDeliveries      NotificationDelivery[]
+  mfaCredential               UserMfaCredential?
+  mfaRecoveryCodes            UserMfaRecoveryCode[]
+}
+
+model UserMfaCredential {
+  id               String                @id @default(cuid())
+  userId           String                @unique
+  secretCiphertext String
+  enabledAt        DateTime?
+  lastUsedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recoveryCodes    UserMfaRecoveryCode[]
+}
+
+model UserMfaRecoveryCode {
+  id           String             @id @default(cuid())
+  userId       String
+  credentialId String
+  codeHash     String
+  usedAt       DateTime?
+  createdAt    DateTime           @default(now())
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential   UserMfaCredential  @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([credentialId, usedAt])
 }
 
 model SupplyPartner {

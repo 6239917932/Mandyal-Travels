@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { AccountProfileForm } from '@/components/account/AccountProfileForm';
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
+import { MfaSecurityManager } from '@/components/account/MfaSecurityManager';
 import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
 import { SessionManager } from '@/components/account/SessionManager';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
@@ -289,6 +290,7 @@ export default async function AccountPage() {
       </section>
 
       <PasswordChangeForm />
+      <MfaSecurityManager />
 
       <SessionManager
         sessions={activeSessions.map((session) => ({
