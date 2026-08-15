@@ -19,7 +19,8 @@ export function CarDriverForm({ nextQuery }: { nextQuery: Record<string, string>
     if (lastName.length < 2) next.lastName = 'Enter a valid last name.';
     if (!Number.isInteger(age) || age < 21 || age > 80)
       next.age = 'Driver must be between 21 and 80.';
-    if (license.length < 6) next.license = 'Enter a valid driving licence number.';
+    if (!/^[A-Z0-9][A-Z0-9 -]{4,38}[A-Z0-9]$/i.test(license))
+      next.license = 'Enter a valid driving licence number.';
     if (!/^\S+@\S+\.\S+$/.test(email)) next.email = 'Enter a valid email address.';
     if (phone.length < 10 || phone.length > 15) next.phone = 'Enter a valid phone number.';
     setErrors(next);

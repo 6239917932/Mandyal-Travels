@@ -34,6 +34,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Car search and revalidation now enforce bounded locations, drivers and rental length, validate
   provider inventory/capacity/pricing, normalize feature data, and expose versioned no-store APIs
   shared by direct partner and future external supplier inventory
+- Car checkout validates the primary driver's age, name, driving licence, email, and phone again at
+  the server boundary before any personal or approved-company trip can be confirmed
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed

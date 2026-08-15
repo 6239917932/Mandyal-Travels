@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
 import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
+import { hasValidCarDriverDetails } from '@/lib/car/bookingRules';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
@@ -119,6 +120,13 @@ export async function POST(request: Request) {
     return errorResponse(
       'INVALID_FLIGHT_PASSENGERS',
       'Complete passenger names and booking contact details are required.',
+      400,
+    );
+  }
+  if (productType === 'CAR' && !hasValidCarDriverDetails(details)) {
+    return errorResponse(
+      'INVALID_CAR_DRIVER',
+      'Complete and valid primary-driver and booking-contact details are required.',
       400,
     );
   }
