@@ -677,6 +677,7 @@ model Booking {
   availabilityLock        AvailabilityLock       @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
   payment                 PaymentTransaction?
+  refunds                 RefundRequest[]
   amendments              BookingAmendment[]
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
@@ -837,15 +838,71 @@ model BookingGuest {
 }
 
 model PaymentTransaction {
-  id          String   @id @default(cuid())
-  bookingId   String   @unique
-  status      String
-  amount      Int
-  currency    String
-  provider    String
-  providerRef String   @unique
-  createdAt   DateTime @default(now())
-  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id                   String                 @id @default(cuid())
+  bookingId            String                 @unique
+  status               String
+  amount               Int
+  currency             String
+  provider             String
+  providerRef          String                 @unique
+  reconciliationStatus String                 @default("UNRECONCILED")
+  providerAmount       Int?
+  providerCurrency     String?
+  reconciliationNote   String                 @default("")
+  reconciledAt         DateTime?
+  reconciledByUserId   String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  booking              Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds              RefundRequest[]
+  ledgerEntries        FinancialLedgerEntry[]
+
+  @@index([reconciliationStatus, createdAt])
+  @@index([status, createdAt])
+}
+
+model RefundRequest {
+  id               String                 @id @default(cuid())
+  bookingId        String
+  paymentId        String
+  amount           Int
+  currency         String
+  reason           String
+  status           String                 @default("PENDING")
+  providerRefundRef String?                @unique
+  requestedByUserId String?
+  reviewedByUserId String?
+  reviewNote       String                 @default("")
+  createdAt        DateTime               @default(now())
+  reviewedAt       DateTime?
+  updatedAt        DateTime               @updatedAt
+  booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  payment          PaymentTransaction     @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  ledgerEntries    FinancialLedgerEntry[]
+
+  @@index([status, createdAt])
+  @@index([bookingId, createdAt])
+  @@index([paymentId, createdAt])
+}
+
+model FinancialLedgerEntry {
+  id            String              @id @default(cuid())
+  paymentId     String?
+  refundId      String?
+  entryType     String
+  amount        Int
+  currency      String
+  status        String              @default("POSTED")
+  reference     String
+  description   String
+  createdByUserId String?
+  createdAt     DateTime            @default(now())
+  payment       PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  refund        RefundRequest?      @relation(fields: [refundId], references: [id], onDelete: Restrict)
+
+  @@index([entryType, createdAt])
+  @@index([paymentId, createdAt])
+  @@index([refundId, createdAt])
 }
 
 model RoomInventoryOverride {
