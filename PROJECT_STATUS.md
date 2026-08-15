@@ -258,6 +258,10 @@ partner-scoped passenger manifest provides bounded pagination, search, routes, s
 seat assignments, captured-value summaries, and a formula-safe CSV export capped at 1,000 records
 without exposing another operator's reservations.
 
+Bus operators have bounded service-date performance reports with reservation, passenger,
+confirmed-value, trip, route, and per-route rollups. Reports are scoped to the authenticated
+operator and refuse oversized periods rather than returning incomplete operational totals.
+
 Car suppliers can export their scoped reservation register as a formula-safe CSV capped at 1,000
 records, including driver or lead traveller, vehicle, registration, route, rental dates, units, and
 captured value without exposing another fleet partner's reservations.
