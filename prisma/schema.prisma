@@ -42,6 +42,7 @@ model User {
   hotelReviews                HotelReview[]               @relation("HotelReviewAuthor")
   moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
   analyticsEvents             AnalyticsEvent[]
+  notificationDeliveries      NotificationDelivery[]
 }
 
 model SupplyPartner {
@@ -864,6 +865,47 @@ model AnalyticsEvent {
   @@index([eventName, occurredAt])
   @@index([productType, funnelStage, occurredAt])
   @@index([userId, occurredAt])
+}
+
+model NotificationTemplate {
+  id          String                 @id @default(cuid())
+  templateKey String                 @unique
+  channel     String
+  locale      String                 @default("en-IN")
+  subject     String                 @default("")
+  body        String
+  status      String                 @default("DRAFT")
+  version     Int                    @default(1)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  deliveries  NotificationDelivery[]
+
+  @@index([channel, status, updatedAt])
+}
+
+model NotificationDelivery {
+  id             String                @id @default(cuid())
+  templateId     String
+  userId         String?
+  recipient      String
+  channel        String
+  status         String                @default("QUEUED")
+  dedupeKey      String                @unique
+  variablesJson  String                @default("{}")
+  providerRef    String                @default("")
+  attempts       Int                   @default(0)
+  maxAttempts    Int                   @default(6)
+  nextAttemptAt  DateTime              @default(now())
+  deliveredAt    DateTime?
+  lastError      String                @default("")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  template       NotificationTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([userId, createdAt])
+  @@index([channel, status, createdAt])
 }
 
 model PartnerPhysicalRoom {
