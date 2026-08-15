@@ -106,6 +106,21 @@ export interface PartnerInventoryRecord {
   roomTypeId: string;
 }
 
+export interface PartnerHotelCalendarRecord {
+  availableRooms: number;
+  closedToArrival: boolean;
+  closedToDeparture: boolean;
+  hotelName: string;
+  maximumStayNights?: number;
+  minimumStayNights?: number;
+  nightlyRate?: number;
+  note: string;
+  roomName: string;
+  roomTypeId: string;
+  stayDate: string;
+  stopSell: boolean;
+}
+
 export interface HotelBookingRecord {
   availabilityLockId: string;
   confirmationCode: string;

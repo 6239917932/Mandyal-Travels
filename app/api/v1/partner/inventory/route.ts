@@ -21,12 +21,44 @@ export async function GET(request: Request): Promise<Response> {
   const checkInDate = url.searchParams.get('checkInDate') ?? '';
   const checkOutDate = url.searchParams.get('checkOutDate') ?? '';
   try {
-    return Response.json({
-      data: await hotelBookingService.getPartnerInventory(
+    const data = await hotelBookingService.getPartnerInventory(
         checkInDate,
         checkOutDate,
         access.allowedHotelSlugs,
-      ),
+      );
+    const calendarDays = access.partnerId
+      ? await prisma.partnerHotelInventoryDay.findMany({
+          include: { property: { select: { displayName: true } } },
+          orderBy: [{ stayDate: 'asc' }, { roomTypeId: 'asc' }],
+          where: {
+            property: { partnerId: access.partnerId, status: 'ACTIVE' },
+            stayDate: { gte: checkInDate, lte: checkOutDate },
+          },
+        })
+      : [];
+    const roomTypes = calendarDays.length
+      ? await prisma.partnerRoomType.findMany({
+          select: { name: true, roomTypeId: true },
+          where: { roomTypeId: { in: [...new Set(calendarDays.map((day) => day.roomTypeId))] } },
+        })
+      : [];
+    const roomNames = new Map(roomTypes.map((room) => [room.roomTypeId, room.name]));
+    return Response.json({
+      calendar: calendarDays.map((day) => ({
+        availableRooms: day.availableRooms,
+        closedToArrival: day.closedToArrival,
+        closedToDeparture: day.closedToDeparture,
+        hotelName: day.property.displayName,
+        maximumStayNights: day.maximumStayNights ?? undefined,
+        minimumStayNights: day.minimumStayNights ?? undefined,
+        nightlyRate: day.nightlyRate ?? undefined,
+        note: day.note,
+        roomName: roomNames.get(day.roomTypeId) ?? day.roomTypeId,
+        roomTypeId: day.roomTypeId,
+        stayDate: day.stayDate,
+        stopSell: day.stopSell,
+      })),
+      data,
     });
   } catch (error) {
     return error instanceof HotelBookingRuleError
