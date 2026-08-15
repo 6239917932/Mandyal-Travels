@@ -12,6 +12,17 @@ function errorResponse(code: string, message: string, status: number): Response 
   return Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 }
 
+function readRoomAssignments(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ confirmationCode: string }> },
@@ -26,14 +37,23 @@ export async function PATCH(
     return errorResponse('INVALID_STAY_STATUS', 'Choose a valid hotel stay status.', 400);
   }
   const { confirmationCode } = await context.params;
+  const assignedRoomNumbers = Array.isArray(body?.assignedRoomNumbers)
+    ? body.assignedRoomNumbers.filter((value): value is string => typeof value === 'string')
+    : [];
   try {
     const booking = await partnerOperationsService.updateHotelStayStatus(
       access.partnerId,
       confirmationCode,
       nextStatus,
+      assignedRoomNumbers,
       access.userId,
     );
-    return Response.json({ data: { operationalStatus: booking.operationalStatus } });
+    return Response.json({
+      data: {
+        assignedRoomNumbers: readRoomAssignments(booking.assignedRoomNumbersJson),
+        operationalStatus: booking.operationalStatus,
+      },
+    });
   } catch (error) {
     if (error instanceof PartnerOperationsError) {
       return errorResponse(error.code, error.message, error.code === 'BOOKING_NOT_FOUND' ? 404 : 409);

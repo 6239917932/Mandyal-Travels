@@ -77,6 +77,7 @@ export interface PartnerAmendmentRecord extends BookingAmendmentRecord {
 }
 
 export interface PartnerBookingRecord {
+  assignedRoomNumbers: string[];
   confirmationCode: string;
   createdAt: string;
   currency: CurrencyCode;
@@ -130,6 +131,7 @@ export interface PartnerInventoryRatePlanRecord {
 }
 
 export interface HotelBookingRecord {
+  assignedRoomNumbers: string[];
   availabilityLockId: string;
   checkInDate: string;
   checkOutDate: string;

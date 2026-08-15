@@ -370,6 +370,7 @@ export class HotelBookingService {
     }
 
     const booking: HotelBookingRecord = {
+      assignedRoomNumbers: [],
       availabilityLockId: convertedLock.id,
       checkInDate: quote.checkInDate,
       checkOutDate: quote.checkOutDate,
@@ -626,6 +627,7 @@ export class HotelBookingService {
         const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
         if (!hotel || !quote || !room || !ratePlan) return undefined;
         return {
+          assignedRoomNumbers: booking.assignedRoomNumbers,
           checkInDate: quote.checkInDate,
           checkOutDate: quote.checkOutDate,
           confirmationCode: booking.confirmationCode,

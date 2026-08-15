@@ -185,7 +185,19 @@ export class InMemoryBookingRepository implements BookingRepository {
   }
 }
 
+function parseRoomAssignments(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function mapBooking(booking: {
+  assignedRoomNumbersJson: string;
   availabilityLockId: string;
   quote: { checkInDate: string; checkOutDate: string };
   confirmationCode: string;
@@ -205,6 +217,7 @@ function mapBooking(booking: {
   }
 
   return {
+    assignedRoomNumbers: parseRoomAssignments(booking.assignedRoomNumbersJson),
     availabilityLockId: booking.availabilityLockId,
     checkInDate: booking.quote.checkInDate,
     checkOutDate: booking.quote.checkOutDate,

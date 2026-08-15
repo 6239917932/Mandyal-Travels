@@ -81,6 +81,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries
+- Persisted physical room assignments required at check-in, validated against booked quantity and
+  overlapping checked-in stays, displayed to front-desk users, audited, and included in exports
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
@@ -157,6 +159,6 @@ room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overri
 supplier-scoped.
 
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 routes, and clean-database verification of all 37 migrations
+a Next.js production build with all 85 routes, and clean-database verification of all 38 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

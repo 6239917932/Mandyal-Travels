@@ -93,6 +93,17 @@ function normalizedList(values: string[], maximumItems = 20) {
   );
 }
 
+function readStoredStringList(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -110,6 +121,7 @@ export const partnerOperationsService = {
     partnerId: string,
     confirmationCode: string,
     nextStatus: 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW',
+    assignedRoomNumbers: string[] = [],
     actorUserId?: string,
   ) {
     const booking = await prisma.booking.findFirst({
@@ -142,9 +154,53 @@ export const partnerOperationsService = {
         `The stay cannot move from ${booking.operationalStatus} to ${nextStatus}.`,
       );
     }
+    const normalizedRoomNumbers = [...new Set(
+      assignedRoomNumbers.map((roomNumber) => normalizeText(roomNumber, 20)).filter(Boolean),
+    )];
+    if (
+      nextStatus === 'CHECKED_IN' &&
+      (normalizedRoomNumbers.length !== booking.quote.rooms ||
+        normalizedRoomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber)))
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_ROOM_ASSIGNMENT',
+        `Assign ${booking.quote.rooms} unique physical room number${booking.quote.rooms === 1 ? '' : 's'} before check-in.`,
+      );
+    }
     return prisma.$transaction(async (transaction) => {
+      if (nextStatus === 'CHECKED_IN') {
+        const activeStays = await transaction.booking.findMany({
+          include: { quote: true },
+          where: {
+            hotelSlug: booking.hotelSlug,
+            id: { not: booking.id },
+            operationalStatus: 'CHECKED_IN',
+            quote: {
+              checkInDate: { lt: booking.quote.checkOutDate },
+              checkOutDate: { gt: booking.quote.checkInDate },
+            },
+            status: 'confirmed',
+          },
+        });
+        const occupiedRooms = new Set(
+          activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+        );
+        const conflicts = normalizedRoomNumbers.filter((roomNumber) => occupiedRooms.has(roomNumber));
+        if (conflicts.length) {
+          throw new PartnerOperationsError(
+            'ROOM_ALREADY_ASSIGNED',
+            `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
+          );
+        }
+      }
       const updated = await transaction.booking.update({
-        data: { operationalStatus: nextStatus },
+        data: {
+          assignedRoomNumbersJson:
+            nextStatus === 'CHECKED_IN'
+              ? JSON.stringify(normalizedRoomNumbers)
+              : booking.assignedRoomNumbersJson,
+          operationalStatus: nextStatus,
+        },
         where: { id: booking.id },
       });
       await transaction.partnerAuditLog.create({
@@ -156,6 +212,7 @@ export const partnerOperationsService = {
           metadataJson: JSON.stringify({
             confirmationCode,
             previousStatus: booking.operationalStatus,
+            assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
           }),
           partnerId,
           summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,

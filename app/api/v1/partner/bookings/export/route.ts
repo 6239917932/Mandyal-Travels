@@ -14,6 +14,7 @@ function bookingRow(booking: PartnerBookingRecord): Array<string | number> {
     booking.checkInDate,
     booking.checkOutDate,
     booking.roomName,
+    booking.assignedRoomNumbers.join(' | '),
     booking.ratePlanName,
     booking.rooms,
     booking.status,
@@ -81,7 +82,7 @@ export async function GET(request: Request): Promise<Response> {
   });
   const header = [
     'Confirmation code', 'Hotel', 'Guest name', 'Guest email', 'Check-in', 'Check-out',
-    'Room type', 'Rate plan', 'Rooms', 'Booking status', 'Stay status', 'Payment status',
+    'Room type', 'Assigned physical rooms', 'Rate plan', 'Rooms', 'Booking status', 'Stay status', 'Payment status',
     'Currency', 'Total amount', 'Created at',
   ];
   const csv = createCsv([header, ...bookings.map(bookingRow)]);

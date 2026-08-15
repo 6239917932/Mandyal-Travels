@@ -38,6 +38,7 @@ export default function PartnerBookingsPage() {
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
+  const [roomAssignments, setRoomAssignments] = useState<Record<string, string>>({});
   const exportParameters = new URLSearchParams();
   if (query) exportParameters.set('query', query);
   if (bookingStatus) exportParameters.set('bookingStatus', bookingStatus);
@@ -89,17 +90,18 @@ export default function PartnerBookingsPage() {
   async function updateStayStatus(
     confirmationCode: string,
     status: 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW',
+    assignedRoomNumbers: string[] = [],
   ) {
     setError(undefined);
     setUpdatingBooking(confirmationCode);
     try {
       const response = await fetch(`/api/v1/partner/bookings/${confirmationCode}`, {
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ assignedRoomNumbers, status }),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
       const result = await readJsonResponse<
-        { data: { operationalStatus: PartnerBookingRecord['operationalStatus'] } } | ApiErrorResponse
+        { data: { assignedRoomNumbers: string[]; operationalStatus: PartnerBookingRecord['operationalStatus'] } } | ApiErrorResponse
       >(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(result && 'error' in result ? result.error.message : 'The stay status could not be updated.');
@@ -108,7 +110,11 @@ export default function PartnerBookingsPage() {
       setBookings((current) =>
         current.map((booking) =>
           booking.confirmationCode === confirmationCode
-            ? { ...booking, operationalStatus: result.data.operationalStatus }
+            ? {
+                ...booking,
+                assignedRoomNumbers: result.data.assignedRoomNumbers,
+                operationalStatus: result.data.operationalStatus,
+              }
             : booking,
         ),
       );
@@ -224,6 +230,9 @@ export default function PartnerBookingsPage() {
                         {booking.rooms} × {booking.roomName}
                       </strong>
                       <small>{booking.ratePlanName}</small>
+                      {booking.assignedRoomNumbers.length ? (
+                        <small>Assigned: {booking.assignedRoomNumbers.join(', ')}</small>
+                      ) : null}
                     </div>
                     <div>
                       <span>Booking</span>
@@ -242,9 +251,23 @@ export default function PartnerBookingsPage() {
                     </div>
                   </div>
                   {booking.status === 'confirmed' && booking.operationalStatus === 'RESERVED' ? (
-                    <div className="manage-booking__document-actions">
-                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'CHECKED_IN')} variant="secondary">Check in guest</Button>
+                    <div>
+                      <Input
+                        label={`Physical room number${booking.rooms === 1 ? '' : 's'} (comma separated)`}
+                        maxLength={booking.rooms * 21}
+                        name={`roomAssignments-${booking.confirmationCode}`}
+                        onChange={(event) => setRoomAssignments((current) => ({ ...current, [booking.confirmationCode]: event.target.value }))}
+                        placeholder={booking.rooms === 1 ? 'Example: 204' : 'Example: 204, 205'}
+                        value={roomAssignments[booking.confirmationCode] ?? ''}
+                      />
+                      <div className="manage-booking__document-actions">
+                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(
+                        booking.confirmationCode,
+                        'CHECKED_IN',
+                        (roomAssignments[booking.confirmationCode] ?? '').split(',').map((value) => value.trim()).filter(Boolean),
+                      )} variant="secondary">Assign rooms and check in</Button>
                       <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'NO_SHOW')} variant="secondary">Mark no-show</Button>
+                      </div>
                     </div>
                   ) : null}
                   {booking.status === 'confirmed' && booking.operationalStatus === 'CHECKED_IN' ? (
