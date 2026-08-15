@@ -19,9 +19,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ prope
       ? await partnerOperationsService.setRoomTypeStatus(access.partnerId, propertyId, roomId, action)
       : action === 'UPDATE'
         ? await partnerOperationsService.updateRoomType(access.partnerId, propertyId, roomId, {
+            amenities: String(body.amenities ?? '').split(',').map((value) => value.trim()),
             bedDescription: String(body.bedDescription ?? ''),
             description: String(body.description ?? ''),
             inventoryCount: Number(body.inventoryCount),
+            imageUrl: String(body.imageUrl ?? ''),
             maximumAdults: Number(body.maximumAdults),
             maximumChildren: Number(body.maximumChildren),
             maximumGuests: Number(body.maximumGuests),

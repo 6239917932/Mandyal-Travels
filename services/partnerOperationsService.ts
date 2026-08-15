@@ -563,9 +563,11 @@ export const partnerOperationsService = {
     propertyId: string,
     roomId: string,
     input: {
+      amenities: string[];
       bedDescription: string;
       description: string;
       inventoryCount: number;
+      imageUrl: string;
       maximumAdults: number;
       maximumChildren: number;
       maximumGuests: number;
@@ -596,9 +598,11 @@ export const partnerOperationsService = {
     }
     return prisma.partnerRoomType.update({
       data: {
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 50)),
         bedDescription: normalizeText(input.bedDescription, 160),
         description: normalizeText(input.description, 800),
         inventoryCount: input.inventoryCount,
+        imageUrl: validateImageUrl(input.imageUrl, room.imageUrl),
         maximumAdults: input.maximumAdults,
         maximumChildren: input.maximumChildren,
         maximumGuests: input.maximumGuests,

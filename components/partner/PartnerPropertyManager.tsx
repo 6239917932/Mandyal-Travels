@@ -26,10 +26,12 @@ type RatePlan = {
 };
 
 type RoomType = {
+  amenitiesJson: string;
   bedDescription: string;
   description: string;
   id: string;
   inventoryCount: number;
+  imageUrl: string;
   maximumAdults: number;
   maximumChildren: number;
   maximumGuests: number;
@@ -271,12 +273,16 @@ export function PartnerPropertyManager({
 
   async function updateRoom(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
     try {
       const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}`, {
-        body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+        body: JSON.stringify({
+          ...Object.fromEntries(formData),
+          amenities: formData.getAll('amenities').map(String).join(','),
+        }),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
@@ -790,7 +796,9 @@ export function PartnerPropertyManager({
                           <Input defaultValue={room.maximumAdults} label="Maximum adults" max={20} min={1} name="maximumAdults" required type="number" />
                           <Input defaultValue={room.maximumChildren} label="Maximum children" max={20} min={0} name="maximumChildren" required type="number" />
                           <Input defaultValue={room.maximumGuests} label="Maximum guests" max={30} min={1} name="maximumGuests" required type="number" />
+                          <Input defaultValue={room.imageUrl} label="Room photo URL" name="imageUrl" required type="url" />
                         </div>
+                        <AmenityChecklist defaultValues={stringListFromJson(room.amenitiesJson)} groups={roomAmenityGroups} legend="Room amenities" name="amenities" />
                         <label className="ui-field"><span className="ui-field__label">Room description</span><textarea className="ui-input supplier-form__textarea" defaultValue={room.description} maxLength={800} minLength={20} name="description" required /></label>
                         <Button fullWidth isLoading={isSaving} type="submit">Save room details</Button>
                       </form>
