@@ -31,6 +31,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   Bus checkout also fails safely if its server-side booking cannot be saved
 - Versioned, no-store Bus offer search and revalidation APIs reuse that supplier boundary for
   future mobile, partner, B2B, and corporate clients
+- Car search and revalidation now enforce bounded locations, drivers and rental length, validate
+  provider inventory/capacity/pricing, normalize feature data, and expose versioned no-store APIs
+  shared by direct partner and future external supplier inventory
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed

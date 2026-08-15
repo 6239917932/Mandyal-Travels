@@ -21,6 +21,6 @@ export function createCarSearchCriteria(
     ).trim(),
     pickupDate: first(params.pickupDate) ?? defaultCarSearchCriteria.pickupDate,
     dropoffDate: first(params.dropoffDate) ?? defaultCarSearchCriteria.dropoffDate,
-    drivers: Number.isInteger(drivers) && drivers > 0 ? drivers : 1,
+    drivers: Number.isInteger(drivers) && drivers >= 1 && drivers <= 4 ? drivers : 1,
   };
 }
