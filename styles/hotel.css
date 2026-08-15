@@ -332,6 +332,24 @@
 .flight-search-form__button {
   align-self: end;
 }
+.flight-result-controls {
+  display: grid;
+  align-items: end;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+  padding: var(--space-4);
+}
+.flight-result-controls__check {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+}
 .flight-page__heading {
   display: flex;
   flex-wrap: wrap;
@@ -450,6 +468,18 @@
     border-left: 1px solid var(--color-border);
     padding-top: 0;
     padding-left: var(--space-5);
+  }
+}
+
+@media (max-width: 899px) {
+  .flight-result-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .flight-result-controls {
+    grid-template-columns: 1fr;
   }
 }
 

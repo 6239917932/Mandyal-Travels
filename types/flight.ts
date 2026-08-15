@@ -44,3 +44,12 @@ export interface FlightOffer {
   supplier: string;
   totalPrice: number;
 }
+
+export type FlightSortOrder = 'price-ascending' | 'duration-ascending' | 'departure-ascending';
+
+export interface FlightResultControls {
+  airline?: string;
+  maximumTotalPrice?: number;
+  refundableOnly: boolean;
+  sort: FlightSortOrder;
+}
