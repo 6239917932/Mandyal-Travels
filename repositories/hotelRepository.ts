@@ -57,6 +57,10 @@ export class InMemoryHotelRepository implements HotelRepository {
           id: `partner-hotel-${property.id}`,
           images: [
             { alt: `${property.displayName} property`, isPrimary: true, url: property.imageUrl },
+            ...parseList(property.imageUrlsJson).map((url, index) => ({
+              alt: `${property.displayName} gallery image ${index + 1}`,
+              url,
+            })),
           ],
           inventory: {
             externalPropertyId: property.id,
@@ -76,6 +80,18 @@ export class InMemoryHotelRepository implements HotelRepository {
           },
           name: property.displayName,
           policies: parseList(property.policiesJson),
+          propertyProfile: {
+            childrenAllowed: property.childrenAllowed,
+            contactEmail: property.contactEmail,
+            contactPhone: property.contactPhone,
+            languages: parseList(property.languagesJson),
+            landmarks: parseList(property.landmarksJson),
+            minimumCheckInAge: property.minimumCheckInAge,
+            petsAllowed: property.petsAllowed,
+            propertyType: property.propertyType,
+            smokingAllowed: property.smokingAllowed,
+            timezone: property.timezone,
+          },
           reviewSummary: { averageRating: 0, reviewCount: 0 },
           rooms: property.rooms.map((room) => ({
             amenities: parseList(room.amenitiesJson).map((name, index) => ({

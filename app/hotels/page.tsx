@@ -2,8 +2,11 @@ import type { Metadata } from 'next';
 
 import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
+import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
 import { hotelService } from '@/services/hotelService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
+import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Hotels',
@@ -14,8 +17,27 @@ interface HotelsPageProps {
 }
 
 export default async function HotelsPage({ searchParams }: HotelsPageProps) {
-  const criteria = createHotelSearchCriteria(await searchParams);
-  const results = await hotelService.searchHotels(criteria);
+  const rawSearchParams = await searchParams;
+  const criteria = createHotelSearchCriteria(rawSearchParams);
+  const filters = createHotelSearchFilters(rawSearchParams);
+  const resultPage = await hotelService.searchHotels(criteria, filters);
+
+  function pageHref(page: number) {
+    const query = new URLSearchParams();
+    query.set('adults', String(criteria.adults));
+    query.set('checkInDate', criteria.checkInDate);
+    query.set('checkOutDate', criteria.checkOutDate);
+    query.set('children', String(criteria.children));
+    query.set('destination', criteria.destination);
+    query.set('rooms', String(criteria.rooms));
+    query.set('minimumStarRating', String(filters.minimumStarRating));
+    query.set('amenity', filters.amenity);
+    query.set('maximumNightlyRate', String(filters.maximumNightlyRate));
+    query.set('sort', filters.sort);
+    if (filters.refundableOnly) query.set('refundableOnly', 'true');
+    query.set('page', String(page));
+    return `/hotels?${query.toString()}`;
+  }
 
   return (
     <div className="hotel-page">
@@ -32,12 +54,13 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
 
       <section className="hotel-page__content">
         <div className="hotel-page__container">
-          <HotelSearchForm criteria={criteria} />
+          <HotelSearchForm criteria={criteria} filters={filters} />
+          <HotelDiscoveryAssistant criteria={criteria} />
 
           <div className="hotel-page__results-heading">
             <div>
               <p className="hotel-page__eyebrow">Available stays</p>
-              <h2>{results.length} hotels found</h2>
+              <h2>{resultPage.totalResults} hotels found</h2>
             </div>
 
             <p>
@@ -48,8 +71,8 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
           </div>
 
           <div className="hotel-result-list">
-            {results.length > 0 ? (
-              results.map((result) => (
+            {resultPage.results.length > 0 ? (
+              resultPage.results.map((result) => (
                 <HotelResultCard criteria={criteria} key={result.hotel.id} result={result} />
               ))
             ) : (
@@ -59,6 +82,14 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
               </p>
             )}
           </div>
+
+          {resultPage.pageCount > 1 ? (
+            <nav aria-label="Hotel results pages" className="hotel-results-pagination">
+              {resultPage.page > 1 ? <Link href={pageHref(resultPage.page - 1)}>Previous</Link> : <span />}
+              <span>Page {resultPage.page} of {resultPage.pageCount}</span>
+              {resultPage.page < resultPage.pageCount ? <Link href={pageHref(resultPage.page + 1)}>Next</Link> : <span />}
+            </nav>
+          ) : null}
         </div>
       </section>
     </div>

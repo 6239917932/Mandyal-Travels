@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import type { HotelSearchCriteria } from '@/types/hotel';
+import type { HotelSearchCriteria, HotelSearchFilters } from '@/types/hotel';
 
 interface HotelSearchFormProps {
   criteria: HotelSearchCriteria;
+  filters: HotelSearchFilters;
 }
 
-export function HotelSearchForm({ criteria }: HotelSearchFormProps) {
+export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
   return (
     <form action="/hotels" className="hotel-search-form">
       <Input
@@ -15,6 +16,56 @@ export function HotelSearchForm({ criteria }: HotelSearchFormProps) {
         name="destination"
         placeholder="City or hotel name"
       />
+
+      <label className="ui-field">
+        <span>Minimum rating</span>
+        <select defaultValue={filters.minimumStarRating} name="minimumStarRating">
+          <option value="0">Any star rating</option>
+          <option value="3">3 stars or higher</option>
+          <option value="4">4 stars or higher</option>
+          <option value="5">5 stars only</option>
+        </select>
+      </label>
+
+      <label className="ui-field">
+        <span>Amenity</span>
+        <select defaultValue={filters.amenity} name="amenity">
+          <option value="">Any amenity</option>
+          <option value="Free Wi-Fi">Free Wi-Fi</option>
+          <option value="Free parking">Free parking</option>
+          <option value="Restaurant">Restaurant</option>
+          <option value="Swimming pool">Swimming pool</option>
+          <option value="Spa">Spa</option>
+        </select>
+      </label>
+
+      <Input
+        defaultValue={filters.maximumNightlyRate || ''}
+        label="Maximum nightly rate"
+        min="0"
+        name="maximumNightlyRate"
+        placeholder="No maximum"
+        type="number"
+      />
+
+      <label className="ui-field">
+        <span>Sort results</span>
+        <select defaultValue={filters.sort} name="sort">
+          <option value="price-ascending">Price: low to high</option>
+          <option value="price-descending">Price: high to low</option>
+          <option value="rating-descending">Guest rating</option>
+        </select>
+      </label>
+
+      <label className="hotel-search-form__checkbox">
+        <input
+          defaultChecked={filters.refundableOnly}
+          name="refundableOnly"
+          type="checkbox"
+          value="true"
+        />
+        Refundable rates only
+      </label>
 
       <Input
         defaultValue={criteria.checkInDate}

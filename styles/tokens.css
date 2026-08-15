@@ -31,8 +31,8 @@
   --color-text-muted: #738399;
 
   /* Typography */
-  --font-family-sans: var(--font-geist-sans), Arial, sans-serif;
-  --font-family-mono: var(--font-geist-mono), monospace;
+  --font-family-sans: Inter, Aptos, "Segoe UI", Arial, sans-serif;
+  --font-family-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 
   /* Layout */
   --container-max-width: 1280px;

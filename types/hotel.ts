@@ -84,10 +84,35 @@ export interface HotelReviewSummary {
   reviewCount: number;
 }
 
+export interface HotelReview {
+  body: string;
+  createdAt: string;
+  id: string;
+  partnerReply?: string;
+  partnerRepliedAt?: string;
+  rating: number;
+  reviewerName: string;
+  title: string;
+  verifiedStay: true;
+}
+
 export interface HotelInventory {
   externalPropertyId?: string;
   source: HotelInventorySource;
   supplierName?: string;
+}
+
+export interface HotelPropertyProfile {
+  childrenAllowed: boolean;
+  contactEmail: string;
+  contactPhone: string;
+  languages: string[];
+  landmarks: string[];
+  minimumCheckInAge: number;
+  petsAllowed: boolean;
+  propertyType: string;
+  smokingAllowed: boolean;
+  timezone: string;
 }
 
 export interface Hotel {
@@ -101,6 +126,7 @@ export interface Hotel {
   location: HotelLocation;
   name: string;
   policies: string[];
+  propertyProfile?: HotelPropertyProfile;
   reviewSummary: HotelReviewSummary;
   rooms: HotelRoom[];
   slug: string;
@@ -114,6 +140,31 @@ export interface HotelSearchCriteria {
   children: number;
   destination: string;
   rooms: number;
+}
+
+export type HotelSearchSort = 'price-ascending' | 'price-descending' | 'rating-descending';
+
+export interface HotelSearchFilters {
+  amenity: string;
+  maximumNightlyRate: number;
+  minimumStarRating: number;
+  page: number;
+  refundableOnly: boolean;
+  sort: HotelSearchSort;
+}
+
+export interface HotelDiscoverySuggestion {
+  explanation: string;
+  filters: Omit<HotelSearchFilters, 'page'>;
+  normalizedDestination: string;
+}
+
+export interface HotelSearchPage {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  results: HotelSearchResult[];
+  totalResults: number;
 }
 
 export interface HotelSearchResult {

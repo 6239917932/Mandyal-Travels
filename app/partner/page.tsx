@@ -171,6 +171,14 @@ export default async function PartnerWorkspacePage() {
               Review amendments
             </Link>
           </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Guest feedback</p>
+            <h2>Reviews and responses</h2>
+            <p>Read published verified-stay reviews and post an audited property response.</p>
+            <Link className="home-card__link" href="/partner/reviews">
+              Manage reviews
+            </Link>
+          </Card>
         </div>
       ) : (
         <div className="partner-workspace__links">

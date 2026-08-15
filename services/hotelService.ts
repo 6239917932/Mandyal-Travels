@@ -12,6 +12,8 @@ import type {
   Hotel,
   HotelRatePlan,
   HotelSearchCriteria,
+  HotelSearchFilters,
+  HotelSearchPage,
   HotelSearchResult,
   Money,
 } from '@/types/hotel';
@@ -79,7 +81,10 @@ export class HotelService {
     return this.hotelRepository.findAll();
   }
 
-  async searchHotels(criteria: HotelSearchCriteria): Promise<HotelSearchResult[]> {
+  async searchHotels(
+    criteria: HotelSearchCriteria,
+    filters: HotelSearchFilters,
+  ): Promise<HotelSearchPage> {
     const nights = calculateNights(criteria.checkInDate, criteria.checkOutDate);
 
     if (!Number.isFinite(nights) || nights < 1) {
@@ -88,8 +93,13 @@ export class HotelService {
 
     const hotels = await this.hotelRepository.findAll();
 
-    const matchingHotels = hotels.filter((hotel) =>
-      matchesDestination(hotel, criteria.destination),
+    const normalizedAmenity = filters.amenity.toLowerCase();
+    const matchingHotels = hotels.filter(
+      (hotel) =>
+        matchesDestination(hotel, criteria.destination) &&
+        hotel.starRating >= filters.minimumStarRating &&
+        (!normalizedAmenity ||
+          hotel.amenities.some((amenity) => amenity.name.toLowerCase().includes(normalizedAmenity))),
     );
 
     const results = await Promise.all(
@@ -136,7 +146,12 @@ export class HotelService {
           hotel.rooms
             .filter((_room, index) => availability[index])
             .flatMap((room) =>
-              room.ratePlans.map(async (ratePlan) => {
+              room.ratePlans
+                .filter(
+                  (ratePlan) =>
+                    !filters.refundableOnly || ratePlan.cancellationPolicy.refundable,
+                )
+                .map(async (ratePlan) => {
                 const control = await partnerHotelInventoryRepository.findStayControl(
                   room.roomTypeId,
                   criteria.checkInDate,
@@ -156,7 +171,11 @@ export class HotelService {
 
         const lowestRatePlan = findLowestRatePlan(availableRatePlans);
 
-        if (!lowestRatePlan) {
+        if (
+          !lowestRatePlan ||
+          (filters.maximumNightlyRate > 0 &&
+            lowestRatePlan.nightlyRate.amount > filters.maximumNightlyRate)
+        ) {
           return undefined;
         }
 
@@ -170,11 +189,33 @@ export class HotelService {
       }),
     );
 
-    return results
-      .filter((result): result is HotelSearchResult => result !== undefined)
-      .sort((firstResult, secondResult) => {
-        return firstResult.minimumNightlyRate.amount - secondResult.minimumNightlyRate.amount;
-      });
+    const sortedResults = results.filter(
+      (result): result is HotelSearchResult => result !== undefined,
+    );
+    sortedResults.sort((firstResult, secondResult) => {
+      if (filters.sort === 'price-descending') {
+        return secondResult.minimumNightlyRate.amount - firstResult.minimumNightlyRate.amount;
+      }
+      if (filters.sort === 'rating-descending') {
+        return (
+          secondResult.hotel.reviewSummary.averageRating -
+            firstResult.hotel.reviewSummary.averageRating ||
+          secondResult.hotel.reviewSummary.reviewCount - firstResult.hotel.reviewSummary.reviewCount
+        );
+      }
+      return firstResult.minimumNightlyRate.amount - secondResult.minimumNightlyRate.amount;
+    });
+
+    const pageSize = 10;
+    const pageCount = Math.max(1, Math.ceil(sortedResults.length / pageSize));
+    const page = Math.min(filters.page, pageCount);
+    return {
+      page,
+      pageCount,
+      pageSize,
+      results: sortedResults.slice((page - 1) * pageSize, page * pageSize),
+      totalResults: sortedResults.length,
+    };
   }
 }
 

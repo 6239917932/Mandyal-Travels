@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
@@ -8,16 +7,6 @@ import { BookingProvider } from '@/context/BookingContext';
 import { getCurrentUser } from '@/lib/auth/session';
 
 import './globals.css';
-
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-});
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-});
 
 export const metadata: Metadata = {
   description: 'Your trusted partner for hotels, flights, buses, and car rentals.',
@@ -36,7 +25,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>

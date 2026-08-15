@@ -13,9 +13,16 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   other-device revocation, profile editing, and password changes
 - Persistent booking-email, SMS-alert, WhatsApp-update, and marketing preferences
 - Hotel, flight, bus, and car search and booking demonstrations
+- Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
+  and bounded pagination
+- Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
+  availability and pricing safeguards
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
 - Customer hotel cancellation/amendment handling and account-bound booking access
+- Verified-stay hotel reviews restricted to signed-in customers with a completed confirmed booking
+- Protected hotel-review moderation with rejection notes, supplier-scoped public responses, and
+  partner audit history
 - Booking-linked customer support cases with personal status tracking and operations resolution
 - Bounded personal JSON archive for profile, preferences, bookings, company requests, and support
   history without passwords, session tokens, or card data
@@ -53,6 +60,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
 - Supplier-managed hotel properties, room types, rates, amenities, publication controls, dated
   availability and stop-sell controls connected to public hotel search and booking
+- Expanded hotel property profiles covering type, contacts, map coordinates, timezone, languages,
+  landmarks, guest eligibility, house rules, and multi-image galleries
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
@@ -74,6 +83,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   account-scoped active-session controls, and session revocation after a password change
 - Content-security policy, anti-framing, content-type, referrer, permissions, and production HTTPS
   response headers
+- Self-contained system font stack so production builds do not depend on Google Fonts availability
 - Same-origin enforcement for authenticated API mutations to protect account and booking actions
   from cross-site requests
 - Authorization checks at customer, organization, administrator, and partner API boundaries,
