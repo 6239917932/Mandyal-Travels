@@ -45,6 +45,38 @@ model User {
   notificationDeliveries      NotificationDelivery[]
   mfaCredential               UserMfaCredential?
   mfaRecoveryCodes            UserMfaRecoveryCode[]
+  consentRecords              UserConsentRecord[]
+  privacyRequests             DataPrivacyRequest[]
+}
+
+model UserConsentRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  purpose       String
+  policyVersion String
+  status        String
+  source        String   @default("ACCOUNT")
+  recordedAt    DateTime @default(now())
+  withdrawnAt   DateTime?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, recordedAt])
+  @@index([purpose, status, recordedAt])
+}
+
+model DataPrivacyRequest {
+  id             String   @id @default(cuid())
+  userId         String
+  requestType    String
+  status         String   @default("OPEN")
+  requestedAt    DateTime @default(now())
+  dueAt          DateTime
+  completedAt    DateTime?
+  resolutionNote String   @default("")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, requestType, requestedAt])
+  @@index([status, dueAt])
 }
 
 model UserMfaCredential {

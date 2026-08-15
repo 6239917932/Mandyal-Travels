@@ -49,6 +49,15 @@ export async function PATCH(request: Request) {
           userId: user.id,
         }),
       }),
+      prisma.userConsentRecord.create({
+        data: {
+          userId: user.id,
+          purpose: 'MARKETING_COMMUNICATIONS',
+          policyVersion: 'privacy-v2.1-pending-legal-approval',
+          status: marketingEmail ? 'GRANTED' : 'WITHDRAWN',
+          withdrawnAt: marketingEmail ? null : new Date(),
+        },
+      }),
     ]);
 
     return NextResponse.json({

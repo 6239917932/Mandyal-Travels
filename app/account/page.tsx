@@ -6,6 +6,7 @@ import { AccountProfileForm } from '@/components/account/AccountProfileForm';
 import { NotificationPreferences } from '@/components/account/NotificationPreferences';
 import { MfaSecurityManager } from '@/components/account/MfaSecurityManager';
 import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
+import { PrivacyRequestManager } from '@/components/account/PrivacyRequestManager';
 import { SessionManager } from '@/components/account/SessionManager';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
 import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
@@ -291,6 +292,7 @@ export default async function AccountPage() {
 
       <PasswordChangeForm />
       <MfaSecurityManager />
+      <PrivacyRequestManager />
 
       <SessionManager
         sessions={activeSessions.map((session) => ({
