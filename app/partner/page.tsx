@@ -184,6 +184,14 @@ export default async function PartnerWorkspacePage() {
               Manage reviews
             </Link>
           </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Room operations</p>
+            <h2>Housekeeping board</h2>
+            <p>Coordinate dirty, cleaning, ready, and out-of-service rooms with front desk.</p>
+            <Link className="home-card__link" href="/partner/housekeeping">
+              Open housekeeping
+            </Link>
+          </Card>
         </div>
       ) : (
         <div className="partner-workspace__links">

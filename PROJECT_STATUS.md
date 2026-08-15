@@ -90,6 +90,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   at check-in, and automatic dirty status after checkout
 - Front-desk room allocation loads only registered, active, housekeeping-ready rooms for the booked
   room type, excludes rooms occupied by active stays, and requires exact checkbox selection before check-in
+- A dedicated supplier housekeeping board summarizes ready, dirty, cleaning, and out-of-service rooms
+  across managed properties and uses the existing scoped, audited room-status workflow
 - Supplier-private front-desk booking notes with bounded content, partner scoping, and append-only
   audit records; notes remain excluded from customer records and operational CSV exports
 - Guest special requests captured before payment, persisted with the lead guest, shown on customer
