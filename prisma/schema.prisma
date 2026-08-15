@@ -41,6 +41,7 @@ model User {
   reviewedPartnerApplications PartnerApplication[]        @relation("PartnerApplicationReviewer")
   hotelReviews                HotelReview[]               @relation("HotelReviewAuthor")
   moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
+  analyticsEvents             AnalyticsEvent[]
 }
 
 model SupplyPartner {
@@ -847,6 +848,22 @@ model PartnerSettlement {
   @@unique([partnerId, periodStart, periodEnd])
   @@index([status, periodEnd, createdAt])
   @@index([partnerId, status, periodEnd])
+}
+
+model AnalyticsEvent {
+  id           String   @id @default(cuid())
+  userId       String?
+  eventName    String
+  productType  String   @default("PLATFORM")
+  funnelStage  String
+  entityRef    String   @default("")
+  metadataJson String   @default("{}")
+  occurredAt   DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([eventName, occurredAt])
+  @@index([productType, funnelStage, occurredAt])
+  @@index([userId, occurredAt])
 }
 
 model PartnerPhysicalRoom {
