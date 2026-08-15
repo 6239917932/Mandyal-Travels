@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
 
-import {
-  calculatePromotion,
-  findPromotionRule,
-  type PromotionProduct,
-} from '@/constants/promotionRules';
+import { calculatePromotion, type PromotionProduct } from '@/constants/promotionRules';
 import { readJsonObject } from '@/lib/api/request';
+import { resolvePromotionRule } from '@/services/promotionService';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'HOTEL', 'BUS', 'CAR']);
 
@@ -39,7 +36,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rule = findPromotionRule(code, productType);
+  const rule = await resolvePromotionRule(code, productType);
 
   if (!rule) {
     return NextResponse.json(

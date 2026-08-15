@@ -1,6 +1,6 @@
 import { createHash, createHmac } from 'node:crypto';
 
-import { calculatePromotion, findPromotionRule } from '@/constants/promotionRules';
+import { calculatePromotion } from '@/constants/promotionRules';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { readConfiguredSecret } from '@/lib/security/configuredSecret';
 import { createBookingReference } from '@/lib/confirmationCode';
@@ -10,6 +10,7 @@ import {
   type AvailabilityLockRepository,
 } from '@/repositories/availabilityLockRepository';
 import { hotelService, type HotelService } from '@/services/hotelService';
+import { resolvePromotionRule } from '@/services/promotionService';
 import {
   bookingRepository,
   BusinessBookingRequestUnavailableError,
@@ -339,7 +340,7 @@ export class HotelBookingService {
 
     let totalAmount = quote.totalAmount;
     if (request.promotionCode) {
-      const promotionRule = findPromotionRule(request.promotionCode, 'HOTEL');
+      const promotionRule = await resolvePromotionRule(request.promotionCode, 'HOTEL');
       if (!promotionRule) {
         throw new HotelBookingRuleError(
           'PROMOTION_NOT_AVAILABLE',
@@ -612,9 +613,7 @@ export class HotelBookingService {
     return this.amendments.countPending(hotelSlugs);
   }
 
-  async listPartnerBookings(
-    options: PartnerBookingQuery = {},
-  ): Promise<PartnerBookingRecord[]> {
+  async listPartnerBookings(options: PartnerBookingQuery = {}): Promise<PartnerBookingRecord[]> {
     const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
       bookings.map(async (booking) => {

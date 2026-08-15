@@ -905,6 +905,29 @@ model FinancialLedgerEntry {
   @@index([refundId, createdAt])
 }
 
+model PromotionCampaign {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  description     String   @default("")
+  productsJson    String
+  percentOff      Int
+  maximumDiscount Int
+  minimumSubtotal Int
+  usageLimit      Int?
+  startsAt        DateTime
+  endsAt          DateTime
+  active          Boolean  @default(false)
+  version         Int      @default(1)
+  createdByUserId String
+  updatedByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([active, startsAt, endsAt])
+  @@index([updatedAt])
+}
+
 model RoomInventoryOverride {
   id             String   @id
   roomTypeId     String
