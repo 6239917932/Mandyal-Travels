@@ -249,7 +249,12 @@ and exposes only active routes, trips, and partners. Booking completion reserves
 exact seat selection transactionally, rejects seats outside the operator's declared capacity, and
 prevents already-occupied seats from being sold again.
 
-The current travel-domain milestone passes 43 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 91 generated route entries, and
+Bus operator administrators can pause and restore dated services, revise bounded seat capacity and
+fares, and cannot reduce capacity below confirmed passengers or their assigned seat positions. A
+partner-scoped passenger manifest provides bounded pagination, search, routes, service times, exact
+seat assignments, and captured-value summaries without exposing another operator's reservations.
+
+The current travel-domain milestone passes 44 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 93 generated route entries, and
 clean-database verification of all 46 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
