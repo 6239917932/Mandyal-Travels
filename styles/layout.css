@@ -70,21 +70,122 @@
 .site-logo {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
   color: var(--color-brand-900);
-  font-size: 1.125rem;
-  font-weight: 700;
 }
 
-.site-logo__mark {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: var(--color-brand-700);
-  color: var(--color-white);
-  font-weight: 800;
+.mandyal-logo {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  line-height: 1;
+}
+
+.mandyal-logo__symbol {
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 5px 12px rgb(7 31 58 / 14%));
+}
+
+.mandyal-logo__background {
+  fill: #0b3158;
+}
+
+.mandyal-logo__sun {
+  fill: #f59e3d;
+}
+
+.mandyal-logo__mountain--back {
+  fill: #dbeafe;
+}
+
+.mandyal-logo__snow {
+  fill: #fff;
+}
+
+.mandyal-logo__ground {
+  fill: #0c3157;
+}
+
+.mandyal-logo__route {
+  stroke: #f59e3d;
+  stroke-linecap: round;
+  stroke-width: 3.5;
+}
+
+.mandyal-logo__copy,
+.mandyal-logo__name,
+.mandyal-logo__tagline {
+  display: block;
+}
+
+.mandyal-logo__copy {
+  min-width: 0;
+}
+
+.mandyal-logo__name {
+  color: var(--color-brand-950);
+  font-size: 1.12rem;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.mandyal-logo__name strong {
+  color: var(--color-brand-600);
+  font-weight: 850;
+}
+
+.mandyal-logo__tagline {
+  margin-top: 0.32rem;
+  color: var(--color-text-muted);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.mandyal-logo--compact .mandyal-logo__symbol {
+  width: 2.55rem;
+  height: 2.55rem;
+}
+
+.mandyal-logo--compact .mandyal-logo__name {
+  font-size: 1rem;
+}
+
+.mandyal-logo--hero {
+  gap: 1rem;
+}
+
+.mandyal-logo--hero .mandyal-logo__symbol {
+  width: clamp(3.8rem, 8vw, 5.4rem);
+  height: clamp(3.8rem, 8vw, 5.4rem);
+  filter: drop-shadow(0 8px 18px rgb(0 0 0 / 25%));
+}
+
+.mandyal-logo--hero .mandyal-logo__name {
+  font-size: clamp(1.45rem, 3.4vw, 2.3rem);
+}
+
+.mandyal-logo--hero .mandyal-logo__tagline {
+  max-width: 25rem;
+  font-size: clamp(0.56rem, 1.2vw, 0.7rem);
+}
+
+.mandyal-logo--inverse .mandyal-logo__background {
+  fill: #174f82;
+}
+
+.mandyal-logo--inverse .mandyal-logo__name,
+.mandyal-logo--inverse .mandyal-logo__name strong {
+  color: #fff;
+}
+
+.mandyal-logo--inverse .mandyal-logo__tagline {
+  color: #bcd6eb;
 }
 
 .site-header__menu-button {
@@ -168,6 +269,18 @@
   line-height: 1.6;
 }
 
+.site-footer__logo {
+  display: inline-flex;
+  margin-bottom: var(--space-5);
+}
+
+.site-footer__origin {
+  margin: var(--space-3) 0 0;
+  color: #f2a45a;
+  font-size: 0.8125rem;
+  font-weight: 750;
+}
+
 .site-footer__links {
   display: grid;
   gap: var(--space-2);
@@ -192,16 +305,32 @@
   margin: 0;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1180px) {
   .site-header__menu-button {
     display: none;
   }
 
   .site-navigation {
     display: flex;
+    gap: var(--space-4);
   }
 
   .site-footer__inner {
     grid-template-columns: 1.6fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .site-header__inner {
+    min-height: 4.25rem;
+  }
+
+  .mandyal-logo--compact .mandyal-logo__symbol {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .mandyal-logo--compact .mandyal-logo__name {
+    font-size: 0.9rem;
   }
 }
