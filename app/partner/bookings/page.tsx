@@ -279,6 +279,13 @@ export default function PartnerBookingsPage() {
                       <strong>{money(booking.totalAmount, booking.currency)}</strong>
                     </div>
                   </div>
+                  {booking.specialRequests ? (
+                    <div className="booking-confirmation__note">
+                      <strong>Guest special requests</strong>
+                      <p>{booking.specialRequests}</p>
+                      <small>Requests are preferences and are not guaranteed until the property confirms them.</small>
+                    </div>
+                  ) : null}
                   <div className="ui-field">
                     <label className="ui-field__label" htmlFor={`partner-note-${booking.confirmationCode}`}>
                       Private front-desk note

@@ -203,7 +203,13 @@ function mapBooking(booking: {
   confirmationCode: string;
   createdAt: Date;
   currency: string;
-  guest: { email: string; firstName: string; lastName: string; phone: string } | null;
+  guest: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    specialRequests: string;
+  } | null;
   hotelSlug: string;
   id: string;
   operationalStatus: string;

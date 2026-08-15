@@ -47,7 +47,9 @@ function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequ
     isValidName(typeof guest?.lastName === 'string' ? guest.lastName : '') &&
     typeof guest?.phone === 'string' &&
     guest.phone.trim().length >= 7 &&
-    guest.phone.trim().length <= 32
+    guest.phone.trim().length <= 32 &&
+    typeof guest?.specialRequests === 'string' &&
+    guest.specialRequests.length <= 1000
   );
 }
 

@@ -92,6 +92,7 @@ export interface PartnerBookingRecord {
   ratePlanName: string;
   roomName: string;
   rooms: number;
+  specialRequests: string;
   status: HotelBookingRecord['status'];
   totalAmount: number;
 }
@@ -143,6 +144,7 @@ export interface HotelBookingRecord {
     firstName: string;
     lastName: string;
     phone: string;
+    specialRequests: string;
   };
   hotelSlug: string;
   id: string;

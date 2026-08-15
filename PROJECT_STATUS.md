@@ -90,6 +90,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   at check-in, and automatic dirty status after checkout
 - Supplier-private front-desk booking notes with bounded content, partner scoping, and append-only
   audit records; notes remain excluded from customer records and operational CSV exports
+- Guest special requests captured before payment, persisted with the lead guest, shown on customer
+  confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
@@ -176,7 +178,11 @@ Booking operations include a private supplier note for arrival preferences, acce
 and shift handovers. Every note change is scoped to the assigned supplier and recorded in activity
 history without copying the note text into audit metadata.
 
+Guests can submit bounded accessibility, dietary, arrival, and room-preference requests before
+payment. The request is persisted with the booking and handed to the assigned property while the UI
+clearly states that fulfilment depends on availability.
+
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 generated route entries, and clean-database verification of all 40 migrations
+a Next.js production build with all 85 generated route entries, and clean-database verification of all 41 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

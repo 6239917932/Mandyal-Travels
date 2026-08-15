@@ -296,7 +296,8 @@ export class HotelBookingService {
         normalizeEmail(existingBooking.guest.email) === normalizeEmail(request.guest.email) &&
         existingBooking.guest.firstName === request.guest.firstName &&
         existingBooking.guest.lastName === request.guest.lastName &&
-        existingBooking.guest.phone === request.guest.phone;
+        existingBooking.guest.phone === request.guest.phone &&
+        existingBooking.guest.specialRequests === request.guest.specialRequests;
       if (!sameRequest) {
         throw new HotelBookingRuleError(
           'IDEMPOTENCY_KEY_REUSED',
@@ -642,6 +643,7 @@ export class HotelBookingService {
           ratePlanName: ratePlan.name,
           roomName: room.name,
           rooms: quote.rooms,
+          specialRequests: booking.guest.specialRequests,
           status: booking.status,
           totalAmount: booking.totalAmount,
         } satisfies PartnerBookingRecord;

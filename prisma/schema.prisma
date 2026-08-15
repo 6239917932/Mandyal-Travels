@@ -710,6 +710,7 @@ model BookingGuest {
   lastName  String
   email     String
   phone     String
+  specialRequests String @default("")
   booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 

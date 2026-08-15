@@ -9,6 +9,7 @@ export interface BookingGuest {
   firstName: string;
   lastName: string;
   phone: string;
+  specialRequests: string;
 }
 
 export interface BookingPricing {
