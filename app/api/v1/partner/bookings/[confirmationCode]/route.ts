@@ -23,6 +23,29 @@ function readRoomAssignments(value: string): string[] {
   }
 }
 
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ confirmationCode: string }> },
+): Promise<Response> {
+  const access = await getPartnerAccess(request);
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
+    return errorResponse('PARTNER_UNAUTHORIZED', 'Hotel partner access is required.', 401);
+  }
+  const { confirmationCode } = await context.params;
+  try {
+    const rooms = await partnerOperationsService.listAvailablePhysicalRooms(
+      access.partnerId,
+      confirmationCode,
+    );
+    return Response.json({ data: rooms });
+  } catch (error) {
+    if (error instanceof PartnerOperationsError) {
+      return errorResponse(error.code, error.message, error.code === 'BOOKING_NOT_FOUND' ? 404 : 409);
+    }
+    return errorResponse('ROOM_AVAILABILITY_FAILED', 'Available physical rooms could not be loaded.', 500);
+  }
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ confirmationCode: string }> },

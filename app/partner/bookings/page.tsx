@@ -18,6 +18,11 @@ type PartnerBookingMeta = {
   totalPages: number;
 };
 
+type AvailablePhysicalRoom = {
+  floorLabel: string;
+  roomNumber: string;
+};
+
 function money(amount: number, currency: string): string {
   return new Intl.NumberFormat('en-IN', {
     currency,
@@ -38,7 +43,8 @@ export default function PartnerBookingsPage() {
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
-  const [roomAssignments, setRoomAssignments] = useState<Record<string, string>>({});
+  const [roomAssignments, setRoomAssignments] = useState<Record<string, string[]>>({});
+  const [availableRooms, setAvailableRooms] = useState<Record<string, AvailablePhysicalRoom[]>>({});
   const [partnerNotes, setPartnerNotes] = useState<Record<string, string>>({});
   const exportParameters = new URLSearchParams();
   if (query) exportParameters.set('query', query);
@@ -86,6 +92,36 @@ export default function PartnerBookingsPage() {
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setQuery(filter.trim());
+  }
+
+  async function loadAvailableRooms(confirmationCode: string) {
+    setError(undefined);
+    setUpdatingBooking(confirmationCode);
+    try {
+      const response = await fetch(`/api/v1/partner/bookings/${confirmationCode}`);
+      const result = await readJsonResponse<{ data: AvailablePhysicalRoom[] } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(result && 'error' in result ? result.error.message : 'Available rooms could not be loaded.');
+        return;
+      }
+      setAvailableRooms((current) => ({ ...current, [confirmationCode]: result.data }));
+      setRoomAssignments((current) => ({ ...current, [confirmationCode]: [] }));
+    } catch {
+      setError('The partner service could not be reached.');
+    } finally {
+      setUpdatingBooking(undefined);
+    }
+  }
+
+  function toggleRoom(confirmationCode: string, roomNumber: string, maximumRooms: number) {
+    setRoomAssignments((current) => {
+      const selected = current[confirmationCode] ?? [];
+      if (selected.includes(roomNumber)) {
+        return { ...current, [confirmationCode]: selected.filter((candidate) => candidate !== roomNumber) };
+      }
+      if (selected.length >= maximumRooms) return current;
+      return { ...current, [confirmationCode]: [...selected, roomNumber] };
+    });
   }
 
   async function updateStayStatus(
@@ -311,19 +347,46 @@ export default function PartnerBookingsPage() {
                   </div>
                   {booking.status === 'confirmed' && booking.operationalStatus === 'RESERVED' ? (
                     <div>
-                      <Input
-                        label={`Physical room number${booking.rooms === 1 ? '' : 's'} (comma separated)`}
-                        maxLength={booking.rooms * 21}
-                        name={`roomAssignments-${booking.confirmationCode}`}
-                        onChange={(event) => setRoomAssignments((current) => ({ ...current, [booking.confirmationCode]: event.target.value }))}
-                        placeholder={booking.rooms === 1 ? 'Example: 204' : 'Example: 204, 205'}
-                        value={roomAssignments[booking.confirmationCode] ?? ''}
-                      />
+                      {availableRooms[booking.confirmationCode] ? (
+                        <fieldset className="supplier-amenities__group">
+                          <legend>Select {booking.rooms} ready physical room{booking.rooms === 1 ? '' : 's'}</legend>
+                          <div className="supplier-amenities__grid">
+                            {availableRooms[booking.confirmationCode].map((room) => (
+                              <label className="supplier-amenities__option" key={room.roomNumber}>
+                                <input
+                                  checked={(roomAssignments[booking.confirmationCode] ?? []).includes(room.roomNumber)}
+                                  disabled={
+                                    !(roomAssignments[booking.confirmationCode] ?? []).includes(room.roomNumber) &&
+                                    (roomAssignments[booking.confirmationCode] ?? []).length >= booking.rooms
+                                  }
+                                  onChange={() => toggleRoom(booking.confirmationCode, room.roomNumber, booking.rooms)}
+                                  type="checkbox"
+                                />
+                                <span>Room {room.roomNumber}{room.floorLabel ? ` · ${room.floorLabel}` : ''}</span>
+                              </label>
+                            ))}
+                          </div>
+                          {availableRooms[booking.confirmationCode].length === 0 ? (
+                            <p>No registered ready rooms are available for this room type. Update housekeeping first.</p>
+                          ) : null}
+                        </fieldset>
+                      ) : (
+                        <Button
+                          disabled={updatingBooking === booking.confirmationCode}
+                          onClick={() => void loadAvailableRooms(booking.confirmationCode)}
+                          variant="secondary"
+                        >
+                          Choose registered rooms
+                        </Button>
+                      )}
                       <div className="manage-booking__document-actions">
-                      <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(
+                      <Button disabled={
+                        updatingBooking === booking.confirmationCode ||
+                        (roomAssignments[booking.confirmationCode] ?? []).length !== booking.rooms
+                      } onClick={() => updateStayStatus(
                         booking.confirmationCode,
                         'CHECKED_IN',
-                        (roomAssignments[booking.confirmationCode] ?? '').split(',').map((value) => value.trim()).filter(Boolean),
+                        roomAssignments[booking.confirmationCode] ?? [],
                       )} variant="secondary">Assign rooms and check in</Button>
                       <Button disabled={updatingBooking === booking.confirmationCode} onClick={() => updateStayStatus(booking.confirmationCode, 'NO_SHOW')} variant="secondary">Mark no-show</Button>
                       </div>

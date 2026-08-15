@@ -88,6 +88,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Supplier-owned physical room registry with room-type inventory caps, unique room numbers,
   ready/dirty/cleaning and active/out-of-service controls, audited changes, ready-room enforcement
   at check-in, and automatic dirty status after checkout
+- Front-desk room allocation loads only registered, active, housekeeping-ready rooms for the booked
+  room type, excludes rooms occupied by active stays, and requires exact checkbox selection before check-in
 - Supplier-private front-desk booking notes with bounded content, partner scoping, and append-only
   audit records; notes remain excluded from customer records and operational CSV exports
 - Guest special requests captured before payment, persisted with the lead guest, shown on customer

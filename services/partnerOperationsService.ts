@@ -136,6 +136,59 @@ function reservationUnitsForDate(
 }
 
 export const partnerOperationsService = {
+  async listAvailablePhysicalRooms(partnerId: string, confirmationCode: string) {
+    const properties = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true, id: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
+    const booking = await prisma.booking.findFirst({
+      include: { quote: true },
+      where: {
+        confirmationCode,
+        hotelSlug: { in: properties.map((property) => property.hotelSlug) },
+        status: 'confirmed',
+      },
+    });
+    if (!booking) {
+      throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The hotel booking was not found.');
+    }
+    const property = properties.find((candidate) => candidate.hotelSlug === booking.hotelSlug);
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
+    }
+    const ratePlan = await prisma.partnerRatePlan.findUnique({
+      include: {
+        room: {
+          include: {
+            physicalRooms: {
+              orderBy: [{ floorLabel: 'asc' }, { roomNumber: 'asc' }],
+              where: { housekeepingStatus: 'READY', operationalStatus: 'ACTIVE' },
+            },
+          },
+        },
+      },
+      where: { ratePlanId: booking.quote.ratePlanId },
+    });
+    if (!ratePlan || ratePlan.room.propertyId !== property.id) {
+      throw new PartnerOperationsError('ROOM_TYPE_NOT_FOUND', 'The booked room type is not managed by this property.');
+    }
+    const activeStays = await prisma.booking.findMany({
+      select: { assignedRoomNumbersJson: true },
+      where: {
+        hotelSlug: booking.hotelSlug,
+        id: { not: booking.id },
+        operationalStatus: 'CHECKED_IN',
+        status: 'confirmed',
+      },
+    });
+    const occupiedRooms = new Set(
+      activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+    );
+    return ratePlan.room.physicalRooms
+      .filter((room) => !occupiedRooms.has(room.roomNumber))
+      .map((room) => ({ floorLabel: room.floorLabel, roomNumber: room.roomNumber }));
+  },
+
   async updateHotelStayStatus(
     partnerId: string,
     confirmationCode: string,
