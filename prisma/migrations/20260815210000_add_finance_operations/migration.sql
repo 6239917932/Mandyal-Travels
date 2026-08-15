@@ -1,10 +1,55 @@
-ALTER TABLE "PaymentTransaction" ADD COLUMN "reconciliationStatus" TEXT NOT NULL DEFAULT 'UNRECONCILED';
-ALTER TABLE "PaymentTransaction" ADD COLUMN "providerAmount" INTEGER;
-ALTER TABLE "PaymentTransaction" ADD COLUMN "providerCurrency" TEXT;
-ALTER TABLE "PaymentTransaction" ADD COLUMN "reconciliationNote" TEXT NOT NULL DEFAULT '';
-ALTER TABLE "PaymentTransaction" ADD COLUMN "reconciledAt" DATETIME;
-ALTER TABLE "PaymentTransaction" ADD COLUMN "reconciledByUserId" TEXT;
-ALTER TABLE "PaymentTransaction" ADD COLUMN "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+
+CREATE TABLE "new_PaymentTransaction" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "bookingId" TEXT NOT NULL,
+  "status" TEXT NOT NULL,
+  "amount" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL,
+  "provider" TEXT NOT NULL,
+  "providerRef" TEXT NOT NULL,
+  "reconciliationStatus" TEXT NOT NULL DEFAULT 'UNRECONCILED',
+  "providerAmount" INTEGER,
+  "providerCurrency" TEXT,
+  "reconciliationNote" TEXT NOT NULL DEFAULT '',
+  "reconciledAt" DATETIME,
+  "reconciledByUserId" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL,
+  CONSTRAINT "PaymentTransaction_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+INSERT INTO "new_PaymentTransaction" (
+  "id",
+  "bookingId",
+  "status",
+  "amount",
+  "currency",
+  "provider",
+  "providerRef",
+  "createdAt",
+  "updatedAt"
+)
+SELECT
+  "id",
+  "bookingId",
+  "status",
+  "amount",
+  "currency",
+  "provider",
+  "providerRef",
+  "createdAt",
+  "createdAt"
+FROM "PaymentTransaction";
+
+DROP TABLE "PaymentTransaction";
+ALTER TABLE "new_PaymentTransaction" RENAME TO "PaymentTransaction";
+
+CREATE UNIQUE INDEX "PaymentTransaction_bookingId_key" ON "PaymentTransaction"("bookingId");
+CREATE UNIQUE INDEX "PaymentTransaction_providerRef_key" ON "PaymentTransaction"("providerRef");
+
+PRAGMA foreign_keys=ON;
 
 CREATE TABLE "RefundRequest" (
   "id" TEXT NOT NULL PRIMARY KEY,

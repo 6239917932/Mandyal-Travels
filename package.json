@@ -16,6 +16,7 @@
     "admin:grant": "node scripts/grant-platform-admin.mjs",
     "partner:grant": "node scripts/grant-hotel-partner.mjs",
     "db:generate": "prisma generate",
+    "db:repair-finance-migration": "node scripts/repair-failed-finance-migration.mjs",
     "db:verify-migrations": "node scripts/verify-migrations.mjs",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
