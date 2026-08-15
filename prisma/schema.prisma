@@ -39,6 +39,8 @@ model User {
   partnerAuditEntries         PartnerAuditLog[]           @relation("PartnerAuditActor")
   partnerApplications         PartnerApplication[]        @relation("PartnerApplicationApplicant")
   reviewedPartnerApplications PartnerApplication[]        @relation("PartnerApplicationReviewer")
+  hotelReviews                HotelReview[]               @relation("HotelReviewAuthor")
+  moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
 }
 
 model SupplyPartner {
@@ -78,6 +80,10 @@ model PartnerProperty {
   partnerId         String
   hotelSlug         String                     @unique
   displayName       String
+  propertyType      String                     @default("HOTEL")
+  contactEmail      String                     @default("")
+  contactPhone      String                     @default("")
+  timezone          String                     @default("Asia/Kolkata")
   status            String                     @default("ACTIVE")
   listingSource     String                     @default("ASSIGNED")
   publicationStatus String                     @default("PUBLISHED")
@@ -94,6 +100,13 @@ model PartnerProperty {
   checkOutTime      String                     @default("11:00")
   amenitiesJson     String                     @default("[]")
   policiesJson      String                     @default("[]")
+  languagesJson     String                     @default("[]")
+  landmarksJson     String                     @default("[]")
+  imageUrlsJson     String                     @default("[]")
+  minimumCheckInAge Int                        @default(18)
+  childrenAllowed   Boolean                    @default(true)
+  petsAllowed       Boolean                    @default(false)
+  smokingAllowed    Boolean                    @default(false)
   imageUrl          String                     @default("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80")
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
@@ -574,6 +587,32 @@ model Booking {
   amendments              BookingAmendment[]
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
+  review                  HotelReview?
+}
+
+model HotelReview {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  userId    String
+  hotelSlug String
+  rating    Int
+  title     String
+  body      String
+  status    String   @default("PENDING")
+  moderationNote String?
+  moderatedAt DateTime?
+  moderatedByUserId String?
+  partnerReply String?
+  partnerRepliedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user      User     @relation("HotelReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  moderatedBy User?  @relation("HotelReviewModerator", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([hotelSlug, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([moderatedByUserId])
 }
 
 model BookingAmendment {

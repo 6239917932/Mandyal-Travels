@@ -72,7 +72,13 @@ export function PartnerPropertyManager({
   async function createProperty(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    const data = Object.fromEntries(new FormData(form));
+    const formData = new FormData(form);
+    const data = {
+      ...Object.fromEntries(formData),
+      childrenAllowed: formData.get('childrenAllowed') === 'on',
+      petsAllowed: formData.get('petsAllowed') === 'on',
+      smokingAllowed: formData.get('smokingAllowed') === 'on',
+    };
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
@@ -196,6 +202,10 @@ export function PartnerPropertyManager({
             </div>
             <p>The property remains private until its first sellable room and rate are added.</p>
             <form className="supplier-form" onSubmit={createProperty}>
+              <div className="supplier-form__section-heading">
+                <span>01</span>
+                <div><strong>Property identity</strong><small>Public name, category, classification, and description</small></div>
+              </div>
               <div className="supplier-form__grid">
                 <Input
                   label="Property name"
@@ -204,6 +214,34 @@ export function PartnerPropertyManager({
                   name="displayName"
                   required
                 />
+                <label className="ui-field">
+                  <span className="ui-field__label">Property type</span>
+                  <select className="ui-input" defaultValue="HOTEL" name="propertyType" required>
+                    <option value="HOTEL">Hotel</option>
+                    <option value="RESORT">Resort</option>
+                    <option value="HOMESTAY">Homestay</option>
+                    <option value="GUEST_HOUSE">Guest house</option>
+                    <option value="APARTMENT">Serviced apartment</option>
+                    <option value="HOSTEL">Hostel</option>
+                  </select>
+                </label>
+                <label className="ui-field">
+                  <span className="ui-field__label">Star rating</span>
+                  <select className="ui-input" defaultValue="3" name="starRating" required>
+                    {[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} star</option>)}
+                  </select>
+                </label>
+              </div>
+              <label className="ui-field">
+                <span className="ui-field__label">Property description</span>
+                <textarea className="ui-input supplier-form__textarea" maxLength={1500} minLength={30} name="description" placeholder="Describe the property, setting, ideal guests, signature experiences, and key selling points." required />
+              </label>
+
+              <div className="supplier-form__section-heading">
+                <span>02</span>
+                <div><strong>Location and map coordinates</strong><small>Complete address and precise map position used by hotel discovery</small></div>
+              </div>
+              <div className="supplier-form__grid">
                 <Input label="City" maxLength={80} minLength={2} name="city" required />
                 <Input label="State" maxLength={80} minLength={2} name="state" required />
                 <Input
@@ -221,16 +259,22 @@ export function PartnerPropertyManager({
                   required
                 />
                 <Input label="Postal code" maxLength={20} name="postalCode" />
+                <Input label="Latitude" max="90" min="-90" name="latitude" placeholder="28.6139" required step="0.000001" type="number" />
+                <Input label="Longitude" max="180" min="-180" name="longitude" placeholder="77.2090" required step="0.000001" type="number" />
+                <label className="ui-field"><span className="ui-field__label">Timezone</span><select className="ui-input" defaultValue="Asia/Kolkata" name="timezone" required><option value="Asia/Kolkata">India Standard Time (Asia/Kolkata)</option><option value="Asia/Dubai">Gulf Standard Time (Asia/Dubai)</option><option value="Europe/London">United Kingdom (Europe/London)</option><option value="America/New_York">US Eastern (America/New_York)</option></select></label>
                 <label className="ui-field">
-                  <span className="ui-field__label">Star rating</span>
-                  <select className="ui-input" defaultValue="3" name="starRating" required>
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <option key={rating} value={rating}>
-                        {rating} star
-                      </option>
-                    ))}
-                  </select>
+                  <span className="ui-field__label">Nearby landmarks (one per line)</span>
+                  <textarea className="ui-input supplier-form__compact-textarea" name="landmarks" placeholder={'Railway station - 2 km\nCity Palace - 4 km'} />
                 </label>
+              </div>
+
+              <div className="supplier-form__section-heading">
+                <span>03</span>
+                <div><strong>Property contact and operations</strong><small>Guest-facing contact, arrival times, languages, and facilities</small></div>
+              </div>
+              <div className="supplier-form__grid">
+                <Input label="Property contact email" maxLength={254} name="contactEmail" required type="email" />
+                <Input label="Property contact phone" maxLength={30} name="contactPhone" placeholder="+91 98765 43210" required type="tel" />
                 <Input
                   defaultValue="14:00"
                   label="Check-in time"
@@ -250,17 +294,21 @@ export function PartnerPropertyManager({
                   name="amenities"
                   placeholder="Wi-Fi, Parking, Restaurant, Pool"
                 />
+                <Input label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
               </div>
-              <label className="ui-field">
-                <span className="ui-field__label">Property description</span>
-                <textarea
-                  className="ui-input supplier-form__textarea"
-                  maxLength={1500}
-                  minLength={30}
-                  name="description"
-                  required
-                />
-              </label>
+
+              <div className="supplier-form__section-heading">
+                <span>04</span>
+                <div><strong>Guest policies</strong><small>Eligibility and house rules shown before booking</small></div>
+              </div>
+              <div className="supplier-form__grid">
+                <Input defaultValue="18" label="Minimum check-in age" max="30" min="16" name="minimumCheckInAge" required type="number" />
+                <div className="supplier-form__policy-checks">
+                  <label><input defaultChecked name="childrenAllowed" type="checkbox" /> Children are welcome</label>
+                  <label><input name="petsAllowed" type="checkbox" /> Pets are allowed</label>
+                  <label><input name="smokingAllowed" type="checkbox" /> Smoking areas are available</label>
+                </div>
+              </div>
               <label className="ui-field">
                 <span className="ui-field__label">Guest policies (one per line)</span>
                 <textarea
@@ -269,12 +317,17 @@ export function PartnerPropertyManager({
                   placeholder={'Government ID required at check-in\nNo smoking in rooms'}
                 />
               </label>
+              <div className="supplier-form__section-heading">
+                <span>05</span>
+                <div><strong>Property media</strong><small>Add a cover image and gallery URLs; uploads can be connected later</small></div>
+              </div>
               <Input
-                label="Property photo URL (optional)"
+                label="Cover photo URL (optional)"
                 name="imageUrl"
                 placeholder="Secure images.unsplash.com URL"
                 type="url"
               />
+              <label className="ui-field"><span className="ui-field__label">Gallery photo URLs (one per line, maximum 12)</span><textarea className="ui-input supplier-form__textarea" name="imageUrls" placeholder={'https://images.unsplash.com/...\nhttps://images.unsplash.com/...'} /></label>
               <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                 Save draft property
               </Button>

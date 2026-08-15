@@ -4,7 +4,9 @@ import { notFound } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
 import { RoomSelectionButton } from '@/components/hotel/RoomSelectionButton';
+import { HotelReviewForm } from '@/components/hotel/HotelReviewForm';
 import { hotelService } from '@/services/hotelService';
+import { hotelReviewService } from '@/services/hotelReviewService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 
 interface HotelDetailsPageProps {
@@ -31,6 +33,9 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
     notFound();
   }
 
+  const reviewData = await hotelReviewService.getHotelReviews(slug);
+  const reviewSummary = reviewData.summary.reviewCount > 0 ? reviewData.summary : hotel.reviewSummary;
+
   const primaryImage = hotel.images.find((image) => image.isPrimary) ?? hotel.images[0];
 
   return (
@@ -50,8 +55,8 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
           </div>
 
           <div className="hotel-details-page__rating">
-            <strong>{hotel.reviewSummary.averageRating.toFixed(1)}</strong>
-            <span>{hotel.reviewSummary.reviewCount} guest reviews</span>
+            <strong>{reviewSummary.averageRating.toFixed(1)}</strong>
+            <span>{reviewSummary.reviewCount} guest reviews</span>
           </div>
         </section>
 
@@ -154,6 +159,39 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                 })}
               </div>
             </section>
+
+            <section className="hotel-details-page__section" id="guest-reviews">
+              <p className="hotel-page__eyebrow">Verified stays</p>
+              <h2>Guest reviews</h2>
+              {reviewData.reviews.length > 0 ? (
+                <div className="hotel-review-list">
+                  {reviewData.reviews.map((review) => (
+                    <Card className="hotel-review" key={review.id}>
+                      <div className="hotel-review__heading">
+                        <div>
+                          <strong>{review.title}</strong>
+                          <span>{review.reviewerName} · Verified stay</span>
+                        </div>
+                        <strong>{review.rating.toFixed(1)}</strong>
+                      </div>
+                      <p>{review.body}</p>
+                      {review.partnerReply ? (
+                        <div className="hotel-review__partner-reply">
+                          <strong>Property response</strong>
+                          <p>{review.partnerReply}</p>
+                        </div>
+                      ) : null}
+                      <time dateTime={review.createdAt}>
+                        {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(review.createdAt))}
+                      </time>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p>No verified guest reviews have been published yet.</p>
+              )}
+              <HotelReviewForm hotelSlug={slug} />
+            </section>
           </div>
 
           <aside>
@@ -171,6 +209,21 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                   <li key={policy}>{policy}</li>
                 ))}
               </ul>
+              {hotel.propertyProfile ? (
+                <>
+                  <h2>Property information</h2>
+                  <dl className="hotel-property-profile">
+                    <div><dt>Property type</dt><dd>{hotel.propertyProfile.propertyType.replaceAll('_', ' ').toLowerCase()}</dd></div>
+                    <div><dt>Minimum check-in age</dt><dd>{hotel.propertyProfile.minimumCheckInAge}</dd></div>
+                    <div><dt>Children</dt><dd>{hotel.propertyProfile.childrenAllowed ? 'Welcome' : 'Not accommodated'}</dd></div>
+                    <div><dt>Pets</dt><dd>{hotel.propertyProfile.petsAllowed ? 'Allowed' : 'Not allowed'}</dd></div>
+                    <div><dt>Smoking</dt><dd>{hotel.propertyProfile.smokingAllowed ? 'Designated areas' : 'Non-smoking property'}</dd></div>
+                    {hotel.propertyProfile.languages.length ? <div><dt>Languages</dt><dd>{hotel.propertyProfile.languages.join(', ')}</dd></div> : null}
+                  </dl>
+                  {hotel.propertyProfile.landmarks.length ? <><h2>Nearby landmarks</h2><ul>{hotel.propertyProfile.landmarks.map((landmark) => <li key={landmark}>{landmark}</li>)}</ul></> : null}
+                  <a className="home-card__link" href={`https://www.openstreetmap.org/?mlat=${hotel.location.latitude}&mlon=${hotel.location.longitude}#map=15/${hotel.location.latitude}/${hotel.location.longitude}`} rel="noreferrer" target="_blank">View location on map</a>
+                </>
+              ) : null}
             </Card>
           </aside>
         </div>

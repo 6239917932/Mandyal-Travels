@@ -1,0 +1,11 @@
+ALTER TABLE "PartnerProperty" ADD COLUMN "propertyType" TEXT NOT NULL DEFAULT 'HOTEL';
+ALTER TABLE "PartnerProperty" ADD COLUMN "contactEmail" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerProperty" ADD COLUMN "contactPhone" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerProperty" ADD COLUMN "timezone" TEXT NOT NULL DEFAULT 'Asia/Kolkata';
+ALTER TABLE "PartnerProperty" ADD COLUMN "languagesJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "PartnerProperty" ADD COLUMN "landmarksJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "PartnerProperty" ADD COLUMN "imageUrlsJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "PartnerProperty" ADD COLUMN "minimumCheckInAge" INTEGER NOT NULL DEFAULT 18;
+ALTER TABLE "PartnerProperty" ADD COLUMN "childrenAllowed" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "PartnerProperty" ADD COLUMN "petsAllowed" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "PartnerProperty" ADD COLUMN "smokingAllowed" BOOLEAN NOT NULL DEFAULT false;

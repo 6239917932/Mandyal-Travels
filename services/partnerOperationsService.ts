@@ -247,15 +247,28 @@ export const partnerOperationsService = {
       checkInTime: string;
       checkOutTime: string;
       city: string;
+      childrenAllowed: boolean;
+      contactEmail: string;
+      contactPhone: string;
       country: string;
       description: string;
       displayName: string;
       imageUrl: string;
+      imageUrls: string[];
+      languages: string[];
+      landmarks: string[];
+      latitude: number;
+      longitude: number;
+      minimumCheckInAge: number;
+      petsAllowed: boolean;
       policies: string[];
       postalCode: string;
+      propertyType: string;
+      smokingAllowed: boolean;
       starRating: number;
       state: string;
       streetAddress: string;
+      timezone: string;
     },
   ) {
     if (
@@ -274,6 +287,15 @@ export const partnerOperationsService = {
     if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5) {
       throw new PartnerOperationsError('INVALID_STAR_RATING', 'Star rating must be from 1 to 5.');
     }
+    if (!Number.isInteger(input.minimumCheckInAge) || input.minimumCheckInAge < 16 || input.minimumCheckInAge > 30) {
+      throw new PartnerOperationsError('INVALID_CHECK_IN_AGE', 'Minimum check-in age must be from 16 to 30.');
+    }
+    if (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90 || !Number.isFinite(input.longitude) || input.longitude < -180 || input.longitude > 180) {
+      throw new PartnerOperationsError('INVALID_COORDINATES', 'Enter valid latitude and longitude coordinates.');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.contactEmail.trim())) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_CONTACT', 'Enter a valid property contact email.');
+    }
     if (
       !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.checkInTime) ||
       !/^([01]\d|2[0-3]):[0-5]\d$/.test(input.checkOutTime)
@@ -289,6 +311,9 @@ export const partnerOperationsService = {
         checkInTime: input.checkInTime,
         checkOutTime: input.checkOutTime,
         city: normalizeText(input.city, 80),
+        childrenAllowed: input.childrenAllowed,
+        contactEmail: normalizeText(input.contactEmail.toLowerCase(), 254),
+        contactPhone: normalizeText(input.contactPhone, 30),
         country: normalizeText(input.country, 80),
         description: normalizeText(input.description, 1_500),
         displayName: normalizeText(input.displayName, 140),
@@ -297,14 +322,26 @@ export const partnerOperationsService = {
           input.imageUrl,
           'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80',
         ),
+        imageUrlsJson: JSON.stringify(
+          input.imageUrls.slice(0, 12).map((url) => validateImageUrl(url, '')).filter(Boolean),
+        ),
+        languagesJson: JSON.stringify(normalizedList(input.languages, 12)),
+        landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
+        latitude: input.latitude,
+        longitude: input.longitude,
         listingSource: 'MANAGED',
+        minimumCheckInAge: input.minimumCheckInAge,
         partnerId,
+        petsAllowed: input.petsAllowed,
         policiesJson: JSON.stringify(normalizedList(input.policies, 12)),
         postalCode: normalizeText(input.postalCode, 20),
         publicationStatus: 'DRAFT',
+        propertyType: normalizeText(input.propertyType, 40).toUpperCase(),
+        smokingAllowed: input.smokingAllowed,
         starRating: input.starRating,
         state: normalizeText(input.state, 80),
         streetAddress: normalizeText(input.streetAddress, 240),
+        timezone: normalizeText(input.timezone, 80),
       },
     });
   },
