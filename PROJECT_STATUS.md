@@ -141,7 +141,6 @@ tax invoices.
 ## Current quality gate
 
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-and a Next.js production build with all 82 routes. Clean-database migration execution must be run
-outside the Codex sandbox because its Prisma schema-engine subprocess is blocked here. Provider
-integration work must preserve those checks and add provider-specific automated tests before going
-live.
+a Next.js production build with all 83 routes, and clean-database verification of all 35 migrations
+with foreign-key integrity enabled. Provider integration work must preserve those checks and add
+provider-specific automated tests before going live.
