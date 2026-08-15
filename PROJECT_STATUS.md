@@ -13,6 +13,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   other-device revocation, profile editing, and password changes
 - Persistent booking-email, SMS-alert, WhatsApp-update, and marketing preferences
 - Hotel, flight, bus, and car search and booking demonstrations
+- Provider-neutral Flight search validation now enforces IATA-style airport codes, travel dates,
+  bounded passenger counts, route/cabin/date matching, seat sufficiency, positive prices, valid
+  segment timing, and continuous connections before supplier offers can enter checkout
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
@@ -203,7 +206,7 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current Hotel supplier milestone passes 16 domain regression tests, Prisma Client generation,
+The current travel-domain milestone passes 20 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 86 generated route entries, and
 clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

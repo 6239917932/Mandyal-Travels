@@ -38,6 +38,7 @@ export function FlightSearchForm({ criteria }: { criteria: FlightSearchCriteria 
       <Input
         defaultValue={criteria.adults}
         label="Adults"
+        max="9"
         min="1"
         name="adults"
         required

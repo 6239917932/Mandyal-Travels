@@ -18,7 +18,10 @@ export function createFlightSearchCriteria(
   const cabin = first(params.cabinClass);
   const trip = first(params.tripType);
   return {
-    adults: Number.isInteger(adults) && adults > 0 ? adults : defaultFlightSearchCriteria.adults,
+    adults:
+      Number.isInteger(adults) && adults >= 1 && adults <= 9
+        ? adults
+        : defaultFlightSearchCriteria.adults,
     cabinClass: cabin === 'business' || cabin === 'premium-economy' ? cabin : 'economy',
     departureDate: first(params.departureDate) ?? defaultFlightSearchCriteria.departureDate,
     destination: (first(params.destination) ?? defaultFlightSearchCriteria.destination)
