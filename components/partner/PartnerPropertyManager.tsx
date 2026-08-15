@@ -44,14 +44,21 @@ type RoomType = {
 };
 
 export type ManagedProperty = {
+  checkInTime: string;
+  checkOutTime: string;
   city: string;
+  contactEmail: string;
+  contactPhone: string;
+  description: string;
   district: string;
   displayName: string;
   hotelSlug: string;
   id: string;
   locality: string;
   locationAliasesJson: string;
+  minimumCheckInAge: number;
   publicationStatus: string;
+  propertyType: string;
   rooms: RoomType[];
   starRating: number;
   state: string;
@@ -86,6 +93,7 @@ export function PartnerPropertyManager({
   const [activeRatePlanRoom, setActiveRatePlanRoom] = useState<string>();
   const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
   const [activeRateEditor, setActiveRateEditor] = useState<string>();
+  const [activeProfileForm, setActiveProfileForm] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -381,6 +389,33 @@ export function PartnerPropertyManager({
     }
   }
 
+  async function updateProfile(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}`, {
+        body: JSON.stringify({ ...data, action: 'UPDATE_PROFILE' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: ManagedProperty } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The property profile could not be updated.'));
+        return;
+      }
+      setActiveProfileForm(undefined);
+      setSuccess(`${result.data.displayName} public profile was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <div className="booking-page partner-property-manager">
       <div className="booking-page__container">
@@ -603,6 +638,28 @@ export function PartnerPropertyManager({
                   ) : null}
                 </div>
               </div>
+              {canManage ? (
+                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveProfileForm(activeProfileForm === property.id ? undefined : property.id)} type="button">
+                  {activeProfileForm === property.id ? 'Close profile editor' : 'Edit property profile'}
+                </button>
+              ) : null}
+              {activeProfileForm === property.id ? (
+                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateProfile(event, property)}>
+                  <div className="booking-confirmation__reference"><span>Profile</span><strong>Public identity and operations</strong></div>
+                  <div className="supplier-form__grid">
+                    <Input defaultValue={property.displayName} label="Property name" maxLength={140} minLength={2} name="displayName" required />
+                    <label className="ui-field"><span className="ui-field__label">Property type</span><select className="ui-input" defaultValue={property.propertyType} name="propertyType" required><option value="HOTEL">Hotel</option><option value="RESORT">Resort</option><option value="HOMESTAY">Homestay</option><option value="GUEST_HOUSE">Guest house</option><option value="APARTMENT">Serviced apartment</option><option value="HOSTEL">Hostel</option></select></label>
+                    <label className="ui-field"><span className="ui-field__label">Star rating</span><select className="ui-input" defaultValue={property.starRating} name="starRating" required>{[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} star</option>)}</select></label>
+                    <Input defaultValue={property.contactEmail} label="Guest contact email" maxLength={254} name="contactEmail" required type="email" />
+                    <Input defaultValue={property.contactPhone} label="Guest contact phone" maxLength={30} name="contactPhone" required type="tel" />
+                    <Input defaultValue={property.checkInTime} label="Check-in time" name="checkInTime" required type="time" />
+                    <Input defaultValue={property.checkOutTime} label="Check-out time" name="checkOutTime" required type="time" />
+                    <Input defaultValue={property.minimumCheckInAge} label="Minimum check-in age" max={30} min={16} name="minimumCheckInAge" required type="number" />
+                  </div>
+                  <label className="ui-field"><span className="ui-field__label">Property description</span><textarea className="ui-input supplier-form__textarea" defaultValue={property.description} maxLength={1500} minLength={30} name="description" required /></label>
+                  <Button fullWidth isLoading={isSaving} type="submit">Save property profile</Button>
+                </form>
+              ) : null}
               <div className="partner-property-manager__rooms">
                 {property.rooms.map((room) => (
                   <div key={room.id}>

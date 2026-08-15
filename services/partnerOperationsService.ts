@@ -797,6 +797,59 @@ export const partnerOperationsService = {
     });
   },
 
+  async updatePropertyProfile(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      checkInTime: string;
+      checkOutTime: string;
+      contactEmail: string;
+      contactPhone: string;
+      description: string;
+      displayName: string;
+      minimumCheckInAge: number;
+      propertyType: string;
+      starRating: number;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    if (input.displayName.trim().length < 2 || input.description.trim().length < 30) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_PROFILE', 'Complete the property name and description.');
+    }
+    if (!['HOTEL', 'RESORT', 'HOMESTAY', 'GUEST_HOUSE', 'APARTMENT', 'HOSTEL'].includes(input.propertyType)) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_TYPE', 'Choose a valid property type.');
+    }
+    if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5) {
+      throw new PartnerOperationsError('INVALID_STAR_RATING', 'Star rating must be between 1 and 5.');
+    }
+    if (!/^\S+@\S+\.\S+$/.test(input.contactEmail.trim()) || input.contactPhone.trim().length < 7) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_CONTACT', 'Enter a valid guest-facing email and phone number.');
+    }
+    if (!/^\d{2}:\d{2}$/.test(input.checkInTime) || !/^\d{2}:\d{2}$/.test(input.checkOutTime)) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_TIME', 'Enter valid check-in and check-out times.');
+    }
+    if (!Number.isInteger(input.minimumCheckInAge) || input.minimumCheckInAge < 16 || input.minimumCheckInAge > 30) {
+      throw new PartnerOperationsError('INVALID_CHECK_IN_AGE', 'Minimum check-in age must be between 16 and 30.');
+    }
+    return prisma.partnerProperty.update({
+      data: {
+        checkInTime: input.checkInTime,
+        checkOutTime: input.checkOutTime,
+        contactEmail: normalizeText(input.contactEmail, 254).toLowerCase(),
+        contactPhone: normalizeText(input.contactPhone, 30),
+        description: normalizeText(input.description, 1500),
+        displayName: normalizeText(input.displayName, 140),
+        minimumCheckInAge: input.minimumCheckInAge,
+        propertyType: input.propertyType,
+        starRating: input.starRating,
+      },
+      where: { id: property.id },
+    });
+  },
+
   async setHotelCalendar(input: {
     availableRooms: number;
     closedToArrival: boolean;
