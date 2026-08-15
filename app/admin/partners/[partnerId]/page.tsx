@@ -86,7 +86,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
           />
           <div className="partner-workspace__properties">
             {partner.properties.map((property) => (
-              <Card key={property.id}>
+              <Card id={`property-${property.id}`} key={property.id}>
                 <strong>{property.displayName}</strong>
                 <span>{property.hotelSlug}</span>
                 <small>

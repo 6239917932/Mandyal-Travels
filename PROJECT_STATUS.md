@@ -98,6 +98,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
 - Platform property review workflow for supplier-created listings with pending, approved, and
   rejected states, correction notes, administrator decisions, audit history, and approval-gated search publication
+- Consolidated administrator property-review queue with oldest-first ordering, submission context,
+  active-room counts, and direct navigation to the exact supplier listing decision controls
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
