@@ -10,6 +10,8 @@ export type BusinessBookingContext = {
 };
 
 export type PartnerBookingQuery = {
+  arrivalFrom?: string;
+  arrivalThrough?: string;
   bookingStatus?: HotelBookingRecord['status'];
   hotelSlugs?: string[];
   operationalStatus?: HotelBookingRecord['operationalStatus'];
@@ -24,6 +26,8 @@ function matchesPartnerQuery(booking: HotelBookingRecord, options: PartnerBookin
     (!options.hotelSlugs || options.hotelSlugs.includes(booking.hotelSlug)) &&
     (!options.bookingStatus || booking.status === options.bookingStatus) &&
     (!options.operationalStatus || booking.operationalStatus === options.operationalStatus) &&
+    (!options.arrivalFrom || booking.checkInDate >= options.arrivalFrom) &&
+    (!options.arrivalThrough || booking.checkInDate <= options.arrivalThrough) &&
     (!query ||
       [
         booking.confirmationCode,
@@ -40,6 +44,14 @@ function createPartnerBookingWhere(options: PartnerBookingQuery): Prisma.Booking
   return {
     hotelSlug: options.hotelSlugs ? { in: options.hotelSlugs } : undefined,
     operationalStatus: options.operationalStatus,
+    quote:
+      options.arrivalFrom || options.arrivalThrough
+        ? {
+            is: {
+              checkInDate: { gte: options.arrivalFrom, lte: options.arrivalThrough },
+            },
+          }
+        : undefined,
     status: options.bookingStatus,
     ...(query
       ? {
@@ -175,6 +187,7 @@ export class InMemoryBookingRepository implements BookingRepository {
 
 function mapBooking(booking: {
   availabilityLockId: string;
+  quote: { checkInDate: string; checkOutDate: string };
   confirmationCode: string;
   createdAt: Date;
   currency: string;
@@ -193,6 +206,8 @@ function mapBooking(booking: {
 
   return {
     availabilityLockId: booking.availabilityLockId,
+    checkInDate: booking.quote.checkInDate,
+    checkOutDate: booking.quote.checkOutDate,
     confirmationCode: booking.confirmationCode,
     createdAt: booking.createdAt.toISOString(),
     currency: booking.currency as HotelBookingRecord['currency'],
@@ -237,7 +252,7 @@ export class PrismaBookingRepository implements BookingRepository {
     accessTokenHash: string,
   ): Promise<HotelBookingRecord | undefined> {
     const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
+      include: { guest: true, payment: true, quote: true },
       where: { confirmationCode: code, accessTokenHash },
     });
     return booking ? mapBooking(booking) : undefined;
@@ -248,7 +263,7 @@ export class PrismaBookingRepository implements BookingRepository {
     email: string,
   ): Promise<HotelBookingRecord | undefined> {
     const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
+      include: { guest: true, payment: true, quote: true },
       where: { confirmationCode: code },
     });
 
@@ -261,7 +276,7 @@ export class PrismaBookingRepository implements BookingRepository {
 
   async findByIdempotencyKey(key: string): Promise<HotelBookingRecord | undefined> {
     const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
+      include: { guest: true, payment: true, quote: true },
       where: { idempotencyKey: key },
     });
     return booking ? mapBooking(booking) : undefined;
@@ -269,7 +284,7 @@ export class PrismaBookingRepository implements BookingRepository {
 
   async findById(id: string): Promise<HotelBookingRecord | undefined> {
     const booking = await prisma.booking.findUnique({
-      include: { guest: true, payment: true },
+      include: { guest: true, payment: true, quote: true },
       where: { id },
     });
     return booking ? mapBooking(booking) : undefined;
@@ -279,7 +294,7 @@ export class PrismaBookingRepository implements BookingRepository {
     options: PartnerBookingQuery = {},
   ): Promise<HotelBookingRecord[]> {
     const bookings = await prisma.booking.findMany({
-      include: { guest: true, payment: true },
+      include: { guest: true, payment: true, quote: true },
       orderBy: { createdAt: 'desc' },
       skip: options.skip,
       take: options.take,

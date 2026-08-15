@@ -33,6 +33,8 @@ export default function PartnerBookingsPage() {
   const [query, setQuery] = useState('');
   const [bookingStatus, setBookingStatus] = useState('');
   const [stayStatus, setStayStatus] = useState('');
+  const [arrivalFrom, setArrivalFrom] = useState('');
+  const [arrivalThrough, setArrivalThrough] = useState('');
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
@@ -44,6 +46,8 @@ export default function PartnerBookingsPage() {
       if (query) parameters.set('query', query);
       if (bookingStatus) parameters.set('bookingStatus', bookingStatus);
       if (stayStatus) parameters.set('stayStatus', stayStatus);
+      if (arrivalFrom) parameters.set('arrivalFrom', arrivalFrom);
+      if (arrivalThrough) parameters.set('arrivalThrough', arrivalThrough);
       const response = await fetch(`/api/v1/partner/bookings?${parameters.toString()}`);
       const result = await readJsonResponse<
         { data: PartnerBookingRecord[]; meta: PartnerBookingMeta } | ApiErrorResponse
@@ -63,7 +67,7 @@ export default function PartnerBookingsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookingStatus, query, stayStatus]);
+  }, [arrivalFrom, arrivalThrough, bookingStatus, query, stayStatus]);
 
   useEffect(() => {
     const task = window.setTimeout(() => void loadPage(1), 0);
@@ -183,6 +187,8 @@ export default function PartnerBookingsPage() {
                   <option value="NO_SHOW">No-show</option>
                 </select>
               </label>
+              <Input label="Arriving from" name="arrivalFrom" onChange={(event) => setArrivalFrom(event.target.value)} type="date" value={arrivalFrom} />
+              <Input label="Arriving through" min={arrivalFrom || undefined} name="arrivalThrough" onChange={(event) => setArrivalThrough(event.target.value)} type="date" value={arrivalThrough} />
               <Button type="submit">Apply search</Button>
               </form>
             </Card>

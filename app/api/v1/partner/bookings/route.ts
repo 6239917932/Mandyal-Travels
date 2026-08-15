@@ -30,7 +30,20 @@ export async function GET(request: Request): Promise<Response> {
   const stayStatus = ['RESERVED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW'].includes(requestedStayStatus ?? '')
     ? (requestedStayStatus as 'RESERVED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW')
     : undefined;
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const requestedArrivalFrom = url.searchParams.get('arrivalFrom') ?? '';
+  const requestedArrivalThrough = url.searchParams.get('arrivalThrough') ?? '';
+  const arrivalFrom = datePattern.test(requestedArrivalFrom) ? requestedArrivalFrom : undefined;
+  const arrivalThrough = datePattern.test(requestedArrivalThrough) ? requestedArrivalThrough : undefined;
+  if (arrivalFrom && arrivalThrough && arrivalFrom > arrivalThrough) {
+    return Response.json(
+      { error: { code: 'INVALID_ARRIVAL_RANGE', message: 'Arrival end date must be on or after the start date.' } } satisfies ApiErrorResponse,
+      { status: 400 },
+    );
+  }
   const filters = {
+    arrivalFrom,
+    arrivalThrough,
     bookingStatus,
     hotelSlugs: access.allowedHotelSlugs,
     operationalStatus: stayStatus,

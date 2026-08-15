@@ -80,6 +80,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Supplier-scoped hotel booking CSV export with a bounded 1,000-record operational limit
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
   captured-value summaries, and pagination
+- Validated arrival-window filters for front-desk arrival lists, combinable with booking search and
+  operational status filters
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
 - Integration-key requests require a validated active supplier identifier; an integration key alone

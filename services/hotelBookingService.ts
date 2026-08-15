@@ -325,6 +325,8 @@ export class HotelBookingService {
 
     const booking: HotelBookingRecord = {
       availabilityLockId: convertedLock.id,
+      checkInDate: quote.checkInDate,
+      checkOutDate: quote.checkOutDate,
       confirmationCode: createBookingReference('MT'),
       createdAt: new Date().toISOString(),
       currency: quote.currency,
@@ -409,8 +411,8 @@ export class HotelBookingService {
     return {
       ...booking,
       cancellationPolicy: ratePlan?.cancellationPolicy.description,
-      checkInDate: quote?.checkInDate || undefined,
-      checkOutDate: quote?.checkOutDate || undefined,
+      checkInDate: quote?.checkInDate ?? booking.checkInDate,
+      checkOutDate: quote?.checkOutDate ?? booking.checkOutDate,
       hotelName: hotel?.name ?? booking.hotelSlug,
       latestAmendment,
       priceComponents: quote?.components,

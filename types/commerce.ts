@@ -124,6 +124,8 @@ export interface PartnerHotelCalendarRecord {
 
 export interface HotelBookingRecord {
   availabilityLockId: string;
+  checkInDate: string;
+  checkOutDate: string;
   confirmationCode: string;
   createdAt: string;
   guest: {
@@ -145,8 +147,6 @@ export interface HotelBookingRecord {
 
 export interface ManagedHotelBooking extends HotelBookingRecord {
   cancellationPolicy?: string;
-  checkInDate?: string;
-  checkOutDate?: string;
   hotelName: string;
   latestAmendment?: BookingAmendmentRecord;
   priceComponents?: PriceComponent[];
