@@ -19,7 +19,7 @@ export default async function PartnerPropertiesPage() {
   const initialProperties = await prisma.partnerProperty.findMany({
     include: {
       rooms: {
-        include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+        include: { ratePlans: { orderBy: { createdAt: 'asc' } } },
         orderBy: { createdAt: 'asc' },
       },
     },

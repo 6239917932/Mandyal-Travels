@@ -85,6 +85,7 @@ export function PartnerPropertyManager({
   const [activeLocationForm, setActiveLocationForm] = useState<string>();
   const [activeRatePlanRoom, setActiveRatePlanRoom] = useState<string>();
   const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
+  const [activeRateEditor, setActiveRateEditor] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -276,18 +277,50 @@ export function PartnerPropertyManager({
     }
   }
 
-  async function pauseRatePlan(property: ManagedProperty, room: RoomType, rate: RatePlan) {
+  async function changeRatePlanStatus(property: ManagedProperty, room: RoomType, rate: RatePlan) {
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, { method: 'PATCH' });
+      const action = rate.status === 'ACTIVE' ? 'PAUSE' : 'RESTORE';
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
+        body: JSON.stringify({ action }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
       const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
       if (!response.ok || !result || !('data' in result)) {
         setError(messageFrom(result, 'The rate plan could not be paused.'));
         return;
       }
-      setSuccess(`${rate.name} was paused. Existing history was retained.`);
+      setSuccess(`${rate.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}. Existing history was retained.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateRatePlan(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType, rate: RatePlan) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
+        body: JSON.stringify({ ...Object.fromEntries(formData), action: 'UPDATE', refundable: formData.get('refundable') === 'on' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be updated.'));
+        return;
+      }
+      setActiveRateEditor(undefined);
+      setSuccess(`${result.data.name} was updated.`);
       await loadProperties();
     } catch {
       setError('The rate service could not be reached.');
@@ -554,17 +587,37 @@ export function PartnerPropertyManager({
                       {room.taxesAndFees.toLocaleString('en-IN')} taxes
                     </span>
                     <small>
-                      {room.ratePlans.length || 1} active rate plan(s)
+                      {room.ratePlans.filter((rate) => rate.status === 'ACTIVE').length || 1} active rate plan(s)
                     </small>
                     {room.ratePlans.map((rate) => (
-                      <small key={rate.id}>
-                        {rate.name} · ₹{rate.nightlyRate.toLocaleString('en-IN')} + ₹
-                        {rate.taxesAndFees.toLocaleString('en-IN')} · {rate.minimumStayNights}–
-                        {rate.maximumStayNights} nights
-                        {canManage && room.ratePlans.length > 1 ? (
-                          <button className="home-card__link" disabled={isSaving} onClick={() => void pauseRatePlan(property, room, rate)} type="button">Pause rate</button>
+                      <div className="partner-property-manager__rate" key={rate.id}>
+                        <small>
+                          {rate.name} · ₹{rate.nightlyRate.toLocaleString('en-IN')} + ₹
+                          {rate.taxesAndFees.toLocaleString('en-IN')} · {rate.minimumStayNights}–
+                          {rate.maximumStayNights} nights · {rate.status.toLowerCase()}
+                        </small>
+                        {canManage ? (
+                          <div className="manage-booking__document-actions">
+                            <button className="home-card__link" onClick={() => setActiveRateEditor(activeRateEditor === rate.id ? undefined : rate.id)} type="button">{activeRateEditor === rate.id ? 'Close editor' : 'Edit rate'}</button>
+                            <button className="home-card__link" disabled={isSaving || (rate.status === 'ACTIVE' && room.ratePlans.filter((candidate) => candidate.status === 'ACTIVE').length === 1)} onClick={() => void changeRatePlanStatus(property, room, rate)} type="button">{rate.status === 'ACTIVE' ? 'Pause rate' : 'Restore rate'}</button>
+                          </div>
                         ) : null}
-                      </small>
+                        {activeRateEditor === rate.id ? (
+                          <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRatePlan(event, property, room, rate)}>
+                            <div className="supplier-form__grid">
+                              <Input defaultValue={rate.name} label="Rate plan name" maxLength={100} minLength={2} name="name" required />
+                              <Input defaultValue={rate.nightlyRate} label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
+                              <Input defaultValue={rate.taxesAndFees} label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
+                              <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue={rate.mealPlan} name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
+                              <Input defaultValue={rate.minimumStayNights} label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
+                              <Input defaultValue={rate.maximumStayNights} label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                            </div>
+                            <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" defaultValue={rate.cancellationDescription} maxLength={300} minLength={10} name="cancellationDescription" required /></label>
+                            <label className="supplier-form__check"><input defaultChecked={rate.refundable} name="refundable" type="checkbox" /> Refundable under the stated policy</label>
+                            <Button fullWidth isLoading={isSaving} type="submit">Save rate plan</Button>
+                          </form>
+                        ) : null}
+                      </div>
                     ))}
                     {canManage ? (
                       <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">

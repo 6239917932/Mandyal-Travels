@@ -604,7 +604,7 @@ export const partnerOperationsService = {
         maximumGuests: input.maximumGuests,
         name: normalizeText(input.name, 120),
       },
-      include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+      include: { ratePlans: { orderBy: { createdAt: 'asc' } } },
       where: { id: room.id },
     });
   },
@@ -626,6 +626,83 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError('LAST_RATE_PLAN', 'Add another active rate plan before pausing this one.');
     }
     return prisma.partnerRatePlan.update({ data: { status: 'PAUSED' }, where: { id: ratePlan.id } });
+  },
+
+  async restoreRatePlan(partnerId: string, propertyId: string, roomId: string, ratePlanRecordId: string) {
+    const ratePlan = await prisma.partnerRatePlan.findFirst({
+      include: { room: { include: { property: true } } },
+      where: { id: ratePlanRecordId, roomId, status: 'PAUSED' },
+    });
+    if (
+      !ratePlan ||
+      ratePlan.room.propertyId !== propertyId ||
+      ratePlan.room.property.partnerId !== partnerId ||
+      ratePlan.room.property.listingSource !== 'MANAGED' ||
+      ratePlan.room.property.status !== 'ACTIVE'
+    ) {
+      throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The paused rate plan was not found.');
+    }
+    const activeCount = await prisma.partnerRatePlan.count({ where: { roomId, status: 'ACTIVE' } });
+    if (activeCount >= 8) throw new PartnerOperationsError('RATE_PLAN_LIMIT', 'A room can have up to 8 active rate plans.');
+    return prisma.partnerRatePlan.update({ data: { status: 'ACTIVE' }, where: { id: ratePlan.id } });
+  },
+
+  async updateRatePlan(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    ratePlanRecordId: string,
+    input: {
+      cancellationDescription: string;
+      maximumStayNights: number;
+      mealPlan: string;
+      minimumStayNights: number;
+      name: string;
+      nightlyRate: number;
+      refundable: boolean;
+      taxesAndFees: number;
+    },
+  ) {
+    const ratePlan = await prisma.partnerRatePlan.findFirst({
+      include: { room: { include: { property: true } } },
+      where: { id: ratePlanRecordId, roomId },
+    });
+    if (
+      !ratePlan ||
+      ratePlan.room.propertyId !== propertyId ||
+      ratePlan.room.property.partnerId !== partnerId ||
+      ratePlan.room.property.listingSource !== 'MANAGED' ||
+      ratePlan.room.property.status !== 'ACTIVE'
+    ) {
+      throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The rate plan was not found.');
+    }
+    if (input.name.trim().length < 2 || input.cancellationDescription.trim().length < 10) {
+      throw new PartnerOperationsError('INVALID_RATE_PLAN', 'Complete the rate plan and cancellation details.');
+    }
+    if (
+      !Number.isInteger(input.nightlyRate) || input.nightlyRate < 100 || input.nightlyRate > 5_000_000 ||
+      !Number.isInteger(input.taxesAndFees) || input.taxesAndFees < 0 || input.taxesAndFees > 1_000_000
+    ) throw new PartnerOperationsError('INVALID_RATE', 'Enter a valid nightly rate and taxes in INR.');
+    if (
+      !Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30 ||
+      !Number.isInteger(input.maximumStayNights) || input.maximumStayNights < input.minimumStayNights || input.maximumStayNights > 90
+    ) throw new PartnerOperationsError('INVALID_STAY_RESTRICTION', 'Stay limits must be between 1 and 90 nights.');
+    if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
+      throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
+    }
+    return prisma.partnerRatePlan.update({
+      data: {
+        cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        maximumStayNights: input.maximumStayNights,
+        mealPlan: input.mealPlan,
+        minimumStayNights: input.minimumStayNights,
+        name: normalizeText(input.name, 100),
+        nightlyRate: input.nightlyRate,
+        refundable: input.refundable,
+        taxesAndFees: input.taxesAndFees,
+      },
+      where: { id: ratePlan.id },
+    });
   },
 
   async setPropertyPublication(partnerId: string, propertyId: string, action: 'PAUSE' | 'PUBLISH') {
