@@ -58,6 +58,7 @@ model SupplyPartner {
   applications        PartnerApplication[]
   vehicles            PartnerVehicle[]
   vehicleReservations PartnerVehicleReservation[]
+  busRoutes           PartnerBusRoute[]
 
   @@index([status, createdAt])
 }
@@ -127,6 +128,46 @@ model PartnerProperty {
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
   @@index([approvalStatus, submittedAt])
+}
+
+model PartnerBusRoute {
+  id             String           @id @default(cuid())
+  partnerId      String
+  code           String           @unique
+  origin         String
+  destination    String
+  boardingPoint  String
+  droppingPoint  String
+  status         String           @default("ACTIVE")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  partner        SupplyPartner    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  trips          PartnerBusTrip[]
+
+  @@index([partnerId, status])
+  @@index([origin, destination, status])
+}
+
+model PartnerBusTrip {
+  id                 String          @id @default(cuid())
+  routeId            String
+  serviceDate        String
+  departureTime      String
+  arrivalTime        String
+  busType            String
+  seatCapacity       Int
+  pricePerSeat       Int
+  currency           String          @default("INR")
+  amenitiesJson      String          @default("[]")
+  cancellationPolicy String
+  refundable         Boolean         @default(false)
+  status             String          @default("ACTIVE")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  route              PartnerBusRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@unique([routeId, serviceDate, departureTime])
+  @@index([serviceDate, status])
 }
 
 model PartnerRoomType {

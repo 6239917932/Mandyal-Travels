@@ -117,6 +117,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   and booking quote validation
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Audited car maintenance records with category, vendor, cost, status, history, and automatic stop-sales for active service dates
+- Bus operator onboarding and a scoped route/trip workspace with governed schedules, seat capacity, fares, amenities, refundability, and cancellation terms
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries

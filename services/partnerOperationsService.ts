@@ -378,10 +378,10 @@ export const partnerOperationsService = {
     inventorySummary: string;
     partnerType: string;
   }) {
-    if (!['HOTEL', 'CAR'].includes(input.partnerType)) {
+    if (!['HOTEL', 'CAR', 'BUS'].includes(input.partnerType)) {
       throw new PartnerOperationsError(
         'INVALID_PARTNER_TYPE',
-        'Choose hotel or car supplier onboarding.',
+        'Choose hotel, car, or bus supplier onboarding.',
       );
     }
     if (
