@@ -4,6 +4,7 @@ import { FlightItineraryActions } from '@/components/flight/FlightItineraryActio
 import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { flightService } from '@/services/flightService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight itinerary' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -19,14 +20,16 @@ export default async function FlightItineraryPage({
   const query = await searchParams;
   const criteria = createFlightSearchCriteria(query);
   const offerId = first(query.offerId);
-  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? flightService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'FLIGHT'),
+  ]);
+  if (!offer || !ownsConfirmation)
     return (
       <main className="flight-itinerary">
         <h1>Itinerary unavailable</h1>
       </main>
     );
-  const segment = offer.segments[0];
   return (
     <main className="flight-itinerary">
       <header>
@@ -43,24 +46,21 @@ export default async function FlightItineraryPage({
       <section>
         <h2>Flight details</h2>
         <dl>
-          <div>
-            <dt>Airline</dt>
-            <dd>{segment.airlineName}</dd>
-          </div>
-          <div>
-            <dt>Flight</dt>
-            <dd>{segment.flightNumber}</dd>
-          </div>
-          <div>
-            <dt>Route</dt>
-            <dd>
-              {segment.departureAirport} → {segment.arrivalAirport}
-            </dd>
-          </div>
-          <div>
-            <dt>Departure date</dt>
-            <dd>{criteria.departureDate}</dd>
-          </div>
+          {offer.segments.map((segment) => (
+            <div key={`${segment.leg}-${segment.flightNumber}`}>
+              <dt>
+                {segment.leg === 'outbound'
+                  ? 'Outbound flight'
+                  : segment.leg === 'return'
+                    ? 'Return flight'
+                    : `Flight ${(segment.journeyIndex ?? 0) + 1}`}
+              </dt>
+              <dd>
+                {segment.airlineName} {segment.flightNumber} · {segment.departureAirport} →{' '}
+                {segment.arrivalAirport} · {segment.departureAt.slice(0, 10)}
+              </dd>
+            </div>
+          ))}
           <div>
             <dt>Cabin</dt>
             <dd>{criteria.cabinClass}</dd>

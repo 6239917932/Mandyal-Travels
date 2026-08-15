@@ -12,6 +12,7 @@ export const siteConfig = {
     { href: '/hotels', label: 'Hotels' },
     { href: '/buses', label: 'Buses' },
     { href: '/cars', label: 'Cars' },
+    { href: '/trip-planner', label: 'Trip planner' },
     { href: '/offers', label: 'Offers' },
     { href: '/business', label: 'Business' },
     { href: '/partners', label: 'Partners' },

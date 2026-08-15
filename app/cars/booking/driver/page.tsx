@@ -36,14 +36,14 @@ export default async function CarDriverPage({
   return (
     <div className="car-booking-page">
       <div className="car-booking-page__container">
-        <p className="hotel-page__eyebrow">Driver details</p>
-        <h1>Who is driving?</h1>
+        <p className="hotel-page__eyebrow">Booking party</p>
+        <h1>{criteria.rentalMode === 'chauffeur' ? 'Who is travelling?' : 'Who is driving?'}</h1>
         <p className="flight-booking-page__intro">
-          Enter the primary driver and booking contact information.
+          Enter the {criteria.rentalMode === 'chauffeur' ? 'lead traveller' : 'primary driver'} and booking contact information.
         </p>
         <div className="car-booking-page__grid">
           <Card>
-            <CarDriverForm nextQuery={query} />
+            <CarDriverForm nextQuery={query} rentalMode={criteria.rentalMode} />
           </Card>
           <Card className="car-booking-page__summary">
             <p className="hotel-page__eyebrow">Rental summary</p>
@@ -52,7 +52,8 @@ export default async function CarDriverPage({
               <div>
                 <dt>Rental period</dt>
                 <dd>
-                  {criteria.pickupDate} to {criteria.dropoffDate}
+                  {criteria.pickupDate} {criteria.pickupTime} to {criteria.dropoffDate}{' '}
+                  {criteria.dropoffTime}
                 </dd>
               </div>
               <div>

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Review flight' };
 
@@ -68,19 +68,38 @@ export default async function FlightBookingReviewPage({
                 </small>
               </div>
             </div>
-            <div className="flight-booking-page__route">
-              <div>
-                <strong>{time(segment.departureAt)}</strong>
-                <span>{segment.departureAirport}</span>
-              </div>
-              <div>
-                <span>{segment.stops === 0 ? 'Non-stop' : `${segment.stops} stop`}</span>
-                <small>{criteria.departureDate}</small>
-              </div>
-              <div>
-                <strong>{time(segment.arrivalAt)}</strong>
-                <span>{segment.arrivalAirport}</span>
-              </div>
+            <div className="flight-booking-page__routes">
+              {offer.segments.map((itinerarySegment) => (
+                <div
+                  className="flight-booking-page__route"
+                  key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}
+                >
+                  <div>
+                    <small>
+                      {itinerarySegment.leg === 'outbound'
+                        ? 'Outbound'
+                        : itinerarySegment.leg === 'return'
+                          ? 'Return'
+                          : `Flight ${(itinerarySegment.journeyIndex ?? 0) + 1}`}
+                    </small>
+                    <strong>{time(itinerarySegment.departureAt)}</strong>
+                    <span>{itinerarySegment.departureAirport}</span>
+                  </div>
+                  <div>
+                    <span>
+                      {itinerarySegment.stops === 0
+                        ? 'Non-stop'
+                        : `${itinerarySegment.stops} stop`}
+                    </span>
+                    <small>{itinerarySegment.departureAt.slice(0, 10)}</small>
+                  </div>
+                  <div>
+                    <small>{itinerarySegment.flightNumber}</small>
+                    <strong>{time(itinerarySegment.arrivalAt)}</strong>
+                    <span>{itinerarySegment.arrivalAirport}</span>
+                  </div>
+                </div>
+              ))}
             </div>
             <dl className="flight-booking-page__facts">
               <div>
@@ -124,16 +143,7 @@ export default async function FlightBookingReviewPage({
               className="ui-button ui-button--accent ui-button--full-width"
               href={{
                 pathname: '/flights/booking/passengers',
-                query: {
-                  adults: criteria.adults,
-                  cabinClass: criteria.cabinClass,
-                  departureDate: criteria.departureDate,
-                  destination: criteria.destination,
-                  offerId: offer.id,
-                  origin: criteria.origin,
-                  returnDate: criteria.returnDate,
-                  tripType: criteria.tripType,
-                },
+                query: { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id },
               }}
             >
               Continue to passenger details
@@ -142,14 +152,7 @@ export default async function FlightBookingReviewPage({
               className="flight-booking-page__change"
               href={{
                 pathname: '/flights',
-                query: {
-                  adults: criteria.adults,
-                  cabinClass: criteria.cabinClass,
-                  departureDate: criteria.departureDate,
-                  destination: criteria.destination,
-                  origin: criteria.origin,
-                  tripType: criteria.tripType,
-                },
+                query: flightSearchCriteriaToQuery(criteria),
               }}
             >
               Choose another flight

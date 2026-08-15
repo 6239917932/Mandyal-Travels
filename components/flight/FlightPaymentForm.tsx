@@ -33,6 +33,7 @@ interface FlightPaymentFormProps {
     departureAirport: string;
     departureDate: string;
     destinationAirport: string;
+    endDate?: string;
     flightNumber: string;
     total: number;
   };
@@ -165,30 +166,29 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
           subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
           startDate: bookingSummary.departureDate,
+          endDate: bookingSummary.endDate,
           totalAmount: finalTotal,
           details: completedBooking,
         }),
       });
-      if (businessRequest && !response.ok) {
+      if (!response.ok) {
         const result = await readJsonResponse<{
           error?: { message?: string };
         }>(response);
         setErrors({
           payment:
             result?.error?.message ??
-            'The company approval could not be verified. No payment has been captured.',
+            'The flight could not be confirmed. No payment has been captured.',
         });
         setProcessing(false);
         return;
       }
     } catch {
-      if (businessRequest) {
-        setErrors({
-          payment: 'The company approval service is unavailable. No payment has been captured.',
-        });
-        setProcessing(false);
-        return;
-      }
+      setErrors({
+        payment: 'The booking service is unavailable. No payment has been captured.',
+      });
+      setProcessing(false);
+      return;
     }
     sessionStorage.setItem('mandyal-flight-booking', JSON.stringify(completedBooking));
     if (businessRequest) clearActiveBusinessTravelRequest();

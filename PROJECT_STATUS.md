@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 12 August 2026
+Last reviewed: 15 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -13,12 +13,56 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   other-device revocation, profile editing, and password changes
 - Persistent booking-email, SMS-alert, WhatsApp-update, and marketing preferences
 - Hotel, flight, bus, and car search and booking demonstrations
+- Provider-neutral Flight search validation now enforces IATA-style airport codes, travel dates,
+  bounded passenger counts, route/cabin/date matching, seat sufficiency, positive prices, valid
+  segment timing, and continuous connections before supplier offers can enter checkout
+- Versioned, no-store Flight offer search and revalidation APIs expose the same governed service
+  boundary to future web, Android, iOS, B2B, and corporate clients
+- Personal Flight, Bus, and Car checkout now revalidates the selected inventory, travel dates,
+  promotion, and final total on the server and fails safely when persistence is unavailable; the
+  browser can no longer show a successful confirmation for an unsaved trip
+- Flight booking persistence validates the exact adult count, bounded passenger names, supported
+  gender values, email address, and normalized phone length at the API boundary
+- Flight offers distinguish outbound and return legs, reject incomplete or wrong-date round trips,
+  and display both legs before selection; the fixture adapter includes a revalidatable round-trip
+  example without pretending to provide live airline inventory
+- Flight multi-city search carries two or three chronological, continuous journeys through typed
+  criteria, supplier normalization, booking, checkout, and itinerary documents; a clearly identified
+  fixture itinerary supports safe local revalidation without implying live airline inventory
+- Flight discovery supports bounded airline, refundable-fare, and maximum-total filters plus stable
+  price, total-duration, and departure-time sorting without weakening server-side offer validation
+- Provider-neutral Bus validation rejects wrong-date, wrong-route, over-capacity, malformed-timing,
+  invalid-rating, and non-positive-price offers while normalizing bounded amenity data; personal
+  Bus checkout also fails safely if its server-side booking cannot be saved
+- Bus discovery adds governed operator, bus-type, refundable-only, maximum-fare, price, duration,
+  departure, and rating controls without weakening supplier revalidation.
+- Versioned, no-store Bus offer search and revalidation APIs reuse that supplier boundary for
+  future mobile, partner, B2B, and corporate clients
+- Bus checkout validates the exact passenger roster, booking contact, and a unique seat assignment
+  for every traveller at the server boundary instead of trusting browser session data
+- Car search and revalidation now enforce bounded locations, drivers and rental length, validate
+  provider inventory/capacity/pricing, normalize feature data, and expose versioned no-store APIs
+  shared by direct partner and future external supplier inventory
+- Car checkout validates the primary driver's age, name, driving licence, email, and phone again at
+  the server boundary before any personal or approved-company trip can be confirmed
+- Car discovery and checkout distinguish self-drive from chauffeur service end to end; self-drive
+  retains licence and age validation while chauffeur bookings require a bounded lead-traveller contact
+- Car pickup and drop-off times are validated and carried through revalidation, billed-duration
+  calculation, checkout, confirmations, and vouchers rather than being reduced to date-only rentals
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
   availability and pricing safeguards
+- An explainable, provider-neutral trip planner creates bounded, editable day-by-day suggestions
+  from origin, destination, dates, travellers, and interests, then links customers into the real
+  Hotel, Bus, Car, and optional Flight search journeys for live inventory and final-price checks
+- Trip-planning guidance is explicitly labelled as a recommendation rather than an availability,
+  price, or booking promise; impossible dates, past travel, excessive trip lengths, invalid party
+  sizes, and unsafe airport combinations are rejected at the versioned API boundary
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
+- Flight, Bus, and Car confirmations, tickets, itineraries, and vouchers require the signed-in
+  customer to own the matching persisted trip; URL parameters alone cannot unlock documents
 - Customer hotel cancellation/amendment handling and account-bound booking access
 - Verified-stay hotel reviews restricted to signed-in customers with a completed confirmed booking
 - Protected hotel-review moderation with rejection notes, supplier-scoped public responses, and
@@ -78,6 +122,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   closed-to-arrival, closed-to-departure, and minimum/maximum stays, enforced by customer search
   and booking quote validation
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
+- Audited car maintenance records with category, vendor, cost, status, history, and automatic stop-sales for active service dates
+- Bus operator onboarding and a scoped route/trip workspace with governed schedules, seat capacity, fares, amenities, refundability, and cancellation terms
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries
@@ -120,7 +166,14 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Explicit row limits for company travel, statement, and audit CSV exports with filter guidance when
   a report is too large
 - Health/readiness endpoint at `/api/v1/health` verifies database access and core customer,
-  organization, booking, and company-request schema availability
+  organization, booking, and company-request schema availability, plus pending and dead-letter
+  integration-event health
+- Transactional hotel-booking integration outbox with deduplication, worker leases, bounded
+  exponential retry, dead-letter handling, and a provider-neutral delivery adapter
+- Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
+  stay timing, physical-room assignment, housekeeping readiness, and integration retries
+- On-demand SQLite backups with SHA-256 sidecars and bounded retention, plus a production release
+  environment preflight that rejects missing, short, or placeholder secrets
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
@@ -152,7 +205,8 @@ credentials, contracts, or signed-off business rules:
 3. Transactional email, SMS, and WhatsApp delivery providers
 4. Statutory GST tax invoices, tax component rules, credit notes, and invoice numbering
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
-6. Production database, encrypted backups, monitoring, alerting, domain/DNS, TLS, and hosting
+6. Production database, off-site encrypted backup storage, monitoring, alerting, domain/DNS, TLS,
+   hosting, and a scheduler/worker for the prepared integration outbox
 7. Legal pages and approved customer communications: privacy, terms, cancellation, refunds, and
    consent wording
 
@@ -161,12 +215,13 @@ tax invoices.
 
 ## Release procedure
 
-1. Back up the database.
+1. Run `npm run db:backup` and copy the backup plus checksum to approved encrypted storage.
 2. Run `UPDATE-PORTAL.cmd`. Never approve a Prisma data-loss warning without review.
 3. Run `npm run check`.
-4. Start the portal with `START-PORTAL.cmd`.
-5. Confirm `/api/v1/health` reports ready.
-6. Smoke-test one customer journey and one company approval-to-booking journey.
+4. Run `npm run release:verify-env` with the production environment loaded.
+5. Start the portal with `START-PORTAL.cmd`.
+6. Confirm `/api/v1/health` reports ready and has no unexplained dead-letter events.
+7. Smoke-test one customer journey and one company approval-to-booking journey.
 
 ## Current quality gate
 
@@ -194,7 +249,51 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 generated route entries, and clean-database verification of all 42 migrations
-with foreign-key integrity enabled. Provider integration work must preserve those checks and add
-provider-specific automated tests before going live.
+Direct bus-operator inventory now participates in customer search alongside the bounded fixture
+adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
+and exposes only active routes, trips, and partners. Booking completion reserves the customer's
+exact seat selection transactionally, rejects seats outside the operator's declared capacity, and
+prevents already-occupied seats from being sold again. Both the supplier interface and versioned
+partner API reject services scheduled before the current operating date.
+
+Bus operator administrators can pause and restore dated services, revise bounded seat capacity and
+fares, and cannot reduce capacity below confirmed passengers or their assigned seat positions. A
+route-level audited stop-sale can pause or restore every dated service on a corridor without
+deleting its schedule or historical reservations. A
+partner-scoped passenger manifest provides bounded pagination, search, routes, service times, exact
+seat assignments, captured-value summaries, and a formula-safe CSV export capped at 1,000 records
+without exposing another operator's reservations.
+
+Bus operators have bounded service-date performance reports with reservation, passenger,
+confirmed-value, trip, route, and per-route rollups. Reports are scoped to the authenticated
+operator and refuse oversized periods rather than returning incomplete operational totals.
+
+Car suppliers can export their scoped reservation register as a formula-safe CSV capped at 1,000
+records, including driver or lead traveller, vehicle, registration, route, rental dates, units, and
+captured value without exposing another fleet partner's reservations.
+
+Car supplier administrators can maintain audited registration/RC, insurance, commercial permit,
+fitness-certificate, and pollution-certificate expiry dates. The fleet workspace classifies each
+vehicle as incomplete, expired, expiring within 30 days, or complete while preserving existing
+fleet records through an additive migration.
+
+Vehicle lifecycle controls let Car supplier administrators pause a vehicle from customer search
+without deleting inventory or reservations. Restoration is audited and requires a registration
+number plus complete, non-expired compliance dates, preventing non-compliant vehicles from
+returning to sale.
+
+Car partners have bounded pickup-date performance reports with reservation, confirmed-value,
+rental-day, average-value, vehicle-utilization, and per-vehicle rollups. Every query is scoped to
+the authenticated fleet partner and refuses unbounded result sets rather than returning partial
+financial totals.
+
+Car rental operations support audited pickup, completion, and no-show transitions. Server-side
+date guards prevent early pickup, future no-shows, expired-period pickup, and invalid state jumps;
+cancellation and refund decisions remain outside this lifecycle until approved commercial rules
+and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
+until completion, and completed rentals remain included in confirmed-value performance totals.
+
+The current travel-domain milestone passes 55 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 97 generated route entries, and
+clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
+integration work must preserve those checks and add provider-specific automated tests before going live.

@@ -17,6 +17,7 @@ export function BusSearchForm({ criteria }: { criteria: BusSearchCriteria }) {
       <Input
         defaultValue={criteria.passengers}
         label="Passengers"
+        max="6"
         min="1"
         name="passengers"
         required

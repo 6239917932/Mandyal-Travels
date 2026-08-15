@@ -4,7 +4,8 @@ import { FlightConfirmationDetails } from '@/components/flight/FlightConfirmatio
 import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight confirmed' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -18,8 +19,11 @@ export default async function FlightConfirmationPage({
   const criteria = createFlightSearchCriteria(params);
   const offerId = first(params.offerId);
   const confirmationCode = first(params.confirmationCode);
-  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || !confirmationCode)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? flightService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'FLIGHT'),
+  ]);
+  if (!offer || !confirmationCode || !ownsConfirmation)
     return (
       <div className="flight-booking-page">
         <Card className="flight-booking-page__empty">
@@ -29,16 +33,8 @@ export default async function FlightConfirmationPage({
       </div>
     );
   const segment = offer.segments[0];
-  const itineraryQuery: Record<string, string> = {
-    adults: String(criteria.adults),
-    cabinClass: criteria.cabinClass,
-    departureDate: criteria.departureDate,
-    destination: criteria.destination,
-    offerId: offer.id,
-    origin: criteria.origin,
-    tripType: criteria.tripType,
-  };
-  if (criteria.returnDate) itineraryQuery.returnDate = criteria.returnDate;
+  const returnSegment = offer.segments.find((item) => item.leg === 'return');
+  const itineraryQuery = { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id };
 
   return (
     <div className="flight-confirmation-page">
@@ -58,18 +54,27 @@ export default async function FlightConfirmationPage({
             </div>
             <div>
               <dt>Flight</dt>
-              <dd>{segment.flightNumber}</dd>
+              <dd>{offer.segments.map((item) => item.flightNumber).join(' / ')}</dd>
             </div>
             <div>
               <dt>Route</dt>
               <dd>
                 {segment.departureAirport} → {segment.arrivalAirport}
+                {returnSegment
+                  ? ` / ${returnSegment.departureAirport} → ${returnSegment.arrivalAirport}`
+                  : ''}
               </dd>
             </div>
             <div>
               <dt>Departure</dt>
               <dd>{criteria.departureDate}</dd>
             </div>
+            {criteria.returnDate ? (
+              <div>
+                <dt>Return</dt>
+                <dd>{criteria.returnDate}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Travelers</dt>
               <dd>

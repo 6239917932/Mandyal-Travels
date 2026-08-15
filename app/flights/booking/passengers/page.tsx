@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { FlightPassengerForm } from '@/components/flight/FlightPassengerForm';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Passenger details' };
 
@@ -42,16 +42,7 @@ export default async function FlightPassengersPage({
   }
 
   const segment = offer.segments[0];
-  const nextQuery: Record<string, string> = {
-    adults: String(criteria.adults),
-    cabinClass: criteria.cabinClass,
-    departureDate: criteria.departureDate,
-    destination: criteria.destination,
-    offerId: offer.id,
-    origin: criteria.origin,
-    tripType: criteria.tripType,
-  };
-  if (criteria.returnDate) nextQuery.returnDate = criteria.returnDate;
+  const nextQuery = { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id };
 
   return (
     <div className="flight-booking-page flight-passenger-page">

@@ -66,6 +66,9 @@ export default function Home() {
               <a className="home-link-button home-link-button--secondary" href="#why-mandyal">
                 Why Mandyal Travels
               </a>
+              <Link className="home-link-button home-link-button--secondary" href="/trip-planner">
+                Plan my whole trip
+              </Link>
             </div>
 
             <div className="home-hero__stats">

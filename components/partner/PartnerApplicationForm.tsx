@@ -56,6 +56,7 @@ export function PartnerApplicationForm({
           <select className="ui-input" name="partnerType" required>
             <option value="HOTEL">Hotel owner or property manager</option>
             <option value="CAR">Car owner or fleet operator</option>
+            <option value="BUS">Bus operator</option>
           </select>
         </label>
       </div>

@@ -1,9 +1,23 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
+import {
+  availablePhysicalRooms,
+  evaluateStayTiming,
+  evaluateStayTransition,
+  normalizeRoomAssignments,
+} from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
+import { seatsFitBusCapacity } from '@/lib/bus/bookingRules';
+import {
+  normalizeVehicleComplianceDates,
+  vehicleComplianceState,
+  type VehicleComplianceDates,
+} from '@/lib/car/complianceRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
+const OCCUPYING_VEHICLE_RESERVATION_STATUSES = ['CONFIRMED', 'PICKED_UP'];
+const VALUE_VEHICLE_RESERVATION_STATUSES = ['COMPLETED', 'CONFIRMED', 'PICKED_UP'];
 
 export class PartnerOperationsError extends Error {
   constructor(
@@ -184,8 +198,7 @@ export const partnerOperationsService = {
     const occupiedRooms = new Set(
       activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
     );
-    return ratePlan.room.physicalRooms
-      .filter((room) => !occupiedRooms.has(room.roomNumber))
+    return availablePhysicalRooms(ratePlan.room.physicalRooms, occupiedRooms)
       .map((room) => ({ floorLabel: room.floorLabel, roomNumber: room.roomNumber }));
   },
 
@@ -218,44 +231,27 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
     }
     const localDate = dateInTimezone(property.timezone);
-    if (
-      ['CHECKED_IN', 'NO_SHOW'].includes(nextStatus) &&
-      localDate < booking.quote.checkInDate
-    ) {
+    const timingViolation = evaluateStayTiming({
+      checkInDate: booking.quote.checkInDate,
+      checkOutDate: booking.quote.checkOutDate,
+      localDate,
+      nextStatus,
+    });
+    if (timingViolation) throw new PartnerOperationsError(timingViolation.code, timingViolation.message);
+    const transitionViolation = evaluateStayTransition(booking.operationalStatus, nextStatus);
+    if (transitionViolation) {
+      throw new PartnerOperationsError(transitionViolation.code, transitionViolation.message);
+    }
+    const assignmentResult = nextStatus === 'CHECKED_IN'
+      ? normalizeRoomAssignments(assignedRoomNumbers, booking.quote.rooms)
+      : { roomNumbers: [] as string[] };
+    if (assignmentResult.violation) {
       throw new PartnerOperationsError(
-        'ARRIVAL_NOT_DUE',
-        `This stay cannot be marked ${nextStatus.toLowerCase().replaceAll('_', ' ')} before ${booking.quote.checkInDate} in the property's timezone.`,
+        assignmentResult.violation.code,
+        assignmentResult.violation.message,
       );
     }
-    if (nextStatus === 'CHECKED_IN' && localDate >= booking.quote.checkOutDate) {
-      throw new PartnerOperationsError(
-        'STAY_DATE_PASSED',
-        'The scheduled stay has already ended and cannot be checked in.',
-      );
-    }
-    const permittedTransitions: Record<string, readonly string[]> = {
-      CHECKED_IN: ['CHECKED_OUT'],
-      RESERVED: ['CHECKED_IN', 'NO_SHOW'],
-    };
-    if (!permittedTransitions[booking.operationalStatus]?.includes(nextStatus)) {
-      throw new PartnerOperationsError(
-        'INVALID_STAY_TRANSITION',
-        `The stay cannot move from ${booking.operationalStatus} to ${nextStatus}.`,
-      );
-    }
-    const normalizedRoomNumbers = [...new Set(
-      assignedRoomNumbers.map((roomNumber) => normalizeText(roomNumber, 20)).filter(Boolean),
-    )];
-    if (
-      nextStatus === 'CHECKED_IN' &&
-      (normalizedRoomNumbers.length !== booking.quote.rooms ||
-        normalizedRoomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber)))
-    ) {
-      throw new PartnerOperationsError(
-        'INVALID_ROOM_ASSIGNMENT',
-        `Assign ${booking.quote.rooms} unique physical room number${booking.quote.rooms === 1 ? '' : 's'} before check-in.`,
-      );
-    }
+    const normalizedRoomNumbers = assignmentResult.roomNumbers;
     const bookedRatePlan = await prisma.partnerRatePlan.findUnique({
       include: { room: { include: { physicalRooms: true } } },
       where: { ratePlanId: booking.quote.ratePlanId },
@@ -390,10 +386,10 @@ export const partnerOperationsService = {
     inventorySummary: string;
     partnerType: string;
   }) {
-    if (!['HOTEL', 'CAR'].includes(input.partnerType)) {
+    if (!['HOTEL', 'CAR', 'BUS'].includes(input.partnerType)) {
       throw new PartnerOperationsError(
         'INVALID_PARTNER_TYPE',
-        'Choose hotel or car supplier onboarding.',
+        'Choose hotel, car, or bus supplier onboarding.',
       );
     }
     if (
@@ -1651,7 +1647,7 @@ export const partnerOperationsService = {
           where: {
             dropoffDate: { gt: input.pickupDate },
             pickupDate: { lt: input.dropoffDate },
-            status: 'CONFIRMED',
+            status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES },
           },
         },
       },
@@ -1705,13 +1701,161 @@ export const partnerOperationsService = {
     return reservation;
   },
 
+  async updateVehicleCompliance(input: VehicleComplianceDates & { partnerId: string; vehicleId: string }) {
+    const vehicle = await prisma.partnerVehicle.findFirst({
+      select: { id: true, registrationNumber: true, vehicleName: true },
+      where: { id: input.vehicleId, partnerId: input.partnerId },
+    });
+    if (!vehicle) throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
+    if (!vehicle.registrationNumber)
+      throw new PartnerOperationsError('REGISTRATION_REQUIRED', 'Add a vehicle registration number before recording compliance dates.');
+    const dates = normalizeVehicleComplianceDates({
+      fitnessExpiry: input.fitnessExpiry,
+      insuranceExpiry: input.insuranceExpiry,
+      permitExpiry: input.permitExpiry,
+      pollutionExpiry: input.pollutionExpiry,
+      registrationExpiry: input.registrationExpiry,
+    });
+    return prisma.partnerVehicle.update({ data: dates, where: { id: vehicle.id } });
+  },
+
+  async updateVehicleStatus(input: {
+    partnerId: string;
+    status: 'ACTIVE' | 'PAUSED';
+    today: string;
+    vehicleId: string;
+  }) {
+    const vehicle = await prisma.partnerVehicle.findFirst({
+      where: { id: input.vehicleId, partnerId: input.partnerId },
+    });
+    if (!vehicle)
+      throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
+    if (vehicle.status === input.status) return vehicle;
+    if (input.status === 'ACTIVE') {
+      if (!vehicle.registrationNumber) {
+        throw new PartnerOperationsError(
+          'REGISTRATION_REQUIRED',
+          'Add the vehicle registration number before restoring sales.',
+        );
+      }
+      const compliance = vehicleComplianceState(vehicle, input.today);
+      if (compliance === 'INCOMPLETE' || compliance === 'EXPIRED') {
+        throw new PartnerOperationsError(
+          'VEHICLE_COMPLIANCE_REQUIRED',
+          'Complete all vehicle compliance dates and renew expired documents before restoring sales.',
+        );
+      }
+    }
+    return prisma.partnerVehicle.update({
+      data: { status: input.status },
+      where: { id: vehicle.id },
+    });
+  },
+
+  async reserveDirectBus(
+    transaction: Prisma.TransactionClient,
+    input: {
+      confirmationCode: string;
+      customerEmail: string;
+      customerName: string;
+      customerTripId: string;
+      offerId: string;
+      passengerCount: number;
+      seats: string[];
+      serviceDate: string;
+      totalAmount: number;
+    },
+  ) {
+    const prefix = 'direct-bus-trip-';
+    if (!input.offerId.startsWith(prefix)) return null;
+    const tripId = input.offerId.slice(prefix.length);
+    const trip = await transaction.partnerBusTrip.findUnique({
+      include: {
+        reservations: {
+          select: { seatNumbersJson: true },
+          where: { status: 'CONFIRMED' },
+        },
+        route: { include: { partner: { select: { id: true, status: true } } } },
+      },
+      where: { id: tripId },
+    });
+    if (
+      !trip ||
+      trip.status !== 'ACTIVE' ||
+      trip.route.status !== 'ACTIVE' ||
+      trip.route.partner.status !== 'ACTIVE' ||
+      trip.serviceDate !== input.serviceDate
+    ) {
+      throw new PartnerOperationsError(
+        'BUS_TRIP_UNAVAILABLE',
+        'This direct operator trip is no longer available.',
+      );
+    }
+    if (
+      input.seats.length !== input.passengerCount ||
+      new Set(input.seats).size !== input.seats.length ||
+      !seatsFitBusCapacity(input.seats, trip.seatCapacity)
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_BUS_SEATS',
+        'Choose valid, unique seats within this bus capacity.',
+      );
+    }
+    const occupiedSeats = new Set(
+      trip.reservations.flatMap((reservation) => readStoredStringList(reservation.seatNumbersJson)),
+    );
+    if (input.seats.some((seat) => occupiedSeats.has(seat))) {
+      throw new PartnerOperationsError(
+        'BUS_SEAT_UNAVAILABLE',
+        'One or more selected seats were just reserved. Please choose different seats.',
+      );
+    }
+    if (occupiedSeats.size + input.passengerCount > trip.seatCapacity) {
+      throw new PartnerOperationsError(
+        'BUS_TRIP_SOLD_OUT',
+        'This trip no longer has enough seats for all passengers.',
+      );
+    }
+    const reservation = await transaction.partnerBusReservation.create({
+      data: {
+        confirmationCode: input.confirmationCode,
+        customerEmail: input.customerEmail,
+        customerName: normalizeText(input.customerName, 120),
+        customerTripId: input.customerTripId,
+        passengerCount: input.passengerCount,
+        partnerId: trip.route.partner.id,
+        seatNumbersJson: JSON.stringify(input.seats),
+        totalAmount: input.totalAmount,
+        tripId: trip.id,
+      },
+    });
+    await transaction.partnerAuditLog.create({
+      data: {
+        action: 'BUS_TRIP_RESERVED',
+        entityId: reservation.id,
+        entityType: 'BUS_RESERVATION',
+        metadataJson: JSON.stringify({
+          confirmationCode: input.confirmationCode,
+          routeCode: trip.route.code,
+          seats: input.seats,
+          serviceDate: trip.serviceDate,
+        }),
+        partnerId: trip.route.partner.id,
+        summary: `${input.passengerCount} bus seat${input.passengerCount === 1 ? '' : 's'} reserved for ${trip.serviceDate}.`,
+      },
+    });
+    return reservation;
+  },
+
   async getVehicleReservationSummary(partnerId: string) {
     const [totalCount, confirmedCount, captured] = await Promise.all([
       prisma.partnerVehicleReservation.count({ where: { partnerId } }),
-      prisma.partnerVehicleReservation.count({ where: { partnerId, status: 'CONFIRMED' } }),
+      prisma.partnerVehicleReservation.count({
+        where: { partnerId, status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES } },
+      }),
       prisma.partnerVehicleReservation.aggregate({
         _sum: { totalAmount: true },
-        where: { partnerId, status: 'CONFIRMED' },
+        where: { partnerId, status: { in: VALUE_VEHICLE_RESERVATION_STATUSES } },
       }),
     ]);
     return {
@@ -1752,7 +1896,7 @@ export const partnerOperationsService = {
           where: {
             dropoffDate: { gt: criteria.pickupDate },
             pickupDate: { lt: criteria.dropoffDate },
-            status: 'CONFIRMED',
+            status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES },
           },
         },
       },
@@ -1809,6 +1953,7 @@ export const partnerOperationsService = {
           pickupLocation: vehicle.pickupLocation,
           pricePerDay,
           providerName: vehicle.partner.name,
+          rentalMode: 'self-drive' as const,
           seats: vehicle.seats,
           source: 'Mandyal Direct Supplier',
           totalPrice: 0,
@@ -1817,6 +1962,6 @@ export const partnerOperationsService = {
           vehicleName: vehicle.vehicleName,
         } satisfies CarOffer;
       })
-      .filter((offer): offer is CarOffer => offer !== null);
+      .filter((offer) => offer !== null);
   },
 };

@@ -5,6 +5,7 @@ import { BusPaidAmount } from '@/components/bus/BusPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Bus confirmed' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -19,8 +20,11 @@ export default async function BusConfirmationPage({
   const offerId = first(params.offerId);
   const confirmationCode = first(params.confirmationCode);
   const seats = (first(params.seats) ?? '').split(',').filter(Boolean);
-  const offer = offerId ? await busService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || !confirmationCode)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? busService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'BUS'),
+  ]);
+  if (!offer || !confirmationCode || !ownsConfirmation)
     return (
       <div className="bus-booking-page">
         <Card className="flight-booking-page__empty">

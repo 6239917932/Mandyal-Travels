@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
+import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
+import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
+import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
+  revalidateTravelSelection,
   validateBusinessCheckout,
 } from '@/services/businessCheckoutService';
 import type { PromotionProduct } from '@/constants/promotionRules';
+import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import {
   PartnerOperationsError,
@@ -43,10 +48,16 @@ function readCarOfferId(value: unknown): string | undefined {
   return isText(offerId) && offerId.length <= 160 ? offerId.trim() : undefined;
 }
 
+function readOfferId(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const offerId = (value as Record<string, unknown>).offerId;
+  return isText(offerId) && offerId.length <= 200 ? offerId.trim() : undefined;
+}
+
 function readCustomerName(details: Record<string, unknown>, fallback: string): string {
-  const driver = details.driver;
-  if (!driver || typeof driver !== 'object' || Array.isArray(driver)) return fallback;
-  const record = driver as Record<string, unknown>;
+  const party = details.driver ?? details.traveller;
+  if (!party || typeof party !== 'object' || Array.isArray(party)) return fallback;
+  const record = party as Record<string, unknown>;
   const firstName = isText(record.firstName) ? record.firstName.trim() : '';
   const lastName = isText(record.lastName) ? record.lastName.trim() : '';
   return `${firstName} ${lastName}`.trim() || fallback;
@@ -77,6 +88,41 @@ export async function POST(request: Request) {
       : {};
   const detailsJson = JSON.stringify(details);
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
+  const busOfferId = productType === 'BUS' ? readOfferId(body.businessSelection) : undefined;
+  const carRentalMode =
+    productType === 'CAR' &&
+    body.businessSelection &&
+    typeof body.businessSelection === 'object' &&
+    !Array.isArray(body.businessSelection) &&
+    (body.businessSelection as Record<string, unknown>).rentalMode === 'chauffeur'
+      ? 'chauffeur'
+      : 'self-drive';
+  const flightAdults =
+    productType === 'FLIGHT'
+      ? createFlightSearchCriteria(
+          body.businessSelection &&
+            typeof body.businessSelection === 'object' &&
+            !Array.isArray(body.businessSelection)
+            ? Object.fromEntries(
+                Object.entries(body.businessSelection).filter(
+                  (entry): entry is [string, string] => typeof entry[1] === 'string',
+                ),
+              )
+            : {},
+        ).adults
+      : undefined;
+  const busPassengers =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? Number((body.businessSelection as Record<string, unknown>).passengers)
+      : undefined;
+  const busSeats =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? (body.businessSelection as Record<string, unknown>).seats
+      : undefined;
+  const parsedBusSeats =
+    productType === 'BUS' && busPassengers !== undefined
+      ? parseBusSeats(busSeats, busPassengers)
+      : undefined;
 
   if (
     !isProductType(productType) ||
@@ -94,6 +140,37 @@ export async function POST(request: Request) {
     (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
+  }
+  if (
+    productType === 'FLIGHT' &&
+    (flightAdults === undefined || !hasValidFlightPassengerDetails(details, flightAdults))
+  ) {
+    return errorResponse(
+      'INVALID_FLIGHT_PASSENGERS',
+      'Complete passenger names and booking contact details are required.',
+      400,
+    );
+  }
+  if (productType === 'CAR' && !hasValidCarBookingParty(details, carRentalMode)) {
+    return errorResponse(
+      'INVALID_CAR_DRIVER',
+      carRentalMode === 'chauffeur'
+        ? 'Complete lead-traveller and booking-contact details are required.'
+        : 'Complete and valid primary-driver and booking-contact details are required.',
+      400,
+    );
+  }
+  if (
+    productType === 'BUS' &&
+    (busPassengers === undefined ||
+      !hasValidBusPassengerDetails(details, busPassengers) ||
+      !parsedBusSeats)
+  ) {
+    return errorResponse(
+      'INVALID_BUS_TRAVELERS',
+      'Complete passenger, contact, and unique seat details are required.',
+      400,
+    );
   }
 
   let existingTrip;
@@ -155,6 +232,35 @@ export async function POST(request: Request) {
         409,
       );
     }
+  } else {
+    try {
+      const validatedSelection = await revalidateTravelSelection(
+        productType,
+        body.businessSelection,
+        isText(body.promotionCode) ? body.promotionCode : undefined,
+      );
+      if (
+        validatedSelection.startDate !== startDate ||
+        validatedSelection.endDate !== endDate ||
+        validatedSelection.finalTotal !== totalAmount
+      ) {
+        return errorResponse(
+          'TRIP_SELECTION_CHANGED',
+          'The selected itinerary or total changed. Please review it again before payment.',
+          409,
+        );
+      }
+    } catch (error) {
+      if (error instanceof BusinessCheckoutError) {
+        return errorResponse('TRIP_SELECTION_UNAVAILABLE', error.message, error.status);
+      }
+      console.error('Personal checkout validation failed.', error);
+      return errorResponse(
+        'TRIP_SELECTION_CHECK_FAILED',
+        'The selected itinerary could not be checked. No payment has been captured.',
+        500,
+      );
+    }
   }
 
   const tripData = {
@@ -186,6 +292,19 @@ export async function POST(request: Request) {
             dropoffDate: endDate ?? startDate,
             offerId: carOfferId,
             pickupDate: startDate,
+            totalAmount: totalAmount as number,
+          });
+        }
+        if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
+          await partnerOperationsService.reserveDirectBus(transaction, {
+            confirmationCode,
+            customerEmail: user.email,
+            customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+            customerTripId: createdTrip.id,
+            offerId: busOfferId,
+            passengerCount: busPassengers,
+            seats: parsedBusSeats,
+            serviceDate: startDate,
             totalAmount: totalAmount as number,
           });
         }
@@ -223,6 +342,19 @@ export async function POST(request: Request) {
           dropoffDate: endDate ?? startDate,
           offerId: carOfferId,
           pickupDate: startDate,
+          totalAmount: totalAmount as number,
+        });
+      }
+      if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
+        await partnerOperationsService.reserveDirectBus(transaction, {
+          confirmationCode,
+          customerEmail: user.email,
+          customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+          customerTripId: completedTrip.id,
+          offerId: busOfferId,
+          passengerCount: busPassengers,
+          seats: parsedBusSeats,
+          serviceDate: startDate,
           totalAmount: totalAmount as number,
         });
       }

@@ -5,6 +5,7 @@ import { CarPaidAmount } from '@/components/car/CarPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 export const metadata: Metadata = { title: 'Car rental confirmed' };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 export default async function CarConfirmationPage({
@@ -15,9 +16,12 @@ export default async function CarConfirmationPage({
   const params = await searchParams,
     criteria = createCarSearchCriteria(params),
     offerId = first(params.offerId),
-    confirmationCode = first(params.confirmationCode),
-    offer = offerId ? await carService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || !confirmationCode)
+    confirmationCode = first(params.confirmationCode);
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? carService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'CAR'),
+  ]);
+  if (!offer || !confirmationCode || !ownsConfirmation)
     return (
       <div className="car-booking-page">
         <Card className="flight-booking-page__empty">
@@ -52,13 +56,13 @@ export default async function CarConfirmationPage({
             <div>
               <dt>Pickup</dt>
               <dd>
-                {criteria.pickupLocation} · {criteria.pickupDate}
+                {criteria.pickupLocation} · {criteria.pickupDate} at {criteria.pickupTime}
               </dd>
             </div>
             <div>
               <dt>Drop-off</dt>
               <dd>
-                {criteria.dropoffLocation} · {criteria.dropoffDate}
+                {criteria.dropoffLocation} · {criteria.dropoffDate} at {criteria.dropoffTime}
               </dd>
             </div>
             <div>

@@ -24,6 +24,7 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         required
         type="date"
       />
+      <Input defaultValue={criteria.pickupTime} label="Pickup time" name="pickupTime" required type="time" />
       <Input
         defaultValue={criteria.dropoffDate}
         label="Drop-off date"
@@ -31,6 +32,7 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         required
         type="date"
       />
+      <Input defaultValue={criteria.dropoffTime} label="Drop-off time" name="dropoffTime" required type="time" />
       <Input
         defaultValue={criteria.drivers}
         label="Drivers"
@@ -39,6 +41,15 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         required
         type="number"
       />
+      <div className="ui-field">
+        <label className="ui-field__label" htmlFor="rentalMode">
+          Rental type
+        </label>
+        <select className="ui-input" defaultValue={criteria.rentalMode} id="rentalMode" name="rentalMode">
+          <option value="self-drive">Self-drive</option>
+          <option value="chauffeur">With chauffeur</option>
+        </select>
+      </div>
       <Button className="car-search-form__button" type="submit">
         Search cars
       </Button>

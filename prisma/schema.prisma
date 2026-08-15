@@ -58,6 +58,8 @@ model SupplyPartner {
   applications        PartnerApplication[]
   vehicles            PartnerVehicle[]
   vehicleReservations PartnerVehicleReservation[]
+  busRoutes           PartnerBusRoute[]
+  busReservations     PartnerBusReservation[]
 
   @@index([status, createdAt])
 }
@@ -127,6 +129,70 @@ model PartnerProperty {
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
   @@index([approvalStatus, submittedAt])
+}
+
+model PartnerBusRoute {
+  id             String           @id @default(cuid())
+  partnerId      String
+  code           String           @unique
+  origin         String
+  destination    String
+  boardingPoint  String
+  droppingPoint  String
+  status         String           @default("ACTIVE")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  partner        SupplyPartner    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  trips          PartnerBusTrip[]
+
+  @@index([partnerId, status])
+  @@index([origin, destination, status])
+}
+
+model PartnerBusTrip {
+  id                 String          @id @default(cuid())
+  routeId            String
+  serviceDate        String
+  departureTime      String
+  arrivalTime        String
+  busType            String
+  seatCapacity       Int
+  pricePerSeat       Int
+  currency           String          @default("INR")
+  amenitiesJson      String          @default("[]")
+  cancellationPolicy String
+  refundable         Boolean         @default(false)
+  status             String          @default("ACTIVE")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  route              PartnerBusRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  reservations       PartnerBusReservation[]
+
+  @@unique([routeId, serviceDate, departureTime])
+  @@index([serviceDate, status])
+}
+
+model PartnerBusReservation {
+  id               String         @id @default(cuid())
+  confirmationCode String         @unique
+  partnerId        String
+  tripId           String
+  customerTripId   String         @unique
+  customerName     String
+  customerEmail    String
+  seatNumbersJson  String
+  passengerCount   Int
+  totalAmount      Int
+  currency         String         @default("INR")
+  status           String         @default("CONFIRMED")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  partner          SupplyPartner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  trip             PartnerBusTrip @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  customerTrip     CustomerTrip   @relation(fields: [customerTripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, status])
+  @@index([partnerId, status, createdAt])
 }
 
 model PartnerRoomType {
@@ -212,6 +278,11 @@ model PartnerVehicle {
   vehicleName        String
   category           String
   registrationNumber String?
+  registrationExpiry String                       @default("")
+  insuranceExpiry    String                       @default("")
+  permitExpiry       String                       @default("")
+  fitnessExpiry      String                       @default("")
+  pollutionExpiry    String                       @default("")
   transmission       String
   seats              Int
   bags               Int
@@ -229,6 +300,7 @@ model PartnerVehicle {
   updatedAt          DateTime                     @updatedAt
   partner            SupplyPartner                @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   inventoryDays      PartnerVehicleInventoryDay[]
+  maintenanceRecords PartnerVehicleMaintenance[]
   reservations       PartnerVehicleReservation[]
 
   @@index([partnerId, status])
@@ -508,6 +580,7 @@ model CustomerTrip {
   businessTravelRequest   BusinessTravelRequest?     @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   supportCases            CustomerSupportCase[]
   vehicleReservation      PartnerVehicleReservation?
+  busReservation          PartnerBusReservation?
 
   @@index([userId, createdAt])
   @@index([email, createdAt])
@@ -608,8 +681,51 @@ model Booking {
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
+  integrationEvents       IntegrationOutboxEvent[]
 
   @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model PartnerVehicleMaintenance {
+  id          String         @id @default(cuid())
+  vehicleId   String
+  startDate   String
+  endDate     String
+  status      String         @default("SCHEDULED")
+  category    String
+  description String
+  vendor      String?
+  costAmount  Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  vehicle     PartnerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, startDate, endDate])
+  @@index([status, startDate])
+}
+
+model IntegrationOutboxEvent {
+  id            String    @id @default(cuid())
+  bookingId     String?
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  dedupeKey     String    @unique
+  payloadJson   String
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(8)
+  nextAttemptAt DateTime  @default(now())
+  lockedAt      DateTime?
+  processedAt   DateTime?
+  lastError     String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([aggregateType, aggregateId, createdAt])
+  @@index([bookingId, createdAt])
 }
 
 model PartnerPhysicalRoom {

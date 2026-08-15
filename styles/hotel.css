@@ -332,6 +332,24 @@
 .flight-search-form__button {
   align-self: end;
 }
+.flight-result-controls {
+  display: grid;
+  align-items: end;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+  padding: var(--space-4);
+}
+.flight-result-controls__check {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 700;
+}
 .flight-page__heading {
   display: flex;
   flex-wrap: wrap;
@@ -396,6 +414,14 @@
   gap: var(--space-4);
   text-align: center;
 }
+.flight-offer-card__routes {
+  display: grid;
+  gap: var(--space-4);
+}
+.flight-offer-card__routes > .flight-offer-card__route + .flight-offer-card__route {
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--color-border);
+}
 .flight-offer-card__route strong {
   color: var(--color-brand-900);
   font-size: 1.35rem;
@@ -442,6 +468,18 @@
     border-left: 1px solid var(--color-border);
     padding-top: 0;
     padding-left: var(--space-5);
+  }
+}
+
+@media (max-width: 899px) {
+  .flight-result-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .flight-result-controls {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -502,6 +540,13 @@
   gap: var(--space-4);
   margin: var(--space-6) 0;
   text-align: center;
+}
+.flight-booking-page__routes {
+  display: grid;
+}
+.flight-booking-page__routes > .flight-booking-page__route + .flight-booking-page__route {
+  padding-top: var(--space-6);
+  border-top: 1px dashed var(--color-border);
 }
 .flight-booking-page__route strong,
 .flight-booking-page__route span,

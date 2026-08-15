@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { FlightPaymentForm } from '@/components/flight/FlightPaymentForm';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Flight payment' };
 
@@ -42,16 +42,12 @@ export default async function FlightPaymentPage({
   }
 
   const segment = offer.segments[0];
-  const backQuery: Record<string, string> = {
-    adults: String(criteria.adults),
-    cabinClass: criteria.cabinClass,
-    departureDate: criteria.departureDate,
-    destination: criteria.destination,
-    offerId: offer.id,
-    origin: criteria.origin,
-    tripType: criteria.tripType,
-  };
-  if (criteria.returnDate) backQuery.returnDate = criteria.returnDate;
+  const finalSegment = offer.segments.at(-1) ?? segment;
+  const endDate =
+    criteria.tripType === 'multi-city'
+      ? criteria.multiCitySegments?.at(-1)?.departureDate
+      : criteria.returnDate;
+  const backQuery = { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id };
 
   return (
     <div className="flight-booking-page flight-payment-page">
@@ -68,7 +64,8 @@ export default async function FlightPaymentPage({
                 airlineName: segment.airlineName,
                 departureAirport: segment.departureAirport,
                 departureDate: criteria.departureDate,
-                destinationAirport: segment.arrivalAirport,
+                destinationAirport: finalSegment.arrivalAirport,
+                endDate,
                 flightNumber: segment.flightNumber,
                 total: offer.totalPrice,
               }}

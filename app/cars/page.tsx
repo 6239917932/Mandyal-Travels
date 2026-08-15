@@ -44,7 +44,8 @@ export default async function CarsPage({
               <h2>{offers.length} cars found</h2>
             </div>
             <p>
-              {criteria.pickupLocation} · {criteria.pickupDate} to {criteria.dropoffDate}
+              {criteria.pickupLocation} · {criteria.pickupDate} {criteria.pickupTime} to{' '}
+              {criteria.dropoffDate} {criteria.dropoffTime}
             </p>
           </div>
           <div className="car-offer-list">

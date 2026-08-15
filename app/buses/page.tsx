@@ -2,8 +2,11 @@ import type { Metadata } from 'next';
 
 import { BusOfferCard } from '@/components/bus/BusOfferCard';
 import { BusSearchForm } from '@/components/bus/BusSearchForm';
+import { BusResultControls } from '@/components/bus/BusResultControls';
+import { applyBusResultControls } from '@/lib/bus/offerFilters';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
+import { createBusResultControls } from '@/utils/busResultControls';
 
 export const metadata: Metadata = { title: 'Buses' };
 
@@ -12,7 +15,9 @@ export default async function BusesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const criteria = createBusSearchCriteria(await searchParams);
+  const params = await searchParams;
+  const criteria = createBusSearchCriteria(params);
+  const controls = createBusResultControls(params);
   let error: string | undefined;
   let offers = [] as Awaited<ReturnType<typeof busService.search>>;
   try {
@@ -20,6 +25,9 @@ export default async function BusesPage({
   } catch (cause) {
     error = cause instanceof Error ? cause.message : 'Bus search is unavailable.';
   }
+  const operators = [...new Set(offers.map((offer) => offer.operatorName))].sort();
+  const busTypes = [...new Set(offers.map((offer) => offer.busType))].sort();
+  offers = applyBusResultControls(offers, controls);
   return (
     <div className="bus-page">
       <section className="bus-page__hero">
@@ -35,6 +43,7 @@ export default async function BusesPage({
       <section className="bus-page__content">
         <div className="bus-page__container">
           <BusSearchForm criteria={criteria} />
+          <BusResultControls busTypes={busTypes} controls={controls} criteria={criteria} operators={operators} />
           {error ? (
             <p className="flight-page__error" role="alert">
               {error}

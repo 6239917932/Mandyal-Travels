@@ -21,6 +21,10 @@ export async function GET(request: Request) {
         take: 14,
         where: { serviceDate: { gte: new Date().toISOString().slice(0, 10) } },
       },
+      maintenanceRecords: {
+        orderBy: { startDate: 'desc' },
+        take: 8,
+      },
     },
     orderBy: { createdAt: 'desc' },
     where: { partnerId: access.partnerId },

@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { FlightOfferCard } from '@/components/flight/FlightOfferCard';
+import { FlightResultControls } from '@/components/flight/FlightResultControls';
 import { FlightSearchForm } from '@/components/flight/FlightSearchForm';
+import { applyFlightResultControls } from '@/lib/flight/offerFilters';
 import { flightService } from '@/services/flightService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightResultControls } from '@/utils/flightResultControls';
 
 export const metadata: Metadata = { title: 'Flights' };
 
@@ -22,8 +25,26 @@ export default async function FlightsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const criteria = createFlightSearchCriteria(await searchParams);
-  const { error, offers } = await getFlightSearchResult(criteria);
+  const params = await searchParams;
+  const criteria = createFlightSearchCriteria(params);
+  const controls = createFlightResultControls(params);
+  const { error, offers: availableOffers } = await getFlightSearchResult(criteria);
+  const offers = applyFlightResultControls(availableOffers, controls);
+  const airlines = Array.from(
+    new Map(
+      availableOffers.flatMap((offer) =>
+        offer.segments.map((segment) => [segment.airlineCode, segment.airlineName] as const),
+      ),
+    ),
+    ([code, name]) => ({ code, name }),
+  ).sort((first, second) => first.name.localeCompare(second.name));
+  const route =
+    criteria.tripType === 'multi-city'
+      ? criteria.multiCitySegments
+          ?.map((segment) => segment.origin)
+          .concat(criteria.multiCitySegments.at(-1)?.destination ?? [])
+          .join(' → ')
+      : `${criteria.origin} → ${criteria.destination}`;
   return (
     <div className="flight-page">
       <section className="flight-page__hero">
@@ -39,6 +60,7 @@ export default async function FlightsPage({
       <section className="flight-page__content">
         <div className="flight-page__container">
           <FlightSearchForm criteria={criteria} />
+          <FlightResultControls airlines={airlines} controls={controls} criteria={criteria} />
           {error ? (
             <p className="flight-page__error" role="alert">
               {error}
@@ -50,7 +72,7 @@ export default async function FlightsPage({
               <h2>{offers.length} flights found</h2>
             </div>
             <p>
-              {criteria.origin} → {criteria.destination} · {criteria.adults} adult
+              {route} · {criteria.adults} adult
               {criteria.adults === 1 ? '' : 's'}
             </p>
           </div>

@@ -32,6 +32,7 @@ export default async function PartnerWorkspacePage() {
 
   const access = await getPartnerAccess();
   if (!access?.partnerId || !access.userId) redirect('/partners');
+  if (access.partnerType === 'BUS') redirect('/partner/bus-operations');
 
   const [partner, bookingSummary, pendingAmendments] = await Promise.all([
     prisma.supplyPartner.findUnique({
@@ -89,7 +90,7 @@ export default async function PartnerWorkspacePage() {
             >
               {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
             </Link>
-            {partner.type === 'HOTEL' ? (
+            {partner.type === 'HOTEL' || partner.type === 'CAR' ? (
               <Link className="ui-button ui-button--secondary" href="/partner/reports">
                 Performance reports
               </Link>

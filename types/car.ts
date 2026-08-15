@@ -2,8 +2,11 @@ export interface CarSearchCriteria {
   pickupLocation: string;
   dropoffLocation: string;
   pickupDate: string;
+  pickupTime: string;
   dropoffDate: string;
+  dropoffTime: string;
   drivers: number;
+  rentalMode: 'self-drive' | 'chauffeur';
 }
 
 export interface CarOffer {
@@ -25,4 +28,5 @@ export interface CarOffer {
   carsRemaining: number;
   pickupLocation: string;
   dropoffLocation: string;
+  rentalMode: CarSearchCriteria['rentalMode'];
 }

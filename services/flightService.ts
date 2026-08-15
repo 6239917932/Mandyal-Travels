@@ -3,6 +3,7 @@ import {
   type FlightSupplierAdapter,
 } from '@/repositories/flightOfferRepository';
 import type { FlightOffer, FlightSearchCriteria } from '@/types/flight';
+import { normalizeFlightOffer, validateFlightSearchCriteria } from '@/lib/flight/searchRules';
 
 export class FlightService {
   constructor(
@@ -10,19 +11,11 @@ export class FlightService {
   ) {}
 
   async search(criteria: FlightSearchCriteria): Promise<FlightOffer[]> {
-    if (criteria.origin === criteria.destination)
-      throw new Error('Origin and destination must be different.');
-    if (criteria.departureDate < new Date().toISOString().slice(0, 10))
-      throw new Error('Departure date cannot be in the past.');
-    if (
-      criteria.tripType === 'return' &&
-      (!criteria.returnDate || criteria.returnDate <= criteria.departureDate)
-    )
-      throw new Error('Return date must be later than departure date.');
+    validateFlightSearchCriteria(criteria, { today: new Date().toISOString().slice(0, 10) });
     const offers = await this.supplier.search(criteria);
     return offers
-      .filter((offer) => offer.seatsRemaining >= criteria.adults)
-      .map((offer) => ({ ...offer, totalPrice: offer.pricePerAdult * criteria.adults }))
+      .map((offer) => normalizeFlightOffer(offer, criteria))
+      .filter((offer): offer is FlightOffer => offer !== undefined)
       .sort((first, second) => first.totalPrice - second.totalPrice);
   }
 

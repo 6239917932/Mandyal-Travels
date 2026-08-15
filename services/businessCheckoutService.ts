@@ -85,7 +85,7 @@ function readApprovedCabin(policySnapshotJson: string) {
   );
 }
 
-async function revalidateSelection(
+export async function revalidateTravelSelection(
   productType: CheckoutProduct,
   selection: unknown,
   promotionCode?: string,
@@ -102,6 +102,11 @@ async function revalidateSelection(
       'origin',
       'tripType',
     ].forEach((key) => requiredText(values, key));
+    if (values.tripType === 'multi-city') {
+      ['segment2Date', 'segment2Destination', 'segment2Origin'].forEach((key) =>
+        requiredText(values, key),
+      );
+    }
     const criteria = createFlightSearchCriteria(values);
     const offer = await flightService.revalidateOffer(values.offerId, criteria);
     if (!offer) {
@@ -111,7 +116,10 @@ async function revalidateSelection(
       );
     }
     return {
-      endDate: criteria.returnDate ?? null,
+      endDate:
+        criteria.tripType === 'multi-city'
+          ? (criteria.multiCitySegments?.at(-1)?.departureDate ?? null)
+          : (criteria.returnDate ?? null),
       finalTotal: applyPromotion(productType, offer.totalPrice, promotionCode),
       policyCabin: criteria.cabinClass.replaceAll('-', '_').toUpperCase(),
       startDate: criteria.departureDate,
@@ -142,9 +150,11 @@ async function revalidateSelection(
     [
       'drivers',
       'dropoffDate',
+      'dropoffTime',
       'dropoffLocation',
       'offerId',
       'pickupDate',
+      'pickupTime',
       'pickupLocation',
     ].forEach((key) => requiredText(values, key));
     const criteria = createCarSearchCriteria(values);
@@ -220,7 +230,7 @@ export async function validateBusinessCheckout({
     throw new BusinessCheckoutError('BUSINESS_REQUEST_NOT_APPROVED', message);
   }
 
-  const selectionResult = await revalidateSelection(productType, selection, promotionCode);
+  const selectionResult = await revalidateTravelSelection(productType, selection, promotionCode);
   if (selectionResult.startDate !== travelRequest.startDate) {
     throw new BusinessCheckoutError(
       'BUSINESS_DATE_MISMATCH',
