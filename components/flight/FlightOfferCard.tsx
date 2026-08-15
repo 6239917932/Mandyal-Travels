@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
 import type { FlightOffer, FlightSearchCriteria } from '@/types/flight';
+import { flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 
 const money = (amount: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -36,7 +37,13 @@ export function FlightOfferCard({
         {offer.segments.map((itinerarySegment) => (
           <div className="flight-offer-card__route" key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}>
             <div>
-              <small>{itinerarySegment.leg === 'outbound' ? 'Outbound' : 'Return'}</small>
+              <small>
+                {itinerarySegment.leg === 'outbound'
+                  ? 'Outbound'
+                  : itinerarySegment.leg === 'return'
+                    ? 'Return'
+                    : `Flight ${(itinerarySegment.journeyIndex ?? 0) + 1}`}
+              </small>
               <strong>{time(itinerarySegment.departureAt)}</strong>
               <span>{itinerarySegment.departureAirport}</span>
             </div>
@@ -66,16 +73,7 @@ export function FlightOfferCard({
           className="ui-button ui-button--primary"
           href={{
             pathname: '/flights/booking',
-            query: {
-              adults: criteria.adults,
-              cabinClass: criteria.cabinClass,
-              departureDate: criteria.departureDate,
-              destination: criteria.destination,
-              offerId: offer.id,
-              origin: criteria.origin,
-              returnDate: criteria.returnDate,
-              tripType: criteria.tripType,
-            },
+            query: { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id },
           }}
         >
           Select flight

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 
 export const metadata: Metadata = { title: 'Review flight' };
 
@@ -75,7 +75,13 @@ export default async function FlightBookingReviewPage({
                   key={`${itinerarySegment.leg}-${itinerarySegment.flightNumber}`}
                 >
                   <div>
-                    <small>{itinerarySegment.leg === 'outbound' ? 'Outbound' : 'Return'}</small>
+                    <small>
+                      {itinerarySegment.leg === 'outbound'
+                        ? 'Outbound'
+                        : itinerarySegment.leg === 'return'
+                          ? 'Return'
+                          : `Flight ${(itinerarySegment.journeyIndex ?? 0) + 1}`}
+                    </small>
                     <strong>{time(itinerarySegment.departureAt)}</strong>
                     <span>{itinerarySegment.departureAirport}</span>
                   </div>
@@ -137,16 +143,7 @@ export default async function FlightBookingReviewPage({
               className="ui-button ui-button--accent ui-button--full-width"
               href={{
                 pathname: '/flights/booking/passengers',
-                query: {
-                  adults: criteria.adults,
-                  cabinClass: criteria.cabinClass,
-                  departureDate: criteria.departureDate,
-                  destination: criteria.destination,
-                  offerId: offer.id,
-                  origin: criteria.origin,
-                  returnDate: criteria.returnDate,
-                  tripType: criteria.tripType,
-                },
+                query: { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id },
               }}
             >
               Continue to passenger details
@@ -155,14 +152,7 @@ export default async function FlightBookingReviewPage({
               className="flight-booking-page__change"
               href={{
                 pathname: '/flights',
-                query: {
-                  adults: criteria.adults,
-                  cabinClass: criteria.cabinClass,
-                  departureDate: criteria.departureDate,
-                  destination: criteria.destination,
-                  origin: criteria.origin,
-                  tripType: criteria.tripType,
-                },
+                query: flightSearchCriteriaToQuery(criteria),
               }}
             >
               Choose another flight

@@ -48,7 +48,13 @@ export default async function FlightItineraryPage({
         <dl>
           {offer.segments.map((segment) => (
             <div key={`${segment.leg}-${segment.flightNumber}`}>
-              <dt>{segment.leg === 'outbound' ? 'Outbound flight' : 'Return flight'}</dt>
+              <dt>
+                {segment.leg === 'outbound'
+                  ? 'Outbound flight'
+                  : segment.leg === 'return'
+                    ? 'Return flight'
+                    : `Flight ${(segment.journeyIndex ?? 0) + 1}`}
+              </dt>
               <dd>
                 {segment.airlineName} {segment.flightNumber} · {segment.departureAirport} →{' '}
                 {segment.arrivalAirport} · {segment.departureAt.slice(0, 10)}

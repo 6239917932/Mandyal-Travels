@@ -117,3 +117,67 @@ test('return searches require complete outbound and return legs on the requested
   assert.equal(normalizeFlightOffer(offer, returnCriteria), undefined);
   assert.equal(normalizeFlightOffer(returnOffer, criteria), undefined);
 });
+
+test('multi-city searches require chronological, continuous journeys', () => {
+  const multiCityCriteria: FlightSearchCriteria = {
+    ...criteria,
+    multiCitySegments: [
+      { departureDate: '2026-09-15', destination: 'BOM', origin: 'DEL' },
+      { departureDate: '2026-09-18', destination: 'BLR', origin: 'BOM' },
+    ],
+    tripType: 'multi-city',
+  };
+  assert.doesNotThrow(() =>
+    validateFlightSearchCriteria(multiCityCriteria, { today: '2026-08-15' }),
+  );
+  assert.throws(
+    () =>
+      validateFlightSearchCriteria(
+        {
+          ...multiCityCriteria,
+          multiCitySegments: [
+            multiCityCriteria.multiCitySegments![0]!,
+            { departureDate: '2026-09-14', destination: 'BLR', origin: 'HYD' },
+          ],
+        },
+        { today: '2026-08-15' },
+      ),
+    /continue from the previous destination|chronological/,
+  );
+});
+
+test('multi-city offers must cover every requested journey exactly', () => {
+  const multiCityCriteria: FlightSearchCriteria = {
+    ...criteria,
+    multiCitySegments: [
+      { departureDate: '2026-09-15', destination: 'BOM', origin: 'DEL' },
+      { departureDate: '2026-09-18', destination: 'BLR', origin: 'BOM' },
+    ],
+    tripType: 'multi-city',
+  };
+  const multiCityOffer: FlightOffer = {
+    ...offer,
+    id: 'multi-city-offer',
+    segments: [
+      { ...offer.segments[0]!, journeyIndex: 0, leg: 'multi-city' },
+      {
+        ...offer.segments[0]!,
+        arrivalAirport: 'BLR',
+        arrivalAt: '2026-09-18T12:00:00+05:30',
+        departureAirport: 'BOM',
+        departureAt: '2026-09-18T10:00:00+05:30',
+        flightNumber: '6E 203',
+        journeyIndex: 1,
+        leg: 'multi-city',
+      },
+    ],
+  };
+  assert.equal(normalizeFlightOffer(multiCityOffer, multiCityCriteria)?.totalPrice, 10000);
+  assert.equal(
+    normalizeFlightOffer(
+      { ...multiCityOffer, segments: multiCityOffer.segments.slice(0, 1) },
+      multiCityCriteria,
+    ),
+    undefined,
+  );
+});

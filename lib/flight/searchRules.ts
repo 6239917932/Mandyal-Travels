@@ -32,6 +32,30 @@ export function validateFlightSearchCriteria(
   ) {
     throw new Error('Return date must be later than departure date.');
   }
+  if (criteria.tripType === 'multi-city') {
+    const journeys = criteria.multiCitySegments;
+    if (!journeys || journeys.length < 2 || journeys.length > 3) {
+      throw new Error('Multi-city searches require two or three flight segments.');
+    }
+    journeys.forEach((journey, index) => {
+      if (!AIRPORT_CODE_PATTERN.test(journey.origin) || !AIRPORT_CODE_PATTERN.test(journey.destination)) {
+        throw new Error(`Multi-city segment ${index + 1} requires valid airport codes.`);
+      }
+      if (journey.origin === journey.destination) {
+        throw new Error(`Multi-city segment ${index + 1} must use different airports.`);
+      }
+      if (journey.departureDate < clock.today) {
+        throw new Error(`Multi-city segment ${index + 1} cannot depart in the past.`);
+      }
+      const previous = journeys[index - 1];
+      if (previous && journey.origin !== previous.destination) {
+        throw new Error(`Multi-city segment ${index + 1} must continue from the previous destination.`);
+      }
+      if (previous && journey.departureDate < previous.departureDate) {
+        throw new Error('Multi-city segment dates must be chronological.');
+      }
+    });
+  }
 }
 
 function isValidSegment(segment: FlightSegment): boolean {
@@ -54,6 +78,57 @@ export function normalizeFlightOffer(
   offer: FlightOffer,
   criteria: FlightSearchCriteria,
 ): FlightOffer | undefined {
+  if (criteria.tripType === 'multi-city') {
+    const journeys = criteria.multiCitySegments;
+    const multiCitySegments = offer.segments.filter((segment) => segment.leg === 'multi-city');
+    if (
+      !journeys ||
+      !offer.id.trim() ||
+      !offer.supplier.trim() ||
+      offer.currency !== 'INR' ||
+      !Number.isFinite(offer.pricePerAdult) ||
+      offer.pricePerAdult <= 0 ||
+      !Number.isInteger(offer.seatsRemaining) ||
+      offer.seatsRemaining < criteria.adults ||
+      offer.cabinClass !== criteria.cabinClass ||
+      multiCitySegments.length !== offer.segments.length ||
+      offer.segments.some((segment) => !isValidSegment(segment))
+    ) {
+      return undefined;
+    }
+    for (let journeyIndex = 0; journeyIndex < journeys.length; journeyIndex += 1) {
+      const expected = journeys[journeyIndex];
+      const journeySegments = multiCitySegments.filter(
+        (segment) => segment.journeyIndex === journeyIndex,
+      );
+      const first = journeySegments[0];
+      const last = journeySegments.at(-1);
+      if (
+        !expected ||
+        !first ||
+        !last ||
+        first.departureAirport !== expected.origin ||
+        last.arrivalAirport !== expected.destination ||
+        first.departureAt.slice(0, 10) !== expected.departureDate
+      ) {
+        return undefined;
+      }
+      for (let index = 1; index < journeySegments.length; index += 1) {
+        if (journeySegments[index - 1]?.arrivalAirport !== journeySegments[index]?.departureAirport) {
+          return undefined;
+        }
+      }
+    }
+    if (new Set(multiCitySegments.map((segment) => segment.journeyIndex)).size !== journeys.length) {
+      return undefined;
+    }
+    return {
+      ...offer,
+      segments: offer.segments.map((segment) => ({ ...segment })),
+      totalPrice: offer.pricePerAdult * criteria.adults,
+    };
+  }
+
   const outboundSegments = offer.segments.filter((segment) => segment.leg === 'outbound');
   const returnSegments = offer.segments.filter((segment) => segment.leg === 'return');
   const firstOutbound = outboundSegments[0];

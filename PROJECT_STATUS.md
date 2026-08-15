@@ -26,6 +26,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Flight offers distinguish outbound and return legs, reject incomplete or wrong-date round trips,
   and display both legs before selection; the fixture adapter includes a revalidatable round-trip
   example without pretending to provide live airline inventory
+- Flight multi-city search carries two or three chronological, continuous journeys through typed
+  criteria, supplier normalization, booking, checkout, and itinerary documents; a clearly identified
+  fixture itinerary supports safe local revalidation without implying live airline inventory
 - Provider-neutral Bus validation rejects wrong-date, wrong-route, over-capacity, malformed-timing,
   invalid-rating, and non-positive-price offers while normalizing bounded amenity data; personal
   Bus checkout also fails safely if its server-side booking cannot be saved
@@ -230,7 +233,7 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current travel-domain milestone passes 32 regression tests, Prisma Client generation,
+The current travel-domain milestone passes 34 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 89 generated route entries, and
 clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

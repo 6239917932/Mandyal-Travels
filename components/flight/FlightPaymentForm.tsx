@@ -33,6 +33,7 @@ interface FlightPaymentFormProps {
     departureAirport: string;
     departureDate: string;
     destinationAirport: string;
+    endDate?: string;
     flightNumber: string;
     total: number;
   };
@@ -165,6 +166,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
           subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
           startDate: bookingSummary.departureDate,
+          endDate: bookingSummary.endDate,
           totalAmount: finalTotal,
           details: completedBooking,
         }),

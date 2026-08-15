@@ -102,6 +102,11 @@ export async function revalidateTravelSelection(
       'origin',
       'tripType',
     ].forEach((key) => requiredText(values, key));
+    if (values.tripType === 'multi-city') {
+      ['segment2Date', 'segment2Destination', 'segment2Origin'].forEach((key) =>
+        requiredText(values, key),
+      );
+    }
     const criteria = createFlightSearchCriteria(values);
     const offer = await flightService.revalidateOffer(values.offerId, criteria);
     if (!offer) {
@@ -111,7 +116,10 @@ export async function revalidateTravelSelection(
       );
     }
     return {
-      endDate: criteria.returnDate ?? null,
+      endDate:
+        criteria.tripType === 'multi-city'
+          ? (criteria.multiCitySegments?.at(-1)?.departureDate ?? null)
+          : (criteria.returnDate ?? null),
       finalTotal: applyPromotion(productType, offer.totalPrice, promotionCode),
       policyCabin: criteria.cabinClass.replaceAll('-', '_').toUpperCase(),
       startDate: criteria.departureDate,

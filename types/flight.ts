@@ -1,4 +1,10 @@
-export type FlightTripType = 'one-way' | 'return';
+export type FlightTripType = 'one-way' | 'return' | 'multi-city';
+
+export interface FlightSearchLeg {
+  departureDate: string;
+  destination: string;
+  origin: string;
+}
 
 export interface FlightSearchCriteria {
   adults: number;
@@ -6,6 +12,7 @@ export interface FlightSearchCriteria {
   departureDate: string;
   destination: string;
   origin: string;
+  multiCitySegments?: FlightSearchLeg[];
   returnDate?: string;
   tripType: FlightTripType;
 }
@@ -19,7 +26,8 @@ export interface FlightSegment {
   departureAt: string;
   durationMinutes: number;
   flightNumber: string;
-  leg: 'outbound' | 'return';
+  journeyIndex?: number;
+  leg: 'outbound' | 'return' | 'multi-city';
   stops: number;
 }
 

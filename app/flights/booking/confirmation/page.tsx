@@ -4,7 +4,7 @@ import { FlightConfirmationDetails } from '@/components/flight/FlightConfirmatio
 import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { createFlightSearchCriteria, flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
 import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight confirmed' };
@@ -34,16 +34,7 @@ export default async function FlightConfirmationPage({
     );
   const segment = offer.segments[0];
   const returnSegment = offer.segments.find((item) => item.leg === 'return');
-  const itineraryQuery: Record<string, string> = {
-    adults: String(criteria.adults),
-    cabinClass: criteria.cabinClass,
-    departureDate: criteria.departureDate,
-    destination: criteria.destination,
-    offerId: offer.id,
-    origin: criteria.origin,
-    tripType: criteria.tripType,
-  };
-  if (criteria.returnDate) itineraryQuery.returnDate = criteria.returnDate;
+  const itineraryQuery = { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id };
 
   return (
     <div className="flight-confirmation-page">
