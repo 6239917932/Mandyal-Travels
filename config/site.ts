@@ -4,7 +4,8 @@ export interface NavigationItem {
 }
 
 export const siteConfig = {
-  description: 'Your trusted partner for hotels, flights, buses, and car rentals.',
+  description:
+    'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
   name: 'Mandyal Travels',
   navigation: [
     { href: '/', label: 'Home' },
@@ -19,4 +20,5 @@ export const siteConfig = {
     { href: '/manage-booking', label: 'Manage booking' },
   ] satisfies NavigationItem[],
   supportEmail: 'support@mandyaltravels.com',
+  tagline: 'From the heart of the Himalayas to everywhere.',
 } as const;

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { MandyalLogo } from '@/components/brand/MandyalLogo';
 import { siteConfig } from '@/config/site';
 
 export function SiteFooter() {
@@ -9,8 +10,11 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer__inner">
         <div>
-          <p className="site-footer__brand">{siteConfig.name}</p>
+          <Link aria-label="Mandyal Travels home" className="site-footer__logo" href="/">
+            <MandyalLogo appearance="inverse" showTagline />
+          </Link>
           <p className="site-footer__description">{siteConfig.description}</p>
+          <p className="site-footer__origin">Proudly rooted in Mandi, Himachal Pradesh, India.</p>
         </div>
 
         <div>

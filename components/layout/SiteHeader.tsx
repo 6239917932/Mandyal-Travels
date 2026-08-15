@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { MandyalLogo } from '@/components/brand/MandyalLogo';
 import { siteConfig } from '@/config/site';
 import { getAccountHomePath } from '@/lib/auth/redirect';
 
@@ -24,10 +25,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
     <header className="site-header">
       <div className="site-header__inner">
         <Link className="site-logo" href="/" onClick={closeMenu}>
-          <span className="site-logo__mark">M</span>
-          <span>
-            Mandyal <strong>Travels</strong>
-          </span>
+          <MandyalLogo size="compact" />
         </Link>
 
         <button
