@@ -16,6 +16,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Provider-neutral Flight search validation now enforces IATA-style airport codes, travel dates,
   bounded passenger counts, route/cabin/date matching, seat sufficiency, positive prices, valid
   segment timing, and continuous connections before supplier offers can enter checkout
+- Versioned, no-store Flight offer search and revalidation APIs expose the same governed service
+  boundary to future web, Android, iOS, B2B, and corporate clients
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed
