@@ -178,6 +178,14 @@ export default async function PartnerWorkspacePage() {
             </Link>
           </Card>
           <Card>
+            <p className="hotel-page__eyebrow">Distribution</p>
+            <h2>PMS and channel sync</h2>
+            <p>Connect provider accounts, map properties, and reconcile synchronization runs.</p>
+            <Link className="home-card__link" href="/partner/channels">
+              Manage channels
+            </Link>
+          </Card>
+          <Card>
             <p className="hotel-page__eyebrow">Guest feedback</p>
             <h2>Reviews and responses</h2>
             <p>Read published verified-stay reviews and post an audited property response.</p>

@@ -60,6 +60,7 @@ model SupplyPartner {
   vehicleReservations PartnerVehicleReservation[]
   busRoutes           PartnerBusRoute[]
   busReservations     PartnerBusReservation[]
+  channelConnections  HotelChannelConnection[]
 
   @@index([status, createdAt])
 }
@@ -125,6 +126,7 @@ model PartnerProperty {
   inventoryDays     PartnerHotelInventoryDay[]
   physicalRooms     PartnerPhysicalRoom[]
   rooms             PartnerRoomType[]
+  channelMappings   HotelChannelPropertyMapping[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -727,6 +729,64 @@ model IntegrationOutboxEvent {
   @@index([status, nextAttemptAt, createdAt])
   @@index([aggregateType, aggregateId, createdAt])
   @@index([bookingId, createdAt])
+}
+
+model HotelChannelConnection {
+  id                 String                        @id @default(cuid())
+  partnerId          String
+  providerName       String
+  connectionType     String                        @default("CHANNEL_MANAGER")
+  status             String                        @default("PENDING_CONFIGURATION")
+  authenticationMode String                        @default("EXTERNAL_SECRET")
+  externalAccountRef String                        @default("")
+  lastHealthAt       DateTime?
+  lastHealthStatus   String                        @default("NOT_CHECKED")
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+  partner            SupplyPartner                 @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  propertyMappings   HotelChannelPropertyMapping[]
+  syncRuns           HotelChannelSyncRun[]
+
+  @@unique([partnerId, providerName, externalAccountRef])
+  @@index([partnerId, status, createdAt])
+}
+
+model HotelChannelPropertyMapping {
+  id                  String                 @id @default(cuid())
+  connectionId        String
+  propertyId          String
+  externalPropertyRef String
+  status              String                 @default("ACTIVE")
+  lastSyncedAt        DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  connection          HotelChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  property            PartnerProperty        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, propertyId])
+  @@unique([connectionId, externalPropertyRef])
+  @@index([propertyId, status])
+}
+
+model HotelChannelSyncRun {
+  id                 String                 @id @default(cuid())
+  connectionId       String
+  direction          String                 @default("BIDIRECTIONAL")
+  scope              String                 @default("INVENTORY_RATES_RESTRICTIONS")
+  status             String                 @default("QUEUED")
+  recordsRead        Int                    @default(0)
+  recordsWritten     Int                    @default(0)
+  conflictCount      Int                    @default(0)
+  reconciliationNote String                 @default("")
+  requestedByUserId  String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  connection         HotelChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, status, createdAt])
+  @@index([status, createdAt])
 }
 
 model RiskSignal {
