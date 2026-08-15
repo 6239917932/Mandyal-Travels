@@ -77,6 +77,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries
+- Supplier-scoped hotel booking CSV export with a bounded 1,000-record operational limit
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment

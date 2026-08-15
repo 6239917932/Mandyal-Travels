@@ -129,6 +129,9 @@ export default function PartnerBookingsPage() {
             <Link className="ui-button ui-button--secondary" href="/partner/amendments">
               Amendments
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/api/v1/partner/bookings/export" prefetch={false}>
+              Export CSV
+            </Link>
           </div>
         </div>
         {isLoading && !meta ? <Card>Loading your assigned booking records…</Card> : null}
