@@ -16,6 +16,8 @@ import {
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
+const OCCUPYING_VEHICLE_RESERVATION_STATUSES = ['CONFIRMED', 'PICKED_UP'];
+const VALUE_VEHICLE_RESERVATION_STATUSES = ['COMPLETED', 'CONFIRMED', 'PICKED_UP'];
 
 export class PartnerOperationsError extends Error {
   constructor(
@@ -1645,7 +1647,7 @@ export const partnerOperationsService = {
           where: {
             dropoffDate: { gt: input.pickupDate },
             pickupDate: { lt: input.dropoffDate },
-            status: 'CONFIRMED',
+            status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES },
           },
         },
       },
@@ -1848,10 +1850,12 @@ export const partnerOperationsService = {
   async getVehicleReservationSummary(partnerId: string) {
     const [totalCount, confirmedCount, captured] = await Promise.all([
       prisma.partnerVehicleReservation.count({ where: { partnerId } }),
-      prisma.partnerVehicleReservation.count({ where: { partnerId, status: 'CONFIRMED' } }),
+      prisma.partnerVehicleReservation.count({
+        where: { partnerId, status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES } },
+      }),
       prisma.partnerVehicleReservation.aggregate({
         _sum: { totalAmount: true },
-        where: { partnerId, status: 'CONFIRMED' },
+        where: { partnerId, status: { in: VALUE_VEHICLE_RESERVATION_STATUSES } },
       }),
     ]);
     return {
@@ -1892,7 +1896,7 @@ export const partnerOperationsService = {
           where: {
             dropoffDate: { gt: criteria.pickupDate },
             pickupDate: { lt: criteria.dropoffDate },
-            status: 'CONFIRMED',
+            status: { in: OCCUPYING_VEHICLE_RESERVATION_STATUSES },
           },
         },
       },

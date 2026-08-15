@@ -280,7 +280,8 @@ financial totals.
 Car rental operations support audited pickup, completion, and no-show transitions. Server-side
 date guards prevent early pickup, future no-shows, expired-period pickup, and invalid state jumps;
 cancellation and refund decisions remain outside this lifecycle until approved commercial rules
-and a payment provider are connected.
+and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
+until completion, and completed rentals remain included in confirmed-value performance totals.
 
 The current travel-domain milestone passes 51 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 97 generated route entries, and

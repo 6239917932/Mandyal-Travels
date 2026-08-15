@@ -65,7 +65,9 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
           where,
         })
       : [];
-    const confirmed = reservations.filter((reservation) => reservation.status === 'CONFIRMED');
+    const confirmed = reservations.filter((reservation) =>
+      ['COMPLETED', 'CONFIRMED', 'PICKED_UP'].includes(reservation.status),
+    );
     const confirmedValue = confirmed.reduce((total, reservation) => total + reservation.totalAmount, 0);
     const rentalDays = confirmed.reduce(
       (total, reservation) =>
@@ -75,7 +77,9 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
     const vehicleRows = [...new Set(reservations.map((reservation) => reservation.vehicle.id))].map((vehicleId) => {
       const rows = reservations.filter((reservation) => reservation.vehicle.id === vehicleId);
       const vehicle = rows[0]?.vehicle;
-      const confirmedRows = rows.filter((reservation) => reservation.status === 'CONFIRMED');
+      const confirmedRows = rows.filter((reservation) =>
+        ['COMPLETED', 'CONFIRMED', 'PICKED_UP'].includes(reservation.status),
+      );
       return {
         confirmedValue: confirmedRows.reduce((total, reservation) => total + reservation.totalAmount, 0),
         registrationNumber: vehicle?.registrationNumber,
