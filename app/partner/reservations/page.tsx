@@ -48,6 +48,7 @@ export default function PartnerReservationsPage() {
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+  const [updating, setUpdating] = useState<string>();
   const filtered = useMemo(() => {
     const query = filter.trim().toLowerCase();
     if (!query) return reservations;
@@ -92,6 +93,25 @@ export default function PartnerReservationsPage() {
     return () => window.clearTimeout(task);
   }, [loadPage]);
 
+  async function updateStatus(confirmationCode: string, action: 'COMPLETE' | 'MARK_NO_SHOW' | 'PICK_UP') {
+    setError(undefined);
+    setUpdating(confirmationCode);
+    try {
+      const response = await fetch(`/api/v1/partner/reservations/${confirmationCode}`, {
+        body: JSON.stringify({ action }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+      if (!response.ok) setError(result && 'error' in result ? result.error.message : 'Rental status could not be updated.');
+      else await loadPage(meta?.page ?? 1);
+    } catch {
+      setError('The rental operations service could not be reached.');
+    } finally {
+      setUpdating(undefined);
+    }
+  }
+
   return (
     <div className="booking-page partner-bookings">
       <div className="booking-page__container">
@@ -104,9 +124,9 @@ export default function PartnerReservationsPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
-            <a className="ui-button ui-button--secondary" href="/api/v1/partner/reservations/export">
+            <Link className="ui-button ui-button--secondary" href="/api/v1/partner/reservations/export">
               Export CSV
-            </a>
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner">
               Workspace
             </Link>
@@ -147,6 +167,13 @@ export default function PartnerReservationsPage() {
                     <div><span>Registration</span><strong>{reservation.vehicle.registrationNumber ?? 'Supplier assigned'}</strong></div>
                     <div><span>Status</span><strong>{reservation.status}</strong></div>
                     <div><span>Total</span><strong>{money(reservation.totalAmount)}</strong></div>
+                  </div>
+                  <div className="manage-booking__document-actions">
+                    {reservation.status === 'CONFIRMED' ? <>
+                      <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'PICK_UP')} variant="primary">Confirm pickup</Button>
+                      <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'MARK_NO_SHOW')} variant="secondary">Mark no-show</Button>
+                    </> : null}
+                    {reservation.status === 'PICKED_UP' ? <Button disabled={updating === reservation.confirmationCode} onClick={() => updateStatus(reservation.confirmationCode, 'COMPLETE')} variant="primary">Complete rental</Button> : null}
                   </div>
                 </Card>
               ))}

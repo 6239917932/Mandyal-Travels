@@ -277,7 +277,12 @@ rental-day, average-value, vehicle-utilization, and per-vehicle rollups. Every q
 the authenticated fleet partner and refuses unbounded result sets rather than returning partial
 financial totals.
 
-The current travel-domain milestone passes 48 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 96 generated route entries, and
+Car rental operations support audited pickup, completion, and no-show transitions. Server-side
+date guards prevent early pickup, future no-shows, expired-period pickup, and invalid state jumps;
+cancellation and refund decisions remain outside this lifecycle until approved commercial rules
+and a payment provider are connected.
+
+The current travel-domain milestone passes 51 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 97 generated route entries, and
 clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
