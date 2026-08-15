@@ -50,7 +50,9 @@ export default async function CarPaymentPage({
                 pickupLocation: criteria.pickupLocation,
                 dropoffLocation: criteria.dropoffLocation,
                 pickupDate: criteria.pickupDate,
+                pickupTime: criteria.pickupTime,
                 dropoffDate: criteria.dropoffDate,
+                dropoffTime: criteria.dropoffTime,
                 total: offer.totalPrice,
               }}
               nextQuery={query}
@@ -63,7 +65,8 @@ export default async function CarPaymentPage({
               <div>
                 <dt>Dates</dt>
                 <dd>
-                  {criteria.pickupDate} to {criteria.dropoffDate}
+                  {criteria.pickupDate} {criteria.pickupTime} to {criteria.dropoffDate}{' '}
+                  {criteria.dropoffTime}
                 </dd>
               </div>
               <div>

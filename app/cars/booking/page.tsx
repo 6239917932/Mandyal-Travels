@@ -51,18 +51,26 @@ export default async function CarBookingPage({
               <div>
                 <dt>Pickup</dt>
                 <dd>
-                  {criteria.pickupLocation} · {criteria.pickupDate}
+                  {criteria.pickupLocation} · {criteria.pickupDate} at {criteria.pickupTime}
                 </dd>
               </div>
               <div>
                 <dt>Drop-off</dt>
                 <dd>
-                  {criteria.dropoffLocation} · {criteria.dropoffDate}
+                  {criteria.dropoffLocation} · {criteria.dropoffDate} at {criteria.dropoffTime}
                 </dd>
               </div>
               <div>
                 <dt>Rental duration</dt>
-                <dd>{rentalDays(criteria.pickupDate, criteria.dropoffDate)} days</dd>
+                <dd>
+                  {rentalDays(
+                    criteria.pickupDate,
+                    criteria.dropoffDate,
+                    criteria.pickupTime,
+                    criteria.dropoffTime,
+                  )}{' '}
+                  billed days
+                </dd>
               </div>
               <div>
                 <dt>Rental type</dt>

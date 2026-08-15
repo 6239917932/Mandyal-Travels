@@ -52,7 +52,8 @@ export default async function CarDriverPage({
               <div>
                 <dt>Rental period</dt>
                 <dd>
-                  {criteria.pickupDate} to {criteria.dropoffDate}
+                  {criteria.pickupDate} {criteria.pickupTime} to {criteria.dropoffDate}{' '}
+                  {criteria.dropoffTime}
                 </dd>
               </div>
               <div>

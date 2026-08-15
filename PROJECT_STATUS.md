@@ -45,6 +45,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   the server boundary before any personal or approved-company trip can be confirmed
 - Car discovery and checkout distinguish self-drive from chauffeur service end to end; self-drive
   retains licence and age validation while chauffeur bookings require a bounded lead-traveller contact
+- Car pickup and drop-off times are validated and carried through revalidation, billed-duration
+  calculation, checkout, confirmations, and vouchers rather than being reduced to date-only rentals
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed

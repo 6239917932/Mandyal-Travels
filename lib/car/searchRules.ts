@@ -4,9 +4,17 @@ const DAY_MS = 86_400_000;
 const MAX_DRIVERS = 4;
 const MAX_RENTAL_DAYS = 90;
 
-export function rentalDurationDays(pickupDate: string, dropoffDate: string): number {
+const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+export function rentalDurationDays(
+  pickupDate: string,
+  dropoffDate: string,
+  pickupTime = '00:00',
+  dropoffTime = '00:00',
+): number {
   return Math.ceil(
-    (Date.parse(`${dropoffDate}T00:00:00.000Z`) - Date.parse(`${pickupDate}T00:00:00.000Z`)) /
+    (Date.parse(`${dropoffDate}T${dropoffTime}:00.000Z`) -
+      Date.parse(`${pickupDate}T${pickupTime}:00.000Z`)) /
       DAY_MS,
   );
 }
@@ -25,7 +33,15 @@ export function validateCarSearchCriteria(criteria: CarSearchCriteria, today: st
     throw new Error(`Drivers must be between 1 and ${MAX_DRIVERS}.`);
   }
   if (criteria.pickupDate < today) throw new Error('Pickup date cannot be in the past.');
-  const days = rentalDurationDays(criteria.pickupDate, criteria.dropoffDate);
+  if (!TIME_PATTERN.test(criteria.pickupTime) || !TIME_PATTERN.test(criteria.dropoffTime)) {
+    throw new Error('Enter valid pickup and drop-off times.');
+  }
+  const days = rentalDurationDays(
+    criteria.pickupDate,
+    criteria.dropoffDate,
+    criteria.pickupTime,
+    criteria.dropoffTime,
+  );
   if (days < 1) throw new Error('Drop-off date must be after pickup date.');
   if (days > MAX_RENTAL_DAYS) throw new Error(`Car rentals are limited to ${MAX_RENTAL_DAYS} days.`);
 }
@@ -34,7 +50,12 @@ export function normalizeCarOffer(
   offer: CarOffer,
   criteria: CarSearchCriteria,
 ): CarOffer | undefined {
-  const days = rentalDurationDays(criteria.pickupDate, criteria.dropoffDate);
+  const days = rentalDurationDays(
+    criteria.pickupDate,
+    criteria.dropoffDate,
+    criteria.pickupTime,
+    criteria.dropoffTime,
+  );
   if (
     !offer.id.trim() ||
     !offer.providerName.trim() ||

@@ -63,13 +63,13 @@ export default async function CarVoucherPage({
             <div>
               <dt>Pickup</dt>
               <dd>
-                {criteria.pickupLocation} · {criteria.pickupDate}
+                {criteria.pickupLocation} · {criteria.pickupDate} at {criteria.pickupTime}
               </dd>
             </div>
             <div>
               <dt>Drop-off</dt>
               <dd>
-                {criteria.dropoffLocation} · {criteria.dropoffDate}
+                {criteria.dropoffLocation} · {criteria.dropoffDate} at {criteria.dropoffTime}
               </dd>
             </div>
             <div>

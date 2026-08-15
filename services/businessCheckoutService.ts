@@ -150,9 +150,11 @@ export async function revalidateTravelSelection(
     [
       'drivers',
       'dropoffDate',
+      'dropoffTime',
       'dropoffLocation',
       'offerId',
       'pickupDate',
+      'pickupTime',
       'pickupLocation',
     ].forEach((key) => requiredText(values, key));
     const criteria = createCarSearchCriteria(values);
