@@ -608,8 +608,33 @@ model Booking {
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
+  integrationEvents       IntegrationOutboxEvent[]
 
   @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model IntegrationOutboxEvent {
+  id            String    @id @default(cuid())
+  bookingId     String?
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  dedupeKey     String    @unique
+  payloadJson   String
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(8)
+  nextAttemptAt DateTime  @default(now())
+  lockedAt      DateTime?
+  processedAt   DateTime?
+  lastError     String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([aggregateType, aggregateId, createdAt])
+  @@index([bookingId, createdAt])
 }
 
 model PartnerPhysicalRoom {

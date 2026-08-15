@@ -411,6 +411,26 @@ export class PrismaBookingRepository implements BookingRepository {
         },
       });
 
+      await transaction.integrationOutboxEvent.create({
+        data: {
+          aggregateId: booking.id,
+          aggregateType: 'HOTEL_BOOKING',
+          bookingId: booking.id,
+          dedupeKey: `hotel-booking-confirmed:${booking.id}`,
+          eventType: 'HOTEL_BOOKING_CONFIRMED',
+          payloadJson: JSON.stringify({
+            checkInDate: booking.checkInDate,
+            checkOutDate: booking.checkOutDate,
+            confirmationCode: booking.confirmationCode,
+            currency: booking.currency,
+            guestEmail: booking.guest.email,
+            guestPhone: booking.guest.phone,
+            hotelSlug: booking.hotelSlug,
+            totalAmount: booking.totalAmount,
+          }),
+        },
+      });
+
       if (businessContext && organizationId) {
         await transaction.businessAuditLog.create({
           data: createBusinessAuditData({
