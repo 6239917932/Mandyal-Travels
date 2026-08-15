@@ -81,6 +81,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
   supplier audit entries
+- Property-timezone-aware arrival guards prevent future stays from being checked in or marked as
+  no-shows, and prevent check-in after the scheduled stay has ended
 - Persisted physical room assignments required at check-in, validated against booked quantity and
   overlapping checked-in stays, displayed to front-desk users, audited, and included in exports
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
@@ -157,6 +159,9 @@ Seasonal pricing is rate-plan-specific: room-only, breakfast, and other plans re
 daily prices across search and booking quotes, while availability and stay restrictions remain
 room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overrides normalized and
 supplier-scoped.
+
+Front-desk stay transitions are evaluated using the property's configured timezone. Future arrivals
+cannot be checked in or marked as no-shows, and an expired stay cannot be checked in.
 
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
 a Next.js production build with all 85 routes, and clean-database verification of all 38 migrations

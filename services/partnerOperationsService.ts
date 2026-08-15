@@ -104,6 +104,25 @@ function readStoredStringList(value: string): string[] {
   }
 }
 
+function dateInTimezone(timezone: string, instant = new Date()): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: '2-digit',
+      timeZone: timezone,
+      year: 'numeric',
+    }).formatToParts(instant);
+    const value = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((part) => part.type === type)?.value ?? '';
+    return `${value('year')}-${value('month')}-${value('day')}`;
+  } catch {
+    throw new PartnerOperationsError(
+      'INVALID_PROPERTY_TIMEZONE',
+      'The property timezone must be corrected before recording stay operations.',
+    );
+  }
+}
+
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -124,18 +143,15 @@ export const partnerOperationsService = {
     assignedRoomNumbers: string[] = [],
     actorUserId?: string,
   ) {
+    const properties = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true, timezone: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
     const booking = await prisma.booking.findFirst({
       include: { quote: true },
       where: {
         confirmationCode,
-        hotelSlug: {
-          in: await prisma.partnerProperty
-            .findMany({
-              select: { hotelSlug: true },
-              where: { partnerId, status: 'ACTIVE' },
-            })
-            .then((properties) => properties.map((property) => property.hotelSlug)),
-        },
+        hotelSlug: { in: properties.map((property) => property.hotelSlug) },
       },
     });
     if (!booking) {
@@ -143,6 +159,26 @@ export const partnerOperationsService = {
     }
     if (booking.status !== 'confirmed') {
       throw new PartnerOperationsError('BOOKING_CANCELLED', 'A cancelled booking cannot be updated.');
+    }
+    const property = properties.find((candidate) => candidate.hotelSlug === booking.hotelSlug);
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
+    }
+    const localDate = dateInTimezone(property.timezone);
+    if (
+      ['CHECKED_IN', 'NO_SHOW'].includes(nextStatus) &&
+      localDate < booking.quote.checkInDate
+    ) {
+      throw new PartnerOperationsError(
+        'ARRIVAL_NOT_DUE',
+        `This stay cannot be marked ${nextStatus.toLowerCase().replaceAll('_', ' ')} before ${booking.quote.checkInDate} in the property's timezone.`,
+      );
+    }
+    if (nextStatus === 'CHECKED_IN' && localDate >= booking.quote.checkOutDate) {
+      throw new PartnerOperationsError(
+        'STAY_DATE_PASSED',
+        'The scheduled stay has already ended and cannot be checked in.',
+      );
     }
     const permittedTransitions: Record<string, readonly string[]> = {
       CHECKED_IN: ['CHECKED_OUT'],
