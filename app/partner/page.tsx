@@ -194,6 +194,14 @@ export default async function PartnerWorkspacePage() {
             </Link>
           </Card>
           <Card>
+            <p className="hotel-page__eyebrow">Supplier finance</p>
+            <h2>Settlement statements</h2>
+            <p>Review captured value, commission, net payable, approvals, and payment status.</p>
+            <Link className="home-card__link" href="/partner/settlements">
+              View settlements
+            </Link>
+          </Card>
+          <Card>
             <p className="hotel-page__eyebrow">Room operations</p>
             <h2>Housekeeping board</h2>
             <p>Coordinate dirty, cleaning, ready, and out-of-service rooms with front desk.</p>

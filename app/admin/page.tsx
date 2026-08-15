@@ -163,6 +163,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/finance">
               Finance operations
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/settlements">
+              Partner settlements
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/admin/promotions">
               Promotions and coupons
             </Link>

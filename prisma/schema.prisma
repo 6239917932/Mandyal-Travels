@@ -61,6 +61,7 @@ model SupplyPartner {
   busRoutes           PartnerBusRoute[]
   busReservations     PartnerBusReservation[]
   channelConnections  HotelChannelConnection[]
+  settlements         PartnerSettlement[]
 
   @@index([status, createdAt])
 }
@@ -818,6 +819,34 @@ model RiskSignal {
   @@index([status, severity, createdAt])
   @@index([subjectType, subjectId, createdAt])
   @@index([signalType, createdAt])
+}
+
+model PartnerSettlement {
+  id               String        @id @default(cuid())
+  partnerId        String
+  periodStart      String
+  periodEnd        String
+  currency         String        @default("INR")
+  grossAmount      Int
+  commissionAmount Int
+  taxWithheldAmount Int          @default(0)
+  adjustmentAmount Int           @default(0)
+  netAmount        Int
+  bookingCount     Int
+  status           String        @default("DRAFT")
+  calculationJson  String        @default("{}")
+  reviewNote       String        @default("")
+  approvedByUserId String?
+  approvedAt       DateTime?
+  paidAt           DateTime?
+  paymentReference String        @default("")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  partner          SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([partnerId, periodStart, periodEnd])
+  @@index([status, periodEnd, createdAt])
+  @@index([partnerId, status, periodEnd])
 }
 
 model PartnerPhysicalRoom {
