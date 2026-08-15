@@ -7,7 +7,7 @@ import { type FormEvent, useState } from 'react';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type AuthFormProps = {
-  accountType?: 'business' | 'customer';
+  accountType?: 'agent' | 'business' | 'customer';
   message?: string;
   mode: 'login' | 'register';
   returnTo?: string;
@@ -95,7 +95,7 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
         </div>
       ) : null}
 
-      {isRegister && accountType === 'business' ? (
+      {isRegister && ['agent', 'business'].includes(accountType) ? (
         <label className="ui-field">
           <span className="ui-field__label">Organization name</span>
           <input
@@ -162,11 +162,13 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
       <button className="ui-button ui-button--accent ui-button--full-width" disabled={isSubmitting}>
         {isSubmitting
           ? 'Please wait...'
-          : isRegister && accountType === 'business'
-            ? 'Create business account'
-            : isRegister
-              ? 'Create account'
-              : 'Sign in'}
+          : isRegister && accountType === 'agent'
+            ? 'Create travel agency account'
+            : isRegister && accountType === 'business'
+              ? 'Create business account'
+              : isRegister
+                ? 'Create account'
+                : 'Sign in'}
       </button>
 
       <p className="auth-form__alternate">

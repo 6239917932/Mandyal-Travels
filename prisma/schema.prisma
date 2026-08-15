@@ -469,6 +469,23 @@ model Organization {
   invitations       OrganizationInvitation[]
   policyVersions    OrganizationPolicyVersion[]
   supportCases      BusinessSupportCase[]
+  agencyCustomers   AgencyCustomer[]
+}
+
+model AgencyCustomer {
+  id             String       @id @default(cuid())
+  organizationId String
+  displayName    String
+  email          String
+  phone          String       @default("")
+  notes          String       @default("")
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([organizationId, status, createdAt])
 }
 
 model BusinessSupportCase {

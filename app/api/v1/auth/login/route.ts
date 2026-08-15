@@ -64,8 +64,14 @@ export async function POST(request: Request) {
 
     await clearRateLimit('LOGIN', rateLimitIdentifier);
     await createSession(user.id);
+    const agencyMembership =
+      user.role === 'BUSINESS_ADMIN'
+        ? await prisma.organizationMember.findFirst({
+            where: { userId: user.id, organization: { type: 'TRAVEL_AGENCY' } },
+          })
+        : null;
     return NextResponse.json({
-      redirectTo: returnTo ?? getAccountHomePath(user.role),
+      redirectTo: returnTo ?? (agencyMembership ? '/agent' : getAccountHomePath(user.role)),
       user: { email: user.email, firstName: user.firstName },
     });
   } catch (error) {
