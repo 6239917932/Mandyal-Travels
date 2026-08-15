@@ -814,6 +814,51 @@ model PaymentProviderEvent {
   @@index([status, receivedAt])
 }
 
+model LoyaltyAccount {
+  id             String          @id @default(cuid())
+  userId         String          @unique
+  pointsBalance  Int             @default(0)
+  walletBalance  Int             @default(0)
+  walletCurrency String          @default("INR")
+  status         String          @default("ACTIVE")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  entries        LoyaltyLedger[]
+
+  @@index([status, updatedAt])
+}
+
+model LoyaltyLedger {
+  id             String         @id @default(cuid())
+  accountId      String
+  entryType      String
+  pointsDelta    Int            @default(0)
+  walletDelta    Int            @default(0)
+  walletCurrency String         @default("INR")
+  referenceType  String
+  referenceId    String
+  description    String
+  createdAt      DateTime       @default(now())
+  account        LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, entryType, referenceType, referenceId])
+  @@index([accountId, createdAt])
+}
+
+model ReferralCode {
+  id          String   @id @default(cuid())
+  ownerUserId String
+  code        String   @unique
+  status      String   @default("ACTIVE")
+  maxUses     Int      @default(20)
+  usedCount   Int      @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerUserId, status])
+}
+
 model PriceComponent {
   id       String     @id @default(cuid())
   quoteId  String
