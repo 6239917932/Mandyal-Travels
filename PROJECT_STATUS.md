@@ -31,6 +31,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   Bus checkout also fails safely if its server-side booking cannot be saved
 - Versioned, no-store Bus offer search and revalidation APIs reuse that supplier boundary for
   future mobile, partner, B2B, and corporate clients
+- Bus checkout validates the exact passenger roster, booking contact, and a unique seat assignment
+  for every traveller at the server boundary instead of trusting browser session data
 - Car search and revalidation now enforce bounded locations, drivers and rental length, validate
   provider inventory/capacity/pricing, normalize feature data, and expose versioned no-store APIs
   shared by direct partner and future external supplier inventory

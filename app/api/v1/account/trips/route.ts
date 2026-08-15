@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { readJsonObject } from '@/lib/api/request';
 import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { hasValidCarDriverDetails } from '@/lib/car/bookingRules';
+import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
 import { prisma } from '@/lib/prisma';
 import {
   BusinessCheckoutError,
@@ -95,6 +96,14 @@ export async function POST(request: Request) {
             : {},
         ).adults
       : undefined;
+  const busPassengers =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? Number((body.businessSelection as Record<string, unknown>).passengers)
+      : undefined;
+  const busSeats =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? (body.businessSelection as Record<string, unknown>).seats
+      : undefined;
 
   if (
     !isProductType(productType) ||
@@ -127,6 +136,18 @@ export async function POST(request: Request) {
     return errorResponse(
       'INVALID_CAR_DRIVER',
       'Complete and valid primary-driver and booking-contact details are required.',
+      400,
+    );
+  }
+  if (
+    productType === 'BUS' &&
+    (busPassengers === undefined ||
+      !hasValidBusPassengerDetails(details, busPassengers) ||
+      !parseBusSeats(busSeats, busPassengers))
+  ) {
+    return errorResponse(
+      'INVALID_BUS_TRAVELERS',
+      'Complete passenger, contact, and unique seat details are required.',
       400,
     );
   }
