@@ -157,6 +157,30 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
     } catch { setError('The compliance service could not be reached.'); }
     finally { setBusy(false); }
   }
+  async function updateVehicleStatus(vehicle: Vehicle) {
+    setBusy(true);
+    setError(undefined);
+    setMessage(undefined);
+    try {
+      const status = vehicle.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+      const response = await fetch(`/api/v1/partner/vehicles/${vehicle.id}`, {
+        body: JSON.stringify({ status }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: Vehicle } | ApiErrorResponse>(response);
+      if (!response.ok) {
+        setError(result && 'error' in result ? result.error.message : 'Vehicle status could not be updated.');
+      } else {
+        setMessage(status === 'ACTIVE' ? 'Vehicle restored to customer search.' : 'Vehicle paused. Existing reservations remain unchanged.');
+        setVehicles(await fetchVehicles());
+      }
+    } catch {
+      setError('The vehicle lifecycle service could not be reached.');
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <>
       {message ? (
@@ -245,6 +269,14 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
               {vehicle.seats} seats · {vehicle.bags} bags · {vehicle.totalUnits} units
             </p>
             <strong>₹{vehicle.pricePerDay.toLocaleString('en-IN')} / day</strong>
+            <p>Distribution status: <strong>{vehicle.status}</strong></p>
+            <Button
+              disabled={!canCreateVehicles || busy}
+              onClick={() => updateVehicleStatus(vehicle)}
+              variant="secondary"
+            >
+              {vehicle.status === 'ACTIVE' ? 'Pause vehicle sales' : 'Restore vehicle sales'}
+            </Button>
             <form className="supplier-form" onSubmit={(event) => saveCompliance(event, vehicle.id)}>
               <h3>Compliance and document expiries</h3>
               <p>Status: <strong>{vehicleComplianceState(vehicle, date(0))}</strong>. Empty or expired records require supplier review before production operation.</p>

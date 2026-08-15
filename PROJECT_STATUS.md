@@ -266,7 +266,12 @@ fitness-certificate, and pollution-certificate expiry dates. The fleet workspace
 vehicle as incomplete, expired, expiring within 30 days, or complete while preserving existing
 fleet records through an additive migration.
 
+Vehicle lifecycle controls let Car supplier administrators pause a vehicle from customer search
+without deleting inventory or reservations. Restoration is audited and requires a registration
+number plus complete, non-expired compliance dates, preventing non-compliant vehicles from
+returning to sale.
+
 The current travel-domain milestone passes 47 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 95 generated route entries, and
+strict TypeScript, ESLint, a Next.js production build with all 96 generated route entries, and
 clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

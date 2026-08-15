@@ -8,7 +8,11 @@ import {
 } from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 import { seatsFitBusCapacity } from '@/lib/bus/bookingRules';
-import { normalizeVehicleComplianceDates, type VehicleComplianceDates } from '@/lib/car/complianceRules';
+import {
+  normalizeVehicleComplianceDates,
+  vehicleComplianceState,
+  type VehicleComplianceDates,
+} from '@/lib/car/complianceRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -1711,6 +1715,39 @@ export const partnerOperationsService = {
       registrationExpiry: input.registrationExpiry,
     });
     return prisma.partnerVehicle.update({ data: dates, where: { id: vehicle.id } });
+  },
+
+  async updateVehicleStatus(input: {
+    partnerId: string;
+    status: 'ACTIVE' | 'PAUSED';
+    today: string;
+    vehicleId: string;
+  }) {
+    const vehicle = await prisma.partnerVehicle.findFirst({
+      where: { id: input.vehicleId, partnerId: input.partnerId },
+    });
+    if (!vehicle)
+      throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
+    if (vehicle.status === input.status) return vehicle;
+    if (input.status === 'ACTIVE') {
+      if (!vehicle.registrationNumber) {
+        throw new PartnerOperationsError(
+          'REGISTRATION_REQUIRED',
+          'Add the vehicle registration number before restoring sales.',
+        );
+      }
+      const compliance = vehicleComplianceState(vehicle, input.today);
+      if (compliance === 'INCOMPLETE' || compliance === 'EXPIRED') {
+        throw new PartnerOperationsError(
+          'VEHICLE_COMPLIANCE_REQUIRED',
+          'Complete all vehicle compliance dates and renew expired documents before restoring sales.',
+        );
+      }
+    }
+    return prisma.partnerVehicle.update({
+      data: { status: input.status },
+      where: { id: vehicle.id },
+    });
   },
 
   async reserveDirectBus(
