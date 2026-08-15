@@ -230,7 +230,7 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current travel-domain milestone passes 20 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 86 generated route entries, and
+The current travel-domain milestone passes 32 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 89 generated route entries, and
 clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
