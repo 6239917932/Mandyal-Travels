@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
-import type { ApiErrorResponse, PartnerInventoryRecord } from '@/types/commerce';
+import type { ApiErrorResponse, PartnerHotelCalendarRecord, PartnerInventoryRatePlanRecord, PartnerInventoryRecord } from '@/types/commerce';
 
 function futureDate(days: number): string {
   const date = new Date();
@@ -19,10 +19,14 @@ export default function PartnerInventoryPage() {
   const [checkInDate, setCheckInDate] = useState(futureDate(1));
   const [checkOutDate, setCheckOutDate] = useState(futureDate(4));
   const [inventory, setInventory] = useState<PartnerInventoryRecord[]>([]);
+  const [calendar, setCalendar] = useState<PartnerHotelCalendarRecord[]>([]);
+  const [ratePlans, setRatePlans] = useState<PartnerInventoryRatePlanRecord[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [success, setSuccess] = useState<string>();
+  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
 
   async function loadInventory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,7 +36,7 @@ export default function PartnerInventoryPage() {
     try {
       const params = new URLSearchParams({ checkInDate, checkOutDate });
       const response = await fetch(`/api/v1/partner/inventory?${params}`);
-      const result = await readJsonResponse<{ data: PartnerInventoryRecord[] } | ApiErrorResponse>(
+      const result = await readJsonResponse<{ calendar: PartnerHotelCalendarRecord[]; data: PartnerInventoryRecord[]; ratePlans: PartnerInventoryRatePlanRecord[] } | ApiErrorResponse>(
         response,
       );
       if (!response.ok || !result || !('data' in result)) {
@@ -42,6 +46,8 @@ export default function PartnerInventoryPage() {
         return;
       }
       setInventory(result.data);
+      setCalendar(result.calendar);
+      setRatePlans(result.ratePlans);
       setHasLoaded(true);
     } catch {
       setError('The partner service could not be reached.');
@@ -55,6 +61,7 @@ export default function PartnerInventoryPage() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     setError(undefined);
+    setSuccess(undefined);
     setIsSaving(true);
     try {
       const response = await fetch('/api/v1/partner/inventory', {
@@ -66,6 +73,16 @@ export default function PartnerInventoryPage() {
           nightlyRate: formData.get('nightlyRate')
             ? Number(formData.get('nightlyRate'))
             : undefined,
+          ratePlanRecordId: String(formData.get('ratePlanRecordId') ?? '') || undefined,
+          minimumStayNights: formData.get('minimumStayNights')
+            ? Number(formData.get('minimumStayNights'))
+            : undefined,
+          maximumStayNights: formData.get('maximumStayNights')
+            ? Number(formData.get('maximumStayNights'))
+            : undefined,
+          closedToArrival: formData.get('closedToArrival') === 'on',
+          closedToDeparture: formData.get('closedToDeparture') === 'on',
+          clearNightlyRate: formData.get('clearNightlyRate') === 'on',
           roomTypeId: String(formData.get('roomTypeId') ?? ''),
           stopSell: formData.get('stopSell') === 'on',
         }),
@@ -85,6 +102,7 @@ export default function PartnerInventoryPage() {
       }
       setInventory(result.data);
       form.reset();
+      setSuccess('The PMS calendar controls were saved. Check inventory again to view each daily control.');
     } catch {
       setError('The partner service could not be reached.');
     } finally {
@@ -148,18 +166,26 @@ export default function PartnerInventoryPage() {
                 {error}
               </p>
             ) : null}
+            {success ? <p className="booking-page__success" role="status">{success}</p> : null}
           </form>
         </Card>
         {inventory.length > 0 ? (
           <Card className="partner-inventory__override-card">
             <h2>Room, rate, and stop-sell calendar</h2>
             <p>
-              Use zero to stop sales. The limit applies to every night in the selected date range.
+              Control seasonal rates, room limits, stay rules, arrivals, departures, and stop-sell
+              for the selected date range.
             </p>
             <form className="booking-page__guest-form" onSubmit={saveOverride}>
               <label className="ui-field">
                 <span className="ui-field__label">Room type</span>
-                <select className="ui-input" name="roomTypeId" required>
+                <select
+                  className="ui-input"
+                  name="roomTypeId"
+                  onChange={(event) => setSelectedRoomTypeId(event.target.value)}
+                  required
+                  value={selectedRoomTypeId}
+                >
                   <option value="">Select a room</option>
                   {inventory.map((room) => (
                     <option key={room.roomTypeId} value={room.roomTypeId}>
@@ -191,7 +217,46 @@ export default function PartnerInventoryPage() {
                   placeholder="Maintenance, allotment, or stop-sell"
                   required
                 />
+                <Input
+                  label="Minimum stay (optional)"
+                  max={30}
+                  min={1}
+                  name="minimumStayNights"
+                  placeholder="No restriction"
+                  type="number"
+                />
+                <label className="ui-field">
+                  <span className="ui-field__label">Rate plan for seasonal price</span>
+                  <select className="ui-input" name="ratePlanRecordId">
+                    <option value="">No price change</option>
+                    {ratePlans.filter((ratePlan) => ratePlan.roomTypeId === selectedRoomTypeId).map((ratePlan) => (
+                      <option key={ratePlan.id} value={ratePlan.id}>
+                        {ratePlan.name} ({inventory.find((room) => room.roomTypeId === ratePlan.roomTypeId)?.roomName ?? ratePlan.roomTypeId})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Input
+                  label="Maximum stay (optional)"
+                  max={90}
+                  min={1}
+                  name="maximumStayNights"
+                  placeholder="No restriction"
+                  type="number"
+                />
               </div>
+              <label className="supplier-form__check">
+                <input name="clearNightlyRate" type="checkbox" /> Clear the selected rate plan
+                seasonal price and return to its base price
+              </label>
+              <label className="supplier-form__check">
+                <input name="closedToArrival" type="checkbox" /> Do not allow check-in on these
+                dates
+              </label>
+              <label className="supplier-form__check">
+                <input name="closedToDeparture" type="checkbox" /> Do not allow check-out on these
+                dates
+              </label>
               <label className="supplier-form__check">
                 <input name="stopSell" type="checkbox" /> Stop selling this room for the selected
                 dates
@@ -200,6 +265,29 @@ export default function PartnerInventoryPage() {
                 Save PMS calendar
               </Button>
             </form>
+          </Card>
+        ) : null}
+        {calendar.length > 0 ? (
+          <Card className="partner-inventory__override-card">
+            <h2>Saved daily controls</h2>
+            <div className="partner-inventory__list">
+              {calendar.map((day) => (
+                <div className="partner-inventory__room" key={`${day.roomTypeId}-${day.ratePlanName ?? 'room'}-${day.stayDate}`}>
+                  <strong>{day.stayDate} · {day.hotelName} · {day.roomName}</strong>
+                  <small>
+                    {day.availableRooms} rooms
+                    {day.ratePlanName ? ` · ${day.ratePlanName}` : ''}
+                    {day.nightlyRate ? ` · ₹${day.nightlyRate.toLocaleString('en-IN')}` : ''}
+                    {day.minimumStayNights ? ` · min ${day.minimumStayNights} nights` : ''}
+                    {day.maximumStayNights ? ` · max ${day.maximumStayNights} nights` : ''}
+                    {day.closedToArrival ? ' · arrivals closed' : ''}
+                    {day.closedToDeparture ? ' · departures closed' : ''}
+                    {day.stopSell ? ' · stop-sell' : ''}
+                  </small>
+                  <span>{day.note}</span>
+                </div>
+              ))}
+            </div>
           </Card>
         ) : null}
         <div className="partner-inventory__list" aria-live="polite">

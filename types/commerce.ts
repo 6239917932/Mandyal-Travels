@@ -77,18 +77,22 @@ export interface PartnerAmendmentRecord extends BookingAmendmentRecord {
 }
 
 export interface PartnerBookingRecord {
+  assignedRoomNumbers: string[];
   confirmationCode: string;
   createdAt: string;
   currency: CurrencyCode;
   guestEmail: string;
   guestName: string;
   hotelName: string;
+  operationalStatus: HotelBookingRecord['operationalStatus'];
+  partnerNote: string;
   checkInDate: string;
   checkOutDate: string;
   paymentStatus: PaymentStatus;
   ratePlanName: string;
   roomName: string;
   rooms: number;
+  specialRequests: string;
   status: HotelBookingRecord['status'];
   totalAmount: number;
 }
@@ -106,8 +110,33 @@ export interface PartnerInventoryRecord {
   roomTypeId: string;
 }
 
+export interface PartnerHotelCalendarRecord {
+  availableRooms: number;
+  closedToArrival: boolean;
+  closedToDeparture: boolean;
+  hotelName: string;
+  maximumStayNights?: number;
+  minimumStayNights?: number;
+  nightlyRate?: number;
+  ratePlanName?: string;
+  note: string;
+  roomName: string;
+  roomTypeId: string;
+  stayDate: string;
+  stopSell: boolean;
+}
+
+export interface PartnerInventoryRatePlanRecord {
+  id: string;
+  name: string;
+  roomTypeId: string;
+}
+
 export interface HotelBookingRecord {
+  assignedRoomNumbers: string[];
   availabilityLockId: string;
+  checkInDate: string;
+  checkOutDate: string;
   confirmationCode: string;
   createdAt: string;
   guest: {
@@ -115,9 +144,12 @@ export interface HotelBookingRecord {
     firstName: string;
     lastName: string;
     phone: string;
+    specialRequests: string;
   };
   hotelSlug: string;
   id: string;
+  operationalStatus: 'RESERVED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW';
+  partnerNote?: string;
   paymentStatus: PaymentStatus;
   paymentAmount: number;
   quoteId: string;
@@ -128,8 +160,6 @@ export interface HotelBookingRecord {
 
 export interface ManagedHotelBooking extends HotelBookingRecord {
   cancellationPolicy?: string;
-  checkInDate?: string;
-  checkOutDate?: string;
   hotelName: string;
   latestAmendment?: BookingAmendmentRecord;
   priceComponents?: PriceComponent[];

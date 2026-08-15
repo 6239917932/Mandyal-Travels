@@ -16,7 +16,13 @@ export async function GET(request: Request) {
     return failure('HOTEL_PARTNER_REQUIRED', 'An active hotel supplier account is required.', 403);
   const data = await prisma.partnerProperty.findMany({
     include: {
-      rooms: { orderBy: { createdAt: 'asc' } },
+      rooms: {
+        include: {
+          physicalRooms: { orderBy: { roomNumber: 'asc' } },
+          ratePlans: { orderBy: { createdAt: 'asc' } },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
     },
     orderBy: { createdAt: 'desc' },
     where: { listingSource: 'MANAGED', partnerId: access.partnerId, status: 'ACTIVE' },

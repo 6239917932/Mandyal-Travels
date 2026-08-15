@@ -15,6 +15,7 @@ import {
   BusinessBookingRequestUnavailableError,
   type BookingRepository,
   type BusinessBookingContext,
+  type PartnerBookingQuery,
 } from '@/repositories/bookingRepository';
 import { quoteRepository, type QuoteRepository } from '@/repositories/quoteRepository';
 import { amendmentRepository, type AmendmentRepository } from '@/repositories/amendmentRepository';
@@ -70,15 +71,60 @@ function calculateNights(checkInDate: string, checkOutDate: string): number {
 
 function isRefundEligible(
   checkInDate: string | undefined,
+  checkInTime: string | undefined,
+  timezone: string | undefined,
   refundable: boolean,
   cutoffHours: number | undefined,
 ): boolean {
-  if (!refundable || !checkInDate || cutoffHours === undefined) {
+  if (!refundable || !checkInDate || !checkInTime || cutoffHours === undefined) {
     return false;
   }
-
-  const checkIn = new Date(`${checkInDate}T00:00:00Z`).getTime();
+  const checkIn = localDateTimeToUtc(checkInDate, checkInTime, timezone ?? 'Asia/Kolkata');
   return Number.isFinite(checkIn) && Date.now() < checkIn - cutoffHours * 60 * 60 * 1000;
+}
+
+function localDateTimeToUtc(date: string, time: string, timezone: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!match || !timeMatch) return Number.NaN;
+  const localWallClock = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(timeMatch[1]),
+    Number(timeMatch[2]),
+  );
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      day: '2-digit',
+      hour: '2-digit',
+      hour12: false,
+      minute: '2-digit',
+      month: '2-digit',
+      timeZone: timezone,
+      year: 'numeric',
+    });
+    let candidate = localWallClock;
+    for (let pass = 0; pass < 2; pass += 1) {
+      const parts = Object.fromEntries(
+        formatter
+          .formatToParts(new Date(candidate))
+          .filter((part) => part.type !== 'literal')
+          .map((part) => [part.type, Number(part.value)]),
+      );
+      const renderedWallClock = Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour === 24 ? 0 : parts.hour,
+        parts.minute,
+      );
+      candidate += localWallClock - renderedWallClock;
+    }
+    return candidate;
+  } catch {
+    return Number.NaN;
+  }
 }
 
 export class HotelBookingService {
@@ -160,6 +206,9 @@ export class HotelBookingService {
       overrideLimit ?? room.inventoryCount,
       partnerControl.availableRooms ?? room.inventoryCount,
     );
+    if (partnerControl.restrictionMessage) {
+      throw new HotelBookingRuleError('CALENDAR_RESTRICTION', partnerControl.restrictionMessage);
+    }
     if (effectiveInventory - lockedInventory < request.rooms) {
       throw new HotelBookingRuleError(
         'INVENTORY_NOT_AVAILABLE',
@@ -171,12 +220,19 @@ export class HotelBookingService {
     if (!ratePlan) {
       throw new HotelBookingRuleError('RATE_PLAN_NOT_FOUND', 'The selected rate is unavailable.');
     }
+    if (nights < ratePlan.minimumStayNights || nights > ratePlan.maximumStayNights) {
+      throw new HotelBookingRuleError(
+        'STAY_RESTRICTION_NOT_MET',
+        `This rate requires a stay between ${ratePlan.minimumStayNights} and ${ratePlan.maximumStayNights} nights.`,
+      );
+    }
 
     const rateControl = await partnerHotelInventoryRepository.findStayControl(
       room.roomTypeId,
       request.checkInDate,
       request.checkOutDate,
       ratePlan.nightlyRate.amount,
+      ratePlan.id,
     );
     const roomChargeAmount =
       (rateControl.nightlyCharge ?? ratePlan.nightlyRate.amount * nights) * request.rooms;
@@ -240,7 +296,8 @@ export class HotelBookingService {
         normalizeEmail(existingBooking.guest.email) === normalizeEmail(request.guest.email) &&
         existingBooking.guest.firstName === request.guest.firstName &&
         existingBooking.guest.lastName === request.guest.lastName &&
-        existingBooking.guest.phone === request.guest.phone;
+        existingBooking.guest.phone === request.guest.phone &&
+        existingBooking.guest.specialRequests === request.guest.specialRequests;
       if (!sameRequest) {
         throw new HotelBookingRuleError(
           'IDEMPOTENCY_KEY_REUSED',
@@ -314,13 +371,17 @@ export class HotelBookingService {
     }
 
     const booking: HotelBookingRecord = {
+      assignedRoomNumbers: [],
       availabilityLockId: convertedLock.id,
+      checkInDate: quote.checkInDate,
+      checkOutDate: quote.checkOutDate,
       confirmationCode: createBookingReference('MT'),
       createdAt: new Date().toISOString(),
       currency: quote.currency,
       guest: request.guest,
       hotelSlug: request.hotelSlug,
       id: crypto.randomUUID(),
+      operationalStatus: 'RESERVED',
       paymentAmount: totalAmount,
       paymentStatus: 'captured',
       quoteId: quote.id,
@@ -392,14 +453,16 @@ export class HotelBookingService {
     const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
     const refundable = isRefundEligible(
       quote?.checkInDate,
+      hotel?.checkInTime,
+      hotel?.propertyProfile?.timezone,
       ratePlan?.cancellationPolicy.refundable ?? false,
       ratePlan?.cancellationPolicy.freeCancellationUntilHoursBeforeCheckIn,
     );
     return {
       ...booking,
       cancellationPolicy: ratePlan?.cancellationPolicy.description,
-      checkInDate: quote?.checkInDate || undefined,
-      checkOutDate: quote?.checkOutDate || undefined,
+      checkInDate: quote?.checkInDate ?? booking.checkInDate,
+      checkOutDate: quote?.checkOutDate ?? booking.checkOutDate,
       hotelName: hotel?.name ?? booking.hotelSlug,
       latestAmendment,
       priceComponents: quote?.components,
@@ -550,7 +613,7 @@ export class HotelBookingService {
   }
 
   async listPartnerBookings(
-    options: { hotelSlugs?: string[]; skip?: number; take?: number } = {},
+    options: PartnerBookingQuery = {},
   ): Promise<PartnerBookingRecord[]> {
     const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
@@ -565,6 +628,7 @@ export class HotelBookingService {
         const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
         if (!hotel || !quote || !room || !ratePlan) return undefined;
         return {
+          assignedRoomNumbers: booking.assignedRoomNumbers,
           checkInDate: quote.checkInDate,
           checkOutDate: quote.checkOutDate,
           confirmationCode: booking.confirmationCode,
@@ -573,10 +637,13 @@ export class HotelBookingService {
           guestEmail: booking.guest.email,
           guestName: `${booking.guest.firstName} ${booking.guest.lastName}`,
           hotelName: hotel.name,
+          operationalStatus: booking.operationalStatus,
+          partnerNote: booking.partnerNote ?? '',
           paymentStatus: booking.paymentStatus,
           ratePlanName: ratePlan.name,
           roomName: room.name,
           rooms: quote.rooms,
+          specialRequests: booking.guest.specialRequests,
           status: booking.status,
           totalAmount: booking.totalAmount,
         } satisfies PartnerBookingRecord;
@@ -585,8 +652,8 @@ export class HotelBookingService {
     return results.filter((booking): booking is PartnerBookingRecord => booking !== undefined);
   }
 
-  async getPartnerBookingSummary(hotelSlugs?: string[]) {
-    return this.bookings.getPartnerSummary(hotelSlugs);
+  async getPartnerBookingSummary(options: PartnerBookingQuery = {}) {
+    return this.bookings.getPartnerSummary(options);
   }
 
   async getPartnerInventory(

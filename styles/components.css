@@ -975,6 +975,20 @@
   color: #53657a;
 }
 
+.partner-property-manager__rate {
+  background: #fff;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  padding: 0.7rem;
+}
+
+.partner-property-manager__rate .manage-booking__document-actions {
+  justify-content: flex-start;
+}
+
 .partner-property-manager__add-room {
   background: transparent;
   border: 0;

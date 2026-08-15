@@ -87,6 +87,11 @@ model PartnerProperty {
   status            String                     @default("ACTIVE")
   listingSource     String                     @default("ASSIGNED")
   publicationStatus String                     @default("PUBLISHED")
+  approvalStatus    String                     @default("PENDING_REVIEW")
+  approvalNote      String                     @default("")
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  reviewedByUserId  String?
   description       String                     @default("")
   locality          String                     @default("")
   tehsil            String                     @default("")
@@ -116,10 +121,12 @@ model PartnerProperty {
   updatedAt         DateTime                   @updatedAt
   partner           SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   inventoryDays     PartnerHotelInventoryDay[]
+  physicalRooms     PartnerPhysicalRoom[]
   rooms             PartnerRoomType[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
+  @@index([approvalStatus, submittedAt])
 }
 
 model PartnerRoomType {
@@ -145,6 +152,8 @@ model PartnerRoomType {
   createdAt               DateTime        @default(now())
   updatedAt               DateTime        @updatedAt
   property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  physicalRooms           PartnerPhysicalRoom[]
+  ratePlans               PartnerRatePlan[]
 
   @@index([propertyId, status])
 }
@@ -181,6 +190,10 @@ model PartnerHotelInventoryDay {
   stayDate       String
   availableRooms Int
   nightlyRate    Int?
+  minimumStayNights Int?
+  maximumStayNights Int?
+  closedToArrival Boolean         @default(false)
+  closedToDeparture Boolean       @default(false)
   currency       String          @default("INR")
   stopSell       Boolean         @default(false)
   note           String
@@ -578,6 +591,9 @@ model Booking {
   accessTokenHash         String?                @unique
   hotelSlug               String
   status                  String
+  operationalStatus       String                 @default("RESERVED")
+  assignedRoomNumbersJson String                 @default("[]")
+  partnerNote             String                 @default("")
   totalAmount             Int
   currency                String
   createdAt               DateTime               @default(now())
@@ -592,6 +608,64 @@ model Booking {
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
+
+  @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model PartnerPhysicalRoom {
+  id                 String          @id @default(cuid())
+  propertyId         String
+  roomTypeId         String
+  roomNumber         String
+  floorLabel         String          @default("")
+  housekeepingStatus String          @default("READY")
+  operationalStatus  String          @default("ACTIVE")
+  notes              String          @default("")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomType           PartnerRoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, roomNumber])
+  @@index([propertyId, housekeepingStatus, operationalStatus])
+  @@index([roomTypeId, operationalStatus])
+}
+
+model PartnerRatePlan {
+  id                      String          @id @default(cuid())
+  roomId                  String
+  ratePlanId              String          @unique
+  name                    String
+  nightlyRate             Int
+  taxesAndFees            Int
+  mealPlan                String          @default("room-only")
+  refundable              Boolean         @default(true)
+  cancellationDescription String
+  freeCancellationHours   Int             @default(48)
+  minimumStayNights       Int             @default(1)
+  maximumStayNights       Int             @default(30)
+  status                  String          @default("ACTIVE")
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  room                    PartnerRoomType @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  inventoryDays           PartnerRatePlanInventoryDay[]
+
+  @@index([roomId, status])
+}
+
+model PartnerRatePlanInventoryDay {
+  id          String          @id @default(cuid())
+  ratePlanId  String
+  stayDate    String
+  nightlyRate Int
+  currency    String          @default("INR")
+  note        String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  ratePlan    PartnerRatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+
+  @@unique([ratePlanId, stayDate])
+  @@index([stayDate])
 }
 
 model HotelReview {
@@ -642,6 +716,7 @@ model BookingGuest {
   lastName  String
   email     String
   phone     String
+  specialRequests String @default("")
   booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 

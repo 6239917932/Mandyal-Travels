@@ -30,6 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ proper
       bedDescription: String(body.bedDescription ?? ''),
       cancellationDescription: String(body.cancellationDescription ?? ''),
       description: String(body.description ?? ''),
+      freeCancellationHours: Number(body.freeCancellationHours),
       imageUrl: String(body.imageUrl ?? ''),
       inventoryCount: Number(body.inventoryCount),
       maximumAdults: Number(body.maximumAdults),
@@ -47,7 +48,7 @@ export async function POST(request: Request, context: { params: Promise<{ proper
       entityId: data.id,
       entityType: 'ROOM_TYPE',
       metadata: { propertyId },
-      summary: `${data.name} added with ${data.inventoryCount} rooms; property published.`,
+      summary: `${data.name} added with ${data.inventoryCount} rooms; property review state refreshed.`,
     });
     return Response.json({ data }, { status: 201 });
   } catch (error) {

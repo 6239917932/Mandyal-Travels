@@ -58,7 +58,7 @@ export default async function PartnerWorkspacePage() {
       where: { id: access.partnerId },
     }),
     access.partnerType === 'HOTEL'
-      ? hotelBookingService.getPartnerBookingSummary(access.allowedHotelSlugs)
+      ? hotelBookingService.getPartnerBookingSummary({ hotelSlugs: access.allowedHotelSlugs })
       : partnerOperationsService.getVehicleReservationSummary(access.partnerId),
     access.partnerType === 'HOTEL'
       ? hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs)
@@ -89,6 +89,11 @@ export default async function PartnerWorkspacePage() {
             >
               {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
             </Link>
+            {partner.type === 'HOTEL' ? (
+              <Link className="ui-button ui-button--secondary" href="/partner/reports">
+                Performance reports
+              </Link>
+            ) : null}
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out
@@ -179,6 +184,14 @@ export default async function PartnerWorkspacePage() {
               Manage reviews
             </Link>
           </Card>
+          <Card>
+            <p className="hotel-page__eyebrow">Room operations</p>
+            <h2>Housekeeping board</h2>
+            <p>Coordinate dirty, cleaning, ready, and out-of-service rooms with front desk.</p>
+            <Link className="home-card__link" href="/partner/housekeeping">
+              Open housekeeping
+            </Link>
+          </Card>
         </div>
       ) : (
         <div className="partner-workspace__links">
@@ -260,6 +273,9 @@ export default async function PartnerWorkspacePage() {
         <section>
           <p className="hotel-page__eyebrow">Accountability</p>
           <h2>Recent partner activity</h2>
+          <Link className="home-card__link" href="/partner/activity">
+            View complete activity log
+          </Link>
           <Card className="partner-workspace__audit">
             {partner.auditEntries.map((entry) => (
               <div key={entry.id}>

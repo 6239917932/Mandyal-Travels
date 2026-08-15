@@ -58,6 +58,8 @@ export interface HotelRatePlan {
   cancellationPolicy: HotelCancellationPolicy;
   id: string;
   mealPlan: MealPlan;
+  maximumStayNights: number;
+  minimumStayNights: number;
   name: string;
   nightlyRate: Money;
   taxesAndFees: Money;

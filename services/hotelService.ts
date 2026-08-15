@@ -156,7 +156,9 @@ export class HotelService {
               room.ratePlans
                 .filter(
                   (ratePlan) =>
-                    !filters.refundableOnly || ratePlan.cancellationPolicy.refundable,
+                    nights >= ratePlan.minimumStayNights &&
+                    nights <= ratePlan.maximumStayNights &&
+                    (!filters.refundableOnly || ratePlan.cancellationPolicy.refundable),
                 )
                 .map(async (ratePlan) => {
                 const control = await partnerHotelInventoryRepository.findStayControl(
@@ -164,6 +166,7 @@ export class HotelService {
                   criteria.checkInDate,
                   criteria.checkOutDate,
                   ratePlan.nightlyRate.amount,
+                  ratePlan.id,
                 );
                 return {
                   ...ratePlan,

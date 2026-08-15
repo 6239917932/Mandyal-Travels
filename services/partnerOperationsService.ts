@@ -62,6 +62,15 @@ function createRoomTypeCode(propertyId: string, name: string) {
   return `direct-${propertyId.slice(-6)}-${base || 'room'}-${crypto.randomUUID().slice(0, 6)}`;
 }
 
+function createRatePlanCode(roomTypeId: string, name: string) {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 32);
+  return `rate-${roomTypeId.slice(-12)}-${base || 'plan'}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
 function validateImageUrl(value: string, fallback: string) {
   const candidate = value.trim();
   if (!candidate) return fallback;
@@ -84,6 +93,36 @@ function normalizedList(values: string[], maximumItems = 20) {
   );
 }
 
+function readStoredStringList(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function dateInTimezone(timezone: string, instant = new Date()): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: '2-digit',
+      timeZone: timezone,
+      year: 'numeric',
+    }).formatToParts(instant);
+    const value = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((part) => part.type === type)?.value ?? '';
+    return `${value('year')}-${value('month')}-${value('day')}`;
+  } catch {
+    throw new PartnerOperationsError(
+      'INVALID_PROPERTY_TIMEZONE',
+      'The property timezone must be corrected before recording stay operations.',
+    );
+  }
+}
+
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -97,6 +136,250 @@ function reservationUnitsForDate(
 }
 
 export const partnerOperationsService = {
+  async listAvailablePhysicalRooms(partnerId: string, confirmationCode: string) {
+    const properties = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true, id: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
+    const booking = await prisma.booking.findFirst({
+      include: { quote: true },
+      where: {
+        confirmationCode,
+        hotelSlug: { in: properties.map((property) => property.hotelSlug) },
+        status: 'confirmed',
+      },
+    });
+    if (!booking) {
+      throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The hotel booking was not found.');
+    }
+    const property = properties.find((candidate) => candidate.hotelSlug === booking.hotelSlug);
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
+    }
+    const ratePlan = await prisma.partnerRatePlan.findUnique({
+      include: {
+        room: {
+          include: {
+            physicalRooms: {
+              orderBy: [{ floorLabel: 'asc' }, { roomNumber: 'asc' }],
+              where: { housekeepingStatus: 'READY', operationalStatus: 'ACTIVE' },
+            },
+          },
+        },
+      },
+      where: { ratePlanId: booking.quote.ratePlanId },
+    });
+    if (!ratePlan || ratePlan.room.propertyId !== property.id) {
+      throw new PartnerOperationsError('ROOM_TYPE_NOT_FOUND', 'The booked room type is not managed by this property.');
+    }
+    const activeStays = await prisma.booking.findMany({
+      select: { assignedRoomNumbersJson: true },
+      where: {
+        hotelSlug: booking.hotelSlug,
+        id: { not: booking.id },
+        operationalStatus: 'CHECKED_IN',
+        status: 'confirmed',
+      },
+    });
+    const occupiedRooms = new Set(
+      activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+    );
+    return ratePlan.room.physicalRooms
+      .filter((room) => !occupiedRooms.has(room.roomNumber))
+      .map((room) => ({ floorLabel: room.floorLabel, roomNumber: room.roomNumber }));
+  },
+
+  async updateHotelStayStatus(
+    partnerId: string,
+    confirmationCode: string,
+    nextStatus: 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW',
+    assignedRoomNumbers: string[] = [],
+    actorUserId?: string,
+  ) {
+    const properties = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true, id: true, timezone: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
+    const booking = await prisma.booking.findFirst({
+      include: { quote: true },
+      where: {
+        confirmationCode,
+        hotelSlug: { in: properties.map((property) => property.hotelSlug) },
+      },
+    });
+    if (!booking) {
+      throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The hotel booking was not found.');
+    }
+    if (booking.status !== 'confirmed') {
+      throw new PartnerOperationsError('BOOKING_CANCELLED', 'A cancelled booking cannot be updated.');
+    }
+    const property = properties.find((candidate) => candidate.hotelSlug === booking.hotelSlug);
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The assigned property was not found.');
+    }
+    const localDate = dateInTimezone(property.timezone);
+    if (
+      ['CHECKED_IN', 'NO_SHOW'].includes(nextStatus) &&
+      localDate < booking.quote.checkInDate
+    ) {
+      throw new PartnerOperationsError(
+        'ARRIVAL_NOT_DUE',
+        `This stay cannot be marked ${nextStatus.toLowerCase().replaceAll('_', ' ')} before ${booking.quote.checkInDate} in the property's timezone.`,
+      );
+    }
+    if (nextStatus === 'CHECKED_IN' && localDate >= booking.quote.checkOutDate) {
+      throw new PartnerOperationsError(
+        'STAY_DATE_PASSED',
+        'The scheduled stay has already ended and cannot be checked in.',
+      );
+    }
+    const permittedTransitions: Record<string, readonly string[]> = {
+      CHECKED_IN: ['CHECKED_OUT'],
+      RESERVED: ['CHECKED_IN', 'NO_SHOW'],
+    };
+    if (!permittedTransitions[booking.operationalStatus]?.includes(nextStatus)) {
+      throw new PartnerOperationsError(
+        'INVALID_STAY_TRANSITION',
+        `The stay cannot move from ${booking.operationalStatus} to ${nextStatus}.`,
+      );
+    }
+    const normalizedRoomNumbers = [...new Set(
+      assignedRoomNumbers.map((roomNumber) => normalizeText(roomNumber, 20)).filter(Boolean),
+    )];
+    if (
+      nextStatus === 'CHECKED_IN' &&
+      (normalizedRoomNumbers.length !== booking.quote.rooms ||
+        normalizedRoomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber)))
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_ROOM_ASSIGNMENT',
+        `Assign ${booking.quote.rooms} unique physical room number${booking.quote.rooms === 1 ? '' : 's'} before check-in.`,
+      );
+    }
+    const bookedRatePlan = await prisma.partnerRatePlan.findUnique({
+      include: { room: { include: { physicalRooms: true } } },
+      where: { ratePlanId: booking.quote.ratePlanId },
+    });
+    const registeredRooms = bookedRatePlan?.room.physicalRooms ?? [];
+    if (nextStatus === 'CHECKED_IN' && registeredRooms.length) {
+      const registeredByNumber = new Map(
+        registeredRooms.map((physicalRoom) => [physicalRoom.roomNumber, physicalRoom]),
+      );
+      const unavailableRooms = normalizedRoomNumbers.filter((roomNumber) => {
+        const registeredRoom = registeredByNumber.get(roomNumber);
+        return (
+          !registeredRoom ||
+          registeredRoom.operationalStatus !== 'ACTIVE' ||
+          registeredRoom.housekeepingStatus !== 'READY'
+        );
+      });
+      if (unavailableRooms.length) {
+        throw new PartnerOperationsError(
+          'PHYSICAL_ROOM_UNAVAILABLE',
+          `Use registered, ready rooms for this room type. Unavailable: ${unavailableRooms.join(', ')}.`,
+        );
+      }
+    }
+    return prisma.$transaction(async (transaction) => {
+      if (nextStatus === 'CHECKED_IN') {
+        const activeStays = await transaction.booking.findMany({
+          include: { quote: true },
+          where: {
+            hotelSlug: booking.hotelSlug,
+            id: { not: booking.id },
+            operationalStatus: 'CHECKED_IN',
+            quote: {
+              checkInDate: { lt: booking.quote.checkOutDate },
+              checkOutDate: { gt: booking.quote.checkInDate },
+            },
+            status: 'confirmed',
+          },
+        });
+        const occupiedRooms = new Set(
+          activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+        );
+        const conflicts = normalizedRoomNumbers.filter((roomNumber) => occupiedRooms.has(roomNumber));
+        if (conflicts.length) {
+          throw new PartnerOperationsError(
+            'ROOM_ALREADY_ASSIGNED',
+            `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
+          );
+        }
+      }
+      const updated = await transaction.booking.update({
+        data: {
+          assignedRoomNumbersJson:
+            nextStatus === 'CHECKED_IN'
+              ? JSON.stringify(normalizedRoomNumbers)
+              : booking.assignedRoomNumbersJson,
+          operationalStatus: nextStatus,
+        },
+        where: { id: booking.id },
+      });
+      if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
+        await transaction.partnerPhysicalRoom.updateMany({
+          data: { housekeepingStatus: 'DIRTY' },
+          where: {
+            propertyId: property.id,
+            roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+          },
+        });
+      }
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: `HOTEL_STAY_${nextStatus}`,
+          actorUserId,
+          entityId: booking.id,
+          entityType: 'HOTEL_BOOKING',
+          metadataJson: JSON.stringify({
+            confirmationCode,
+            previousStatus: booking.operationalStatus,
+            assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
+          }),
+          partnerId,
+          summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
+        },
+      });
+      return updated;
+    });
+  },
+  async updateHotelPartnerNote(
+    partnerId: string,
+    confirmationCode: string,
+    partnerNote: string,
+    actorUserId?: string,
+  ) {
+    const propertySlugs = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
+    const booking = await prisma.booking.findFirst({
+      where: {
+        confirmationCode,
+        hotelSlug: { in: propertySlugs.map((property) => property.hotelSlug) },
+      },
+    });
+    if (!booking) throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The assigned booking was not found.');
+    const normalizedNote = partnerNote.trim().replace(/\r\n/g, '\n').slice(0, 1_000);
+    return prisma.$transaction(async (transaction) => {
+      const updated = await transaction.booking.update({
+        data: { partnerNote: normalizedNote },
+        where: { id: booking.id },
+      });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'HOTEL_BOOKING_NOTE_UPDATED',
+          actorUserId,
+          entityId: booking.id,
+          entityType: 'HOTEL_BOOKING',
+          metadataJson: JSON.stringify({ confirmationCode, noteLength: normalizedNote.length }),
+          partnerId,
+          summary: `${confirmationCode} front-desk note was updated.`,
+        },
+      });
+      return updated;
+    });
+  },
   async createApplication(input: {
     applicantUserId: string;
     businessName: string;
@@ -364,6 +647,7 @@ export const partnerOperationsService = {
       bedDescription: string;
       cancellationDescription: string;
       description: string;
+      freeCancellationHours: number;
       imageUrl: string;
       inventoryCount: number;
       maximumAdults: number;
@@ -437,6 +721,9 @@ export const partnerOperationsService = {
     if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
       throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
     }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
     return prisma.$transaction(async (transaction) => {
       const room = await transaction.partnerRoomType.create({
         data: {
@@ -462,11 +749,386 @@ export const partnerOperationsService = {
           taxesAndFees: input.taxesAndFees,
         },
       });
+      await transaction.partnerRatePlan.create({
+        data: {
+          cancellationDescription: normalizeText(input.cancellationDescription, 300),
+          freeCancellationHours: input.freeCancellationHours,
+          maximumStayNights: 30,
+          mealPlan: input.mealPlan,
+          minimumStayNights: 1,
+          name: normalizeText(input.ratePlanName, 100),
+          nightlyRate: input.nightlyRate,
+          ratePlanId: `rate-${room.roomTypeId}`,
+          refundable: input.refundable,
+          roomId: room.id,
+          taxesAndFees: input.taxesAndFees,
+        },
+      });
       await transaction.partnerProperty.update({
-        data: { publicationStatus: 'PUBLISHED' },
+        data: property.approvalStatus === 'APPROVED'
+          ? { publicationStatus: 'PUBLISHED' }
+          : {
+              approvalNote: '',
+              approvalStatus: 'PENDING_REVIEW',
+              publicationStatus: 'DRAFT',
+              submittedAt: new Date(),
+            },
         where: { id: propertyId },
       });
-      return room;
+      return transaction.partnerRoomType.findUniqueOrThrow({
+        include: { ratePlans: { where: { status: 'ACTIVE' } } },
+        where: { id: room.id },
+      });
+    });
+  },
+
+  async createRatePlan(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    input: {
+      cancellationDescription: string;
+      freeCancellationHours: number;
+      maximumStayNights: number;
+      mealPlan: string;
+      minimumStayNights: number;
+      name: string;
+      nightlyRate: number;
+      refundable: boolean;
+      taxesAndFees: number;
+    },
+  ) {
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { property: true, ratePlans: { where: { status: 'ACTIVE' } } },
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (room.ratePlans.length >= 8) {
+      throw new PartnerOperationsError('RATE_PLAN_LIMIT', 'A room can have up to 8 active rate plans.');
+    }
+    if (input.name.trim().length < 2 || input.cancellationDescription.trim().length < 10) {
+      throw new PartnerOperationsError('INVALID_RATE_PLAN', 'Complete the rate plan and cancellation details.');
+    }
+    if (
+      !Number.isInteger(input.nightlyRate) || input.nightlyRate < 100 || input.nightlyRate > 5_000_000 ||
+      !Number.isInteger(input.taxesAndFees) || input.taxesAndFees < 0 || input.taxesAndFees > 1_000_000
+    ) {
+      throw new PartnerOperationsError('INVALID_RATE', 'Enter a valid nightly rate and taxes in INR.');
+    }
+    if (
+      !Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30 ||
+      !Number.isInteger(input.maximumStayNights) || input.maximumStayNights < input.minimumStayNights || input.maximumStayNights > 90
+    ) {
+      throw new PartnerOperationsError('INVALID_STAY_RESTRICTION', 'Stay limits must be between 1 and 90 nights.');
+    }
+    if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
+      throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
+    }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
+    return prisma.partnerRatePlan.create({
+      data: {
+        cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        freeCancellationHours: input.freeCancellationHours,
+        maximumStayNights: input.maximumStayNights,
+        mealPlan: input.mealPlan,
+        minimumStayNights: input.minimumStayNights,
+        name: normalizeText(input.name, 100),
+        nightlyRate: input.nightlyRate,
+        ratePlanId: createRatePlanCode(room.roomTypeId, input.name),
+        refundable: input.refundable,
+        roomId: room.id,
+        taxesAndFees: input.taxesAndFees,
+      },
+    });
+  },
+
+  async createPhysicalRoom(
+    partnerId: string,
+    propertyId: string,
+    roomTypeId: string,
+    input: { floorLabel: string; notes: string; roomNumber: string },
+  ) {
+    const roomType = await prisma.partnerRoomType.findFirst({
+      include: { physicalRooms: { where: { operationalStatus: 'ACTIVE' } } },
+      where: {
+        id: roomTypeId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!roomType) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    const roomNumber = normalizeText(input.roomNumber, 20);
+    if (!/^[A-Za-z0-9][A-Za-z0-9 ._/-]{0,19}$/.test(roomNumber)) {
+      throw new PartnerOperationsError('INVALID_ROOM_NUMBER', 'Use a valid room number up to 20 characters.');
+    }
+    if (roomType.physicalRooms.length >= roomType.inventoryCount) {
+      throw new PartnerOperationsError(
+        'PHYSICAL_ROOM_LIMIT',
+        'Registered physical rooms cannot exceed this room type inventory.',
+      );
+    }
+    const duplicate = await prisma.partnerPhysicalRoom.findUnique({
+      where: { propertyId_roomNumber: { propertyId, roomNumber } },
+    });
+    if (duplicate) {
+      throw new PartnerOperationsError('ROOM_NUMBER_EXISTS', 'That room number is already registered at this property.');
+    }
+    return prisma.partnerPhysicalRoom.create({
+      data: {
+        floorLabel: normalizeText(input.floorLabel, 40),
+        notes: normalizeText(input.notes, 300),
+        propertyId,
+        roomNumber,
+        roomTypeId,
+      },
+    });
+  },
+
+  async updatePhysicalRoom(
+    partnerId: string,
+    propertyId: string,
+    roomTypeId: string,
+    physicalRoomId: string,
+    input: {
+      housekeepingStatus: 'CLEANING' | 'DIRTY' | 'READY';
+      operationalStatus: 'ACTIVE' | 'OUT_OF_SERVICE';
+    },
+  ) {
+    const physicalRoom = await prisma.partnerPhysicalRoom.findFirst({
+      where: {
+        id: physicalRoomId,
+        propertyId,
+        roomTypeId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+      },
+    });
+    if (!physicalRoom) {
+      throw new PartnerOperationsError('PHYSICAL_ROOM_NOT_FOUND', 'The registered room was not found.');
+    }
+    if (physicalRoom.operationalStatus !== 'ACTIVE' && input.operationalStatus === 'ACTIVE') {
+      const [roomType, activeRoomCount] = await Promise.all([
+        prisma.partnerRoomType.findUnique({ where: { id: roomTypeId } }),
+        prisma.partnerPhysicalRoom.count({
+          where: { operationalStatus: 'ACTIVE', roomTypeId },
+        }),
+      ]);
+      if (!roomType || activeRoomCount >= roomType.inventoryCount) {
+        throw new PartnerOperationsError(
+          'PHYSICAL_ROOM_LIMIT',
+          'Increase the room type inventory before returning this physical room to service.',
+        );
+      }
+    }
+    return prisma.partnerPhysicalRoom.update({
+      data: {
+        housekeepingStatus: input.housekeepingStatus,
+        operationalStatus: input.operationalStatus,
+      },
+      where: { id: physicalRoom.id },
+    });
+  },
+
+  async updateRoomType(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    input: {
+      amenities: string[];
+      bedDescription: string;
+      description: string;
+      inventoryCount: number;
+      imageUrl: string;
+      maximumAdults: number;
+      maximumChildren: number;
+      maximumGuests: number;
+      name: string;
+    },
+  ) {
+    const room = await prisma.partnerRoomType.findFirst({
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (input.name.trim().length < 2 || input.bedDescription.trim().length < 2 || input.description.trim().length < 20) {
+      throw new PartnerOperationsError('INVALID_ROOM', 'Complete the room name, bed, and description.');
+    }
+    if (!Number.isInteger(input.inventoryCount) || input.inventoryCount < 1 || input.inventoryCount > 500) {
+      throw new PartnerOperationsError('INVALID_ROOM_COUNT', 'Room inventory must be between 1 and 500.');
+    }
+    const registeredRoomCount = await prisma.partnerPhysicalRoom.count({
+      where: { operationalStatus: 'ACTIVE', roomTypeId: room.id },
+    });
+    if (input.inventoryCount < registeredRoomCount) {
+      throw new PartnerOperationsError(
+        'REGISTERED_ROOM_COUNT_EXCEEDED',
+        `Inventory cannot be lower than the ${registeredRoomCount} active physical rooms already registered.`,
+      );
+    }
+    if (
+      !Number.isInteger(input.maximumAdults) || input.maximumAdults < 1 || input.maximumAdults > 20 ||
+      !Number.isInteger(input.maximumChildren) || input.maximumChildren < 0 || input.maximumChildren > 20 ||
+      !Number.isInteger(input.maximumGuests) || input.maximumGuests < input.maximumAdults || input.maximumGuests > 30
+    ) {
+      throw new PartnerOperationsError('INVALID_OCCUPANCY', 'Enter a valid adult, child, and maximum guest capacity.');
+    }
+    return prisma.partnerRoomType.update({
+      data: {
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 50)),
+        bedDescription: normalizeText(input.bedDescription, 160),
+        description: normalizeText(input.description, 800),
+        inventoryCount: input.inventoryCount,
+        imageUrl: validateImageUrl(input.imageUrl, room.imageUrl),
+        maximumAdults: input.maximumAdults,
+        maximumChildren: input.maximumChildren,
+        maximumGuests: input.maximumGuests,
+        name: normalizeText(input.name, 120),
+      },
+      include: { ratePlans: { orderBy: { createdAt: 'asc' } } },
+      where: { id: room.id },
+    });
+  },
+
+  async setRoomTypeStatus(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    action: 'PAUSE' | 'RESTORE',
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      include: { rooms: { where: { status: 'ACTIVE' } } },
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    const room = await prisma.partnerRoomType.findFirst({ where: { id: roomId, propertyId } });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (action === 'PAUSE') {
+      if (room.status !== 'ACTIVE') throw new PartnerOperationsError('ROOM_ALREADY_PAUSED', 'The room type is already paused.');
+      if (property.publicationStatus === 'PUBLISHED' && property.rooms.length === 1) {
+        throw new PartnerOperationsError(
+          'LAST_ACTIVE_ROOM',
+          'Pause property sales or restore another room before pausing its final active room.',
+        );
+      }
+      return prisma.partnerRoomType.update({ data: { status: 'PAUSED' }, where: { id: room.id } });
+    }
+    if (room.status !== 'PAUSED') throw new PartnerOperationsError('ROOM_NOT_PAUSED', 'The room type is not paused.');
+    const activeRateCount = await prisma.partnerRatePlan.count({ where: { roomId: room.id, status: 'ACTIVE' } });
+    if (activeRateCount === 0) {
+      throw new PartnerOperationsError('ACTIVE_RATE_REQUIRED', 'Restore or add an active rate before restoring this room.');
+    }
+    return prisma.partnerRoomType.update({ data: { status: 'ACTIVE' }, where: { id: room.id } });
+  },
+
+  async pauseRatePlan(partnerId: string, propertyId: string, roomId: string, ratePlanRecordId: string) {
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { ratePlans: { where: { status: 'ACTIVE' } } },
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    const ratePlan = room.ratePlans.find((candidate) => candidate.id === ratePlanRecordId);
+    if (!ratePlan) throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The active rate plan was not found.');
+    if (room.ratePlans.length === 1) {
+      throw new PartnerOperationsError('LAST_RATE_PLAN', 'Add another active rate plan before pausing this one.');
+    }
+    return prisma.partnerRatePlan.update({ data: { status: 'PAUSED' }, where: { id: ratePlan.id } });
+  },
+
+  async restoreRatePlan(partnerId: string, propertyId: string, roomId: string, ratePlanRecordId: string) {
+    const ratePlan = await prisma.partnerRatePlan.findFirst({
+      include: { room: { include: { property: true } } },
+      where: { id: ratePlanRecordId, roomId, status: 'PAUSED' },
+    });
+    if (
+      !ratePlan ||
+      ratePlan.room.propertyId !== propertyId ||
+      ratePlan.room.property.partnerId !== partnerId ||
+      ratePlan.room.property.listingSource !== 'MANAGED' ||
+      ratePlan.room.property.status !== 'ACTIVE'
+    ) {
+      throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The paused rate plan was not found.');
+    }
+    const activeCount = await prisma.partnerRatePlan.count({ where: { roomId, status: 'ACTIVE' } });
+    if (activeCount >= 8) throw new PartnerOperationsError('RATE_PLAN_LIMIT', 'A room can have up to 8 active rate plans.');
+    return prisma.partnerRatePlan.update({ data: { status: 'ACTIVE' }, where: { id: ratePlan.id } });
+  },
+
+  async updateRatePlan(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    ratePlanRecordId: string,
+    input: {
+      cancellationDescription: string;
+      freeCancellationHours: number;
+      maximumStayNights: number;
+      mealPlan: string;
+      minimumStayNights: number;
+      name: string;
+      nightlyRate: number;
+      refundable: boolean;
+      taxesAndFees: number;
+    },
+  ) {
+    const ratePlan = await prisma.partnerRatePlan.findFirst({
+      include: { room: { include: { property: true } } },
+      where: { id: ratePlanRecordId, roomId },
+    });
+    if (
+      !ratePlan ||
+      ratePlan.room.propertyId !== propertyId ||
+      ratePlan.room.property.partnerId !== partnerId ||
+      ratePlan.room.property.listingSource !== 'MANAGED' ||
+      ratePlan.room.property.status !== 'ACTIVE'
+    ) {
+      throw new PartnerOperationsError('RATE_PLAN_NOT_FOUND', 'The rate plan was not found.');
+    }
+    if (input.name.trim().length < 2 || input.cancellationDescription.trim().length < 10) {
+      throw new PartnerOperationsError('INVALID_RATE_PLAN', 'Complete the rate plan and cancellation details.');
+    }
+    if (
+      !Number.isInteger(input.nightlyRate) || input.nightlyRate < 100 || input.nightlyRate > 5_000_000 ||
+      !Number.isInteger(input.taxesAndFees) || input.taxesAndFees < 0 || input.taxesAndFees > 1_000_000
+    ) throw new PartnerOperationsError('INVALID_RATE', 'Enter a valid nightly rate and taxes in INR.');
+    if (
+      !Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30 ||
+      !Number.isInteger(input.maximumStayNights) || input.maximumStayNights < input.minimumStayNights || input.maximumStayNights > 90
+    ) throw new PartnerOperationsError('INVALID_STAY_RESTRICTION', 'Stay limits must be between 1 and 90 nights.');
+    if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
+      throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
+    }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
+    return prisma.partnerRatePlan.update({
+      data: {
+        cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        freeCancellationHours: input.freeCancellationHours,
+        maximumStayNights: input.maximumStayNights,
+        mealPlan: input.mealPlan,
+        minimumStayNights: input.minimumStayNights,
+        name: normalizeText(input.name, 100),
+        nightlyRate: input.nightlyRate,
+        refundable: input.refundable,
+        taxesAndFees: input.taxesAndFees,
+      },
+      where: { id: ratePlan.id },
     });
   },
 
@@ -481,6 +1143,12 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError(
         'ROOM_REQUIRED',
         'Add at least one active room type before publishing.',
+      );
+    }
+    if (action === 'PUBLISH' && property.approvalStatus !== 'APPROVED') {
+      throw new PartnerOperationsError(
+        'PROPERTY_APPROVAL_REQUIRED',
+        'Submit this property for platform review before publishing it to hotel search.',
       );
     }
     return prisma.partnerProperty.update({
@@ -520,12 +1188,147 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.update({
       data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
         city: normalizeText(input.city, 80),
         district: normalizeText(input.district, 80),
         locality: normalizeText(input.locality, 100),
         locationAliasesJson: JSON.stringify(normalizedList(input.locationAliases, 20)),
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
         state: normalizeText(input.state, 80),
+        submittedAt: null,
         tehsil: normalizeText(input.tehsil, 80),
+      },
+      where: { id: property.id },
+    });
+  },
+
+  async submitPropertyForReview(partnerId: string, propertyId: string) {
+    const property = await prisma.partnerProperty.findFirst({
+      include: { rooms: { where: { status: 'ACTIVE' } } },
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    }
+    if (property.rooms.length === 0) {
+      throw new PartnerOperationsError('ROOM_REQUIRED', 'Add at least one active room type before review.');
+    }
+    if (property.approvalStatus === 'APPROVED') {
+      throw new PartnerOperationsError('PROPERTY_ALREADY_APPROVED', 'This property is already approved.');
+    }
+    return prisma.partnerProperty.update({
+      data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
+        submittedAt: new Date(),
+      },
+      where: { id: property.id },
+    });
+  },
+
+  async updatePropertyProfile(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      checkInTime: string;
+      checkOutTime: string;
+      contactEmail: string;
+      contactPhone: string;
+      description: string;
+      displayName: string;
+      minimumCheckInAge: number;
+      propertyType: string;
+      starRating: number;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    if (input.displayName.trim().length < 2 || input.description.trim().length < 30) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_PROFILE', 'Complete the property name and description.');
+    }
+    if (!['HOTEL', 'RESORT', 'HOMESTAY', 'GUEST_HOUSE', 'APARTMENT', 'HOSTEL'].includes(input.propertyType)) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_TYPE', 'Choose a valid property type.');
+    }
+    if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5) {
+      throw new PartnerOperationsError('INVALID_STAR_RATING', 'Star rating must be between 1 and 5.');
+    }
+    if (!/^\S+@\S+\.\S+$/.test(input.contactEmail.trim()) || input.contactPhone.trim().length < 7) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_CONTACT', 'Enter a valid guest-facing email and phone number.');
+    }
+    if (!/^\d{2}:\d{2}$/.test(input.checkInTime) || !/^\d{2}:\d{2}$/.test(input.checkOutTime)) {
+      throw new PartnerOperationsError('INVALID_PROPERTY_TIME', 'Enter valid check-in and check-out times.');
+    }
+    if (!Number.isInteger(input.minimumCheckInAge) || input.minimumCheckInAge < 16 || input.minimumCheckInAge > 30) {
+      throw new PartnerOperationsError('INVALID_CHECK_IN_AGE', 'Minimum check-in age must be between 16 and 30.');
+    }
+    return prisma.partnerProperty.update({
+      data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
+        checkInTime: input.checkInTime,
+        checkOutTime: input.checkOutTime,
+        contactEmail: normalizeText(input.contactEmail, 254).toLowerCase(),
+        contactPhone: normalizeText(input.contactPhone, 30),
+        description: normalizeText(input.description, 1500),
+        displayName: normalizeText(input.displayName, 140),
+        minimumCheckInAge: input.minimumCheckInAge,
+        publicationStatus: 'DRAFT',
+        propertyType: input.propertyType,
+        reviewedAt: null,
+        reviewedByUserId: null,
+        starRating: input.starRating,
+        submittedAt: null,
+      },
+      where: { id: property.id },
+    });
+  },
+
+  async updatePropertyContent(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      amenities: string[];
+      childrenAllowed: boolean;
+      imageUrl: string;
+      imageUrls: string[];
+      languages: string[];
+      landmarks: string[];
+      petsAllowed: boolean;
+      policies: string[];
+      smokingAllowed: boolean;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    const imageUrl = validateImageUrl(input.imageUrl, property.imageUrl);
+    const imageUrls = normalizedList(input.imageUrls, 12).map((url) => validateImageUrl(url, property.imageUrl));
+    return prisma.partnerProperty.update({
+      data: {
+        approvalNote: '',
+        approvalStatus: 'PENDING_REVIEW',
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
+        childrenAllowed: input.childrenAllowed,
+        imageUrl,
+        imageUrlsJson: JSON.stringify(imageUrls),
+        languagesJson: JSON.stringify(normalizedList(input.languages, 12)),
+        landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
+        petsAllowed: input.petsAllowed,
+        policiesJson: JSON.stringify(normalizedList(input.policies, 20)),
+        publicationStatus: 'DRAFT',
+        reviewedAt: null,
+        reviewedByUserId: null,
+        smokingAllowed: input.smokingAllowed,
+        submittedAt: null,
       },
       where: { id: property.id },
     });
@@ -533,11 +1336,17 @@ export const partnerOperationsService = {
 
   async setHotelCalendar(input: {
     availableRooms: number;
+    closedToArrival: boolean;
+    closedToDeparture: boolean;
+    clearNightlyRate: boolean;
     endDate: string;
     nightlyRate?: number;
+    maximumStayNights?: number;
+    minimumStayNights?: number;
     note: string;
     partnerId: string;
     propertyId: string;
+    ratePlanRecordId?: string;
     roomTypeId: string;
     startDate: string;
     stopSell: boolean;
@@ -572,13 +1381,44 @@ export const partnerOperationsService = {
         'Nightly rate must be between ₹100 and ₹50,00,000.',
       );
     }
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { ratePlans: true },
+      where: { propertyId: property.id, roomTypeId: input.roomTypeId, status: 'ACTIVE' },
+    });
+    if (!room) {
+      throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The active room type was not found.');
+    }
+    const ratePlan = input.ratePlanRecordId
+      ? room.ratePlans.find((candidate) => candidate.id === input.ratePlanRecordId && candidate.status === 'ACTIVE')
+      : undefined;
+    if ((input.nightlyRate !== undefined || input.clearNightlyRate) && !ratePlan) {
+      throw new PartnerOperationsError(
+        'RATE_PLAN_REQUIRED',
+        'Select an active rate plan before setting a seasonal nightly rate.',
+      );
+    }
+    if (
+      input.minimumStayNights !== undefined &&
+      (!Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30)
+    ) {
+      throw new PartnerOperationsError('INVALID_MINIMUM_STAY', 'Minimum stay must be between 1 and 30 nights.');
+    }
+    if (
+      input.maximumStayNights !== undefined &&
+      (!Number.isInteger(input.maximumStayNights) || input.maximumStayNights < (input.minimumStayNights ?? 1) || input.maximumStayNights > 90)
+    ) {
+      throw new PartnerOperationsError('INVALID_MAXIMUM_STAY', 'Maximum stay must be between the minimum stay and 90 nights.');
+    }
     const dates = enumerateDates(input.startDate, input.endDate);
     await prisma.$transaction(
       dates.map((stayDate) =>
         prisma.partnerHotelInventoryDay.upsert({
           create: {
             availableRooms: input.availableRooms,
-            nightlyRate: input.nightlyRate,
+            closedToArrival: input.closedToArrival,
+            closedToDeparture: input.closedToDeparture,
+            maximumStayNights: input.maximumStayNights,
+            minimumStayNights: input.minimumStayNights,
             note: normalizeText(input.note, 200),
             propertyId: property.id,
             roomTypeId: input.roomTypeId,
@@ -587,7 +1427,10 @@ export const partnerOperationsService = {
           },
           update: {
             availableRooms: input.availableRooms,
-            nightlyRate: input.nightlyRate,
+            closedToArrival: input.closedToArrival,
+            closedToDeparture: input.closedToDeparture,
+            maximumStayNights: input.maximumStayNights,
+            minimumStayNights: input.minimumStayNights,
             note: normalizeText(input.note, 200),
             stopSell: input.stopSell,
           },
@@ -601,6 +1444,30 @@ export const partnerOperationsService = {
         }),
       ),
     );
+    if (ratePlan && input.nightlyRate !== undefined) {
+      await prisma.$transaction(
+        dates.map((stayDate) =>
+          prisma.partnerRatePlanInventoryDay.upsert({
+            create: {
+              nightlyRate: input.nightlyRate as number,
+              note: normalizeText(input.note, 200),
+              ratePlanId: ratePlan.id,
+              stayDate,
+            },
+            update: {
+              nightlyRate: input.nightlyRate as number,
+              note: normalizeText(input.note, 200),
+            },
+            where: { ratePlanId_stayDate: { ratePlanId: ratePlan.id, stayDate } },
+          }),
+        ),
+      );
+    }
+    if (ratePlan && input.clearNightlyRate) {
+      await prisma.partnerRatePlanInventoryDay.deleteMany({
+        where: { ratePlanId: ratePlan.id, stayDate: { in: dates } },
+      });
+    }
     return dates.length;
   },
 

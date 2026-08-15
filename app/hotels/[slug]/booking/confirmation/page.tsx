@@ -82,6 +82,13 @@ export default function BookingConfirmationPage() {
               <strong>{booking.paymentStatus === 'captured' ? 'Captured' : 'Pending'}</strong>
             </div>
           </div>
+          {booking.guest.specialRequests ? (
+            <div className="booking-confirmation__note">
+              <strong>Special requests sent to the property</strong>
+              <p>{booking.guest.specialRequests}</p>
+              <small>Special requests are subject to availability and are not guaranteed.</small>
+            </div>
+          ) : null}
           <p className="booking-confirmation__note">
             Your reservation and voucher are saved in the booking system. Payment capture and email
             delivery remain simulated until approved provider integrations are configured.

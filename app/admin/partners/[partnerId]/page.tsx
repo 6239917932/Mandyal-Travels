@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { AdminPartnerPropertyAssignment } from '@/components/admin/AdminPartnerPropertyAssignment';
+import { AdminPropertyReviewActions } from '@/components/admin/AdminPropertyReviewActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
@@ -85,7 +86,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
           />
           <div className="partner-workspace__properties">
             {partner.properties.map((property) => (
-              <Card key={property.id}>
+              <Card id={`property-${property.id}`} key={property.id}>
                 <strong>{property.displayName}</strong>
                 <span>{property.hotelSlug}</span>
                 <small>
@@ -93,8 +94,14 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                   {' · '}
                   {property.publicationStatus.toLowerCase()}
                   {' · '}
+                  {property.approvalStatus.toLowerCase().replaceAll('_', ' ')}
+                  {' · '}
                   {property.rooms.length} room {property.rooms.length === 1 ? 'type' : 'types'}
                 </small>
+                {property.approvalNote ? <p>{property.approvalNote}</p> : null}
+                {property.approvalStatus === 'PENDING_REVIEW' ? (
+                  <AdminPropertyReviewActions partnerId={partner.id} propertyId={property.id} />
+                ) : null}
               </Card>
             ))}
           </div>

@@ -15,6 +15,7 @@ const emptyGuest: BookingGuest = {
   firstName: '',
   lastName: '',
   phone: '',
+  specialRequests: '',
 };
 
 export default function GuestDetailsPage() {
@@ -49,6 +50,7 @@ export default function GuestDetailsPage() {
       firstName: String(formData.get('firstName') ?? '').trim(),
       lastName: String(formData.get('lastName') ?? '').trim(),
       phone: String(formData.get('phone') ?? '').trim(),
+      specialRequests: String(formData.get('specialRequests') ?? '').trim(),
     });
     router.push(`/hotels/${bookingSlug}/booking/payment`);
   }
@@ -91,6 +93,17 @@ export default function GuestDetailsPage() {
                 required
                 type="tel"
               />
+              <label className="ui-field">
+                <span className="ui-field__label">Special requests (optional)</span>
+                <textarea
+                  className="ui-input supplier-form__textarea"
+                  defaultValue={guest.specialRequests}
+                  maxLength={1000}
+                  name="specialRequests"
+                  placeholder="Accessibility support, dietary needs, arrival details, or room preferences"
+                />
+                <small>Requests are shared with the property but cannot be guaranteed.</small>
+              </label>
 
               <Button fullWidth type="submit" variant="accent">
                 Continue to secure payment

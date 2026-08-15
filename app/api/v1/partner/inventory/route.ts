@@ -14,19 +14,80 @@ function errorResponse(code: string, message: string, status: number): Response 
 
 export async function GET(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const url = new URL(request.url);
   const checkInDate = url.searchParams.get('checkInDate') ?? '';
   const checkOutDate = url.searchParams.get('checkOutDate') ?? '';
   try {
-    return Response.json({
-      data: await hotelBookingService.getPartnerInventory(
+    const data = await hotelBookingService.getPartnerInventory(
         checkInDate,
         checkOutDate,
         access.allowedHotelSlugs,
-      ),
+      );
+    const calendarDays = access.partnerId
+      ? await prisma.partnerHotelInventoryDay.findMany({
+          include: { property: { select: { displayName: true } } },
+          orderBy: [{ stayDate: 'asc' }, { roomTypeId: 'asc' }],
+          where: {
+            property: { partnerId: access.partnerId, status: 'ACTIVE' },
+            stayDate: { gte: checkInDate, lte: checkOutDate },
+          },
+        })
+      : [];
+    const roomTypes = calendarDays.length
+      ? await prisma.partnerRoomType.findMany({
+          select: { name: true, roomTypeId: true },
+          where: { roomTypeId: { in: [...new Set(calendarDays.map((day) => day.roomTypeId))] } },
+        })
+      : [];
+    const managedRooms = await prisma.partnerRoomType.findMany({
+      include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+      where: { property: { partnerId: access.partnerId, status: 'ACTIVE' }, status: 'ACTIVE' },
+    });
+    const ratePlanDays = await prisma.partnerRatePlanInventoryDay.findMany({
+      include: { ratePlan: { include: { room: { include: { property: true } } } } },
+      orderBy: [{ stayDate: 'asc' }, { ratePlanId: 'asc' }],
+      where: {
+        ratePlan: { room: { property: { partnerId: access.partnerId, status: 'ACTIVE' } } },
+        stayDate: { gte: checkInDate, lte: checkOutDate },
+      },
+    });
+    const roomNames = new Map(roomTypes.map((room) => [room.roomTypeId, room.name]));
+    return Response.json({
+      calendar: [...calendarDays.map((day) => ({
+        availableRooms: day.availableRooms,
+        closedToArrival: day.closedToArrival,
+        closedToDeparture: day.closedToDeparture,
+        hotelName: day.property.displayName,
+        maximumStayNights: day.maximumStayNights ?? undefined,
+        minimumStayNights: day.minimumStayNights ?? undefined,
+        nightlyRate: day.nightlyRate ?? undefined,
+        note: day.note,
+        roomName: roomNames.get(day.roomTypeId) ?? day.roomTypeId,
+        roomTypeId: day.roomTypeId,
+        stayDate: day.stayDate,
+        stopSell: day.stopSell,
+      })), ...ratePlanDays.map((day) => ({
+        availableRooms: day.ratePlan.room.inventoryCount,
+        closedToArrival: false,
+        closedToDeparture: false,
+        hotelName: day.ratePlan.room.property.displayName,
+        nightlyRate: day.nightlyRate,
+        note: day.note,
+        ratePlanName: day.ratePlan.name,
+        roomName: day.ratePlan.room.name,
+        roomTypeId: day.ratePlan.room.roomTypeId,
+        stayDate: day.stayDate,
+        stopSell: false,
+      }))],
+      data,
+      ratePlans: managedRooms.flatMap((room) => room.ratePlans.map((ratePlan) => ({
+        id: ratePlan.id,
+        name: ratePlan.name,
+        roomTypeId: room.roomTypeId,
+      }))),
     });
   } catch (error) {
     return error instanceof HotelBookingRuleError
@@ -37,7 +98,7 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const body = await readJsonObject(request);
@@ -69,6 +130,28 @@ export async function POST(request: Request): Promise<Response> {
     typeof values.nightlyRate === 'number' && values.nightlyRate > 0
       ? values.nightlyRate
       : undefined;
+  const ratePlanRecordId =
+    typeof values.ratePlanRecordId === 'string' && values.ratePlanRecordId.length > 0
+      ? values.ratePlanRecordId
+      : undefined;
+  const minimumStayNights =
+    typeof values.minimumStayNights === 'number' && values.minimumStayNights > 0
+      ? values.minimumStayNights
+      : undefined;
+  const maximumStayNights =
+    typeof values.maximumStayNights === 'number' && values.maximumStayNights > 0
+      ? values.maximumStayNights
+      : undefined;
+  const closedToArrival = values.closedToArrival === true;
+  const closedToDeparture = values.closedToDeparture === true;
+  const clearNightlyRate = values.clearNightlyRate === true;
+  if (clearNightlyRate && nightlyRate !== undefined) {
+    return errorResponse(
+      'CONFLICTING_RATE_ACTION',
+      'Enter a seasonal price or clear the saved price, but do not select both.',
+      400,
+    );
+  }
   const stopSell = values.stopSell === true || availableRooms === 0;
   try {
     const data = await hotelBookingService.setPartnerInventoryOverride(
@@ -100,11 +183,17 @@ export async function POST(request: Request): Promise<Response> {
       if (property) {
         await partnerOperationsService.setHotelCalendar({
           availableRooms,
+          closedToArrival,
+          closedToDeparture,
+          clearNightlyRate,
           endDate: checkOutDate,
           nightlyRate,
+          maximumStayNights,
+          minimumStayNights,
           note,
           partnerId: access.partnerId,
           propertyId: property.id,
+          ratePlanRecordId,
           roomTypeId,
           startDate: checkInDate,
           stopSell,
@@ -120,6 +209,11 @@ export async function POST(request: Request): Promise<Response> {
         checkInDate,
         checkOutDate,
         nightlyRate,
+        maximumStayNights,
+        minimumStayNights,
+        closedToArrival,
+        closedToDeparture,
+        clearNightlyRate,
         stopSell,
       },
       summary: 'Room inventory limit updated.',

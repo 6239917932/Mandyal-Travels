@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Supplier administration' };
 
 export default async function AdminPartnersPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners');
-  const [applications, partners] = await Promise.all([
+  const [applications, partners, pendingProperties] = await Promise.all([
     prisma.partnerApplication.findMany({
       include: { applicant: { select: { email: true, firstName: true, lastName: true } } },
       orderBy: { createdAt: 'asc' },
@@ -20,6 +20,18 @@ export default async function AdminPartnersPage() {
     prisma.supplyPartner.findMany({
       include: { _count: { select: { members: true, properties: true, vehicles: true } } },
       orderBy: { createdAt: 'desc' },
+    }),
+    prisma.partnerProperty.findMany({
+      include: {
+        partner: { select: { id: true, name: true } },
+        rooms: { select: { id: true }, where: { status: 'ACTIVE' } },
+      },
+      orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
+      where: {
+        approvalStatus: 'PENDING_REVIEW',
+        listingSource: 'MANAGED',
+        status: 'ACTIVE',
+      },
     }),
   ]);
   return (
@@ -42,8 +54,8 @@ export default async function AdminPartnersPage() {
           <strong>{applications.length}</strong>
         </Card>
         <Card>
-          <span>Active suppliers</span>
-          <strong>{partners.filter((p) => p.status === 'ACTIVE').length}</strong>
+          <span>Property reviews</span>
+          <strong>{pendingProperties.length}</strong>
         </Card>
         <Card>
           <span>Hotel suppliers</span>
@@ -82,6 +94,37 @@ export default async function AdminPartnersPage() {
           {applications.length === 0 ? (
             <Card>No supplier applications are awaiting verification.</Card>
           ) : null}
+        </div>
+      </section>
+      <section>
+        <p className="hotel-page__eyebrow">Property governance</p>
+        <h2>Listings awaiting review</h2>
+        <div className="supplier-admin__grid">
+          {pendingProperties.map((property) => (
+            <Card key={property.id}>
+              <div className="booking-confirmation__reference">
+                <span>{property.partner.name}</span>
+                <strong>{property.displayName}</strong>
+              </div>
+              <p>
+                {property.locality || property.city}, {property.district || property.state}
+                {' · '}
+                {property.rooms.length} active room {property.rooms.length === 1 ? 'type' : 'types'}
+              </p>
+              <small>
+                Submitted {property.submittedAt
+                  ? property.submittedAt.toLocaleString('en-IN')
+                  : 'automatically when its first room was added'}
+              </small>
+              <Link
+                className="home-card__link"
+                href={`/admin/partners/${property.partner.id}#property-${property.id}`}
+              >
+                Review listing
+              </Link>
+            </Card>
+          ))}
+          {pendingProperties.length === 0 ? <Card>No property listings are awaiting review.</Card> : null}
         </div>
       </section>
       <section>

@@ -67,10 +67,53 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   and AI-assisted hotel discovery use the same expanded destination vocabulary
 - Governed, categorized property and room amenity checklists with standardized supplier selections,
   duplicate normalization, responsive controls, and the same catalogue powering customer filters
+- Editable supplier room definitions and normalized multi-rate-plan management with meal plans,
+  refundable policies, taxes, and enforced minimum/maximum stay restrictions; the additive
+  migration backfills every existing room without changing its public rate-plan identifier
+- Structured free-cancellation cutoffs on supplier rates, validated from 0 to 720 hours and used by
+  customer refund-eligibility decisions
+- Refund cutoffs anchored to each property's configured check-in time and IANA timezone rather than
+  UTC midnight, with invalid timezone data failing closed
+- Date-level Hotel PMS controls for seasonal pricing, availability limits, stop-sell,
+  closed-to-arrival, closed-to-departure, and minimum/maximum stays, enforced by customer search
+  and booking quote validation
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
+- Guarded hotel stay operations for check-in, check-out, and no-show handling with append-only
+  supplier audit entries
+- Property-timezone-aware arrival guards prevent future stays from being checked in or marked as
+  no-shows, and prevent check-in after the scheduled stay has ended
+- Persisted physical room assignments required at check-in, validated against booked quantity and
+  overlapping checked-in stays, displayed to front-desk users, audited, and included in exports
+- Supplier-owned physical room registry with room-type inventory caps, unique room numbers,
+  ready/dirty/cleaning and active/out-of-service controls, audited changes, ready-room enforcement
+  at check-in, and automatic dirty status after checkout
+- Front-desk room allocation loads only registered, active, housekeeping-ready rooms for the booked
+  room type, excludes rooms occupied by active stays, and requires exact checkbox selection before check-in
+- A dedicated supplier housekeeping board summarizes ready, dirty, cleaning, and out-of-service rooms
+  across managed properties and uses the existing scoped, audited room-status workflow
+- Supplier-private front-desk booking notes with bounded content, partner scoping, and append-only
+  audit records; notes remain excluded from customer records and operational CSV exports
+- Guest special requests captured before payment, persisted with the lead guest, shown on customer
+  confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
+- Platform property review workflow for supplier-created listings with pending, approved, and
+  rejected states, correction notes, administrator decisions, audit history, and approval-gated search publication
+- Consolidated administrator property-review queue with oldest-first ordering, submission context,
+  active-room counts, and direct navigation to the exact supplier listing decision controls
+- Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
+  sets above the bounded 1,000-record operational limit instead of silently truncating records
+- Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
+  captured-value summaries, and pagination
+- Validated arrival-window filters for front-desk arrival lists, combinable with booking search and
+  operational status filters
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
+- Integration-key requests require a validated active supplier identifier; an integration key alone
+  cannot enumerate cross-supplier bookings, properties, inventory, amendments, reviews, or exports
+- Supplier-scoped activity history with server-side action, record-type, and text filters, bounded
+  pagination, actor attribution, and immutable operational audit records
+- Arrival-based supplier performance reports with bounded periods and exact booking, captured-value,
+  room-night, cancellation, no-show, check-out, average-value, and per-property rollups
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment
   persistence
 - Pagination and bounded query sizes for operational lists
@@ -127,6 +170,31 @@ tax invoices.
 
 ## Current quality gate
 
-The saved baseline is expected to pass lint, TypeScript checking, and a production build. Provider
-integration work must preserve those checks and add provider-specific automated tests before going
-live.
+Seasonal pricing is rate-plan-specific: room-only, breakfast, and other plans retain independent
+daily prices across search and booking quotes, while availability and stay restrictions remain
+room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overrides normalized and
+supplier-scoped.
+
+Front-desk stay transitions are evaluated using the property's configured timezone. Future arrivals
+cannot be checked in or marked as no-shows, and an expired stay cannot be checked in.
+
+Managed properties can register their physical rooms and operate a basic housekeeping lifecycle.
+When a room type has registered rooms, check-in accepts only registered rooms that are ready and in
+service; checkout marks the assigned rooms dirty for housekeeping follow-up.
+
+Booking operations include a private supplier note for arrival preferences, accessibility support,
+and shift handovers. Every note change is scoped to the assigned supplier and recorded in activity
+history without copying the note text into audit metadata.
+
+Guests can submit bounded accessibility, dietary, arrival, and room-preference requests before
+payment. The request is persisted with the booking and handed to the assigned property while the UI
+clearly states that fulfilment depends on availability.
+
+Supplier-created properties enter a platform review queue after an active room is added. Only an
+administrator-approved property can publish to hotel search; rejected listings remain private with
+correction guidance, while the additive migration preserves existing published inventory as approved.
+
+The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
+a Next.js production build with all 85 generated route entries, and clean-database verification of all 42 migrations
+with foreign-key integrity enabled. Provider integration work must preserve those checks and add
+provider-specific automated tests before going live.

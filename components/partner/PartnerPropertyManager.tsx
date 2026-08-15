@@ -11,30 +11,83 @@ import { propertyAmenityGroups, roomAmenityGroups } from '@/constants/hotelAmeni
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
+type RatePlan = {
+  cancellationDescription: string;
+  freeCancellationHours: number;
+  id: string;
+  maximumStayNights: number;
+  mealPlan: string;
+  minimumStayNights: number;
+  name: string;
+  nightlyRate: number;
+  ratePlanId: string;
+  refundable: boolean;
+  status: string;
+  taxesAndFees: number;
+};
+
+type PhysicalRoom = {
+  floorLabel: string;
+  housekeepingStatus: string;
+  id: string;
+  operationalStatus: string;
+  roomNumber: string;
+};
+
+type HousekeepingStatus = 'CLEANING' | 'DIRTY' | 'READY';
+type PhysicalRoomOperationalStatus = 'ACTIVE' | 'OUT_OF_SERVICE';
+
 type RoomType = {
+  amenitiesJson: string;
+  bedDescription: string;
+  description: string;
   id: string;
   inventoryCount: number;
+  imageUrl: string;
+  maximumAdults: number;
+  maximumChildren: number;
+  maximumGuests: number;
   mealPlan: string;
   name: string;
   nightlyRate: number;
+  physicalRooms: PhysicalRoom[];
   ratePlanName: string;
+  ratePlans: RatePlan[];
   roomTypeId: string;
   status: string;
   taxesAndFees: number;
 };
 
 export type ManagedProperty = {
+  approvalNote: string;
+  approvalStatus: string;
+  amenitiesJson: string;
+  checkInTime: string;
+  checkOutTime: string;
   city: string;
+  contactEmail: string;
+  contactPhone: string;
+  childrenAllowed: boolean;
+  description: string;
   district: string;
   displayName: string;
   hotelSlug: string;
+  imageUrl: string;
+  imageUrlsJson: string;
+  languagesJson: string;
+  landmarksJson: string;
   id: string;
   locality: string;
   locationAliasesJson: string;
+  minimumCheckInAge: number;
+  petsAllowed: boolean;
+  policiesJson: string;
   publicationStatus: string;
+  propertyType: string;
   rooms: RoomType[];
   starRating: number;
   state: string;
+  smokingAllowed: boolean;
   tehsil: string;
 };
 
@@ -53,6 +106,14 @@ function stringListFromJson(value: string): string[] {
   }
 }
 
+function physicalRoomOperationalStatus(value: string): PhysicalRoomOperationalStatus {
+  return value === 'OUT_OF_SERVICE' ? 'OUT_OF_SERVICE' : 'ACTIVE';
+}
+
+function housekeepingStatus(value: string): HousekeepingStatus {
+  return value === 'CLEANING' || value === 'DIRTY' ? value : 'READY';
+}
+
 export function PartnerPropertyManager({
   canManage,
   initialProperties,
@@ -63,6 +124,12 @@ export function PartnerPropertyManager({
   const [properties, setProperties] = useState<ManagedProperty[]>(initialProperties);
   const [activeRoomForm, setActiveRoomForm] = useState<string>();
   const [activeLocationForm, setActiveLocationForm] = useState<string>();
+  const [activeRatePlanRoom, setActiveRatePlanRoom] = useState<string>();
+  const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
+  const [activePhysicalRoomForm, setActivePhysicalRoomForm] = useState<string>();
+  const [activeRateEditor, setActiveRateEditor] = useState<string>();
+  const [activeProfileForm, setActiveProfileForm] = useState<string>();
+  const [activeContentForm, setActiveContentForm] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -150,7 +217,9 @@ export function PartnerPropertyManager({
       form.reset();
       setActiveRoomForm(undefined);
       setSuccess(
-        `${result.data.name} was added. ${property.displayName} is now visible in hotel search.`,
+        property.approvalStatus === 'APPROVED'
+          ? `${result.data.name} was added. ${property.displayName} is now visible in hotel search.`
+          : `${result.data.name} was added. ${property.displayName} was submitted for platform review.`,
       );
       await loadProperties();
     } catch {
@@ -161,7 +230,11 @@ export function PartnerPropertyManager({
   }
 
   async function changePublication(property: ManagedProperty) {
-    const action = property.publicationStatus === 'PUBLISHED' ? 'PAUSE' : 'PUBLISH';
+    const action = property.publicationStatus === 'PUBLISHED'
+      ? 'PAUSE'
+      : property.approvalStatus === 'APPROVED'
+        ? 'PUBLISH'
+        : 'SUBMIT_REVIEW';
     setError(undefined);
     setSuccess(undefined);
     setIsSaving(true);
@@ -177,13 +250,229 @@ export function PartnerPropertyManager({
         return;
       }
       setSuccess(
-        action === 'PUBLISH'
+        action === 'SUBMIT_REVIEW'
+          ? `${property.displayName} was submitted for platform review.`
+          : action === 'PUBLISH'
           ? `${property.displayName} is now visible in hotel search.`
           : `${property.displayName} has been paused from new sales.`,
       );
       await loadProperties();
     } catch {
       setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createPhysicalRoom(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+  ) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/physical-rooms`,
+        {
+          body: JSON.stringify(Object.fromEntries(formData)),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        },
+      );
+      const result = await readJsonResponse<{ data: PhysicalRoom } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The physical room could not be registered.'));
+        return;
+      }
+      form.reset();
+      setSuccess(`Room ${result.data.roomNumber} was registered under ${room.name}.`);
+      await loadProperties();
+    } catch {
+      setError('The physical room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updatePhysicalRoom(
+    property: ManagedProperty,
+    room: RoomType,
+    physicalRoom: PhysicalRoom,
+    housekeepingStatus: HousekeepingStatus,
+    operationalStatus: PhysicalRoomOperationalStatus,
+  ) {
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/physical-rooms/${physicalRoom.id}`,
+        {
+          body: JSON.stringify({ housekeepingStatus, operationalStatus }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+        },
+      );
+      const result = await readJsonResponse<{ data: PhysicalRoom } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room status could not be updated.'));
+        return;
+      }
+      setSuccess(`Room ${physicalRoom.roomNumber} status was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The physical room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createRatePlan(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+  ) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans`,
+        {
+          body: JSON.stringify({
+            ...Object.fromEntries(formData),
+            refundable: formData.get('refundable') === 'on',
+          }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        },
+      );
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be added.'));
+        return;
+      }
+      form.reset();
+      setActiveRatePlanRoom(undefined);
+      setSuccess(`${result.data.name} was added to ${room.name}.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateRoom(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}`, {
+        body: JSON.stringify({
+          ...Object.fromEntries(formData),
+          amenities: formData.getAll('amenities').map(String).join(','),
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RoomType } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room type could not be updated.'));
+        return;
+      }
+      setActiveRoomEditor(undefined);
+      setSuccess(`${result.data.name} was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function changeRoomStatus(property: ManagedProperty, room: RoomType) {
+    const action = room.status === 'ACTIVE' ? 'PAUSE' : 'RESTORE';
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}`, {
+        body: JSON.stringify({ action }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RoomType } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room status could not be updated.'));
+        return;
+      }
+      setSuccess(`${room.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}.`);
+      await loadProperties();
+    } catch {
+      setError('The room service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function changeRatePlanStatus(property: ManagedProperty, room: RoomType, rate: RatePlan) {
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const action = rate.status === 'ACTIVE' ? 'PAUSE' : 'RESTORE';
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
+        body: JSON.stringify({ action }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be paused.'));
+        return;
+      }
+      setSuccess(`${rate.name} was ${action === 'PAUSE' ? 'paused' : 'restored'}. Existing history was retained.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateRatePlan(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType, rate: RatePlan) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans/${rate.id}`, {
+        body: JSON.stringify({ ...Object.fromEntries(formData), action: 'UPDATE', refundable: formData.get('refundable') === 'on' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be updated.'));
+        return;
+      }
+      setActiveRateEditor(undefined);
+      setSuccess(`${result.data.name} was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
     } finally {
       setIsSaving(false);
     }
@@ -208,6 +497,68 @@ export function PartnerPropertyManager({
       }
       setActiveLocationForm(undefined);
       setSuccess(`${property.displayName} can now be found using its updated locality and aliases.`);
+      await loadProperties();
+    } catch {
+      setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateProfile(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}`, {
+        body: JSON.stringify({ ...data, action: 'UPDATE_PROFILE' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: ManagedProperty } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The property profile could not be updated.'));
+        return;
+      }
+      setActiveProfileForm(undefined);
+      setSuccess(`${result.data.displayName} public profile was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateContent(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = {
+      ...Object.fromEntries(formData),
+      action: 'UPDATE_CONTENT',
+      amenities: formData.getAll('amenities').map(String).join(','),
+      childrenAllowed: formData.get('childrenAllowed') === 'on',
+      petsAllowed: formData.get('petsAllowed') === 'on',
+      smokingAllowed: formData.get('smokingAllowed') === 'on',
+    };
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}`, {
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: ManagedProperty } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The property content could not be updated.'));
+        return;
+      }
+      setActiveContentForm(undefined);
+      setSuccess(`${property.displayName} amenities, policies, and media were updated.`);
       await loadProperties();
     } catch {
       setError('The property service could not be reached.');
@@ -414,6 +765,10 @@ export function PartnerPropertyManager({
                     {property.locality}, {property.district} · {property.starRating} star ·{' '}
                     {property.rooms.length} room types
                   </p>
+                  <small>
+                    Platform review: {property.approvalStatus.toLowerCase().replaceAll('_', ' ')}
+                  </small>
+                  {property.approvalNote ? <p>{property.approvalNote}</p> : null}
                 </div>
                 <div className="manage-booking__document-actions">
                   {property.publicationStatus === 'PUBLISHED' ? (
@@ -427,28 +782,240 @@ export function PartnerPropertyManager({
                   {canManage ? (
                     <button
                       className="ui-button ui-button--secondary"
-                      disabled={isSaving}
+                      disabled={isSaving || property.approvalStatus === 'PENDING_REVIEW'}
                       onClick={() => void changePublication(property)}
                       type="button"
                     >
                       {property.publicationStatus === 'PUBLISHED'
                         ? 'Pause sales'
-                        : 'Publish property'}
+                        : property.approvalStatus === 'APPROVED'
+                          ? 'Publish property'
+                          : property.approvalStatus === 'PENDING_REVIEW'
+                            ? 'Review pending'
+                            : 'Submit for review'}
                     </button>
                   ) : null}
                 </div>
               </div>
+              {canManage ? (
+                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveProfileForm(activeProfileForm === property.id ? undefined : property.id)} type="button">
+                  {activeProfileForm === property.id ? 'Close profile editor' : 'Edit property profile'}
+                </button>
+              ) : null}
+              {activeProfileForm === property.id ? (
+                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateProfile(event, property)}>
+                  <div className="booking-confirmation__reference"><span>Profile</span><strong>Public identity and operations</strong></div>
+                  <div className="supplier-form__grid">
+                    <Input defaultValue={property.displayName} label="Property name" maxLength={140} minLength={2} name="displayName" required />
+                    <label className="ui-field"><span className="ui-field__label">Property type</span><select className="ui-input" defaultValue={property.propertyType} name="propertyType" required><option value="HOTEL">Hotel</option><option value="RESORT">Resort</option><option value="HOMESTAY">Homestay</option><option value="GUEST_HOUSE">Guest house</option><option value="APARTMENT">Serviced apartment</option><option value="HOSTEL">Hostel</option></select></label>
+                    <label className="ui-field"><span className="ui-field__label">Star rating</span><select className="ui-input" defaultValue={property.starRating} name="starRating" required>{[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} star</option>)}</select></label>
+                    <Input defaultValue={property.contactEmail} label="Guest contact email" maxLength={254} name="contactEmail" required type="email" />
+                    <Input defaultValue={property.contactPhone} label="Guest contact phone" maxLength={30} name="contactPhone" required type="tel" />
+                    <Input defaultValue={property.checkInTime} label="Check-in time" name="checkInTime" required type="time" />
+                    <Input defaultValue={property.checkOutTime} label="Check-out time" name="checkOutTime" required type="time" />
+                    <Input defaultValue={property.minimumCheckInAge} label="Minimum check-in age" max={30} min={16} name="minimumCheckInAge" required type="number" />
+                  </div>
+                  <label className="ui-field"><span className="ui-field__label">Property description</span><textarea className="ui-input supplier-form__textarea" defaultValue={property.description} maxLength={1500} minLength={30} name="description" required /></label>
+                  <Button fullWidth isLoading={isSaving} type="submit">Save property profile</Button>
+                </form>
+              ) : null}
+              {canManage ? (
+                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveContentForm(activeContentForm === property.id ? undefined : property.id)} type="button">
+                  {activeContentForm === property.id ? 'Close content editor' : 'Edit amenities, policies, and media'}
+                </button>
+              ) : null}
+              {activeContentForm === property.id ? (
+                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateContent(event, property)}>
+                  <div className="booking-confirmation__reference"><span>Content</span><strong>Facilities, guest rules, and gallery</strong></div>
+                  <div className="supplier-form__grid">
+                    <Input defaultValue={stringListFromJson(property.languagesJson).join(', ')} label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
+                    <label className="ui-field"><span className="ui-field__label">Nearby landmarks (one per line)</span><textarea className="ui-input supplier-form__compact-textarea" defaultValue={stringListFromJson(property.landmarksJson).join('\n')} name="landmarks" /></label>
+                  </div>
+                  <AmenityChecklist defaultValues={stringListFromJson(property.amenitiesJson)} groups={propertyAmenityGroups} legend="Property amenities" name="amenities" />
+                  <div className="supplier-form__policy-checks">
+                    <label><input defaultChecked={property.childrenAllowed} name="childrenAllowed" type="checkbox" /> Children are welcome</label>
+                    <label><input defaultChecked={property.petsAllowed} name="petsAllowed" type="checkbox" /> Pets are allowed</label>
+                    <label><input defaultChecked={property.smokingAllowed} name="smokingAllowed" type="checkbox" /> Smoking areas are available</label>
+                  </div>
+                  <label className="ui-field"><span className="ui-field__label">Guest policies (one per line)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.policiesJson).join('\n')} name="policies" /></label>
+                  <Input defaultValue={property.imageUrl} label="Cover photo URL" name="imageUrl" required type="url" />
+                  <label className="ui-field"><span className="ui-field__label">Gallery photo URLs (one per line, maximum 12)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.imageUrlsJson).join('\n')} name="imageUrls" /></label>
+                  <Button fullWidth isLoading={isSaving} type="submit">Save property content</Button>
+                </form>
+              ) : null}
               <div className="partner-property-manager__rooms">
                 {property.rooms.map((room) => (
                   <div key={room.id}>
-                    <strong>{room.name}</strong>
+                    <strong>{room.name} · {room.status.toLowerCase()}</strong>
                     <span>
                       {room.inventoryCount} rooms · ₹{room.nightlyRate.toLocaleString('en-IN')} + ₹
                       {room.taxesAndFees.toLocaleString('en-IN')} taxes
                     </span>
                     <small>
-                      {room.ratePlanName} · {room.mealPlan.replaceAll('-', ' ')}
+                      {room.ratePlans.filter((rate) => rate.status === 'ACTIVE').length || 1} active rate plan(s)
                     </small>
+                    <div className="partner-property-manager__rate">
+                      <strong>Physical rooms</strong>
+                      <small>
+                        {room.physicalRooms.length} of {room.inventoryCount} registered
+                      </small>
+                      {room.physicalRooms.map((physicalRoom) => (
+                        <div key={physicalRoom.id}>
+                          <small>
+                            {physicalRoom.roomNumber}
+                            {physicalRoom.floorLabel ? ` · ${physicalRoom.floorLabel}` : ''} ·{' '}
+                            {physicalRoom.housekeepingStatus.toLowerCase()} ·{' '}
+                            {physicalRoom.operationalStatus.toLowerCase().replaceAll('_', ' ')}
+                          </small>
+                          <div className="manage-booking__document-actions">
+                            {(['READY', 'DIRTY', 'CLEANING'] as const).map((status) => (
+                              <button
+                                className="home-card__link"
+                                disabled={isSaving || physicalRoom.housekeepingStatus === status}
+                                key={status}
+                                onClick={() =>
+                                  void updatePhysicalRoom(
+                                    property,
+                                    room,
+                                    physicalRoom,
+                                    status,
+                                    physicalRoomOperationalStatus(physicalRoom.operationalStatus),
+                                  )
+                                }
+                                type="button"
+                              >
+                                {status === 'READY' ? 'Mark ready' : status === 'DIRTY' ? 'Mark dirty' : 'Start cleaning'}
+                              </button>
+                            ))}
+                            <button
+                              className="home-card__link"
+                              disabled={isSaving}
+                              onClick={() =>
+                                void updatePhysicalRoom(
+                                  property,
+                                  room,
+                                  physicalRoom,
+                                  housekeepingStatus(physicalRoom.housekeepingStatus),
+                                  physicalRoom.operationalStatus === 'ACTIVE' ? 'OUT_OF_SERVICE' : 'ACTIVE',
+                                )
+                              }
+                              type="button"
+                            >
+                              {physicalRoom.operationalStatus === 'ACTIVE' ? 'Take out of service' : 'Return to service'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {canManage && room.physicalRooms.length < room.inventoryCount ? (
+                        <button
+                          className="home-card__link"
+                          onClick={() =>
+                            setActivePhysicalRoomForm(
+                              activePhysicalRoomForm === room.id ? undefined : room.id,
+                            )
+                          }
+                          type="button"
+                        >
+                          {activePhysicalRoomForm === room.id ? 'Close room registry' : 'Register physical room'}
+                        </button>
+                      ) : null}
+                      {activePhysicalRoomForm === room.id ? (
+                        <form
+                          className="supplier-form partner-property-manager__room-form"
+                          onSubmit={(event) => void createPhysicalRoom(event, property, room)}
+                        >
+                          <div className="supplier-form__grid">
+                            <Input label="Room number" maxLength={20} name="roomNumber" required />
+                            <Input label="Floor / wing" maxLength={40} name="floorLabel" />
+                          </div>
+                          <label className="ui-field">
+                            <span className="ui-field__label">Housekeeping notes (optional)</span>
+                            <textarea className="ui-input supplier-form__textarea" maxLength={300} name="notes" />
+                          </label>
+                          <Button fullWidth isLoading={isSaving} type="submit">Register room</Button>
+                        </form>
+                      ) : null}
+                    </div>
+                    {room.ratePlans.map((rate) => (
+                      <div className="partner-property-manager__rate" key={rate.id}>
+                        <small>
+                          {rate.name} · ₹{rate.nightlyRate.toLocaleString('en-IN')} + ₹
+                          {rate.taxesAndFees.toLocaleString('en-IN')} · {rate.minimumStayNights}–
+                          {rate.maximumStayNights} nights · {rate.status.toLowerCase()}
+                        </small>
+                        {canManage ? (
+                          <div className="manage-booking__document-actions">
+                            <button className="home-card__link" onClick={() => setActiveRateEditor(activeRateEditor === rate.id ? undefined : rate.id)} type="button">{activeRateEditor === rate.id ? 'Close editor' : 'Edit rate'}</button>
+                            <button className="home-card__link" disabled={isSaving || (rate.status === 'ACTIVE' && room.ratePlans.filter((candidate) => candidate.status === 'ACTIVE').length === 1)} onClick={() => void changeRatePlanStatus(property, room, rate)} type="button">{rate.status === 'ACTIVE' ? 'Pause rate' : 'Restore rate'}</button>
+                          </div>
+                        ) : null}
+                        {activeRateEditor === rate.id ? (
+                          <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRatePlan(event, property, room, rate)}>
+                            <div className="supplier-form__grid">
+                              <Input defaultValue={rate.name} label="Rate plan name" maxLength={100} minLength={2} name="name" required />
+                              <Input defaultValue={rate.nightlyRate} label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
+                              <Input defaultValue={rate.taxesAndFees} label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
+                              <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue={rate.mealPlan} name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
+                              <Input defaultValue={rate.minimumStayNights} label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
+                              <Input defaultValue={rate.maximumStayNights} label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                              <Input defaultValue={rate.freeCancellationHours} label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
+                            </div>
+                            <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" defaultValue={rate.cancellationDescription} maxLength={300} minLength={10} name="cancellationDescription" required /></label>
+                            <label className="supplier-form__check"><input defaultChecked={rate.refundable} name="refundable" type="checkbox" /> Refundable under the stated policy</label>
+                            <Button fullWidth isLoading={isSaving} type="submit">Save rate plan</Button>
+                          </form>
+                        ) : null}
+                      </div>
+                    ))}
+                    {canManage ? (
+                      <div className="manage-booking__document-actions">
+                        <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">
+                          {activeRoomEditor === room.id ? 'Close room editor' : 'Edit room details'}
+                        </button>
+                        <button className="home-card__link" disabled={isSaving} onClick={() => void changeRoomStatus(property, room)} type="button">
+                          {room.status === 'ACTIVE' ? 'Pause room' : 'Restore room'}
+                        </button>
+                      </div>
+                    ) : null}
+                    {activeRoomEditor === room.id ? (
+                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRoom(event, property, room)}>
+                        <div className="booking-confirmation__reference"><span>Room</span><strong>Room definition and occupancy</strong></div>
+                        <div className="supplier-form__grid">
+                          <Input defaultValue={room.name} label="Room name" maxLength={120} minLength={2} name="name" required />
+                          <Input defaultValue={room.bedDescription} label="Bed configuration" maxLength={160} minLength={2} name="bedDescription" required />
+                          <Input defaultValue={room.inventoryCount} label="Number of rooms" max={500} min={1} name="inventoryCount" required type="number" />
+                          <Input defaultValue={room.maximumAdults} label="Maximum adults" max={20} min={1} name="maximumAdults" required type="number" />
+                          <Input defaultValue={room.maximumChildren} label="Maximum children" max={20} min={0} name="maximumChildren" required type="number" />
+                          <Input defaultValue={room.maximumGuests} label="Maximum guests" max={30} min={1} name="maximumGuests" required type="number" />
+                          <Input defaultValue={room.imageUrl} label="Room photo URL" name="imageUrl" required type="url" />
+                        </div>
+                        <AmenityChecklist defaultValues={stringListFromJson(room.amenitiesJson)} groups={roomAmenityGroups} legend="Room amenities" name="amenities" />
+                        <label className="ui-field"><span className="ui-field__label">Room description</span><textarea className="ui-input supplier-form__textarea" defaultValue={room.description} maxLength={800} minLength={20} name="description" required /></label>
+                        <Button fullWidth isLoading={isSaving} type="submit">Save room details</Button>
+                      </form>
+                    ) : null}
+                    {canManage ? (
+                      <button className="home-card__link" onClick={() => setActiveRatePlanRoom(activeRatePlanRoom === room.id ? undefined : room.id)} type="button">
+                        {activeRatePlanRoom === room.id ? 'Close rate form' : 'Add rate plan'}
+                      </button>
+                    ) : null}
+                    {activeRatePlanRoom === room.id ? (
+                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void createRatePlan(event, property, room)}>
+                        <div className="booking-confirmation__reference"><span>Rate</span><strong>New sellable rate plan</strong></div>
+                        <div className="supplier-form__grid">
+                          <Input label="Rate plan name" maxLength={100} minLength={2} name="name" required />
+                          <Input label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
+                          <Input defaultValue="0" label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
+                          <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue="room-only" name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
+                          <Input defaultValue="1" label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
+                          <Input defaultValue="30" label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                          <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
+                        </div>
+                        <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" maxLength={300} minLength={10} name="cancellationDescription" required /></label>
+                        <label className="supplier-form__check"><input defaultChecked name="refundable" type="checkbox" /> Refundable under the stated policy</label>
+                        <Button fullWidth isLoading={isSaving} type="submit">Add rate plan</Button>
+                      </form>
+                    ) : null}
                   </div>
                 ))}
                 {property.rooms.length === 0 ? (
@@ -608,6 +1175,7 @@ export function PartnerPropertyManager({
                     <input defaultChecked name="refundable" type="checkbox" /> This rate is
                     refundable under the stated policy
                   </label>
+                  <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
                   <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                     Add room and publish property
                   </Button>

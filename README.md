@@ -74,6 +74,10 @@ sample catalog property from the `frontend` folder:
 npm run partner:grant -- partner@example.com "Partner name" hotel-slug[,hotel-slug] --confirm
 ```
 
+Approved server-to-server partner API requests must send both `x-partner-key` and `x-partner-id`.
+The partner identifier is validated against an active supplier and scopes properties, inventory,
+bookings, amendments, reviews, and audit records to that supplier. The key alone grants no access.
+
 The command refuses to move a property already assigned to another supplier. Browser users never
 need the integration key.
 
