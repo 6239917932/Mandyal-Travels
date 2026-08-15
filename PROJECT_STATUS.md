@@ -252,9 +252,10 @@ prevents already-occupied seats from being sold again.
 Bus operator administrators can pause and restore dated services, revise bounded seat capacity and
 fares, and cannot reduce capacity below confirmed passengers or their assigned seat positions. A
 partner-scoped passenger manifest provides bounded pagination, search, routes, service times, exact
-seat assignments, and captured-value summaries without exposing another operator's reservations.
+seat assignments, captured-value summaries, and a formula-safe CSV export capped at 1,000 records
+without exposing another operator's reservations.
 
 The current travel-domain milestone passes 44 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 93 generated route entries, and
+strict TypeScript, ESLint, a Next.js production build with all 94 generated route entries, and
 clean-database verification of all 46 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
