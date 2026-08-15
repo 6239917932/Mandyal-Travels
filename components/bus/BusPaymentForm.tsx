@@ -157,26 +157,22 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
           details: completedBooking,
         }),
       });
-      if (businessRequest && !response.ok) {
+      if (!response.ok) {
         const result = await readJsonResponse<{
           error?: { message?: string };
         }>(response);
         setErrors({
           payment:
             result?.error?.message ??
-            'The company approval could not be verified. No payment has been captured.',
+            'The bus booking could not be confirmed. No payment has been captured.',
         });
         setProcessing(false);
         return;
       }
     } catch {
-      if (businessRequest) {
-        setErrors({
-          payment: 'The company approval service is unavailable. No payment has been captured.',
-        });
-        setProcessing(false);
-        return;
-      }
+      setErrors({ payment: 'The booking service is unavailable. No payment has been captured.' });
+      setProcessing(false);
+      return;
     }
     sessionStorage.setItem('mandyal-bus-booking', JSON.stringify(completedBooking));
     if (businessRequest) clearActiveBusinessTravelRequest();

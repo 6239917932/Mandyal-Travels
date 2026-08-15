@@ -13,9 +13,11 @@ export interface BusOffer {
   cancellationPolicy: string;
   currency: 'INR';
   departureAt: string;
+  destination: string;
   droppingPoint: string;
   id: string;
   operatorName: string;
+  origin: string;
   pricePerSeat: number;
   rating: number;
   seatsRemaining: number;

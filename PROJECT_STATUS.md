@@ -26,6 +26,11 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Flight offers distinguish outbound and return legs, reject incomplete or wrong-date round trips,
   and display both legs before selection; the fixture adapter includes a revalidatable round-trip
   example without pretending to provide live airline inventory
+- Provider-neutral Bus validation rejects wrong-date, wrong-route, over-capacity, malformed-timing,
+  invalid-rating, and non-positive-price offers while normalizing bounded amenity data; personal
+  Bus checkout also fails safely if its server-side booking cannot be saved
+- Versioned, no-store Bus offer search and revalidation APIs reuse that supplier boundary for
+  future mobile, partner, B2B, and corporate clients
 - Hotel availability results with typed star/amenity/refundability filters, price/rating sorting,
   and bounded pagination
 - Provider-ready natural-language hotel discovery with explicit explanations and inventory-backed

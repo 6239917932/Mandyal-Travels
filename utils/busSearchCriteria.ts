@@ -17,7 +17,7 @@ export function createBusSearchCriteria(
     destination: (first(params.destination) ?? defaultBusSearchCriteria.destination).trim(),
     origin: (first(params.origin) ?? defaultBusSearchCriteria.origin).trim(),
     passengers:
-      Number.isInteger(passengers) && passengers > 0
+      Number.isInteger(passengers) && passengers >= 1 && passengers <= 6
         ? passengers
         : defaultBusSearchCriteria.passengers,
     travelDate: first(params.travelDate) ?? defaultBusSearchCriteria.travelDate,
