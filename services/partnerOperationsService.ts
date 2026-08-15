@@ -7,6 +7,7 @@ import {
   normalizeRoomAssignments,
 } from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
+import { seatsFitBusCapacity } from '@/lib/bus/bookingRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -1688,6 +1689,101 @@ export const partnerOperationsService = {
         }),
         partnerId: vehicle.partnerId,
         summary: `${vehicle.vehicleName} reserved for ${input.pickupDate}.`,
+      },
+    });
+    return reservation;
+  },
+
+  async reserveDirectBus(
+    transaction: Prisma.TransactionClient,
+    input: {
+      confirmationCode: string;
+      customerEmail: string;
+      customerName: string;
+      customerTripId: string;
+      offerId: string;
+      passengerCount: number;
+      seats: string[];
+      serviceDate: string;
+      totalAmount: number;
+    },
+  ) {
+    const prefix = 'direct-bus-trip-';
+    if (!input.offerId.startsWith(prefix)) return null;
+    const tripId = input.offerId.slice(prefix.length);
+    const trip = await transaction.partnerBusTrip.findUnique({
+      include: {
+        reservations: {
+          select: { seatNumbersJson: true },
+          where: { status: 'CONFIRMED' },
+        },
+        route: { include: { partner: { select: { id: true, status: true } } } },
+      },
+      where: { id: tripId },
+    });
+    if (
+      !trip ||
+      trip.status !== 'ACTIVE' ||
+      trip.route.status !== 'ACTIVE' ||
+      trip.route.partner.status !== 'ACTIVE' ||
+      trip.serviceDate !== input.serviceDate
+    ) {
+      throw new PartnerOperationsError(
+        'BUS_TRIP_UNAVAILABLE',
+        'This direct operator trip is no longer available.',
+      );
+    }
+    if (
+      input.seats.length !== input.passengerCount ||
+      new Set(input.seats).size !== input.seats.length ||
+      !seatsFitBusCapacity(input.seats, trip.seatCapacity)
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_BUS_SEATS',
+        'Choose valid, unique seats within this bus capacity.',
+      );
+    }
+    const occupiedSeats = new Set(
+      trip.reservations.flatMap((reservation) => readStoredStringList(reservation.seatNumbersJson)),
+    );
+    if (input.seats.some((seat) => occupiedSeats.has(seat))) {
+      throw new PartnerOperationsError(
+        'BUS_SEAT_UNAVAILABLE',
+        'One or more selected seats were just reserved. Please choose different seats.',
+      );
+    }
+    if (occupiedSeats.size + input.passengerCount > trip.seatCapacity) {
+      throw new PartnerOperationsError(
+        'BUS_TRIP_SOLD_OUT',
+        'This trip no longer has enough seats for all passengers.',
+      );
+    }
+    const reservation = await transaction.partnerBusReservation.create({
+      data: {
+        confirmationCode: input.confirmationCode,
+        customerEmail: input.customerEmail,
+        customerName: normalizeText(input.customerName, 120),
+        customerTripId: input.customerTripId,
+        passengerCount: input.passengerCount,
+        partnerId: trip.route.partner.id,
+        seatNumbersJson: JSON.stringify(input.seats),
+        totalAmount: input.totalAmount,
+        tripId: trip.id,
+      },
+    });
+    await transaction.partnerAuditLog.create({
+      data: {
+        action: 'BUS_TRIP_RESERVED',
+        entityId: reservation.id,
+        entityType: 'BUS_RESERVATION',
+        metadataJson: JSON.stringify({
+          confirmationCode: input.confirmationCode,
+          routeCode: trip.route.code,
+          seats: input.seats,
+          serviceDate: trip.serviceDate,
+        }),
+        partnerId: trip.route.partner.id,
+        summary: `${input.passengerCount} bus seat${input.passengerCount === 1 ? '' : 's'} reserved for ${trip.serviceDate}.`,
       },
     });
     return reservation;

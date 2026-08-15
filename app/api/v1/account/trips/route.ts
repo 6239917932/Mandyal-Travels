@@ -48,6 +48,12 @@ function readCarOfferId(value: unknown): string | undefined {
   return isText(offerId) && offerId.length <= 160 ? offerId.trim() : undefined;
 }
 
+function readOfferId(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const offerId = (value as Record<string, unknown>).offerId;
+  return isText(offerId) && offerId.length <= 200 ? offerId.trim() : undefined;
+}
+
 function readCustomerName(details: Record<string, unknown>, fallback: string): string {
   const party = details.driver ?? details.traveller;
   if (!party || typeof party !== 'object' || Array.isArray(party)) return fallback;
@@ -82,6 +88,7 @@ export async function POST(request: Request) {
       : {};
   const detailsJson = JSON.stringify(details);
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
+  const busOfferId = productType === 'BUS' ? readOfferId(body.businessSelection) : undefined;
   const carRentalMode =
     productType === 'CAR' &&
     body.businessSelection &&
@@ -111,6 +118,10 @@ export async function POST(request: Request) {
   const busSeats =
     productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
       ? (body.businessSelection as Record<string, unknown>).seats
+      : undefined;
+  const parsedBusSeats =
+    productType === 'BUS' && busPassengers !== undefined
+      ? parseBusSeats(busSeats, busPassengers)
       : undefined;
 
   if (
@@ -153,7 +164,7 @@ export async function POST(request: Request) {
     productType === 'BUS' &&
     (busPassengers === undefined ||
       !hasValidBusPassengerDetails(details, busPassengers) ||
-      !parseBusSeats(busSeats, busPassengers))
+      !parsedBusSeats)
   ) {
     return errorResponse(
       'INVALID_BUS_TRAVELERS',
@@ -284,6 +295,19 @@ export async function POST(request: Request) {
             totalAmount: totalAmount as number,
           });
         }
+        if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
+          await partnerOperationsService.reserveDirectBus(transaction, {
+            confirmationCode,
+            customerEmail: user.email,
+            customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+            customerTripId: createdTrip.id,
+            offerId: busOfferId,
+            passengerCount: busPassengers,
+            seats: parsedBusSeats,
+            serviceDate: startDate,
+            totalAmount: totalAmount as number,
+          });
+        }
         return createdTrip;
       });
       return NextResponse.json({ data: trip }, { status: 201 });
@@ -318,6 +342,19 @@ export async function POST(request: Request) {
           dropoffDate: endDate ?? startDate,
           offerId: carOfferId,
           pickupDate: startDate,
+          totalAmount: totalAmount as number,
+        });
+      }
+      if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
+        await partnerOperationsService.reserveDirectBus(transaction, {
+          confirmationCode,
+          customerEmail: user.email,
+          customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+          customerTripId: completedTrip.id,
+          offerId: busOfferId,
+          passengerCount: busPassengers,
+          seats: parsedBusSeats,
+          serviceDate: startDate,
           totalAmount: totalAmount as number,
         });
       }

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hasValidBusPassengerDetails, parseBusSeats } from '../lib/bus/bookingRules.ts';
+import {
+  hasValidBusPassengerDetails,
+  parseBusSeats,
+  seatsFitBusCapacity,
+} from '../lib/bus/bookingRules.ts';
 
 const details = {
   passengerDraft: {
@@ -35,4 +39,11 @@ test('bus booking validates exact passenger and contact details', () => {
     ),
     false,
   );
+});
+
+test('direct bus seats must exist within the operator capacity', () => {
+  assert.equal(seatsFitBusCapacity(['1A', '10D'], 40), true);
+  assert.equal(seatsFitBusCapacity(['10D', '11A'], 40), false);
+  assert.equal(seatsFitBusCapacity(['20D'], 80), true);
+  assert.equal(seatsFitBusCapacity(['21A'], 80), false);
 });

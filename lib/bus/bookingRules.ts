@@ -29,6 +29,17 @@ export function parseBusSeats(value: unknown, passengers: number): string[] | un
   return seats;
 }
 
+export function seatsFitBusCapacity(seats: string[], seatCapacity: number): boolean {
+  if (!Number.isInteger(seatCapacity) || seatCapacity < 1 || seatCapacity > 80) return false;
+  return seats.every((seat) => {
+    const match = /^(\d{1,2})([A-D])$/.exec(seat.toUpperCase());
+    if (!match) return false;
+    const row = Number(match[1]);
+    const column = match[2].charCodeAt(0) - 64;
+    return (row - 1) * 4 + column <= seatCapacity;
+  });
+}
+
 export function hasValidBusPassengerDetails(details: unknown, passengers: number): boolean {
   if (!Number.isInteger(passengers) || passengers < 1 || passengers > 6) return false;
   const detailRecord = readRecord(details);

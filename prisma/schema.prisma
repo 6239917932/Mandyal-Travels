@@ -59,6 +59,7 @@ model SupplyPartner {
   vehicles            PartnerVehicle[]
   vehicleReservations PartnerVehicleReservation[]
   busRoutes           PartnerBusRoute[]
+  busReservations     PartnerBusReservation[]
 
   @@index([status, createdAt])
 }
@@ -165,9 +166,33 @@ model PartnerBusTrip {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   route              PartnerBusRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  reservations       PartnerBusReservation[]
 
   @@unique([routeId, serviceDate, departureTime])
   @@index([serviceDate, status])
+}
+
+model PartnerBusReservation {
+  id               String         @id @default(cuid())
+  confirmationCode String         @unique
+  partnerId        String
+  tripId           String
+  customerTripId   String         @unique
+  customerName     String
+  customerEmail    String
+  seatNumbersJson  String
+  passengerCount   Int
+  totalAmount      Int
+  currency         String         @default("INR")
+  status           String         @default("CONFIRMED")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  partner          SupplyPartner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  trip             PartnerBusTrip @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  customerTrip     CustomerTrip   @relation(fields: [customerTripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, status])
+  @@index([partnerId, status, createdAt])
 }
 
 model PartnerRoomType {
@@ -550,6 +575,7 @@ model CustomerTrip {
   businessTravelRequest   BusinessTravelRequest?     @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   supportCases            CustomerSupportCase[]
   vehicleReservation      PartnerVehicleReservation?
+  busReservation          PartnerBusReservation?
 
   @@index([userId, createdAt])
   @@index([email, createdAt])

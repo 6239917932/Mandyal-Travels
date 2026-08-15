@@ -243,7 +243,13 @@ Supplier-created properties enter a platform review queue after an active room i
 administrator-approved property can publish to hotel search; rejected listings remain private with
 correction guidance, while the additive migration preserves existing published inventory as approved.
 
-The current travel-domain milestone passes 37 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 89 generated route entries, and
-clean-database verification of all 43 migrations with foreign-key integrity enabled. Provider
+Direct bus-operator inventory now participates in customer search alongside the bounded fixture
+adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
+and exposes only active routes, trips, and partners. Booking completion reserves the customer's
+exact seat selection transactionally, rejects seats outside the operator's declared capacity, and
+prevents already-occupied seats from being sold again.
+
+The current travel-domain milestone passes 43 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 91 generated route entries, and
+clean-database verification of all 46 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
