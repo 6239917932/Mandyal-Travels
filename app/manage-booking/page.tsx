@@ -29,6 +29,17 @@ function formatPaymentStatus(status: ManagedHotelBooking['paymentStatus']): stri
 
 export default function ManageBookingPage() {
   const [booking, setBooking] = useState<ManagedHotelBooking>();
+  const [trip, setTrip] = useState<{
+    confirmationCode: string;
+    currency: string;
+    endDate: string | null;
+    productType: string;
+    startDate: string;
+    status: string;
+    subtitle: string;
+    title: string;
+    totalAmount: number;
+  }>();
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -38,6 +49,7 @@ export default function ManageBookingPage() {
   async function findBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBooking(undefined);
+    setTrip(undefined);
     setError(undefined);
     setIsLoading(true);
 
@@ -54,16 +66,23 @@ export default function ManageBookingPage() {
         response,
       );
 
-      if (!response.ok || !result || !('data' in result)) {
-        setError(
-          response.status === 401
-            ? 'Sign in to the booking account or use the browser where the booking was completed.'
-            : 'We could not find that booking. Check the reference and try again.',
-        );
+      if (response.ok && result && 'data' in result) {
+        setBooking(result.data);
         return;
       }
-
-      setBooking(result.data);
+      const tripResponse = await fetch(`/api/v1/trips/${encodeURIComponent(confirmationCode)}`);
+      const tripResult = await readJsonResponse<
+        { data: NonNullable<typeof trip> } | ApiErrorResponse
+      >(tripResponse);
+      if (tripResponse.ok && tripResult && 'data' in tripResult) {
+        setTrip(tripResult.data);
+        return;
+      }
+      setError(
+        response.status === 401 || tripResponse.status === 401
+          ? 'Sign in to the booking account or use the browser where the booking was completed.'
+          : 'We could not find that booking. Check the reference and try again.',
+      );
     } catch {
       setError('We could not connect to the booking service. Please try again.');
     } finally {
@@ -158,8 +177,8 @@ export default function ManageBookingPage() {
                 autoComplete="off"
                 label="Booking reference"
                 name="confirmationCode"
-                pattern="MT[0-9]{8}"
-                placeholder="MT12345678"
+                pattern="M(T[0-9]{8}|[BCF][A-Z0-9]{8,20})"
+                placeholder="MT12345678 or MF…"
                 required
               />
               <Button fullWidth isLoading={isLoading} type="submit" variant="accent">
@@ -351,6 +370,46 @@ export default function ManageBookingPage() {
                   </>
                 ) : null}
               </div>
+            </Card>
+          ) : null}
+          {trip ? (
+            <Card className="manage-booking__result" aria-live="polite">
+              <div className="booking-confirmation__reference">
+                <span>{trip.productType.toLowerCase()} reference</span>
+                <strong>{trip.confirmationCode}</strong>
+              </div>
+              <div className="booking-confirmation__details">
+                <div>
+                  <span>Trip</span>
+                  <strong>{trip.title}</strong>
+                </div>
+                <div>
+                  <span>Route / service</span>
+                  <strong>{trip.subtitle}</strong>
+                </div>
+                <div>
+                  <span>Travel date</span>
+                  <strong>
+                    {trip.startDate}
+                    {trip.endDate ? ` – ${trip.endDate}` : ''}
+                  </strong>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <strong>{trip.status.toLowerCase().replaceAll('_', ' ')}</strong>
+                </div>
+                <div>
+                  <span>Total</span>
+                  <strong>{formatCurrency(trip.totalAmount, trip.currency)}</strong>
+                </div>
+              </div>
+              <p>
+                Product-specific changes depend on supplier rules. Our support team can coordinate
+                servicing without exposing supplier credentials.
+              </p>
+              <Link className="ui-button ui-button--secondary" href="/account/support">
+                Request trip support
+              </Link>
             </Card>
           ) : null}
         </div>

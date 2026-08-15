@@ -23,9 +23,17 @@ export async function POST(request: Request) {
     'contactPhone',
     'city',
     'inventorySummary',
+    'legalBusinessName',
+    'registeredAddress',
+    'taxIdentifier',
+    'registrationId',
+    'identityType',
+    'identityReference',
   ] as const;
   if (required.some((key) => typeof body[key] !== 'string'))
     return failure('INVALID_APPLICATION', 'Complete every onboarding field.', 400);
+  if (body.kycConsent !== 'on')
+    return failure('KYC_CONSENT_REQUIRED', 'Supplier due-diligence consent is required.', 400);
   try {
     const data = await partnerOperationsService.createApplication({
       applicantUserId: user.id,
@@ -36,6 +44,12 @@ export async function POST(request: Request) {
       contactPhone: String(body.contactPhone),
       inventorySummary: String(body.inventorySummary),
       partnerType: String(body.partnerType),
+      legalBusinessName: String(body.legalBusinessName),
+      registeredAddress: String(body.registeredAddress),
+      taxIdentifier: String(body.taxIdentifier),
+      registrationId: String(body.registrationId),
+      identityType: String(body.identityType),
+      identityReference: String(body.identityReference),
     });
     return Response.json({ data }, { status: 201 });
   } catch (error) {

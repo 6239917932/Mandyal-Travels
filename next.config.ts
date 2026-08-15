@@ -8,6 +8,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  'frame-src https://www.openstreetmap.org',
   "img-src 'self' data: https://images.unsplash.com",
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline'" + (isDevelopment ? " 'unsafe-eval'" : ''),

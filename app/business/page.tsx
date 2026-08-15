@@ -32,6 +32,12 @@ export default function BusinessTravelPage() {
           <div className="home-hero__actions">
             <Link
               className="home-link-button home-link-button--primary"
+              href="/register?account=agent"
+            >
+              Create a travel agency account
+            </Link>
+            <Link
+              className="home-link-button home-link-button--primary"
               href="/register?account=business"
             >
               Create a business account

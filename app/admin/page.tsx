@@ -160,6 +160,24 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/reviews">
               Moderate hotel reviews
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/finance">
+              Finance operations
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/settlements">
+              Partner settlements
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/analytics">
+              Platform analytics
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/notifications">
+              Notifications
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/promotions">
+              Promotions and coupons
+            </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/operations">
+              Exception queues
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out

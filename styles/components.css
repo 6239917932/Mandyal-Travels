@@ -975,6 +975,34 @@
   color: #53657a;
 }
 
+.partner-channel-manager,
+.partner-channel-card,
+.partner-channel-mappings,
+.partner-channel-runs {
+  display: grid;
+  gap: 1rem;
+}
+
+.partner-channel-manager {
+  margin-top: 1.5rem;
+}
+
+.partner-channel-card {
+  padding: 1.25rem;
+}
+
+.partner-channel-card h2,
+.partner-channel-card h3,
+.partner-channel-card p {
+  margin: 0;
+}
+
+.partner-channel-mappings,
+.partner-channel-runs {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+
 .partner-property-manager__rate {
   background: #fff;
   border: 1px solid #dbe5f0;

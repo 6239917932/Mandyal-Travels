@@ -30,7 +30,9 @@ export async function POST(request: Request) {
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
   const password = typeof body.password === 'string' ? body.password : '';
   const returnTo = getSafeReturnTo(body.returnTo);
-  const accountType = body.accountType === 'business' ? 'business' : 'customer';
+  const accountType = ['agent', 'business'].includes(String(body.accountType))
+    ? (body.accountType as 'agent' | 'business')
+    : 'customer';
   const organizationName =
     typeof body.organizationName === 'string' ? body.organizationName.trim() : '';
   const rateLimitIdentifier = getRequestRateLimitIdentifier(request, email || 'unknown');
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   if (
-    accountType === 'business' &&
+    ['agent', 'business'].includes(accountType) &&
     (organizationName.length < 2 || organizationName.length > 120)
   ) {
     return NextResponse.json(
@@ -90,11 +92,11 @@ export async function POST(request: Request) {
           lastName,
           marketingConsentAt: body.marketingConsent === true ? new Date() : null,
           passwordHash,
-          role: accountType === 'business' ? 'BUSINESS_ADMIN' : 'CUSTOMER',
+          role: ['agent', 'business'].includes(accountType) ? 'BUSINESS_ADMIN' : 'CUSTOMER',
         },
       });
 
-      if (accountType === 'business') {
+      if (['agent', 'business'].includes(accountType)) {
         await transaction.organization.create({
           data: {
             contactEmail: email,
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
                 version: 1,
               },
             },
-            type: 'CORPORATE',
+            type: accountType === 'agent' ? 'TRAVEL_AGENCY' : 'CORPORATE',
           },
         });
       }
@@ -117,7 +119,7 @@ export async function POST(request: Request) {
       await transaction.accountSecurityEvent.create({
         data: createAccountSecurityEventData({
           action: ACCOUNT_SECURITY_ACTIONS.ACCOUNT_CREATED,
-          summary: `${accountType === 'business' ? 'Business administrator' : 'Customer'} account created.`,
+          summary: `${accountType === 'agent' ? 'Travel agency administrator' : accountType === 'business' ? 'Business administrator' : 'Customer'} account created.`,
           userId: createdUser.id,
         }),
       });
@@ -142,7 +144,7 @@ export async function POST(request: Request) {
   await createSession(user.id);
   return NextResponse.json(
     {
-      redirectTo: returnTo ?? getAccountHomePath(user.role),
+      redirectTo: returnTo ?? (accountType === 'agent' ? '/agent' : getAccountHomePath(user.role)),
       user: { email: user.email, firstName: user.firstName },
     },
     { status: 201 },

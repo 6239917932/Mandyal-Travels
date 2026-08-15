@@ -1,0 +1,7 @@
+# Search, cache, and analytics projections
+
+The relational database remains the source of truth. `SearchProjectionDocument` is a disposable, rebuildable read model containing normalized terms, bounded facets, a public payload, and a source hash. Administrators can inspect and rebuild hotel projections through `/api/v1/admin/search-projections`; provider indexing workers may consume the same rows without reading private supplier or guest tables.
+
+Production search may use OpenSearch, Elasticsearch, Algolia, or another approved engine only after residency, deletion, cost, and operational review. Redis-compatible caching may store public search responses and short-lived rate-limit state. Cache keys use the `mandyal:v1` namespace and hashed normalized inputs; no guest identity, email, phone, raw query token, or payment data belongs in a key or cached payload.
+
+Projection writes are idempotent and source-versioned. Search and cache outages must fall back to bounded relational queries rather than corrupt inventory or prices. Availability and final quotes always come from the live inventory/quote engines, never from search documents. Analytics events remain purpose-limited and are projected separately from operational data.

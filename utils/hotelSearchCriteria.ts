@@ -15,6 +15,7 @@ export const defaultHotelSearchFilters: HotelSearchFilters = {
   minimumStarRating: 0,
   page: 1,
   refundableOnly: false,
+  radiusKm: 0,
   sort: 'price-ascending',
 };
 
@@ -23,9 +24,7 @@ function getFirstValue(value: string | string[] | undefined): string | undefined
 }
 
 function getSearchSort(value: string | undefined): HotelSearchSort {
-  return value === 'price-descending' || value === 'rating-descending'
-    ? value
-    : 'price-ascending';
+  return value === 'price-descending' || value === 'rating-descending' ? value : 'price-ascending';
 }
 
 function getPositiveInteger(value: string | undefined, fallback: number): number {
@@ -41,8 +40,13 @@ export function createHotelSearchFilters(
     getFirstValue(searchParams.minimumStarRating),
     defaultHotelSearchFilters.minimumStarRating,
   );
+  const latitude = getCoordinate(getFirstValue(searchParams.latitude), -90, 90);
+  const longitude = getCoordinate(getFirstValue(searchParams.longitude), -180, 180);
   return {
     amenity: (getFirstValue(searchParams.amenity) ?? '').trim().slice(0, 80),
+    ...(latitude !== undefined && longitude !== undefined
+      ? { centerLatitude: latitude, centerLongitude: longitude }
+      : {}),
     maximumNightlyRate: Math.min(
       getNonNegativeInteger(
         getFirstValue(searchParams.maximumNightlyRate),
@@ -53,8 +57,15 @@ export function createHotelSearchFilters(
     minimumStarRating: Math.min(minimumStarRating, 5),
     page: getPositiveInteger(getFirstValue(searchParams.page), 1),
     refundableOnly: getFirstValue(searchParams.refundableOnly) === 'true',
+    radiusKm: Math.min(getNonNegativeInteger(getFirstValue(searchParams.radiusKm), 0), 500),
     sort: getSearchSort(getFirstValue(searchParams.sort)),
   };
+}
+
+function getCoordinate(value: string | undefined, minimum: number, maximum: number) {
+  if (!value?.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum ? parsed : undefined;
 }
 
 function getNonNegativeInteger(value: string | undefined, fallback: number): number {

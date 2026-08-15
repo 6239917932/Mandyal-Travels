@@ -41,6 +41,68 @@ model User {
   reviewedPartnerApplications PartnerApplication[]        @relation("PartnerApplicationReviewer")
   hotelReviews                HotelReview[]               @relation("HotelReviewAuthor")
   moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
+  analyticsEvents             AnalyticsEvent[]
+  notificationDeliveries      NotificationDelivery[]
+  mfaCredential               UserMfaCredential?
+  mfaRecoveryCodes            UserMfaRecoveryCode[]
+  consentRecords              UserConsentRecord[]
+  privacyRequests             DataPrivacyRequest[]
+}
+
+model UserConsentRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  purpose       String
+  policyVersion String
+  status        String
+  source        String   @default("ACCOUNT")
+  recordedAt    DateTime @default(now())
+  withdrawnAt   DateTime?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, recordedAt])
+  @@index([purpose, status, recordedAt])
+}
+
+model DataPrivacyRequest {
+  id             String   @id @default(cuid())
+  userId         String
+  requestType    String
+  status         String   @default("OPEN")
+  requestedAt    DateTime @default(now())
+  dueAt          DateTime
+  completedAt    DateTime?
+  resolutionNote String   @default("")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, requestType, requestedAt])
+  @@index([status, dueAt])
+}
+
+model UserMfaCredential {
+  id               String                @id @default(cuid())
+  userId           String                @unique
+  secretCiphertext String
+  enabledAt        DateTime?
+  lastUsedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recoveryCodes    UserMfaRecoveryCode[]
+}
+
+model UserMfaRecoveryCode {
+  id           String             @id @default(cuid())
+  userId       String
+  credentialId String
+  codeHash     String
+  usedAt       DateTime?
+  createdAt    DateTime           @default(now())
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential   UserMfaCredential  @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([credentialId, usedAt])
 }
 
 model SupplyPartner {
@@ -60,6 +122,9 @@ model SupplyPartner {
   vehicleReservations PartnerVehicleReservation[]
   busRoutes           PartnerBusRoute[]
   busReservations     PartnerBusReservation[]
+  channelConnections  HotelChannelConnection[]
+  settlements         PartnerSettlement[]
+  flightConnections   FlightSupplierConnection[]
 
   @@index([status, createdAt])
 }
@@ -125,10 +190,51 @@ model PartnerProperty {
   inventoryDays     PartnerHotelInventoryDay[]
   physicalRooms     PartnerPhysicalRoom[]
   rooms             PartnerRoomType[]
+  channelMappings   HotelChannelPropertyMapping[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
   @@index([approvalStatus, submittedAt])
+}
+
+model FlightSupplierConnection {
+  id                 String                    @id @default(cuid())
+  partnerId          String
+  providerCode       String
+  displayName        String
+  environment        String                    @default("SANDBOX")
+  credentialRef      String
+  status             String                    @default("DRAFT")
+  lastHealthStatus   String                    @default("NOT_TESTED")
+  lastHealthAt       DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  partner            SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  operations         FlightSupplierOperation[]
+
+  @@unique([partnerId, providerCode, environment])
+  @@index([partnerId, status, updatedAt])
+}
+
+model FlightSupplierOperation {
+  id             String                   @id @default(cuid())
+  connectionId   String
+  operationType  String
+  correlationId  String
+  requestHash    String
+  status         String                   @default("QUEUED")
+  providerRef    String                   @default("")
+  attempts       Int                      @default(0)
+  nextAttemptAt  DateTime                 @default(now())
+  lastError      String                   @default("")
+  completedAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  connection     FlightSupplierConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, correlationId])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([connectionId, createdAt])
 }
 
 model PartnerBusRoute {
@@ -236,6 +342,14 @@ model PartnerApplication {
   contactPhone     String
   city             String
   inventorySummary String
+  legalBusinessName String         @default("")
+  registeredAddress String         @default("")
+  taxIdentifier     String         @default("")
+  registrationId    String         @default("")
+  identityType      String         @default("")
+  identityReference String         @default("")
+  kycStatus         String         @default("SUBMITTED")
+  kycConsentAt      DateTime?
   status           String         @default("PENDING")
   reviewNote       String?
   reviewedAt       DateTime?
@@ -247,6 +361,7 @@ model PartnerApplication {
 
   @@index([status, createdAt])
   @@index([applicantUserId, createdAt])
+  @@index([kycStatus, createdAt])
 }
 
 model PartnerHotelInventoryDay {
@@ -395,6 +510,23 @@ model Organization {
   invitations       OrganizationInvitation[]
   policyVersions    OrganizationPolicyVersion[]
   supportCases      BusinessSupportCase[]
+  agencyCustomers   AgencyCustomer[]
+}
+
+model AgencyCustomer {
+  id             String       @id @default(cuid())
+  organizationId String
+  displayName    String
+  email          String
+  phone          String       @default("")
+  notes          String       @default("")
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([organizationId, status, createdAt])
 }
 
 model BusinessSupportCase {
@@ -643,6 +775,88 @@ model HotelQuote {
   availabilityLock   AvailabilityLock @relation(fields: [availabilityLockId], references: [id])
   components         PriceComponent[]
   booking            Booking?
+  paymentIntents     PaymentCheckoutIntent[]
+}
+
+model PaymentCheckoutIntent {
+  id             String     @id @default(cuid())
+  quoteId        String
+  idempotencyKey String     @unique
+  provider       String
+  providerRef    String     @unique
+  amount         Int
+  currency       String
+  status         String     @default("CREATED")
+  checkoutUrl    String
+  expiresAt      DateTime
+  capturedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  quote          HotelQuote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId, status, createdAt])
+  @@index([status, expiresAt])
+}
+
+model PaymentProviderEvent {
+  id              String   @id @default(cuid())
+  provider        String
+  providerEventId String   @unique
+  eventType       String
+  providerRef     String
+  payloadHash     String
+  status          String   @default("RECEIVED")
+  errorMessage    String   @default("")
+  receivedAt      DateTime @default(now())
+  processedAt     DateTime?
+
+  @@index([providerRef, receivedAt])
+  @@index([status, receivedAt])
+}
+
+model LoyaltyAccount {
+  id             String          @id @default(cuid())
+  userId         String          @unique
+  pointsBalance  Int             @default(0)
+  walletBalance  Int             @default(0)
+  walletCurrency String          @default("INR")
+  status         String          @default("ACTIVE")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  entries        LoyaltyLedger[]
+
+  @@index([status, updatedAt])
+}
+
+model LoyaltyLedger {
+  id             String         @id @default(cuid())
+  accountId      String
+  entryType      String
+  pointsDelta    Int            @default(0)
+  walletDelta    Int            @default(0)
+  walletCurrency String         @default("INR")
+  referenceType  String
+  referenceId    String
+  description    String
+  createdAt      DateTime       @default(now())
+  account        LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([accountId, entryType, referenceType, referenceId])
+  @@index([accountId, createdAt])
+}
+
+model ReferralCode {
+  id          String   @id @default(cuid())
+  ownerUserId String
+  code        String   @unique
+  status      String   @default("ACTIVE")
+  maxUses     Int      @default(20)
+  usedCount   Int      @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerUserId, status])
 }
 
 model PriceComponent {
@@ -677,6 +891,7 @@ model Booking {
   availabilityLock        AvailabilityLock       @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
   payment                 PaymentTransaction?
+  refunds                 RefundRequest[]
   amendments              BookingAmendment[]
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
@@ -726,6 +941,185 @@ model IntegrationOutboxEvent {
   @@index([status, nextAttemptAt, createdAt])
   @@index([aggregateType, aggregateId, createdAt])
   @@index([bookingId, createdAt])
+}
+
+model HotelChannelConnection {
+  id                 String                        @id @default(cuid())
+  partnerId          String
+  providerName       String
+  connectionType     String                        @default("CHANNEL_MANAGER")
+  status             String                        @default("PENDING_CONFIGURATION")
+  authenticationMode String                        @default("EXTERNAL_SECRET")
+  externalAccountRef String                        @default("")
+  lastHealthAt       DateTime?
+  lastHealthStatus   String                        @default("NOT_CHECKED")
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+  partner            SupplyPartner                 @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  propertyMappings   HotelChannelPropertyMapping[]
+  syncRuns           HotelChannelSyncRun[]
+
+  @@unique([partnerId, providerName, externalAccountRef])
+  @@index([partnerId, status, createdAt])
+}
+
+model HotelChannelPropertyMapping {
+  id                  String                 @id @default(cuid())
+  connectionId        String
+  propertyId          String
+  externalPropertyRef String
+  status              String                 @default("ACTIVE")
+  lastSyncedAt        DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  connection          HotelChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  property            PartnerProperty        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, propertyId])
+  @@unique([connectionId, externalPropertyRef])
+  @@index([propertyId, status])
+}
+
+model HotelChannelSyncRun {
+  id                 String                 @id @default(cuid())
+  connectionId       String
+  direction          String                 @default("BIDIRECTIONAL")
+  scope              String                 @default("INVENTORY_RATES_RESTRICTIONS")
+  status             String                 @default("QUEUED")
+  recordsRead        Int                    @default(0)
+  recordsWritten     Int                    @default(0)
+  conflictCount      Int                    @default(0)
+  reconciliationNote String                 @default("")
+  requestedByUserId  String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  connection         HotelChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model RiskSignal {
+  id               String    @id @default(cuid())
+  source           String
+  signalType       String
+  severity         String
+  subjectType      String
+  subjectId        String
+  summary          String
+  evidenceJson     String    @default("{}")
+  status           String    @default("OPEN")
+  assignedToUserId String?
+  reviewedByUserId String?
+  resolutionNote   String    @default("")
+  createdAt        DateTime  @default(now())
+  reviewedAt       DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, severity, createdAt])
+  @@index([subjectType, subjectId, createdAt])
+  @@index([signalType, createdAt])
+}
+
+model PartnerSettlement {
+  id               String        @id @default(cuid())
+  partnerId        String
+  periodStart      String
+  periodEnd        String
+  currency         String        @default("INR")
+  grossAmount      Int
+  commissionAmount Int
+  taxWithheldAmount Int          @default(0)
+  adjustmentAmount Int           @default(0)
+  netAmount        Int
+  bookingCount     Int
+  status           String        @default("DRAFT")
+  calculationJson  String        @default("{}")
+  reviewNote       String        @default("")
+  approvedByUserId String?
+  approvedAt       DateTime?
+  paidAt           DateTime?
+  paymentReference String        @default("")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  partner          SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([partnerId, periodStart, periodEnd])
+  @@index([status, periodEnd, createdAt])
+  @@index([partnerId, status, periodEnd])
+}
+
+model AnalyticsEvent {
+  id           String   @id @default(cuid())
+  userId       String?
+  eventName    String
+  productType  String   @default("PLATFORM")
+  funnelStage  String
+  entityRef    String   @default("")
+  metadataJson String   @default("{}")
+  occurredAt   DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([eventName, occurredAt])
+  @@index([productType, funnelStage, occurredAt])
+  @@index([userId, occurredAt])
+}
+
+model SearchProjectionDocument {
+  id            String   @id @default(cuid())
+  entityType    String
+  entityId      String
+  searchTerms   String
+  facetsJson    String   @default("{}")
+  payloadJson   String   @default("{}")
+  sourceVersion String
+  projectedAt   DateTime @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([entityType, projectedAt])
+}
+
+model NotificationTemplate {
+  id          String                 @id @default(cuid())
+  templateKey String                 @unique
+  channel     String
+  locale      String                 @default("en-IN")
+  subject     String                 @default("")
+  body        String
+  status      String                 @default("DRAFT")
+  version     Int                    @default(1)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  deliveries  NotificationDelivery[]
+
+  @@index([channel, status, updatedAt])
+}
+
+model NotificationDelivery {
+  id             String                @id @default(cuid())
+  templateId     String
+  userId         String?
+  recipient      String
+  channel        String
+  status         String                @default("QUEUED")
+  dedupeKey      String                @unique
+  variablesJson  String                @default("{}")
+  providerRef    String                @default("")
+  attempts       Int                   @default(0)
+  maxAttempts    Int                   @default(6)
+  nextAttemptAt  DateTime              @default(now())
+  deliveredAt    DateTime?
+  lastError      String                @default("")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  template       NotificationTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([userId, createdAt])
+  @@index([channel, status, createdAt])
 }
 
 model PartnerPhysicalRoom {
@@ -837,15 +1231,94 @@ model BookingGuest {
 }
 
 model PaymentTransaction {
-  id          String   @id @default(cuid())
-  bookingId   String   @unique
-  status      String
-  amount      Int
-  currency    String
-  provider    String
-  providerRef String   @unique
-  createdAt   DateTime @default(now())
-  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id                   String                 @id @default(cuid())
+  bookingId            String                 @unique
+  status               String
+  amount               Int
+  currency             String
+  provider             String
+  providerRef          String                 @unique
+  reconciliationStatus String                 @default("UNRECONCILED")
+  providerAmount       Int?
+  providerCurrency     String?
+  reconciliationNote   String                 @default("")
+  reconciledAt         DateTime?
+  reconciledByUserId   String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  booking              Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds              RefundRequest[]
+  ledgerEntries        FinancialLedgerEntry[]
+
+  @@index([reconciliationStatus, createdAt])
+  @@index([status, createdAt])
+}
+
+model RefundRequest {
+  id               String                 @id @default(cuid())
+  bookingId        String
+  paymentId        String
+  amount           Int
+  currency         String
+  reason           String
+  status           String                 @default("PENDING")
+  providerRefundRef String?                @unique
+  requestedByUserId String?
+  reviewedByUserId String?
+  reviewNote       String                 @default("")
+  createdAt        DateTime               @default(now())
+  reviewedAt       DateTime?
+  updatedAt        DateTime               @updatedAt
+  booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  payment          PaymentTransaction     @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  ledgerEntries    FinancialLedgerEntry[]
+
+  @@index([status, createdAt])
+  @@index([bookingId, createdAt])
+  @@index([paymentId, createdAt])
+}
+
+model FinancialLedgerEntry {
+  id            String              @id @default(cuid())
+  paymentId     String?
+  refundId      String?
+  entryType     String
+  amount        Int
+  currency      String
+  status        String              @default("POSTED")
+  reference     String
+  description   String
+  createdByUserId String?
+  createdAt     DateTime            @default(now())
+  payment       PaymentTransaction? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  refund        RefundRequest?      @relation(fields: [refundId], references: [id], onDelete: Restrict)
+
+  @@index([entryType, createdAt])
+  @@index([paymentId, createdAt])
+  @@index([refundId, createdAt])
+}
+
+model PromotionCampaign {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  description     String   @default("")
+  productsJson    String
+  percentOff      Int
+  maximumDiscount Int
+  minimumSubtotal Int
+  usageLimit      Int?
+  startsAt        DateTime
+  endsAt          DateTime
+  active          Boolean  @default(false)
+  version         Int      @default(1)
+  createdByUserId String
+  updatedByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([active, startsAt, endsAt])
+  @@index([updatedAt])
 }
 
 model RoomInventoryOverride {

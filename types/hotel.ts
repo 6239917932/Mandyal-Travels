@@ -152,9 +152,12 @@ export type HotelSearchSort = 'price-ascending' | 'price-descending' | 'rating-d
 
 export interface HotelSearchFilters {
   amenity: string;
+  centerLatitude?: number;
+  centerLongitude?: number;
   maximumNightlyRate: number;
   minimumStarRating: number;
   page: number;
+  radiusKm: number;
   refundableOnly: boolean;
   sort: HotelSearchSort;
 }
@@ -174,6 +177,7 @@ export interface HotelSearchPage {
 }
 
 export interface HotelSearchResult {
+  distanceKm?: number;
   hotel: Hotel;
   isAvailable: boolean;
   minimumNightlyRate: Money;

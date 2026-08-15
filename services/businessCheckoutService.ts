@@ -1,13 +1,10 @@
-import {
-  calculatePromotion,
-  findPromotionRule,
-  type PromotionProduct,
-} from '@/constants/promotionRules';
+import { calculatePromotion, type PromotionProduct } from '@/constants/promotionRules';
 import { prisma } from '@/lib/prisma';
 import { quoteRepository } from '@/repositories/quoteRepository';
 import { busService } from '@/services/busService';
 import { carService } from '@/services/carService';
 import { flightService } from '@/services/flightService';
+import { resolvePromotionRule } from '@/services/promotionService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
@@ -54,10 +51,14 @@ function requiredText(values: Record<string, string>, key: string) {
   return value;
 }
 
-function applyPromotion(productType: CheckoutProduct, subtotal: number, promotionCode?: string) {
+async function applyPromotion(
+  productType: CheckoutProduct,
+  subtotal: number,
+  promotionCode?: string,
+) {
   if (!promotionCode) return subtotal;
 
-  const rule = findPromotionRule(promotionCode, productType);
+  const rule = await resolvePromotionRule(promotionCode, productType);
   if (!rule || subtotal < rule.minimumSubtotal) {
     throw new BusinessCheckoutError(
       'BUSINESS_PROMOTION_INVALID',
@@ -120,7 +121,7 @@ export async function revalidateTravelSelection(
         criteria.tripType === 'multi-city'
           ? (criteria.multiCitySegments?.at(-1)?.departureDate ?? null)
           : (criteria.returnDate ?? null),
-      finalTotal: applyPromotion(productType, offer.totalPrice, promotionCode),
+      finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
       policyCabin: criteria.cabinClass.replaceAll('-', '_').toUpperCase(),
       startDate: criteria.departureDate,
     };
@@ -140,7 +141,7 @@ export async function revalidateTravelSelection(
     }
     return {
       endDate: null,
-      finalTotal: applyPromotion(productType, offer.totalPrice, promotionCode),
+      finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
       policyCabin: null,
       startDate: criteria.travelDate,
     };
@@ -167,7 +168,7 @@ export async function revalidateTravelSelection(
     }
     return {
       endDate: criteria.dropoffDate,
-      finalTotal: applyPromotion(productType, offer.totalPrice, promotionCode),
+      finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
       policyCabin: null,
       startDate: criteria.pickupDate,
     };
@@ -183,7 +184,7 @@ export async function revalidateTravelSelection(
   }
   return {
     endDate: quote.checkOutDate,
-    finalTotal: applyPromotion(productType, quote.totalAmount, promotionCode),
+    finalTotal: await applyPromotion(productType, quote.totalAmount, promotionCode),
     policyCabin: null,
     startDate: quote.checkInDate,
   };

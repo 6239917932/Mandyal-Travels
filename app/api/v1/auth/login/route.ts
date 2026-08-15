@@ -11,6 +11,7 @@ import {
 import { createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { verifyUserSecondFactor } from '@/services/mfaService';
 
 const LOGIN_ATTEMPT_LIMIT = 8;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -44,10 +45,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'The email or password is incorrect.' }, { status: 401 });
     }
 
+    const mfa = await prisma.userMfaCredential.findUnique({ where: { userId: user.id } });
+    if (mfa?.enabledAt) {
+      const mfaCode = typeof body.mfaCode === 'string' ? body.mfaCode : '';
+      if (!mfaCode) {
+        return NextResponse.json(
+          { error: 'Enter your authenticator or recovery code.', mfaRequired: true },
+          { status: 401 },
+        );
+      }
+      if (!(await verifyUserSecondFactor(user.id, mfaCode))) {
+        return NextResponse.json(
+          { error: 'The authentication code is incorrect.', mfaRequired: true },
+          { status: 401 },
+        );
+      }
+    }
+
     await clearRateLimit('LOGIN', rateLimitIdentifier);
     await createSession(user.id);
+    const agencyMembership =
+      user.role === 'BUSINESS_ADMIN'
+        ? await prisma.organizationMember.findFirst({
+            where: { userId: user.id, organization: { type: 'TRAVEL_AGENCY' } },
+          })
+        : null;
     return NextResponse.json({
-      redirectTo: returnTo ?? getAccountHomePath(user.role),
+      redirectTo: returnTo ?? (agencyMembership ? '/agent' : getAccountHomePath(user.role)),
       user: { email: user.email, firstName: user.firstName },
     });
   } catch (error) {

@@ -8,6 +8,7 @@ import {
   type InventoryOverrideRepository,
 } from '@/repositories/inventoryOverrideRepository';
 import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
+import { distanceInKilometres } from '@/lib/hotel/geo';
 import type {
   Hotel,
   HotelRatePlan,
@@ -101,12 +102,23 @@ export class HotelService {
     const hotels = await this.hotelRepository.findAll();
 
     const normalizedAmenity = filters.amenity.toLowerCase();
+    const usesRadius =
+      filters.radiusKm > 0 &&
+      filters.centerLatitude !== undefined &&
+      filters.centerLongitude !== undefined;
     const matchingHotels = hotels.filter(
       (hotel) =>
         matchesDestination(hotel, criteria.destination) &&
+        (!usesRadius ||
+          distanceInKilometres(
+            { latitude: filters.centerLatitude!, longitude: filters.centerLongitude! },
+            { latitude: hotel.location.latitude, longitude: hotel.location.longitude },
+          ) <= filters.radiusKm) &&
         hotel.starRating >= filters.minimumStarRating &&
         (!normalizedAmenity ||
-          hotel.amenities.some((amenity) => amenity.name.toLowerCase().includes(normalizedAmenity))),
+          hotel.amenities.some((amenity) =>
+            amenity.name.toLowerCase().includes(normalizedAmenity),
+          )),
     );
 
     const results = await Promise.all(
@@ -161,21 +173,21 @@ export class HotelService {
                     (!filters.refundableOnly || ratePlan.cancellationPolicy.refundable),
                 )
                 .map(async (ratePlan) => {
-                const control = await partnerHotelInventoryRepository.findStayControl(
-                  room.roomTypeId,
-                  criteria.checkInDate,
-                  criteria.checkOutDate,
-                  ratePlan.nightlyRate.amount,
-                  ratePlan.id,
-                );
-                return {
-                  ...ratePlan,
-                  nightlyRate: {
-                    ...ratePlan.nightlyRate,
-                    amount: Math.round(control.averageNightlyRate ?? ratePlan.nightlyRate.amount),
-                  },
-                };
-              }),
+                  const control = await partnerHotelInventoryRepository.findStayControl(
+                    room.roomTypeId,
+                    criteria.checkInDate,
+                    criteria.checkOutDate,
+                    ratePlan.nightlyRate.amount,
+                    ratePlan.id,
+                  );
+                  return {
+                    ...ratePlan,
+                    nightlyRate: {
+                      ...ratePlan.nightlyRate,
+                      amount: Math.round(control.averageNightlyRate ?? ratePlan.nightlyRate.amount),
+                    },
+                  };
+                }),
             ),
         );
 
@@ -190,6 +202,14 @@ export class HotelService {
         }
 
         return {
+          ...(usesRadius
+            ? {
+                distanceKm: distanceInKilometres(
+                  { latitude: filters.centerLatitude!, longitude: filters.centerLongitude! },
+                  { latitude: hotel.location.latitude, longitude: hotel.location.longitude },
+                ),
+              }
+            : {}),
           hotel,
           isAvailable: true,
           minimumNightlyRate: lowestRatePlan.nightlyRate,
