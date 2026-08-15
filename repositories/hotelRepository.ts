@@ -13,7 +13,11 @@ export class InMemoryHotelRepository implements HotelRepository {
     const managedProperties = await prisma.partnerProperty.findMany({
       include: {
         partner: { select: { name: true, status: true } },
-        rooms: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } },
+        rooms: {
+          include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+          orderBy: { createdAt: 'asc' },
+          where: { status: 'ACTIVE' },
+        },
       },
       orderBy: { createdAt: 'desc' },
       where: {
@@ -120,20 +124,30 @@ export class InMemoryHotelRepository implements HotelRepository {
               maximumChildren: room.maximumChildren,
               maximumGuests: room.maximumGuests,
             },
-            ratePlans: [
-              {
+            ratePlans: (room.ratePlans.length > 0 ? room.ratePlans : [{
+              cancellationDescription: room.cancellationDescription,
+              mealPlan: room.mealPlan,
+              maximumStayNights: 30,
+              minimumStayNights: 1,
+              name: room.ratePlanName,
+              nightlyRate: room.nightlyRate,
+              ratePlanId: `rate-${room.roomTypeId}`,
+              refundable: room.refundable,
+              taxesAndFees: room.taxesAndFees,
+            }]).map((ratePlan) => ({
                 cancellationPolicy: {
-                  description: room.cancellationDescription,
-                  refundable: room.refundable,
+                  description: ratePlan.cancellationDescription,
+                  refundable: ratePlan.refundable,
                 },
-                id: `rate-${room.roomTypeId}`,
-                mealPlan: room.mealPlan as
+                id: ratePlan.ratePlanId,
+                mealPlan: ratePlan.mealPlan as
                   'room-only' | 'breakfast-included' | 'half-board' | 'full-board',
-                name: room.ratePlanName,
-                nightlyRate: { amount: room.nightlyRate, currency: 'INR' },
-                taxesAndFees: { amount: room.taxesAndFees, currency: 'INR' },
-              },
-            ],
+                maximumStayNights: ratePlan.maximumStayNights,
+                minimumStayNights: ratePlan.minimumStayNights,
+                name: ratePlan.name,
+                nightlyRate: { amount: ratePlan.nightlyRate, currency: 'INR' },
+                taxesAndFees: { amount: ratePlan.taxesAndFees, currency: 'INR' },
+              })),
             roomTypeId: room.roomTypeId,
           })),
           slug: property.hotelSlug,

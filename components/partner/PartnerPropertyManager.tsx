@@ -11,13 +11,33 @@ import { propertyAmenityGroups, roomAmenityGroups } from '@/constants/hotelAmeni
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
+type RatePlan = {
+  cancellationDescription: string;
+  id: string;
+  maximumStayNights: number;
+  mealPlan: string;
+  minimumStayNights: number;
+  name: string;
+  nightlyRate: number;
+  ratePlanId: string;
+  refundable: boolean;
+  status: string;
+  taxesAndFees: number;
+};
+
 type RoomType = {
+  bedDescription: string;
+  description: string;
   id: string;
   inventoryCount: number;
+  maximumAdults: number;
+  maximumChildren: number;
+  maximumGuests: number;
   mealPlan: string;
   name: string;
   nightlyRate: number;
   ratePlanName: string;
+  ratePlans: RatePlan[];
   roomTypeId: string;
   status: string;
   taxesAndFees: number;
@@ -63,6 +83,8 @@ export function PartnerPropertyManager({
   const [properties, setProperties] = useState<ManagedProperty[]>(initialProperties);
   const [activeRoomForm, setActiveRoomForm] = useState<string>();
   const [activeLocationForm, setActiveLocationForm] = useState<string>();
+  const [activeRatePlanRoom, setActiveRatePlanRoom] = useState<string>();
+  const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -184,6 +206,71 @@ export function PartnerPropertyManager({
       await loadProperties();
     } catch {
       setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function createRatePlan(
+    event: FormEvent<HTMLFormElement>,
+    property: ManagedProperty,
+    room: RoomType,
+  ) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/partner/properties/${property.id}/rooms/${room.id}/rate-plans`,
+        {
+          body: JSON.stringify({
+            ...Object.fromEntries(formData),
+            refundable: formData.get('refundable') === 'on',
+          }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        },
+      );
+      const result = await readJsonResponse<{ data: RatePlan } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The rate plan could not be added.'));
+        return;
+      }
+      form.reset();
+      setActiveRatePlanRoom(undefined);
+      setSuccess(`${result.data.name} was added to ${room.name}.`);
+      await loadProperties();
+    } catch {
+      setError('The rate service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function updateRoom(event: FormEvent<HTMLFormElement>, property: ManagedProperty, room: RoomType) {
+    event.preventDefault();
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}/rooms/${room.id}`, {
+        body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: RoomType } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The room type could not be updated.'));
+        return;
+      }
+      setActiveRoomEditor(undefined);
+      setSuccess(`${result.data.name} was updated.`);
+      await loadProperties();
+    } catch {
+      setError('The room service could not be reached.');
     } finally {
       setIsSaving(false);
     }
@@ -447,8 +534,56 @@ export function PartnerPropertyManager({
                       {room.taxesAndFees.toLocaleString('en-IN')} taxes
                     </span>
                     <small>
-                      {room.ratePlanName} · {room.mealPlan.replaceAll('-', ' ')}
+                      {room.ratePlans.length || 1} active rate plan(s)
                     </small>
+                    {room.ratePlans.map((rate) => (
+                      <small key={rate.id}>
+                        {rate.name} · ₹{rate.nightlyRate.toLocaleString('en-IN')} + ₹
+                        {rate.taxesAndFees.toLocaleString('en-IN')} · {rate.minimumStayNights}–
+                        {rate.maximumStayNights} nights
+                      </small>
+                    ))}
+                    {canManage ? (
+                      <button className="home-card__link" onClick={() => setActiveRoomEditor(activeRoomEditor === room.id ? undefined : room.id)} type="button">
+                        {activeRoomEditor === room.id ? 'Close room editor' : 'Edit room details'}
+                      </button>
+                    ) : null}
+                    {activeRoomEditor === room.id ? (
+                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateRoom(event, property, room)}>
+                        <div className="booking-confirmation__reference"><span>Room</span><strong>Room definition and occupancy</strong></div>
+                        <div className="supplier-form__grid">
+                          <Input defaultValue={room.name} label="Room name" maxLength={120} minLength={2} name="name" required />
+                          <Input defaultValue={room.bedDescription} label="Bed configuration" maxLength={160} minLength={2} name="bedDescription" required />
+                          <Input defaultValue={room.inventoryCount} label="Number of rooms" max={500} min={1} name="inventoryCount" required type="number" />
+                          <Input defaultValue={room.maximumAdults} label="Maximum adults" max={20} min={1} name="maximumAdults" required type="number" />
+                          <Input defaultValue={room.maximumChildren} label="Maximum children" max={20} min={0} name="maximumChildren" required type="number" />
+                          <Input defaultValue={room.maximumGuests} label="Maximum guests" max={30} min={1} name="maximumGuests" required type="number" />
+                        </div>
+                        <label className="ui-field"><span className="ui-field__label">Room description</span><textarea className="ui-input supplier-form__textarea" defaultValue={room.description} maxLength={800} minLength={20} name="description" required /></label>
+                        <Button fullWidth isLoading={isSaving} type="submit">Save room details</Button>
+                      </form>
+                    ) : null}
+                    {canManage ? (
+                      <button className="home-card__link" onClick={() => setActiveRatePlanRoom(activeRatePlanRoom === room.id ? undefined : room.id)} type="button">
+                        {activeRatePlanRoom === room.id ? 'Close rate form' : 'Add rate plan'}
+                      </button>
+                    ) : null}
+                    {activeRatePlanRoom === room.id ? (
+                      <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void createRatePlan(event, property, room)}>
+                        <div className="booking-confirmation__reference"><span>Rate</span><strong>New sellable rate plan</strong></div>
+                        <div className="supplier-form__grid">
+                          <Input label="Rate plan name" maxLength={100} minLength={2} name="name" required />
+                          <Input label="Nightly rate (INR)" max={5000000} min={100} name="nightlyRate" required type="number" />
+                          <Input defaultValue="0" label="Taxes and fees (INR)" max={1000000} min={0} name="taxesAndFees" required type="number" />
+                          <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue="room-only" name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
+                          <Input defaultValue="1" label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
+                          <Input defaultValue="30" label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                        </div>
+                        <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" maxLength={300} minLength={10} name="cancellationDescription" required /></label>
+                        <label className="supplier-form__check"><input defaultChecked name="refundable" type="checkbox" /> Refundable under the stated policy</label>
+                        <Button fullWidth isLoading={isSaving} type="submit">Add rate plan</Button>
+                      </form>
+                    ) : null}
                   </div>
                 ))}
                 {property.rooms.length === 0 ? (

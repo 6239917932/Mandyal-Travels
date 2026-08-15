@@ -171,6 +171,12 @@ export class HotelBookingService {
     if (!ratePlan) {
       throw new HotelBookingRuleError('RATE_PLAN_NOT_FOUND', 'The selected rate is unavailable.');
     }
+    if (nights < ratePlan.minimumStayNights || nights > ratePlan.maximumStayNights) {
+      throw new HotelBookingRuleError(
+        'STAY_RESTRICTION_NOT_MET',
+        `This rate requires a stay between ${ratePlan.minimumStayNights} and ${ratePlan.maximumStayNights} nights.`,
+      );
+    }
 
     const rateControl = await partnerHotelInventoryRepository.findStayControl(
       room.roomTypeId,

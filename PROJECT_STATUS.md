@@ -67,6 +67,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   and AI-assisted hotel discovery use the same expanded destination vocabulary
 - Governed, categorized property and room amenity checklists with standardized supplier selections,
   duplicate normalization, responsive controls, and the same catalogue powering customer filters
+- Editable supplier room definitions and normalized multi-rate-plan management with meal plans,
+  refundable policies, taxes, and enforced minimum/maximum stay restrictions; the additive
+  migration backfills every existing room without changing its public rate-plan identifier
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
@@ -127,6 +130,8 @@ tax invoices.
 
 ## Current quality gate
 
-The saved baseline is expected to pass lint, TypeScript checking, and a production build. Provider
+The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
+and a Next.js production build with all 82 routes. Clean-database migration execution must be run
+outside the Codex sandbox because its Prisma schema-engine subprocess is blocked here. Provider
 integration work must preserve those checks and add provider-specific automated tests before going
 live.

@@ -62,6 +62,15 @@ function createRoomTypeCode(propertyId: string, name: string) {
   return `direct-${propertyId.slice(-6)}-${base || 'room'}-${crypto.randomUUID().slice(0, 6)}`;
 }
 
+function createRatePlanCode(roomTypeId: string, name: string) {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 32);
+  return `rate-${roomTypeId.slice(-12)}-${base || 'plan'}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
 function validateImageUrl(value: string, fallback: string) {
   const candidate = value.trim();
   if (!candidate) return fallback;
@@ -462,11 +471,141 @@ export const partnerOperationsService = {
           taxesAndFees: input.taxesAndFees,
         },
       });
+      await transaction.partnerRatePlan.create({
+        data: {
+          cancellationDescription: normalizeText(input.cancellationDescription, 300),
+          maximumStayNights: 30,
+          mealPlan: input.mealPlan,
+          minimumStayNights: 1,
+          name: normalizeText(input.ratePlanName, 100),
+          nightlyRate: input.nightlyRate,
+          ratePlanId: `rate-${room.roomTypeId}`,
+          refundable: input.refundable,
+          roomId: room.id,
+          taxesAndFees: input.taxesAndFees,
+        },
+      });
       await transaction.partnerProperty.update({
         data: { publicationStatus: 'PUBLISHED' },
         where: { id: propertyId },
       });
-      return room;
+      return transaction.partnerRoomType.findUniqueOrThrow({
+        include: { ratePlans: { where: { status: 'ACTIVE' } } },
+        where: { id: room.id },
+      });
+    });
+  },
+
+  async createRatePlan(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    input: {
+      cancellationDescription: string;
+      maximumStayNights: number;
+      mealPlan: string;
+      minimumStayNights: number;
+      name: string;
+      nightlyRate: number;
+      refundable: boolean;
+      taxesAndFees: number;
+    },
+  ) {
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { property: true, ratePlans: { where: { status: 'ACTIVE' } } },
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (room.ratePlans.length >= 8) {
+      throw new PartnerOperationsError('RATE_PLAN_LIMIT', 'A room can have up to 8 active rate plans.');
+    }
+    if (input.name.trim().length < 2 || input.cancellationDescription.trim().length < 10) {
+      throw new PartnerOperationsError('INVALID_RATE_PLAN', 'Complete the rate plan and cancellation details.');
+    }
+    if (
+      !Number.isInteger(input.nightlyRate) || input.nightlyRate < 100 || input.nightlyRate > 5_000_000 ||
+      !Number.isInteger(input.taxesAndFees) || input.taxesAndFees < 0 || input.taxesAndFees > 1_000_000
+    ) {
+      throw new PartnerOperationsError('INVALID_RATE', 'Enter a valid nightly rate and taxes in INR.');
+    }
+    if (
+      !Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30 ||
+      !Number.isInteger(input.maximumStayNights) || input.maximumStayNights < input.minimumStayNights || input.maximumStayNights > 90
+    ) {
+      throw new PartnerOperationsError('INVALID_STAY_RESTRICTION', 'Stay limits must be between 1 and 90 nights.');
+    }
+    if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
+      throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
+    }
+    return prisma.partnerRatePlan.create({
+      data: {
+        cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        maximumStayNights: input.maximumStayNights,
+        mealPlan: input.mealPlan,
+        minimumStayNights: input.minimumStayNights,
+        name: normalizeText(input.name, 100),
+        nightlyRate: input.nightlyRate,
+        ratePlanId: createRatePlanCode(room.roomTypeId, input.name),
+        refundable: input.refundable,
+        roomId: room.id,
+        taxesAndFees: input.taxesAndFees,
+      },
+    });
+  },
+
+  async updateRoomType(
+    partnerId: string,
+    propertyId: string,
+    roomId: string,
+    input: {
+      bedDescription: string;
+      description: string;
+      inventoryCount: number;
+      maximumAdults: number;
+      maximumChildren: number;
+      maximumGuests: number;
+      name: string;
+    },
+  ) {
+    const room = await prisma.partnerRoomType.findFirst({
+      where: {
+        id: roomId,
+        propertyId,
+        property: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+        status: 'ACTIVE',
+      },
+    });
+    if (!room) throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The room type was not found.');
+    if (input.name.trim().length < 2 || input.bedDescription.trim().length < 2 || input.description.trim().length < 20) {
+      throw new PartnerOperationsError('INVALID_ROOM', 'Complete the room name, bed, and description.');
+    }
+    if (!Number.isInteger(input.inventoryCount) || input.inventoryCount < 1 || input.inventoryCount > 500) {
+      throw new PartnerOperationsError('INVALID_ROOM_COUNT', 'Room inventory must be between 1 and 500.');
+    }
+    if (
+      !Number.isInteger(input.maximumAdults) || input.maximumAdults < 1 || input.maximumAdults > 20 ||
+      !Number.isInteger(input.maximumChildren) || input.maximumChildren < 0 || input.maximumChildren > 20 ||
+      !Number.isInteger(input.maximumGuests) || input.maximumGuests < input.maximumAdults || input.maximumGuests > 30
+    ) {
+      throw new PartnerOperationsError('INVALID_OCCUPANCY', 'Enter a valid adult, child, and maximum guest capacity.');
+    }
+    return prisma.partnerRoomType.update({
+      data: {
+        bedDescription: normalizeText(input.bedDescription, 160),
+        description: normalizeText(input.description, 800),
+        inventoryCount: input.inventoryCount,
+        maximumAdults: input.maximumAdults,
+        maximumChildren: input.maximumChildren,
+        maximumGuests: input.maximumGuests,
+        name: normalizeText(input.name, 120),
+      },
+      include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+      where: { id: room.id },
     });
   },
 

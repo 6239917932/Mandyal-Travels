@@ -145,6 +145,7 @@ model PartnerRoomType {
   createdAt               DateTime        @default(now())
   updatedAt               DateTime        @updatedAt
   property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  ratePlans               PartnerRatePlan[]
 
   @@index([propertyId, status])
 }
@@ -592,6 +593,26 @@ model Booking {
   businessTravelRequest   BusinessTravelRequest? @relation(fields: [businessTravelRequestId], references: [id], onDelete: SetNull)
   customerSupportCases    CustomerSupportCase[]
   review                  HotelReview?
+}
+
+model PartnerRatePlan {
+  id                      String          @id @default(cuid())
+  roomId                  String
+  ratePlanId              String          @unique
+  name                    String
+  nightlyRate             Int
+  taxesAndFees            Int
+  mealPlan                String          @default("room-only")
+  refundable              Boolean         @default(true)
+  cancellationDescription String
+  minimumStayNights       Int             @default(1)
+  maximumStayNights       Int             @default(30)
+  status                  String          @default("ACTIVE")
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  room                    PartnerRoomType @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, status])
 }
 
 model HotelReview {

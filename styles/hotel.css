@@ -2456,7 +2456,7 @@
 .amenity-checklist { border: 1px solid var(--color-border); border-radius: var(--radius-lg); display: grid; gap: var(--space-5); margin: 0; padding: var(--space-5); }
 .amenity-checklist > legend { color: var(--color-brand-900); font-size: 1.125rem; font-weight: 800; padding: 0 var(--space-2); }
 .amenity-checklist__group { display: grid; gap: var(--space-3); }
-.amenity-checklist__group h3 { font-size: 1rem; margin: 0; }
+.amenity-checklist__group h3 { color: var(--color-brand-950); font-size: 1rem; font-weight: 800; letter-spacing: 0.01em; margin: 0; }
 .amenity-checklist__options { display: grid; gap: var(--space-2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .amenity-checklist__options label { align-items: flex-start; background: var(--color-surface-muted); border: 1px solid transparent; border-radius: var(--radius-md); cursor: pointer; display: flex; gap: var(--space-2); min-height: 3rem; padding: var(--space-3); }
 .amenity-checklist__options label:has(input:checked) { background: var(--color-brand-50); border-color: var(--color-brand-500); }

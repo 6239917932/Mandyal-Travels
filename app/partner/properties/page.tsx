@@ -17,7 +17,12 @@ export default async function PartnerPropertiesPage() {
   const access = await getPartnerAccess();
   if (!access?.partnerId || access.partnerType !== 'HOTEL') redirect('/partner');
   const initialProperties = await prisma.partnerProperty.findMany({
-    include: { rooms: { orderBy: { createdAt: 'asc' } } },
+    include: {
+      rooms: {
+        include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
     orderBy: { createdAt: 'desc' },
     where: { listingSource: 'MANAGED', partnerId: access.partnerId, status: 'ACTIVE' },
   });
