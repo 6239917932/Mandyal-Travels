@@ -27,6 +27,16 @@ type Vehicle = {
     pricePerDay: number | null;
     stopSell: boolean;
   }>;
+  maintenanceRecords: Array<{
+    id: string;
+    category: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    vendor: string | null;
+    costAmount: number | null;
+  }>;
 };
 const date = (days: number) => {
   const value = new Date();
@@ -100,6 +110,26 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
       );
     else {
       setMessage('Availability and pricing calendar saved.');
+      setVehicles(await fetchVehicles());
+    }
+    setBusy(false);
+  }
+  async function saveMaintenance(event: FormEvent<HTMLFormElement>, vehicleId: string) {
+    event.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    setMessage(undefined);
+    const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/maintenance`, {
+      body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    });
+    const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+    if (!response.ok) {
+      setError(result && 'error' in result ? result.error.message : 'Maintenance could not be recorded.');
+    } else {
+      event.currentTarget.reset();
+      setMessage('Maintenance recorded. Active work dates are stopped from sale.');
       setVehicles(await fetchVehicles());
     }
     setBusy(false);
@@ -245,6 +275,41 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
             ) : (
               <small>Base fleet availability is active.</small>
             )}
+            <form className="supplier-form" onSubmit={(event) => saveMaintenance(event, vehicle.id)}>
+              <h3>Maintenance register</h3>
+              <p>Scheduled or in-progress work automatically stops this vehicle from sale for the selected dates.</p>
+              <div className="supplier-form__grid">
+                <label className="ui-field">
+                  <span className="ui-field__label">Maintenance category</span>
+                  <select className="ui-input" name="category" required>
+                    <option>Inspection</option><option>Preventive service</option><option>Repair</option><option>Tyres</option><option>Cleaning</option><option>Compliance</option>
+                  </select>
+                </label>
+                <label className="ui-field">
+                  <span className="ui-field__label">Status</span>
+                  <select className="ui-input" name="status" required>
+                    <option value="SCHEDULED">Scheduled</option><option value="IN_PROGRESS">In progress</option><option value="COMPLETED">Completed</option>
+                  </select>
+                </label>
+                <Input label="Start date" min={date(0)} name="startDate" required type="date" />
+                <Input label="End date" min={date(0)} name="endDate" required type="date" />
+                <Input label="Service vendor (optional)" maxLength={120} name="vendor" />
+                <Input label="Cost (INR, optional)" max={10000000} min={0} name="costAmount" type="number" />
+                <Input label="Work description" maxLength={300} minLength={5} name="description" required />
+              </div>
+              <Button fullWidth isLoading={busy} type="submit" variant="secondary">Record maintenance</Button>
+            </form>
+            {vehicle.maintenanceRecords.length ? (
+              <div className="partner-workspace__properties">
+                {vehicle.maintenanceRecords.map((record) => (
+                  <div className="partner-fleet__maintenance" key={record.id}>
+                    <strong>{record.category} · {record.status.toLowerCase().replace('_', ' ')}</strong>
+                    <span>{record.startDate} to {record.endDate}</span>
+                    <small>{record.description}{record.vendor ? ` · ${record.vendor}` : ''}{record.costAmount !== null ? ` · ₹${record.costAmount.toLocaleString('en-IN')}` : ''}</small>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </Card>
         ))}
       </section>

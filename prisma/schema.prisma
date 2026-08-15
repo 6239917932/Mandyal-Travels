@@ -229,6 +229,7 @@ model PartnerVehicle {
   updatedAt          DateTime                     @updatedAt
   partner            SupplyPartner                @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   inventoryDays      PartnerVehicleInventoryDay[]
+  maintenanceRecords PartnerVehicleMaintenance[]
   reservations       PartnerVehicleReservation[]
 
   @@index([partnerId, status])
@@ -611,6 +612,24 @@ model Booking {
   integrationEvents       IntegrationOutboxEvent[]
 
   @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model PartnerVehicleMaintenance {
+  id          String         @id @default(cuid())
+  vehicleId   String
+  startDate   String
+  endDate     String
+  status      String         @default("SCHEDULED")
+  category    String
+  description String
+  vendor      String?
+  costAmount  Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  vehicle     PartnerVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, startDate, endDate])
+  @@index([status, startDate])
 }
 
 model IntegrationOutboxEvent {
