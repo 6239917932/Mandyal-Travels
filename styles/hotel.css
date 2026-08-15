@@ -2453,3 +2453,13 @@
 .hotel-property-profile div { display: flex; gap: var(--space-3); justify-content: space-between; }
 .hotel-property-profile dt { color: var(--color-text-secondary); }
 .hotel-property-profile dd { font-weight: 700; margin: 0; text-align: right; text-transform: capitalize; }
+.amenity-checklist { border: 1px solid var(--color-border); border-radius: var(--radius-lg); display: grid; gap: var(--space-5); margin: 0; padding: var(--space-5); }
+.amenity-checklist > legend { color: var(--color-brand-900); font-size: 1.125rem; font-weight: 800; padding: 0 var(--space-2); }
+.amenity-checklist__group { display: grid; gap: var(--space-3); }
+.amenity-checklist__group h3 { font-size: 1rem; margin: 0; }
+.amenity-checklist__options { display: grid; gap: var(--space-2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.amenity-checklist__options label { align-items: flex-start; background: var(--color-surface-muted); border: 1px solid transparent; border-radius: var(--radius-md); cursor: pointer; display: flex; gap: var(--space-2); min-height: 3rem; padding: var(--space-3); }
+.amenity-checklist__options label:has(input:checked) { background: var(--color-brand-50); border-color: var(--color-brand-500); }
+.amenity-checklist__options input { margin-top: 0.2rem; }
+@media (max-width: 900px) { .amenity-checklist__options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .amenity-checklist { padding: var(--space-4); } .amenity-checklist__options { grid-template-columns: 1fr; } }

@@ -65,6 +65,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Structured hotel destination hierarchy covering locality, town or city, tehsil, district, state,
   searchable aliases, landmarks, and safe editing of already-published property locations; public
   and AI-assisted hotel discovery use the same expanded destination vocabulary
+- Governed, categorized property and room amenity checklists with standardized supplier selections,
+  duplicate normalization, responsive controls, and the same catalogue powering customer filters
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
