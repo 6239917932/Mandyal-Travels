@@ -238,6 +238,14 @@ model PartnerApplication {
   contactPhone     String
   city             String
   inventorySummary String
+  legalBusinessName String         @default("")
+  registeredAddress String         @default("")
+  taxIdentifier     String         @default("")
+  registrationId    String         @default("")
+  identityType      String         @default("")
+  identityReference String         @default("")
+  kycStatus         String         @default("SUBMITTED")
+  kycConsentAt      DateTime?
   status           String         @default("PENDING")
   reviewNote       String?
   reviewedAt       DateTime?
@@ -249,6 +257,7 @@ model PartnerApplication {
 
   @@index([status, createdAt])
   @@index([applicantUserId, createdAt])
+  @@index([kycStatus, createdAt])
 }
 
 model PartnerHotelInventoryDay {

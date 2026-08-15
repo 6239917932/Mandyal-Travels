@@ -84,6 +84,17 @@ export default async function AdminPartnersPage() {
                 {item.contactEmail} · {item.contactPhone}
               </p>
               <p>{item.inventorySummary}</p>
+              <p>
+                <strong>KYC: {item.kycStatus.replaceAll('_', ' ')}</strong>
+                <br />
+                Legal name: {item.legalBusinessName}
+                <br />
+                Registration: {item.registrationId} · Tax ID: {item.taxIdentifier}
+                <br />
+                Representative: {item.identityType.replaceAll('_', ' ')} · {item.identityReference}
+                <br />
+                Address: {item.registeredAddress}
+              </p>
               <small>
                 Account: {item.applicant.firstName} {item.applicant.lastName} (
                 {item.applicant.email})
@@ -112,7 +123,8 @@ export default async function AdminPartnersPage() {
                 {property.rooms.length} active room {property.rooms.length === 1 ? 'type' : 'types'}
               </p>
               <small>
-                Submitted {property.submittedAt
+                Submitted{' '}
+                {property.submittedAt
                   ? property.submittedAt.toLocaleString('en-IN')
                   : 'automatically when its first room was added'}
               </small>
@@ -124,7 +136,9 @@ export default async function AdminPartnersPage() {
               </Link>
             </Card>
           ))}
-          {pendingProperties.length === 0 ? <Card>No property listings are awaiting review.</Card> : null}
+          {pendingProperties.length === 0 ? (
+            <Card>No property listings are awaiting review.</Card>
+          ) : null}
         </div>
       </section>
       <section>

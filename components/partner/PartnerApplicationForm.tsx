@@ -81,6 +81,36 @@ export function PartnerApplicationForm({
         <Input label="Phone number" maxLength={30} name="contactPhone" required type="tel" />
         <Input label="Operating city" maxLength={100} name="city" required />
       </div>
+      <div className="auth-form__row">
+        <Input label="Legal business name" maxLength={160} name="legalBusinessName" required />
+        <Input label="Business registration number" maxLength={60} name="registrationId" required />
+      </div>
+      <div className="auth-form__row">
+        <Input label="PAN or GSTIN" maxLength={15} name="taxIdentifier" required />
+        <label className="ui-field">
+          <span className="ui-field__label">Authorized representative ID type</span>
+          <select className="ui-input" name="identityType" required>
+            <option value="">Choose document type</option>
+            <option value="AADHAAR_LAST4">Aadhaar (last 4 digits only)</option>
+            <option value="PASSPORT">Passport reference</option>
+            <option value="DRIVING_LICENCE">Driving licence reference</option>
+          </select>
+        </label>
+      </div>
+      <div className="auth-form__row">
+        <Input
+          label="Identity document reference"
+          maxLength={40}
+          name="identityReference"
+          required
+        />
+        <Input
+          label="Registered business address"
+          maxLength={300}
+          name="registeredAddress"
+          required
+        />
+      </div>
       <label className="ui-field">
         <span className="ui-field__label">Inventory summary</span>
         <textarea
@@ -96,6 +126,13 @@ export function PartnerApplicationForm({
         Submitting this form does not grant supplier access. Mandyal Travels verifies and activates
         every supplier account.
       </p>
+      <label className="supplier-form__checkbox">
+        <input name="kycConsent" required type="checkbox" />
+        <span>
+          I confirm I am authorized to submit these verification details and consent to their use
+          for supplier due diligence.
+        </span>
+      </label>
       {error ? (
         <p className="booking-page__payment-error" role="alert">
           {error}
