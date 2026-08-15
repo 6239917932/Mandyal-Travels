@@ -36,9 +36,16 @@ function matchesDestination(hotel: Hotel, destination: string): boolean {
 
   const searchableText = [
     hotel.name,
+    hotel.location.address.locality,
     hotel.location.address.city,
+    hotel.location.address.tehsil,
+    hotel.location.address.district,
     hotel.location.address.state,
     hotel.location.address.country,
+    hotel.location.address.postalCode,
+    hotel.location.address.streetAddress,
+    ...(hotel.propertyProfile?.locationAliases ?? []),
+    ...(hotel.propertyProfile?.landmarks ?? []),
   ]
     .filter(Boolean)
     .join(' ')

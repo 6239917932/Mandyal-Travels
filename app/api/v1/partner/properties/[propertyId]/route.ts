@@ -23,21 +23,28 @@ export async function PATCH(
       403,
     );
   const body = await readJsonObject(request);
-  const action = String(body?.action ?? '') as 'PAUSE' | 'PUBLISH';
-  if (!['PAUSE', 'PUBLISH'].includes(action))
-    return failure('INVALID_ACTION', 'Choose publish or pause.', 400);
+  const action = String(body?.action ?? '') as 'PAUSE' | 'PUBLISH' | 'UPDATE_LOCATION';
+  if (!['PAUSE', 'PUBLISH', 'UPDATE_LOCATION'].includes(action))
+    return failure('INVALID_ACTION', 'Choose a supported property update.', 400);
   try {
     const { propertyId } = await context.params;
-    const data = await partnerOperationsService.setPropertyPublication(
-      access.partnerId,
-      propertyId,
-      action,
-    );
+    const data = action === 'UPDATE_LOCATION'
+      ? await partnerOperationsService.updatePropertyLocation(access.partnerId, propertyId, {
+          city: String(body?.city ?? ''),
+          district: String(body?.district ?? ''),
+          locality: String(body?.locality ?? ''),
+          locationAliases: String(body?.locationAliases ?? '').split(',').map((value) => value.trim()),
+          state: String(body?.state ?? ''),
+          tehsil: String(body?.tehsil ?? ''),
+        })
+      : await partnerOperationsService.setPropertyPublication(access.partnerId, propertyId, action);
     await recordPartnerAudit(access, {
-      action: action === 'PUBLISH' ? 'PROPERTY_PUBLISHED' : 'PROPERTY_PAUSED',
+      action: action === 'PUBLISH' ? 'PROPERTY_PUBLISHED' : action === 'PAUSE' ? 'PROPERTY_PAUSED' : 'PROPERTY_LOCATION_UPDATED',
       entityId: data.id,
       entityType: 'PROPERTY',
-      summary: `${data.displayName} ${action === 'PUBLISH' ? 'published to hotel search' : 'paused from sale'}.`,
+      summary: action === 'UPDATE_LOCATION'
+        ? `${data.displayName} search location updated.`
+        : `${data.displayName} ${action === 'PUBLISH' ? 'published to hotel search' : 'paused from sale'}.`,
     });
     return Response.json({ data });
   } catch (error) {

@@ -12,9 +12,9 @@ export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
     <form action="/hotels" className="hotel-search-form">
       <Input
         defaultValue={criteria.destination}
-        label="Destination"
+        label="City, area, locality, or property"
         name="destination"
-        placeholder="City or hotel name"
+        placeholder="Bir Billing, Suja, Mandi, or hotel name"
       />
 
       <label className="ui-field">

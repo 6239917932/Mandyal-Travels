@@ -247,6 +247,7 @@ export const partnerOperationsService = {
       checkInTime: string;
       checkOutTime: string;
       city: string;
+      district: string;
       childrenAllowed: boolean;
       contactEmail: string;
       contactPhone: string;
@@ -257,6 +258,8 @@ export const partnerOperationsService = {
       imageUrls: string[];
       languages: string[];
       landmarks: string[];
+      locality: string;
+      locationAliases: string[];
       latitude: number;
       longitude: number;
       minimumCheckInAge: number;
@@ -268,20 +271,23 @@ export const partnerOperationsService = {
       starRating: number;
       state: string;
       streetAddress: string;
+      tehsil: string;
       timezone: string;
     },
   ) {
     if (
       input.displayName.trim().length < 2 ||
       input.description.trim().length < 30 ||
+      input.locality.trim().length < 2 ||
       input.city.trim().length < 2 ||
+      input.district.trim().length < 2 ||
       input.state.trim().length < 2 ||
       input.country.trim().length < 2 ||
       input.streetAddress.trim().length < 5
     ) {
       throw new PartnerOperationsError(
         'INVALID_PROPERTY',
-        'Complete the property name, description, location, and street address.',
+        'Complete the property name, description, locality, district, city or town, and street address.',
       );
     }
     if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5) {
@@ -311,6 +317,7 @@ export const partnerOperationsService = {
         checkInTime: input.checkInTime,
         checkOutTime: input.checkOutTime,
         city: normalizeText(input.city, 80),
+        district: normalizeText(input.district, 80),
         childrenAllowed: input.childrenAllowed,
         contactEmail: normalizeText(input.contactEmail.toLowerCase(), 254),
         contactPhone: normalizeText(input.contactPhone, 30),
@@ -327,6 +334,8 @@ export const partnerOperationsService = {
         ),
         languagesJson: JSON.stringify(normalizedList(input.languages, 12)),
         landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
+        locality: normalizeText(input.locality, 100),
+        locationAliasesJson: JSON.stringify(normalizedList(input.locationAliases, 20)),
         latitude: input.latitude,
         longitude: input.longitude,
         listingSource: 'MANAGED',
@@ -341,6 +350,7 @@ export const partnerOperationsService = {
         starRating: input.starRating,
         state: normalizeText(input.state, 80),
         streetAddress: normalizeText(input.streetAddress, 240),
+        tehsil: normalizeText(input.tehsil, 80),
         timezone: normalizeText(input.timezone, 80),
       },
     });
@@ -475,6 +485,48 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.update({
       data: { publicationStatus: action === 'PUBLISH' ? 'PUBLISHED' : 'PAUSED' },
+      where: { id: property.id },
+    });
+  },
+
+  async updatePropertyLocation(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      city: string;
+      district: string;
+      locality: string;
+      locationAliases: string[];
+      state: string;
+      tehsil: string;
+    },
+  ) {
+    if (
+      input.locality.trim().length < 2 ||
+      input.city.trim().length < 2 ||
+      input.district.trim().length < 2 ||
+      input.state.trim().length < 2
+    ) {
+      throw new PartnerOperationsError(
+        'INVALID_PROPERTY_LOCATION',
+        'Enter the locality, town or city, district, and state.',
+      );
+    }
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) {
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    }
+    return prisma.partnerProperty.update({
+      data: {
+        city: normalizeText(input.city, 80),
+        district: normalizeText(input.district, 80),
+        locality: normalizeText(input.locality, 100),
+        locationAliasesJson: JSON.stringify(normalizedList(input.locationAliases, 20)),
+        state: normalizeText(input.state, 80),
+        tehsil: normalizeText(input.tehsil, 80),
+      },
       where: { id: property.id },
     });
   },

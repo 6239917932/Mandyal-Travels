@@ -23,17 +23,32 @@ type RoomType = {
 
 export type ManagedProperty = {
   city: string;
+  district: string;
   displayName: string;
   hotelSlug: string;
   id: string;
+  locality: string;
+  locationAliasesJson: string;
   publicationStatus: string;
   rooms: RoomType[];
   starRating: number;
   state: string;
+  tehsil: string;
 };
 
 function messageFrom(result: { data?: unknown } | ApiErrorResponse | null, fallback: string) {
   return result && 'error' in result ? result.error.message : fallback;
+}
+
+function stringListFromJson(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 export function PartnerPropertyManager({
@@ -45,6 +60,7 @@ export function PartnerPropertyManager({
 }) {
   const [properties, setProperties] = useState<ManagedProperty[]>(initialProperties);
   const [activeRoomForm, setActiveRoomForm] = useState<string>();
+  const [activeLocationForm, setActiveLocationForm] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -167,6 +183,33 @@ export function PartnerPropertyManager({
     }
   }
 
+  async function updateLocation(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}`, {
+        body: JSON.stringify({ ...data, action: 'UPDATE_LOCATION' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: ManagedProperty } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The searchable location could not be updated.'));
+        return;
+      }
+      setActiveLocationForm(undefined);
+      setSuccess(`${property.displayName} can now be found using its updated locality and aliases.`);
+      await loadProperties();
+    } catch {
+      setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <div className="booking-page partner-property-manager">
       <div className="booking-page__container">
@@ -242,7 +285,10 @@ export function PartnerPropertyManager({
                 <div><strong>Location and map coordinates</strong><small>Complete address and precise map position used by hotel discovery</small></div>
               </div>
               <div className="supplier-form__grid">
-                <Input label="City" maxLength={80} minLength={2} name="city" required />
+                <Input label="Area / locality" maxLength={100} minLength={2} name="locality" placeholder="Bir Billing, Suja, Old Manali" required />
+                <Input label="Town / city" maxLength={80} minLength={2} name="city" required />
+                <Input label="Tehsil (optional)" maxLength={80} name="tehsil" />
+                <Input label="District" maxLength={80} minLength={2} name="district" required />
                 <Input label="State" maxLength={80} minLength={2} name="state" required />
                 <Input
                   defaultValue="India"
@@ -259,6 +305,7 @@ export function PartnerPropertyManager({
                   required
                 />
                 <Input label="Postal code" maxLength={20} name="postalCode" />
+                <Input label="Other searchable names (comma separated)" maxLength={300} name="locationAliases" placeholder="Bir, Upper Bir, Billing" />
                 <Input label="Latitude" max="90" min="-90" name="latitude" placeholder="28.6139" required step="0.000001" type="number" />
                 <Input label="Longitude" max="180" min="-180" name="longitude" placeholder="77.2090" required step="0.000001" type="number" />
                 <label className="ui-field"><span className="ui-field__label">Timezone</span><select className="ui-input" defaultValue="Asia/Kolkata" name="timezone" required><option value="Asia/Kolkata">India Standard Time (Asia/Kolkata)</option><option value="Asia/Dubai">Gulf Standard Time (Asia/Dubai)</option><option value="Europe/London">United Kingdom (Europe/London)</option><option value="America/New_York">US Eastern (America/New_York)</option></select></label>
@@ -362,7 +409,7 @@ export function PartnerPropertyManager({
                   </span>
                   <h2>{property.displayName}</h2>
                   <p>
-                    {property.city}, {property.state} · {property.starRating} star ·{' '}
+                    {property.locality}, {property.district} · {property.starRating} star ·{' '}
                     {property.rooms.length} room types
                   </p>
                 </div>
@@ -406,6 +453,29 @@ export function PartnerPropertyManager({
                   <p>No room types yet. This draft is not visible to customers.</p>
                 ) : null}
               </div>
+              {canManage ? (
+                <button
+                  className="home-card__link partner-property-manager__add-room"
+                  onClick={() => setActiveLocationForm(activeLocationForm === property.id ? undefined : property.id)}
+                  type="button"
+                >
+                  {activeLocationForm === property.id ? 'Close location editor' : 'Edit searchable location'}
+                </button>
+              ) : null}
+              {activeLocationForm === property.id ? (
+                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateLocation(event, property)}>
+                  <div className="booking-confirmation__reference"><span>Location</span><strong>Searchable destination details</strong></div>
+                  <div className="supplier-form__grid">
+                    <Input defaultValue={property.locality} label="Area / locality" name="locality" required />
+                    <Input defaultValue={property.city} label="Town / city" name="city" required />
+                    <Input defaultValue={property.tehsil} label="Tehsil (optional)" name="tehsil" />
+                    <Input defaultValue={property.district} label="District" name="district" required />
+                    <Input defaultValue={property.state} label="State" name="state" required />
+                    <Input defaultValue={stringListFromJson(property.locationAliasesJson).join(', ')} label="Other searchable names" name="locationAliases" placeholder="Bir, Upper Bir, Billing" />
+                  </div>
+                  <Button fullWidth isLoading={isSaving} type="submit">Save searchable location</Button>
+                </form>
+              ) : null}
               {canManage ? (
                 <button
                   className="home-card__link partner-property-manager__add-room"

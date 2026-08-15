@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       checkInTime: String(body.checkInTime ?? ''),
       checkOutTime: String(body.checkOutTime ?? ''),
       city: String(body.city ?? ''),
+      district: String(body.district ?? ''),
       childrenAllowed: body.childrenAllowed === true,
       contactEmail: String(body.contactEmail ?? ''),
       contactPhone: String(body.contactPhone ?? ''),
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
       imageUrls: String(body.imageUrls ?? '').split('\n').map((value) => value.trim()).filter(Boolean),
       languages: String(body.languages ?? '').split(',').map((value) => value.trim()),
       landmarks: String(body.landmarks ?? '').split('\n').map((value) => value.trim()),
+      locality: String(body.locality ?? ''),
+      locationAliases: String(body.locationAliases ?? '').split(',').map((value) => value.trim()),
       latitude: Number(body.latitude),
       longitude: Number(body.longitude),
       minimumCheckInAge: Number(body.minimumCheckInAge),
@@ -67,6 +70,7 @@ export async function POST(request: Request) {
       starRating: Number(body.starRating),
       state: String(body.state ?? ''),
       streetAddress: String(body.streetAddress ?? ''),
+      tehsil: String(body.tehsil ?? ''),
       timezone: String(body.timezone ?? 'Asia/Kolkata'),
     });
     await recordPartnerAudit(access, {

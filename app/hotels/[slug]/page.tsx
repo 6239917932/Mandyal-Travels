@@ -48,7 +48,9 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
         <section className="hotel-details-page__heading">
           <div>
             <p className="hotel-page__eyebrow">
-              {hotel.location.address.city}, {hotel.location.address.country}
+              {hotel.location.address.locality ?? hotel.location.address.city}
+              {hotel.location.address.district ? `, ${hotel.location.address.district}` : ''},{' '}
+              {hotel.location.address.state ?? hotel.location.address.country}
             </p>
             <h1>{hotel.name}</h1>
             <p>{hotel.description}</p>
