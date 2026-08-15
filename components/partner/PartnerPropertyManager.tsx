@@ -44,24 +44,33 @@ type RoomType = {
 };
 
 export type ManagedProperty = {
+  amenitiesJson: string;
   checkInTime: string;
   checkOutTime: string;
   city: string;
   contactEmail: string;
   contactPhone: string;
+  childrenAllowed: boolean;
   description: string;
   district: string;
   displayName: string;
   hotelSlug: string;
+  imageUrl: string;
+  imageUrlsJson: string;
+  languagesJson: string;
+  landmarksJson: string;
   id: string;
   locality: string;
   locationAliasesJson: string;
   minimumCheckInAge: number;
+  petsAllowed: boolean;
+  policiesJson: string;
   publicationStatus: string;
   propertyType: string;
   rooms: RoomType[];
   starRating: number;
   state: string;
+  smokingAllowed: boolean;
   tehsil: string;
 };
 
@@ -94,6 +103,7 @@ export function PartnerPropertyManager({
   const [activeRoomEditor, setActiveRoomEditor] = useState<string>();
   const [activeRateEditor, setActiveRateEditor] = useState<string>();
   const [activeProfileForm, setActiveProfileForm] = useState<string>();
+  const [activeContentForm, setActiveContentForm] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -416,6 +426,41 @@ export function PartnerPropertyManager({
     }
   }
 
+  async function updateContent(event: FormEvent<HTMLFormElement>, property: ManagedProperty) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = {
+      ...Object.fromEntries(formData),
+      action: 'UPDATE_CONTENT',
+      amenities: formData.getAll('amenities').map(String).join(','),
+      childrenAllowed: formData.get('childrenAllowed') === 'on',
+      petsAllowed: formData.get('petsAllowed') === 'on',
+      smokingAllowed: formData.get('smokingAllowed') === 'on',
+    };
+    setError(undefined);
+    setSuccess(undefined);
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/v1/partner/properties/${property.id}`, {
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: ManagedProperty } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(messageFrom(result, 'The property content could not be updated.'));
+        return;
+      }
+      setActiveContentForm(undefined);
+      setSuccess(`${property.displayName} amenities, policies, and media were updated.`);
+      await loadProperties();
+    } catch {
+      setError('The property service could not be reached.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <div className="booking-page partner-property-manager">
       <div className="booking-page__container">
@@ -658,6 +703,30 @@ export function PartnerPropertyManager({
                   </div>
                   <label className="ui-field"><span className="ui-field__label">Property description</span><textarea className="ui-input supplier-form__textarea" defaultValue={property.description} maxLength={1500} minLength={30} name="description" required /></label>
                   <Button fullWidth isLoading={isSaving} type="submit">Save property profile</Button>
+                </form>
+              ) : null}
+              {canManage ? (
+                <button className="home-card__link partner-property-manager__add-room" onClick={() => setActiveContentForm(activeContentForm === property.id ? undefined : property.id)} type="button">
+                  {activeContentForm === property.id ? 'Close content editor' : 'Edit amenities, policies, and media'}
+                </button>
+              ) : null}
+              {activeContentForm === property.id ? (
+                <form className="supplier-form partner-property-manager__room-form" onSubmit={(event) => void updateContent(event, property)}>
+                  <div className="booking-confirmation__reference"><span>Content</span><strong>Facilities, guest rules, and gallery</strong></div>
+                  <div className="supplier-form__grid">
+                    <Input defaultValue={stringListFromJson(property.languagesJson).join(', ')} label="Languages spoken" name="languages" placeholder="Hindi, English, Punjabi" />
+                    <label className="ui-field"><span className="ui-field__label">Nearby landmarks (one per line)</span><textarea className="ui-input supplier-form__compact-textarea" defaultValue={stringListFromJson(property.landmarksJson).join('\n')} name="landmarks" /></label>
+                  </div>
+                  <AmenityChecklist defaultValues={stringListFromJson(property.amenitiesJson)} groups={propertyAmenityGroups} legend="Property amenities" name="amenities" />
+                  <div className="supplier-form__policy-checks">
+                    <label><input defaultChecked={property.childrenAllowed} name="childrenAllowed" type="checkbox" /> Children are welcome</label>
+                    <label><input defaultChecked={property.petsAllowed} name="petsAllowed" type="checkbox" /> Pets are allowed</label>
+                    <label><input defaultChecked={property.smokingAllowed} name="smokingAllowed" type="checkbox" /> Smoking areas are available</label>
+                  </div>
+                  <label className="ui-field"><span className="ui-field__label">Guest policies (one per line)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.policiesJson).join('\n')} name="policies" /></label>
+                  <Input defaultValue={property.imageUrl} label="Cover photo URL" name="imageUrl" required type="url" />
+                  <label className="ui-field"><span className="ui-field__label">Gallery photo URLs (one per line, maximum 12)</span><textarea className="ui-input supplier-form__textarea" defaultValue={stringListFromJson(property.imageUrlsJson).join('\n')} name="imageUrls" /></label>
+                  <Button fullWidth isLoading={isSaving} type="submit">Save property content</Button>
                 </form>
               ) : null}
               <div className="partner-property-manager__rooms">

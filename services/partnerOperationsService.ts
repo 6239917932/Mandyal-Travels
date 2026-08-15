@@ -850,6 +850,43 @@ export const partnerOperationsService = {
     });
   },
 
+  async updatePropertyContent(
+    partnerId: string,
+    propertyId: string,
+    input: {
+      amenities: string[];
+      childrenAllowed: boolean;
+      imageUrl: string;
+      imageUrls: string[];
+      languages: string[];
+      landmarks: string[];
+      petsAllowed: boolean;
+      policies: string[];
+      smokingAllowed: boolean;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property) throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    const imageUrl = validateImageUrl(input.imageUrl, property.imageUrl);
+    const imageUrls = normalizedList(input.imageUrls, 12).map((url) => validateImageUrl(url, property.imageUrl));
+    return prisma.partnerProperty.update({
+      data: {
+        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
+        childrenAllowed: input.childrenAllowed,
+        imageUrl,
+        imageUrlsJson: JSON.stringify(imageUrls),
+        languagesJson: JSON.stringify(normalizedList(input.languages, 12)),
+        landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
+        petsAllowed: input.petsAllowed,
+        policiesJson: JSON.stringify(normalizedList(input.policies, 20)),
+        smokingAllowed: input.smokingAllowed,
+      },
+      where: { id: property.id },
+    });
+  },
+
   async setHotelCalendar(input: {
     availableRooms: number;
     closedToArrival: boolean;

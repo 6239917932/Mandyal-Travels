@@ -23,8 +23,8 @@ export async function PATCH(
       403,
     );
   const body = await readJsonObject(request);
-  const action = String(body?.action ?? '') as 'PAUSE' | 'PUBLISH' | 'UPDATE_LOCATION' | 'UPDATE_PROFILE';
-  if (!['PAUSE', 'PUBLISH', 'UPDATE_LOCATION', 'UPDATE_PROFILE'].includes(action))
+  const action = String(body?.action ?? '') as 'PAUSE' | 'PUBLISH' | 'UPDATE_CONTENT' | 'UPDATE_LOCATION' | 'UPDATE_PROFILE';
+  if (!['PAUSE', 'PUBLISH', 'UPDATE_CONTENT', 'UPDATE_LOCATION', 'UPDATE_PROFILE'].includes(action))
     return failure('INVALID_ACTION', 'Choose a supported property update.', 400);
   try {
     const { propertyId } = await context.params;
@@ -49,15 +49,29 @@ export async function PATCH(
             propertyType: String(body?.propertyType ?? ''),
             starRating: Number(body?.starRating),
           })
+        : action === 'UPDATE_CONTENT'
+          ? await partnerOperationsService.updatePropertyContent(access.partnerId, propertyId, {
+              amenities: String(body?.amenities ?? '').split(',').map((value) => value.trim()),
+              childrenAllowed: body?.childrenAllowed === true,
+              imageUrl: String(body?.imageUrl ?? ''),
+              imageUrls: String(body?.imageUrls ?? '').split('\n').map((value) => value.trim()).filter(Boolean),
+              languages: String(body?.languages ?? '').split(',').map((value) => value.trim()),
+              landmarks: String(body?.landmarks ?? '').split('\n').map((value) => value.trim()),
+              petsAllowed: body?.petsAllowed === true,
+              policies: String(body?.policies ?? '').split('\n').map((value) => value.trim()),
+              smokingAllowed: body?.smokingAllowed === true,
+            })
         : await partnerOperationsService.setPropertyPublication(access.partnerId, propertyId, action);
     await recordPartnerAudit(access, {
-      action: action === 'PUBLISH' ? 'PROPERTY_PUBLISHED' : action === 'PAUSE' ? 'PROPERTY_PAUSED' : action === 'UPDATE_PROFILE' ? 'PROPERTY_PROFILE_UPDATED' : 'PROPERTY_LOCATION_UPDATED',
+      action: action === 'PUBLISH' ? 'PROPERTY_PUBLISHED' : action === 'PAUSE' ? 'PROPERTY_PAUSED' : action === 'UPDATE_PROFILE' ? 'PROPERTY_PROFILE_UPDATED' : action === 'UPDATE_CONTENT' ? 'PROPERTY_CONTENT_UPDATED' : 'PROPERTY_LOCATION_UPDATED',
       entityId: data.id,
       entityType: 'PROPERTY',
       summary: action === 'UPDATE_LOCATION'
         ? `${data.displayName} search location updated.`
         : action === 'UPDATE_PROFILE'
           ? `${data.displayName} public profile and operating details updated.`
+          : action === 'UPDATE_CONTENT'
+            ? `${data.displayName} amenities, policies, and media updated.`
         : `${data.displayName} ${action === 'PUBLISH' ? 'published to hotel search' : 'paused from sale'}.`,
     });
     return Response.json({ data });
