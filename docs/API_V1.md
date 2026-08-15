@@ -1,0 +1,19 @@
+# Mandyal Travels API v1 governance
+
+## Contract
+
+All supported endpoints are rooted at `/api/v1`. JSON successes use a `data` member where practical. Failures use an `error` object with a stable machine-readable `code` and a user-safe `message`. Validation details must never contain credentials, provider payloads, or stack traces.
+
+Every API response includes `X-Request-ID`. Callers may supply an identifier matching `[A-Za-z0-9][A-Za-z0-9._:-]{7,127}`; invalid values are replaced. Operations that create money, bookings, tickets, settlements, deliveries, or supplier sync work must use a bounded `Idempotency-Key` or an equivalent persisted deduplication key.
+
+List endpoints default to 25 records and must cap requests at 100 unless a stricter product bound is documented. Cursor pagination is preferred for mutable operational data. Responses must expose an opaque next cursor rather than database offsets.
+
+## Compatibility and deprecation
+
+Breaking changes require a new major API path. Additive fields may be introduced in v1 and clients must ignore unknown response fields. A deprecated endpoint remains available for at least 180 days and returns `Deprecation: true`, an RFC 8594 `Sunset` timestamp, and a `Link` header pointing to its successor. Security-critical retirement may be faster only with a recorded incident decision and direct partner notification.
+
+The live contract summary is available from `GET /api/v1/meta`. Provider-specific credentials, schemas, rate limits, certification evidence, and signed commercial obligations remain in the relevant integration runbook and are not committed to source control.
+
+## Observability and security
+
+Logs and audit events should carry the request ID, authenticated actor ID, action, result, latency, and a non-sensitive entity reference. Authentication secrets, payment data, identity documents, raw supplier payloads, and notification recipients must be redacted. Cookie-authenticated writes are origin checked; privileged routes additionally enforce role and scoped supplier ownership.
