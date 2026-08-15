@@ -637,6 +637,7 @@ export class HotelBookingService {
           guestName: `${booking.guest.firstName} ${booking.guest.lastName}`,
           hotelName: hotel.name,
           operationalStatus: booking.operationalStatus,
+          partnerNote: booking.partnerNote ?? '',
           paymentStatus: booking.paymentStatus,
           ratePlanName: ratePlan.name,
           roomName: room.name,

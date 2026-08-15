@@ -290,6 +290,43 @@ export const partnerOperationsService = {
       return updated;
     });
   },
+  async updateHotelPartnerNote(
+    partnerId: string,
+    confirmationCode: string,
+    partnerNote: string,
+    actorUserId?: string,
+  ) {
+    const propertySlugs = await prisma.partnerProperty.findMany({
+      select: { hotelSlug: true },
+      where: { partnerId, status: 'ACTIVE' },
+    });
+    const booking = await prisma.booking.findFirst({
+      where: {
+        confirmationCode,
+        hotelSlug: { in: propertySlugs.map((property) => property.hotelSlug) },
+      },
+    });
+    if (!booking) throw new PartnerOperationsError('BOOKING_NOT_FOUND', 'The assigned booking was not found.');
+    const normalizedNote = partnerNote.trim().replace(/\r\n/g, '\n').slice(0, 1_000);
+    return prisma.$transaction(async (transaction) => {
+      const updated = await transaction.booking.update({
+        data: { partnerNote: normalizedNote },
+        where: { id: booking.id },
+      });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'HOTEL_BOOKING_NOTE_UPDATED',
+          actorUserId,
+          entityId: booking.id,
+          entityType: 'HOTEL_BOOKING',
+          metadataJson: JSON.stringify({ confirmationCode, noteLength: normalizedNote.length }),
+          partnerId,
+          summary: `${confirmationCode} front-desk note was updated.`,
+        },
+      });
+      return updated;
+    });
+  },
   async createApplication(input: {
     applicantUserId: string;
     businessName: string;

@@ -39,6 +39,7 @@ export default function PartnerBookingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string>();
   const [roomAssignments, setRoomAssignments] = useState<Record<string, string>>({});
+  const [partnerNotes, setPartnerNotes] = useState<Record<string, string>>({});
   const exportParameters = new URLSearchParams();
   if (query) exportParameters.set('query', query);
   if (bookingStatus) exportParameters.set('bookingStatus', bookingStatus);
@@ -118,6 +119,34 @@ export default function PartnerBookingsPage() {
             : booking,
         ),
       );
+    } catch {
+      setError('The partner service could not be reached.');
+    } finally {
+      setUpdatingBooking(undefined);
+    }
+  }
+
+  async function savePartnerNote(booking: PartnerBookingRecord) {
+    setError(undefined);
+    setUpdatingBooking(booking.confirmationCode);
+    try {
+      const partnerNote = partnerNotes[booking.confirmationCode] ?? booking.partnerNote;
+      const response = await fetch(`/api/v1/partner/bookings/${booking.confirmationCode}`, {
+        body: JSON.stringify({ partnerNote }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: { partnerNote: string } } | ApiErrorResponse>(response);
+      if (!response.ok || !result || !('data' in result)) {
+        setError(result && 'error' in result ? result.error.message : 'The front-desk note could not be saved.');
+        return;
+      }
+      setBookings((current) => current.map((candidate) =>
+        candidate.confirmationCode === booking.confirmationCode
+          ? { ...candidate, partnerNote: result.data.partnerNote }
+          : candidate,
+      ));
+      setPartnerNotes((current) => ({ ...current, [booking.confirmationCode]: result.data.partnerNote }));
     } catch {
       setError('The partner service could not be reached.');
     } finally {
@@ -249,6 +278,29 @@ export default function PartnerBookingsPage() {
                       <span>Total</span>
                       <strong>{money(booking.totalAmount, booking.currency)}</strong>
                     </div>
+                  </div>
+                  <div className="ui-field">
+                    <label className="ui-field__label" htmlFor={`partner-note-${booking.confirmationCode}`}>
+                      Private front-desk note
+                    </label>
+                    <textarea
+                      className="ui-input supplier-form__textarea"
+                      id={`partner-note-${booking.confirmationCode}`}
+                      maxLength={1000}
+                      onChange={(event) => setPartnerNotes((current) => ({
+                        ...current,
+                        [booking.confirmationCode]: event.target.value,
+                      }))}
+                      placeholder="Arrival preferences, accessibility support, or internal handover notes"
+                      value={partnerNotes[booking.confirmationCode] ?? booking.partnerNote}
+                    />
+                    <Button
+                      disabled={updatingBooking === booking.confirmationCode}
+                      onClick={() => void savePartnerNote(booking)}
+                      variant="secondary"
+                    >
+                      Save private note
+                    </Button>
                   </div>
                   {booking.status === 'confirmed' && booking.operationalStatus === 'RESERVED' ? (
                     <div>

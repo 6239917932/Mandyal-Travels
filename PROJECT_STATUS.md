@@ -88,6 +88,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Supplier-owned physical room registry with room-type inventory caps, unique room numbers,
   ready/dirty/cleaning and active/out-of-service controls, audited changes, ready-room enforcement
   at check-in, and automatic dirty status after checkout
+- Supplier-private front-desk booking notes with bounded content, partner scoping, and append-only
+  audit records; notes remain excluded from customer records and operational CSV exports
 - Formula-safe supplier booking CSV exports that honor active dashboard filters and reject result
   sets above the bounded 1,000-record operational limit instead of silently truncating records
 - Server-side supplier booking search and booking/stay-status filters with matching scoped totals,
@@ -170,7 +172,11 @@ Managed properties can register their physical rooms and operate a basic houseke
 When a room type has registered rooms, check-in accepts only registered rooms that are ready and in
 service; checkout marks the assigned rooms dirty for housekeeping follow-up.
 
+Booking operations include a private supplier note for arrival preferences, accessibility support,
+and shift handovers. Every note change is scoped to the assigned supplier and recorded in activity
+history without copying the note text into audit metadata.
+
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 85 generated route entries, and clean-database verification of all 39 migrations
+a Next.js production build with all 85 generated route entries, and clean-database verification of all 40 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

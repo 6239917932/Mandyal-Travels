@@ -1,0 +1,1 @@
+ALTER TABLE "Booking" ADD COLUMN "partnerNote" TEXT NOT NULL DEFAULT '';

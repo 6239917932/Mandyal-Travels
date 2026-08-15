@@ -587,6 +587,7 @@ model Booking {
   status                  String
   operationalStatus       String                 @default("RESERVED")
   assignedRoomNumbersJson String                 @default("[]")
+  partnerNote             String                 @default("")
   totalAmount             Int
   currency                String
   createdAt               DateTime               @default(now())
