@@ -9,8 +9,9 @@ export function normalizeBusRoute(input: BusRouteInput): BusRouteInput {
   if (route.origin.localeCompare(route.destination, undefined, { sensitivity: 'base' }) === 0) throw new Error('Route origin and destination must be different.');
   return route;
 }
-export function normalizeBusTrip(input: BusTripInput): BusTripInput {
+export function normalizeBusTrip(input: BusTripInput, today?: string): BusTripInput {
   if (!DATE.test(input.serviceDate) || !TIME.test(input.departureTime) || !TIME.test(input.arrivalTime)) throw new Error('Enter a valid service date and 24-hour departure and arrival times.');
+  if (today && input.serviceDate < today) throw new Error('Bus services cannot be scheduled in the past.');
   if (!Number.isInteger(input.seatCapacity) || input.seatCapacity < 1 || input.seatCapacity > 80) throw new Error('Seat capacity must be between 1 and 80.');
   if (!Number.isInteger(input.pricePerSeat) || input.pricePerSeat < 100 || input.pricePerSeat > 100000) throw new Error('Seat price must be between ₹100 and ₹1,00,000.');
   return { ...input, amenities: [...new Set(input.amenities.map((value) => text(value, 2, 60)))].slice(0, 20), busType: text(input.busType, 2, 100), cancellationPolicy: text(input.cancellationPolicy, 10, 300) };

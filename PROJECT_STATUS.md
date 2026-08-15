@@ -247,7 +247,8 @@ Direct bus-operator inventory now participates in customer search alongside the 
 adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
 and exposes only active routes, trips, and partners. Booking completion reserves the customer's
 exact seat selection transactionally, rejects seats outside the operator's declared capacity, and
-prevents already-occupied seats from being sold again.
+prevents already-occupied seats from being sold again. Both the supplier interface and versioned
+partner API reject services scheduled before the current operating date.
 
 Bus operator administrators can pause and restore dated services, revise bounded seat capacity and
 fares, and cannot reduce capacity below confirmed passengers or their assigned seat positions. A
@@ -271,7 +272,7 @@ without deleting inventory or reservations. Restoration is audited and requires 
 number plus complete, non-expired compliance dates, preventing non-compliant vehicles from
 returning to sale.
 
-The current travel-domain milestone passes 47 regression tests, Prisma Client generation,
+The current travel-domain milestone passes 48 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 96 generated route entries, and
 clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.
