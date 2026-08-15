@@ -257,7 +257,11 @@ partner-scoped passenger manifest provides bounded pagination, search, routes, s
 seat assignments, captured-value summaries, and a formula-safe CSV export capped at 1,000 records
 without exposing another operator's reservations.
 
+Car suppliers can export their scoped reservation register as a formula-safe CSV capped at 1,000
+records, including driver or lead traveller, vehicle, registration, route, rental dates, units, and
+captured value without exposing another fleet partner's reservations.
+
 The current travel-domain milestone passes 45 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 94 generated route entries, and
+strict TypeScript, ESLint, a Next.js production build with all 95 generated route entries, and
 clean-database verification of all 46 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

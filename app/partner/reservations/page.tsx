@@ -104,6 +104,9 @@ export default function PartnerReservationsPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
+            <a className="ui-button ui-button--secondary" href="/api/v1/partner/reservations/export">
+              Export CSV
+            </a>
             <Link className="ui-button ui-button--secondary" href="/partner">
               Workspace
             </Link>
