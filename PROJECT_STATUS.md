@@ -82,6 +82,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   captured-value summaries, and pagination
 - Integration-key compatibility for approved server-to-server partner operations without exposing a
   shared key in browser forms
+- Integration-key requests require a validated active supplier identifier; an integration key alone
+  cannot enumerate cross-supplier bookings, properties, inventory, amendments, reviews, or exports
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment
   persistence
 - Pagination and bounded query sizes for operational lists

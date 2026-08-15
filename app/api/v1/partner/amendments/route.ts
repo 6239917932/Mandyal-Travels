@@ -13,7 +13,7 @@ function unauthorized(): Response {
 
 export async function GET(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) return unauthorized();
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') return unauthorized();
 
   const url = new URL(request.url);
   const requestedPage = Number(url.searchParams.get('page') ?? '1');

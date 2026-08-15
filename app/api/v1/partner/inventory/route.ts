@@ -14,7 +14,7 @@ function errorResponse(code: string, message: string, status: number): Response 
 
 export async function GET(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const url = new URL(request.url);
@@ -69,7 +69,7 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const body = await readJsonObject(request);

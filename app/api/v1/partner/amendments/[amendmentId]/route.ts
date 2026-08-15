@@ -13,7 +13,7 @@ function errorResponse(code: string, message: string, status: number): Response 
 
 export async function PATCH(request: Request, context: ReviewContext): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Partner access is required.', 401);
   }
   const body = await readJsonObject(request);

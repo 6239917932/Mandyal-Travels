@@ -4,7 +4,7 @@ import type { ApiErrorResponse } from '@/types/commerce';
 
 export async function GET(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
-  if (!access) {
+  if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return Response.json(
       {
         error: { code: 'PARTNER_UNAUTHORIZED', message: 'Partner access is required.' },

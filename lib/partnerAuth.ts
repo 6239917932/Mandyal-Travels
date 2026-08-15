@@ -27,7 +27,26 @@ export function isValidPartnerKey(value: string | null): boolean {
 
 export async function getPartnerAccess(request?: Request): Promise<PartnerAccess | null> {
   if (request && isValidPartnerKey(request.headers.get('x-partner-key'))) {
-    return { mode: 'integration-key' };
+    const partnerId = request.headers.get('x-partner-id')?.trim();
+    if (!partnerId) return null;
+    const partner = await prisma.supplyPartner.findFirst({
+      include: {
+        properties: {
+          select: { hotelSlug: true },
+          where: { status: 'ACTIVE' },
+        },
+      },
+      where: { id: partnerId, status: 'ACTIVE' },
+    });
+    if (!partner) return null;
+    return {
+      allowedHotelSlugs: partner.properties.map((property) => property.hotelSlug),
+      memberRole: 'ADMIN',
+      mode: 'integration-key',
+      partnerId: partner.id,
+      partnerName: partner.name,
+      partnerType: partner.type,
+    };
   }
 
   const user = await getCurrentUser();
