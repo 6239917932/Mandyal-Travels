@@ -798,6 +798,22 @@ model PaymentCheckoutIntent {
   @@index([status, expiresAt])
 }
 
+model PaymentProviderEvent {
+  id              String   @id @default(cuid())
+  provider        String
+  providerEventId String   @unique
+  eventType       String
+  providerRef     String
+  payloadHash     String
+  status          String   @default("RECEIVED")
+  errorMessage    String   @default("")
+  receivedAt      DateTime @default(now())
+  processedAt     DateTime?
+
+  @@index([providerRef, receivedAt])
+  @@index([status, receivedAt])
+}
+
 model PriceComponent {
   id       String     @id @default(cuid())
   quoteId  String
