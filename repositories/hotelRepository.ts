@@ -126,6 +126,7 @@ export class InMemoryHotelRepository implements HotelRepository {
             },
             ratePlans: (room.ratePlans.length > 0 ? room.ratePlans : [{
               cancellationDescription: room.cancellationDescription,
+              freeCancellationHours: 48,
               mealPlan: room.mealPlan,
               maximumStayNights: 30,
               minimumStayNights: 1,
@@ -137,6 +138,7 @@ export class InMemoryHotelRepository implements HotelRepository {
             }]).map((ratePlan) => ({
                 cancellationPolicy: {
                   description: ratePlan.cancellationDescription,
+                  freeCancellationUntilHoursBeforeCheckIn: ratePlan.freeCancellationHours,
                   refundable: ratePlan.refundable,
                 },
                 id: ratePlan.ratePlanId,

@@ -30,6 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ proper
       bedDescription: String(body.bedDescription ?? ''),
       cancellationDescription: String(body.cancellationDescription ?? ''),
       description: String(body.description ?? ''),
+      freeCancellationHours: Number(body.freeCancellationHours),
       imageUrl: String(body.imageUrl ?? ''),
       inventoryCount: Number(body.inventoryCount),
       maximumAdults: Number(body.maximumAdults),

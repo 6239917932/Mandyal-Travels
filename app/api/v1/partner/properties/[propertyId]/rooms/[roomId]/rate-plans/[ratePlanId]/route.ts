@@ -28,6 +28,7 @@ export async function PATCH(
           : action === 'UPDATE'
             ? await partnerOperationsService.updateRatePlan(access.partnerId, propertyId, roomId, ratePlanId, {
                 cancellationDescription: String(body.cancellationDescription ?? ''),
+                freeCancellationHours: Number(body.freeCancellationHours),
                 maximumStayNights: Number(body.maximumStayNights),
                 mealPlan: String(body.mealPlan ?? ''),
                 minimumStayNights: Number(body.minimumStayNights),

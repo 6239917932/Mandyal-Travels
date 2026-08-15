@@ -70,6 +70,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Editable supplier room definitions and normalized multi-rate-plan management with meal plans,
   refundable policies, taxes, and enforced minimum/maximum stay restrictions; the additive
   migration backfills every existing room without changing its public rate-plan identifier
+- Structured free-cancellation cutoffs on supplier rates, validated from 0 to 720 hours and used by
+  customer refund-eligibility decisions
 - Date-level Hotel PMS controls for seasonal pricing, availability limits, stop-sell,
   closed-to-arrival, closed-to-departure, and minimum/maximum stays, enforced by customer search
   and booking quote validation
@@ -143,6 +145,6 @@ tax invoices.
 ## Current quality gate
 
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 83 routes, and clean-database verification of all 35 migrations
+a Next.js production build with all 83 routes, and clean-database verification of all 36 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

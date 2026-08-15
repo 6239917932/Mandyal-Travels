@@ -612,6 +612,7 @@ model PartnerRatePlan {
   mealPlan                String          @default("room-only")
   refundable              Boolean         @default(true)
   cancellationDescription String
+  freeCancellationHours   Int             @default(48)
   minimumStayNights       Int             @default(1)
   maximumStayNights       Int             @default(30)
   status                  String          @default("ACTIVE")

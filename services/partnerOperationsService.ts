@@ -431,6 +431,7 @@ export const partnerOperationsService = {
       bedDescription: string;
       cancellationDescription: string;
       description: string;
+      freeCancellationHours: number;
       imageUrl: string;
       inventoryCount: number;
       maximumAdults: number;
@@ -504,6 +505,9 @@ export const partnerOperationsService = {
     if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
       throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
     }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
     return prisma.$transaction(async (transaction) => {
       const room = await transaction.partnerRoomType.create({
         data: {
@@ -532,6 +536,7 @@ export const partnerOperationsService = {
       await transaction.partnerRatePlan.create({
         data: {
           cancellationDescription: normalizeText(input.cancellationDescription, 300),
+          freeCancellationHours: input.freeCancellationHours,
           maximumStayNights: 30,
           mealPlan: input.mealPlan,
           minimumStayNights: 1,
@@ -560,6 +565,7 @@ export const partnerOperationsService = {
     roomId: string,
     input: {
       cancellationDescription: string;
+      freeCancellationHours: number;
       maximumStayNights: number;
       mealPlan: string;
       minimumStayNights: number;
@@ -600,9 +606,13 @@ export const partnerOperationsService = {
     if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
       throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
     }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
     return prisma.partnerRatePlan.create({
       data: {
         cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        freeCancellationHours: input.freeCancellationHours,
         maximumStayNights: input.maximumStayNights,
         mealPlan: input.mealPlan,
         minimumStayNights: input.minimumStayNights,
@@ -747,6 +757,7 @@ export const partnerOperationsService = {
     ratePlanRecordId: string,
     input: {
       cancellationDescription: string;
+      freeCancellationHours: number;
       maximumStayNights: number;
       mealPlan: string;
       minimumStayNights: number;
@@ -783,9 +794,13 @@ export const partnerOperationsService = {
     if (!['room-only', 'breakfast-included', 'half-board', 'full-board'].includes(input.mealPlan)) {
       throw new PartnerOperationsError('INVALID_MEAL_PLAN', 'Choose a valid meal plan.');
     }
+    if (!Number.isInteger(input.freeCancellationHours) || input.freeCancellationHours < 0 || input.freeCancellationHours > 720) {
+      throw new PartnerOperationsError('INVALID_CANCELLATION_CUTOFF', 'Cancellation cutoff must be between 0 and 720 hours.');
+    }
     return prisma.partnerRatePlan.update({
       data: {
         cancellationDescription: normalizeText(input.cancellationDescription, 300),
+        freeCancellationHours: input.freeCancellationHours,
         maximumStayNights: input.maximumStayNights,
         mealPlan: input.mealPlan,
         minimumStayNights: input.minimumStayNights,

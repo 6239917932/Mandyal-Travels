@@ -21,6 +21,7 @@ export async function POST(
     const { propertyId, roomId } = await context.params;
     const data = await partnerOperationsService.createRatePlan(access.partnerId, propertyId, roomId, {
       cancellationDescription: String(body.cancellationDescription ?? ''),
+      freeCancellationHours: Number(body.freeCancellationHours),
       maximumStayNights: Number(body.maximumStayNights),
       mealPlan: String(body.mealPlan ?? ''),
       minimumStayNights: Number(body.minimumStayNights),

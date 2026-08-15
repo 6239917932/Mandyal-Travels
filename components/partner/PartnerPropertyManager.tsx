@@ -13,6 +13,7 @@ import type { ApiErrorResponse } from '@/types/commerce';
 
 type RatePlan = {
   cancellationDescription: string;
+  freeCancellationHours: number;
   id: string;
   maximumStayNights: number;
   mealPlan: string;
@@ -768,6 +769,7 @@ export function PartnerPropertyManager({
                               <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue={rate.mealPlan} name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
                               <Input defaultValue={rate.minimumStayNights} label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
                               <Input defaultValue={rate.maximumStayNights} label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                              <Input defaultValue={rate.freeCancellationHours} label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
                             </div>
                             <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" defaultValue={rate.cancellationDescription} maxLength={300} minLength={10} name="cancellationDescription" required /></label>
                             <label className="supplier-form__check"><input defaultChecked={rate.refundable} name="refundable" type="checkbox" /> Refundable under the stated policy</label>
@@ -818,6 +820,7 @@ export function PartnerPropertyManager({
                           <label className="ui-field"><span className="ui-field__label">Meal plan</span><select className="ui-input" defaultValue="room-only" name="mealPlan"><option value="room-only">Room only</option><option value="breakfast-included">Breakfast included</option><option value="half-board">Half board</option><option value="full-board">Full board</option></select></label>
                           <Input defaultValue="1" label="Minimum stay (nights)" max={30} min={1} name="minimumStayNights" required type="number" />
                           <Input defaultValue="30" label="Maximum stay (nights)" max={90} min={1} name="maximumStayNights" required type="number" />
+                          <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
                         </div>
                         <label className="ui-field"><span className="ui-field__label">Cancellation policy</span><textarea className="ui-input supplier-form__textarea" maxLength={300} minLength={10} name="cancellationDescription" required /></label>
                         <label className="supplier-form__check"><input defaultChecked name="refundable" type="checkbox" /> Refundable under the stated policy</label>
@@ -983,6 +986,7 @@ export function PartnerPropertyManager({
                     <input defaultChecked name="refundable" type="checkbox" /> This rate is
                     refundable under the stated policy
                   </label>
+                  <Input defaultValue="48" label="Free cancellation cutoff (hours before check-in)" max={720} min={0} name="freeCancellationHours" required type="number" />
                   <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                     Add room and publish property
                   </Button>
