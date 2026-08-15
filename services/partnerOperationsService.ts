@@ -975,6 +975,7 @@ export const partnerOperationsService = {
     note: string;
     partnerId: string;
     propertyId: string;
+    ratePlanRecordId?: string;
     roomTypeId: string;
     startDate: string;
     stopSell: boolean;
@@ -1009,6 +1010,22 @@ export const partnerOperationsService = {
         'Nightly rate must be between ₹100 and ₹50,00,000.',
       );
     }
+    const room = await prisma.partnerRoomType.findFirst({
+      include: { ratePlans: true },
+      where: { propertyId: property.id, roomTypeId: input.roomTypeId, status: 'ACTIVE' },
+    });
+    if (!room) {
+      throw new PartnerOperationsError('ROOM_NOT_FOUND', 'The active room type was not found.');
+    }
+    const ratePlan = input.ratePlanRecordId
+      ? room.ratePlans.find((candidate) => candidate.id === input.ratePlanRecordId && candidate.status === 'ACTIVE')
+      : undefined;
+    if (input.nightlyRate !== undefined && !ratePlan) {
+      throw new PartnerOperationsError(
+        'RATE_PLAN_REQUIRED',
+        'Select an active rate plan before setting a seasonal nightly rate.',
+      );
+    }
     if (
       input.minimumStayNights !== undefined &&
       (!Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30)
@@ -1031,7 +1048,6 @@ export const partnerOperationsService = {
             closedToDeparture: input.closedToDeparture,
             maximumStayNights: input.maximumStayNights,
             minimumStayNights: input.minimumStayNights,
-            nightlyRate: input.nightlyRate,
             note: normalizeText(input.note, 200),
             propertyId: property.id,
             roomTypeId: input.roomTypeId,
@@ -1044,7 +1060,6 @@ export const partnerOperationsService = {
             closedToDeparture: input.closedToDeparture,
             maximumStayNights: input.maximumStayNights,
             minimumStayNights: input.minimumStayNights,
-            nightlyRate: input.nightlyRate,
             note: normalizeText(input.note, 200),
             stopSell: input.stopSell,
           },
@@ -1058,6 +1073,25 @@ export const partnerOperationsService = {
         }),
       ),
     );
+    if (ratePlan && input.nightlyRate !== undefined) {
+      await prisma.$transaction(
+        dates.map((stayDate) =>
+          prisma.partnerRatePlanInventoryDay.upsert({
+            create: {
+              nightlyRate: input.nightlyRate as number,
+              note: normalizeText(input.note, 200),
+              ratePlanId: ratePlan.id,
+              stayDate,
+            },
+            update: {
+              nightlyRate: input.nightlyRate as number,
+              note: normalizeText(input.note, 200),
+            },
+            where: { ratePlanId_stayDate: { ratePlanId: ratePlan.id, stayDate } },
+          }),
+        ),
+      );
+    }
     return dates.length;
   },
 

@@ -146,7 +146,12 @@ tax invoices.
 
 ## Current quality gate
 
+Seasonal pricing is rate-plan-specific: room-only, breakfast, and other plans retain independent
+daily prices across search and booking quotes, while availability and stay restrictions remain
+room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overrides normalized and
+supplier-scoped.
+
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 83 routes, and clean-database verification of all 36 migrations
+a Next.js production build with all 83 routes, and clean-database verification of all 37 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

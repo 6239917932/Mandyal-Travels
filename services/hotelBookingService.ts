@@ -232,6 +232,7 @@ export class HotelBookingService {
       request.checkInDate,
       request.checkOutDate,
       ratePlan.nightlyRate.amount,
+      ratePlan.id,
     );
     const roomChargeAmount =
       (rateControl.nightlyCharge ?? ratePlan.nightlyRate.amount * nights) * request.rooms;

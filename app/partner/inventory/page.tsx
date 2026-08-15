@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
-import type { ApiErrorResponse, PartnerHotelCalendarRecord, PartnerInventoryRecord } from '@/types/commerce';
+import type { ApiErrorResponse, PartnerHotelCalendarRecord, PartnerInventoryRatePlanRecord, PartnerInventoryRecord } from '@/types/commerce';
 
 function futureDate(days: number): string {
   const date = new Date();
@@ -20,6 +20,7 @@ export default function PartnerInventoryPage() {
   const [checkOutDate, setCheckOutDate] = useState(futureDate(4));
   const [inventory, setInventory] = useState<PartnerInventoryRecord[]>([]);
   const [calendar, setCalendar] = useState<PartnerHotelCalendarRecord[]>([]);
+  const [ratePlans, setRatePlans] = useState<PartnerInventoryRatePlanRecord[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function PartnerInventoryPage() {
     try {
       const params = new URLSearchParams({ checkInDate, checkOutDate });
       const response = await fetch(`/api/v1/partner/inventory?${params}`);
-      const result = await readJsonResponse<{ calendar: PartnerHotelCalendarRecord[]; data: PartnerInventoryRecord[] } | ApiErrorResponse>(
+      const result = await readJsonResponse<{ calendar: PartnerHotelCalendarRecord[]; data: PartnerInventoryRecord[]; ratePlans: PartnerInventoryRatePlanRecord[] } | ApiErrorResponse>(
         response,
       );
       if (!response.ok || !result || !('data' in result)) {
@@ -45,6 +46,7 @@ export default function PartnerInventoryPage() {
       }
       setInventory(result.data);
       setCalendar(result.calendar);
+      setRatePlans(result.ratePlans);
       setHasLoaded(true);
     } catch {
       setError('The partner service could not be reached.');
@@ -70,6 +72,7 @@ export default function PartnerInventoryPage() {
           nightlyRate: formData.get('nightlyRate')
             ? Number(formData.get('nightlyRate'))
             : undefined,
+          ratePlanRecordId: String(formData.get('ratePlanRecordId') ?? '') || undefined,
           minimumStayNights: formData.get('minimumStayNights')
             ? Number(formData.get('minimumStayNights'))
             : undefined,
@@ -214,6 +217,17 @@ export default function PartnerInventoryPage() {
                   placeholder="No restriction"
                   type="number"
                 />
+                <label className="ui-field">
+                  <span className="ui-field__label">Rate plan for seasonal price</span>
+                  <select className="ui-input" name="ratePlanRecordId">
+                    <option value="">No price change</option>
+                    {ratePlans.map((ratePlan) => (
+                      <option key={ratePlan.id} value={ratePlan.id}>
+                        {ratePlan.name} ({inventory.find((room) => room.roomTypeId === ratePlan.roomTypeId)?.roomName ?? ratePlan.roomTypeId})
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <Input
                   label="Maximum stay (optional)"
                   max={90}
@@ -246,10 +260,11 @@ export default function PartnerInventoryPage() {
             <h2>Saved daily controls</h2>
             <div className="partner-inventory__list">
               {calendar.map((day) => (
-                <div className="partner-inventory__room" key={`${day.roomTypeId}-${day.stayDate}`}>
+                <div className="partner-inventory__room" key={`${day.roomTypeId}-${day.ratePlanName ?? 'room'}-${day.stayDate}`}>
                   <strong>{day.stayDate} · {day.hotelName} · {day.roomName}</strong>
                   <small>
                     {day.availableRooms} rooms
+                    {day.ratePlanName ? ` · ${day.ratePlanName}` : ''}
                     {day.nightlyRate ? ` · ₹${day.nightlyRate.toLocaleString('en-IN')}` : ''}
                     {day.minimumStayNights ? ` · min ${day.minimumStayNights} nights` : ''}
                     {day.maximumStayNights ? ` · max ${day.maximumStayNights} nights` : ''}

@@ -166,6 +166,7 @@ export class HotelService {
                   criteria.checkInDate,
                   criteria.checkOutDate,
                   ratePlan.nightlyRate.amount,
+                  ratePlan.id,
                 );
                 return {
                   ...ratePlan,

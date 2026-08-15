@@ -619,8 +619,24 @@ model PartnerRatePlan {
   createdAt               DateTime        @default(now())
   updatedAt               DateTime        @updatedAt
   room                    PartnerRoomType @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  inventoryDays           PartnerRatePlanInventoryDay[]
 
   @@index([roomId, status])
+}
+
+model PartnerRatePlanInventoryDay {
+  id          String          @id @default(cuid())
+  ratePlanId  String
+  stayDate    String
+  nightlyRate Int
+  currency    String          @default("INR")
+  note        String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  ratePlan    PartnerRatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+
+  @@unique([ratePlanId, stayDate])
+  @@index([stayDate])
 }
 
 model HotelReview {

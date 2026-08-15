@@ -115,11 +115,18 @@ export interface PartnerHotelCalendarRecord {
   maximumStayNights?: number;
   minimumStayNights?: number;
   nightlyRate?: number;
+  ratePlanName?: string;
   note: string;
   roomName: string;
   roomTypeId: string;
   stayDate: string;
   stopSell: boolean;
+}
+
+export interface PartnerInventoryRatePlanRecord {
+  id: string;
+  name: string;
+  roomTypeId: string;
 }
 
 export interface HotelBookingRecord {

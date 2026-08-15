@@ -20,6 +20,7 @@ export class PartnerHotelInventoryRepository {
     startDate: string,
     endDate: string,
     fallbackNightlyRate?: number,
+    ratePlanId?: string,
   ): Promise<PartnerHotelStayControl> {
     const stayNights = nights(startDate, endDate);
     if (!Number.isFinite(stayNights) || stayNights < 1) return { stopSell: true };
@@ -51,6 +52,12 @@ export class PartnerHotelInventoryRepository {
       : restrictionMessage
         ? 0
         : undefined;
+    const rateDays = ratePlanId && fallbackNightlyRate !== undefined
+      ? await prisma.partnerRatePlanInventoryDay.findMany({
+          orderBy: { stayDate: 'asc' },
+          where: { ratePlan: { ratePlanId }, stayDate: { gte: startDate, lt: endDate } },
+        })
+      : [];
     const nightlyCharge =
       fallbackNightlyRate === undefined
         ? undefined
@@ -59,7 +66,11 @@ export class PartnerHotelInventoryRepository {
               .toISOString()
               .slice(0, 10);
             return (
-              stayDays.find((day) => day.stayDate === date)?.nightlyRate ?? fallbackNightlyRate
+              rateDays.find((day) => day.stayDate === date)?.nightlyRate ??
+              (ratePlanId
+                ? undefined
+                : stayDays.find((day) => day.stayDate === date)?.nightlyRate) ??
+              fallbackNightlyRate
             );
           }).reduce((total, amount) => total + amount, 0);
     return {

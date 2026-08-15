@@ -42,9 +42,21 @@ export async function GET(request: Request): Promise<Response> {
           where: { roomTypeId: { in: [...new Set(calendarDays.map((day) => day.roomTypeId))] } },
         })
       : [];
+    const managedRooms = await prisma.partnerRoomType.findMany({
+      include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+      where: { property: { partnerId: access.partnerId, status: 'ACTIVE' }, status: 'ACTIVE' },
+    });
+    const ratePlanDays = await prisma.partnerRatePlanInventoryDay.findMany({
+      include: { ratePlan: { include: { room: { include: { property: true } } } } },
+      orderBy: [{ stayDate: 'asc' }, { ratePlanId: 'asc' }],
+      where: {
+        ratePlan: { room: { property: { partnerId: access.partnerId, status: 'ACTIVE' } } },
+        stayDate: { gte: checkInDate, lte: checkOutDate },
+      },
+    });
     const roomNames = new Map(roomTypes.map((room) => [room.roomTypeId, room.name]));
     return Response.json({
-      calendar: calendarDays.map((day) => ({
+      calendar: [...calendarDays.map((day) => ({
         availableRooms: day.availableRooms,
         closedToArrival: day.closedToArrival,
         closedToDeparture: day.closedToDeparture,
@@ -57,8 +69,25 @@ export async function GET(request: Request): Promise<Response> {
         roomTypeId: day.roomTypeId,
         stayDate: day.stayDate,
         stopSell: day.stopSell,
-      })),
+      })), ...ratePlanDays.map((day) => ({
+        availableRooms: day.ratePlan.room.inventoryCount,
+        closedToArrival: false,
+        closedToDeparture: false,
+        hotelName: day.ratePlan.room.property.displayName,
+        nightlyRate: day.nightlyRate,
+        note: day.note,
+        ratePlanName: day.ratePlan.name,
+        roomName: day.ratePlan.room.name,
+        roomTypeId: day.ratePlan.room.roomTypeId,
+        stayDate: day.stayDate,
+        stopSell: false,
+      }))],
       data,
+      ratePlans: managedRooms.flatMap((room) => room.ratePlans.map((ratePlan) => ({
+        id: ratePlan.id,
+        name: ratePlan.name,
+        roomTypeId: room.roomTypeId,
+      }))),
     });
   } catch (error) {
     return error instanceof HotelBookingRuleError
@@ -100,6 +129,10 @@ export async function POST(request: Request): Promise<Response> {
   const nightlyRate =
     typeof values.nightlyRate === 'number' && values.nightlyRate > 0
       ? values.nightlyRate
+      : undefined;
+  const ratePlanRecordId =
+    typeof values.ratePlanRecordId === 'string' && values.ratePlanRecordId.length > 0
+      ? values.ratePlanRecordId
       : undefined;
   const minimumStayNights =
     typeof values.minimumStayNights === 'number' && values.minimumStayNights > 0
@@ -151,6 +184,7 @@ export async function POST(request: Request): Promise<Response> {
           note,
           partnerId: access.partnerId,
           propertyId: property.id,
+          ratePlanRecordId,
           roomTypeId,
           startDate: checkInDate,
           stopSell,
