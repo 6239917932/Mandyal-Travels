@@ -13,6 +13,16 @@ for (const name of ['BOOKING_TOKEN_SECRET', 'PARTNER_ADMIN_KEY', 'MFA_ENCRYPTION
   if (/replace|example|change-me/i.test(value))
     failures.push(`${name} still contains a placeholder value.`);
 }
+if (process.env.PAYMENT_GATEWAY_MODE !== 'live')
+  failures.push('PAYMENT_GATEWAY_MODE must be live.');
+for (const name of [
+  'PAYMENT_GATEWAY_ENDPOINT',
+  'PAYMENT_GATEWAY_API_KEY',
+  'PAYMENT_WEBHOOK_SECRET',
+]) {
+  if (!(process.env[name] ?? '').trim())
+    failures.push(`${name} is required for production checkout.`);
+}
 if (
   !['postgresql:', 'postgres:'].some((prefix) =>
     (process.env.DATABASE_URL ?? '').startsWith(prefix),

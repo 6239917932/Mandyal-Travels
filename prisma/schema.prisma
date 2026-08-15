@@ -775,6 +775,27 @@ model HotelQuote {
   availabilityLock   AvailabilityLock @relation(fields: [availabilityLockId], references: [id])
   components         PriceComponent[]
   booking            Booking?
+  paymentIntents     PaymentCheckoutIntent[]
+}
+
+model PaymentCheckoutIntent {
+  id             String     @id @default(cuid())
+  quoteId        String
+  idempotencyKey String     @unique
+  provider       String
+  providerRef    String     @unique
+  amount         Int
+  currency       String
+  status         String     @default("CREATED")
+  checkoutUrl    String
+  expiresAt      DateTime
+  capturedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  quote          HotelQuote @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId, status, createdAt])
+  @@index([status, expiresAt])
 }
 
 model PriceComponent {
