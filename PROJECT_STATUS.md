@@ -261,7 +261,12 @@ Car suppliers can export their scoped reservation register as a formula-safe CSV
 records, including driver or lead traveller, vehicle, registration, route, rental dates, units, and
 captured value without exposing another fleet partner's reservations.
 
-The current travel-domain milestone passes 45 regression tests, Prisma Client generation,
+Car supplier administrators can maintain audited registration/RC, insurance, commercial permit,
+fitness-certificate, and pollution-certificate expiry dates. The fleet workspace classifies each
+vehicle as incomplete, expired, expiring within 30 days, or complete while preserving existing
+fleet records through an additive migration.
+
+The current travel-domain milestone passes 47 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 95 generated route entries, and
-clean-database verification of all 46 migrations with foreign-key integrity enabled. Provider
+clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
 integration work must preserve those checks and add provider-specific automated tests before going live.

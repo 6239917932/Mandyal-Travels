@@ -8,6 +8,7 @@ import {
 } from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 import { seatsFitBusCapacity } from '@/lib/bus/bookingRules';
+import { normalizeVehicleComplianceDates, type VehicleComplianceDates } from '@/lib/car/complianceRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -1692,6 +1693,24 @@ export const partnerOperationsService = {
       },
     });
     return reservation;
+  },
+
+  async updateVehicleCompliance(input: VehicleComplianceDates & { partnerId: string; vehicleId: string }) {
+    const vehicle = await prisma.partnerVehicle.findFirst({
+      select: { id: true, registrationNumber: true, vehicleName: true },
+      where: { id: input.vehicleId, partnerId: input.partnerId },
+    });
+    if (!vehicle) throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
+    if (!vehicle.registrationNumber)
+      throw new PartnerOperationsError('REGISTRATION_REQUIRED', 'Add a vehicle registration number before recording compliance dates.');
+    const dates = normalizeVehicleComplianceDates({
+      fitnessExpiry: input.fitnessExpiry,
+      insuranceExpiry: input.insuranceExpiry,
+      permitExpiry: input.permitExpiry,
+      pollutionExpiry: input.pollutionExpiry,
+      registrationExpiry: input.registrationExpiry,
+    });
+    return prisma.partnerVehicle.update({ data: dates, where: { id: vehicle.id } });
   },
 
   async reserveDirectBus(

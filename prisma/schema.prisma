@@ -278,6 +278,11 @@ model PartnerVehicle {
   vehicleName        String
   category           String
   registrationNumber String?
+  registrationExpiry String                       @default("")
+  insuranceExpiry    String                       @default("")
+  permitExpiry       String                       @default("")
+  fitnessExpiry      String                       @default("")
+  pollutionExpiry    String                       @default("")
   transmission       String
   seats              Int
   bags               Int

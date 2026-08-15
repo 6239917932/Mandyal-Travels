@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import { vehicleComplianceState } from '@/lib/car/complianceRules';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 type Vehicle = {
@@ -13,6 +14,11 @@ type Vehicle = {
   vehicleName: string;
   category: string;
   registrationNumber: string | null;
+  registrationExpiry: string;
+  insuranceExpiry: string;
+  permitExpiry: string;
+  fitnessExpiry: string;
+  pollutionExpiry: string;
   transmission: string;
   seats: number;
   bags: number;
@@ -134,6 +140,23 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
     }
     setBusy(false);
   }
+  async function saveCompliance(event: FormEvent<HTMLFormElement>, vehicleId: string) {
+    event.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    setMessage(undefined);
+    try {
+      const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/compliance`, {
+        body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+      });
+      const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+      if (!response.ok) setError(result && 'error' in result ? result.error.message : 'Compliance records could not be saved.');
+      else { setMessage('Vehicle compliance dates saved and audited.'); setVehicles(await fetchVehicles()); }
+    } catch { setError('The compliance service could not be reached.'); }
+    finally { setBusy(false); }
+  }
   return (
     <>
       {message ? (
@@ -222,6 +245,18 @@ export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: 
               {vehicle.seats} seats · {vehicle.bags} bags · {vehicle.totalUnits} units
             </p>
             <strong>₹{vehicle.pricePerDay.toLocaleString('en-IN')} / day</strong>
+            <form className="supplier-form" onSubmit={(event) => saveCompliance(event, vehicle.id)}>
+              <h3>Compliance and document expiries</h3>
+              <p>Status: <strong>{vehicleComplianceState(vehicle, date(0))}</strong>. Empty or expired records require supplier review before production operation.</p>
+              <div className="supplier-form__grid">
+                <Input defaultValue={vehicle.registrationExpiry} label="Registration / RC expiry" name="registrationExpiry" type="date" />
+                <Input defaultValue={vehicle.insuranceExpiry} label="Insurance expiry" name="insuranceExpiry" type="date" />
+                <Input defaultValue={vehicle.permitExpiry} label="Commercial permit expiry" name="permitExpiry" type="date" />
+                <Input defaultValue={vehicle.fitnessExpiry} label="Fitness certificate expiry" name="fitnessExpiry" type="date" />
+                <Input defaultValue={vehicle.pollutionExpiry} label="Pollution certificate expiry" name="pollutionExpiry" type="date" />
+              </div>
+              <Button disabled={!canCreateVehicles} isLoading={busy} type="submit" variant="secondary">Save compliance dates</Button>
+            </form>
             <form className="supplier-form" onSubmit={(event) => saveCalendar(event, vehicle.id)}>
               <div className="supplier-form__grid">
                 <Input
