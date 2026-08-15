@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
+import { HotelMapResults } from '@/components/hotel/HotelMapResults';
 import { hotelService } from '@/services/hotelService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
@@ -33,6 +34,11 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
     query.set('minimumStarRating', String(filters.minimumStarRating));
     query.set('amenity', filters.amenity);
     query.set('maximumNightlyRate', String(filters.maximumNightlyRate));
+    if (filters.centerLatitude !== undefined && filters.centerLongitude !== undefined) {
+      query.set('latitude', String(filters.centerLatitude));
+      query.set('longitude', String(filters.centerLongitude));
+    }
+    if (filters.radiusKm) query.set('radiusKm', String(filters.radiusKm));
     query.set('sort', filters.sort);
     if (filters.refundableOnly) query.set('refundableOnly', 'true');
     query.set('page', String(page));
@@ -56,6 +62,7 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
         <div className="hotel-page__container">
           <HotelSearchForm criteria={criteria} filters={filters} />
           <HotelDiscoveryAssistant criteria={criteria} />
+          <HotelMapResults results={resultPage.results} />
 
           <div className="hotel-page__results-heading">
             <div>
@@ -85,9 +92,19 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
 
           {resultPage.pageCount > 1 ? (
             <nav aria-label="Hotel results pages" className="hotel-results-pagination">
-              {resultPage.page > 1 ? <Link href={pageHref(resultPage.page - 1)}>Previous</Link> : <span />}
-              <span>Page {resultPage.page} of {resultPage.pageCount}</span>
-              {resultPage.page < resultPage.pageCount ? <Link href={pageHref(resultPage.page + 1)}>Next</Link> : <span />}
+              {resultPage.page > 1 ? (
+                <Link href={pageHref(resultPage.page - 1)}>Previous</Link>
+              ) : (
+                <span />
+              )}
+              <span>
+                Page {resultPage.page} of {resultPage.pageCount}
+              </span>
+              {resultPage.page < resultPage.pageCount ? (
+                <Link href={pageHref(resultPage.page + 1)}>Next</Link>
+              ) : (
+                <span />
+              )}
             </nav>
           ) : null}
         </div>

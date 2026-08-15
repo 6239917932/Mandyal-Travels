@@ -2370,6 +2370,44 @@
   min-height: 2.75rem;
 }
 
+.hotel-map-results {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  padding: var(--space-5);
+}
+
+.hotel-map-results h2,
+.hotel-map-results p {
+  margin-top: 0;
+}
+
+.hotel-map-results ol {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+}
+
+.hotel-map-results a {
+  color: var(--color-brand-700);
+}
+
+.hotel-map-results iframe {
+  width: 100%;
+  min-height: 22rem;
+  border: 0;
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 768px) {
+  .hotel-map-results {
+    grid-template-columns: minmax(16rem, 0.8fr) minmax(24rem, 1.2fr);
+  }
+}
+
 .hotel-results-pagination {
   align-items: center;
   display: grid;
@@ -2486,25 +2524,126 @@
     grid-template-columns: 1fr;
   }
 }
-.partner-property-manager .booking-page__container { width: min(100% - 2rem, 80rem); }
-.supplier-form__section-heading { align-items: center; background: linear-gradient(90deg, var(--color-brand-50), transparent); border-left: 0.25rem solid var(--color-brand-600); display: flex; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); }
-.supplier-form__section-heading > span { color: var(--color-brand-600); font-size: 1.25rem; font-weight: 800; }
-.supplier-form__section-heading > div { display: grid; gap: var(--space-1); }
-.supplier-form__section-heading small { color: var(--color-text-secondary); }
-.supplier-form__policy-checks { align-content: center; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: var(--space-2); padding: var(--space-3); }
-.supplier-form__policy-checks label { align-items: center; display: flex; gap: var(--space-2); }
-.supplier-form__compact-textarea { min-height: 5rem; padding: var(--space-3); resize: vertical; }
-.hotel-property-profile { display: grid; gap: var(--space-3); margin: 0; }
-.hotel-property-profile div { display: flex; gap: var(--space-3); justify-content: space-between; }
-.hotel-property-profile dt { color: var(--color-text-secondary); }
-.hotel-property-profile dd { font-weight: 700; margin: 0; text-align: right; text-transform: capitalize; }
-.amenity-checklist { border: 1px solid var(--color-border); border-radius: var(--radius-lg); display: grid; gap: var(--space-5); margin: 0; padding: var(--space-5); }
-.amenity-checklist > legend { color: var(--color-brand-900); font-size: 1.125rem; font-weight: 800; padding: 0 var(--space-2); }
-.amenity-checklist__group { display: grid; gap: var(--space-3); }
-.amenity-checklist__group h3 { color: var(--color-brand-950); font-size: 1rem; font-weight: 800; letter-spacing: 0.01em; margin: 0; }
-.amenity-checklist__options { display: grid; gap: var(--space-2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.amenity-checklist__options label { align-items: flex-start; background: var(--color-surface-muted); border: 1px solid transparent; border-radius: var(--radius-md); cursor: pointer; display: flex; gap: var(--space-2); min-height: 3rem; padding: var(--space-3); }
-.amenity-checklist__options label:has(input:checked) { background: var(--color-brand-50); border-color: var(--color-brand-500); }
-.amenity-checklist__options input { margin-top: 0.2rem; }
-@media (max-width: 900px) { .amenity-checklist__options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .amenity-checklist { padding: var(--space-4); } .amenity-checklist__options { grid-template-columns: 1fr; } }
+.partner-property-manager .booking-page__container {
+  width: min(100% - 2rem, 80rem);
+}
+.supplier-form__section-heading {
+  align-items: center;
+  background: linear-gradient(90deg, var(--color-brand-50), transparent);
+  border-left: 0.25rem solid var(--color-brand-600);
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.supplier-form__section-heading > span {
+  color: var(--color-brand-600);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.supplier-form__section-heading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+.supplier-form__section-heading small {
+  color: var(--color-text-secondary);
+}
+.supplier-form__policy-checks {
+  align-content: center;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+.supplier-form__policy-checks label {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+}
+.supplier-form__compact-textarea {
+  min-height: 5rem;
+  padding: var(--space-3);
+  resize: vertical;
+}
+.hotel-property-profile {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+.hotel-property-profile div {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+}
+.hotel-property-profile dt {
+  color: var(--color-text-secondary);
+}
+.hotel-property-profile dd {
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
+  text-transform: capitalize;
+}
+.amenity-checklist {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: var(--space-5);
+}
+.amenity-checklist > legend {
+  color: var(--color-brand-900);
+  font-size: 1.125rem;
+  font-weight: 800;
+  padding: 0 var(--space-2);
+}
+.amenity-checklist__group {
+  display: grid;
+  gap: var(--space-3);
+}
+.amenity-checklist__group h3 {
+  color: var(--color-brand-950);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.amenity-checklist__options {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.amenity-checklist__options label {
+  align-items: flex-start;
+  background: var(--color-surface-muted);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-2);
+  min-height: 3rem;
+  padding: var(--space-3);
+}
+.amenity-checklist__options label:has(input:checked) {
+  background: var(--color-brand-50);
+  border-color: var(--color-brand-500);
+}
+.amenity-checklist__options input {
+  margin-top: 0.2rem;
+}
+@media (max-width: 900px) {
+  .amenity-checklist__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .amenity-checklist {
+    padding: var(--space-4);
+  }
+  .amenity-checklist__options {
+    grid-template-columns: 1fr;
+  }
+}

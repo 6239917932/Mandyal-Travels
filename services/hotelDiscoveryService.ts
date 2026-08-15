@@ -74,7 +74,14 @@ export class RuleBasedHotelDiscoveryAdapter implements HotelDiscoveryAdapter {
         recognized.length > 0
           ? `Applied ${recognized.join(', ')}. Live availability and final prices are checked by the normal hotel search.`
           : 'No specific filters were recognized, so all currently available stays are shown by lowest price.',
-      filters: { amenity, maximumNightlyRate, minimumStarRating, refundableOnly, sort },
+      filters: {
+        amenity,
+        maximumNightlyRate,
+        minimumStarRating,
+        radiusKm: 0,
+        refundableOnly,
+        sort,
+      },
       normalizedDestination: destination,
     };
   }

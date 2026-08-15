@@ -18,6 +18,36 @@ export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
         placeholder="Bir Billing, Suja, Mandi, or hotel name"
       />
 
+      <Input
+        defaultValue={filters.centerLatitude ?? ''}
+        label="Map latitude"
+        max="90"
+        min="-90"
+        name="latitude"
+        placeholder="Optional"
+        step="any"
+        type="number"
+      />
+      <Input
+        defaultValue={filters.centerLongitude ?? ''}
+        label="Map longitude"
+        max="180"
+        min="-180"
+        name="longitude"
+        placeholder="Optional"
+        step="any"
+        type="number"
+      />
+      <Input
+        defaultValue={filters.radiusKm || ''}
+        label="Radius (km)"
+        max="500"
+        min="0"
+        name="radiusKm"
+        placeholder="No radius"
+        type="number"
+      />
+
       <label className="ui-field">
         <span>Minimum rating</span>
         <select defaultValue={filters.minimumStarRating} name="minimumStarRating">
@@ -33,7 +63,9 @@ export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
         <select defaultValue={filters.amenity} name="amenity">
           <option value="">Any amenity</option>
           {searchableHotelAmenities.map((amenity) => (
-            <option key={amenity} value={amenity}>{amenity}</option>
+            <option key={amenity} value={amenity}>
+              {amenity}
+            </option>
           ))}
         </select>
       </label>
