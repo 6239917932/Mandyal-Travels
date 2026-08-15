@@ -11,6 +11,7 @@ export type PartnerHotelStayControl = {
   averageNightlyRate?: number;
   nightlyCharge?: number;
   stopSell: boolean;
+  restrictionMessage?: string;
 };
 
 export class PartnerHotelInventoryRepository {
@@ -25,15 +26,31 @@ export class PartnerHotelInventoryRepository {
     const days = await prisma.partnerHotelInventoryDay.findMany({
       include: { property: { include: { partner: { select: { status: true } } } } },
       orderBy: { stayDate: 'asc' },
-      where: { roomTypeId, stayDate: { gte: startDate, lt: endDate } },
+      where: { roomTypeId, stayDate: { gte: startDate, lte: endDate } },
     });
     const activeDays = days.filter(
       (day) => day.property.status === 'ACTIVE' && day.property.partner.status === 'ACTIVE',
     );
     if (!activeDays.length) return { stopSell: false };
-    const availableRooms = Math.min(
-      ...activeDays.map((day) => (day.stopSell ? 0 : day.availableRooms)),
-    );
+    const stayDays = activeDays.filter((day) => day.stayDate < endDate);
+    const arrivalDay = activeDays.find((day) => day.stayDate === startDate);
+    const departureDay = activeDays.find((day) => day.stayDate === endDate);
+    const minimumStay = Math.max(1, ...stayDays.map((day) => day.minimumStayNights ?? 1));
+    const maximumStay = Math.min(90, ...stayDays.map((day) => day.maximumStayNights ?? 90));
+    const restrictionMessage = arrivalDay?.closedToArrival
+      ? 'Arrivals are closed on the selected check-in date.'
+      : departureDay?.closedToDeparture
+        ? 'Departures are closed on the selected check-out date.'
+        : stayNights < minimumStay || stayNights > maximumStay
+          ? `This date range requires a stay between ${minimumStay} and ${maximumStay} nights.`
+          : undefined;
+    const availableRooms = stayDays.length
+      ? Math.min(
+          ...stayDays.map((day) => (day.stopSell || restrictionMessage ? 0 : day.availableRooms)),
+        )
+      : restrictionMessage
+        ? 0
+        : undefined;
     const nightlyCharge =
       fallbackNightlyRate === undefined
         ? undefined
@@ -42,14 +59,15 @@ export class PartnerHotelInventoryRepository {
               .toISOString()
               .slice(0, 10);
             return (
-              activeDays.find((day) => day.stayDate === date)?.nightlyRate ?? fallbackNightlyRate
+              stayDays.find((day) => day.stayDate === date)?.nightlyRate ?? fallbackNightlyRate
             );
           }).reduce((total, amount) => total + amount, 0);
     return {
       availableRooms,
       averageNightlyRate: nightlyCharge === undefined ? undefined : nightlyCharge / stayNights,
       nightlyCharge,
-      stopSell: activeDays.some((day) => day.stopSell),
+      restrictionMessage,
+      stopSell: Boolean(restrictionMessage) || stayDays.some((day) => day.stopSell),
     };
   }
 }

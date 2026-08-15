@@ -160,6 +160,9 @@ export class HotelBookingService {
       overrideLimit ?? room.inventoryCount,
       partnerControl.availableRooms ?? room.inventoryCount,
     );
+    if (partnerControl.restrictionMessage) {
+      throw new HotelBookingRuleError('CALENDAR_RESTRICTION', partnerControl.restrictionMessage);
+    }
     if (effectiveInventory - lockedInventory < request.rooms) {
       throw new HotelBookingRuleError(
         'INVENTORY_NOT_AVAILABLE',

@@ -672,8 +672,12 @@ export const partnerOperationsService = {
 
   async setHotelCalendar(input: {
     availableRooms: number;
+    closedToArrival: boolean;
+    closedToDeparture: boolean;
     endDate: string;
     nightlyRate?: number;
+    maximumStayNights?: number;
+    minimumStayNights?: number;
     note: string;
     partnerId: string;
     propertyId: string;
@@ -711,12 +715,28 @@ export const partnerOperationsService = {
         'Nightly rate must be between ₹100 and ₹50,00,000.',
       );
     }
+    if (
+      input.minimumStayNights !== undefined &&
+      (!Number.isInteger(input.minimumStayNights) || input.minimumStayNights < 1 || input.minimumStayNights > 30)
+    ) {
+      throw new PartnerOperationsError('INVALID_MINIMUM_STAY', 'Minimum stay must be between 1 and 30 nights.');
+    }
+    if (
+      input.maximumStayNights !== undefined &&
+      (!Number.isInteger(input.maximumStayNights) || input.maximumStayNights < (input.minimumStayNights ?? 1) || input.maximumStayNights > 90)
+    ) {
+      throw new PartnerOperationsError('INVALID_MAXIMUM_STAY', 'Maximum stay must be between the minimum stay and 90 nights.');
+    }
     const dates = enumerateDates(input.startDate, input.endDate);
     await prisma.$transaction(
       dates.map((stayDate) =>
         prisma.partnerHotelInventoryDay.upsert({
           create: {
             availableRooms: input.availableRooms,
+            closedToArrival: input.closedToArrival,
+            closedToDeparture: input.closedToDeparture,
+            maximumStayNights: input.maximumStayNights,
+            minimumStayNights: input.minimumStayNights,
             nightlyRate: input.nightlyRate,
             note: normalizeText(input.note, 200),
             propertyId: property.id,
@@ -726,6 +746,10 @@ export const partnerOperationsService = {
           },
           update: {
             availableRooms: input.availableRooms,
+            closedToArrival: input.closedToArrival,
+            closedToDeparture: input.closedToDeparture,
+            maximumStayNights: input.maximumStayNights,
+            minimumStayNights: input.minimumStayNights,
             nightlyRate: input.nightlyRate,
             note: normalizeText(input.note, 200),
             stopSell: input.stopSell,

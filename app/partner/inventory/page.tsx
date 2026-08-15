@@ -66,6 +66,14 @@ export default function PartnerInventoryPage() {
           nightlyRate: formData.get('nightlyRate')
             ? Number(formData.get('nightlyRate'))
             : undefined,
+          minimumStayNights: formData.get('minimumStayNights')
+            ? Number(formData.get('minimumStayNights'))
+            : undefined,
+          maximumStayNights: formData.get('maximumStayNights')
+            ? Number(formData.get('maximumStayNights'))
+            : undefined,
+          closedToArrival: formData.get('closedToArrival') === 'on',
+          closedToDeparture: formData.get('closedToDeparture') === 'on',
           roomTypeId: String(formData.get('roomTypeId') ?? ''),
           stopSell: formData.get('stopSell') === 'on',
         }),
@@ -154,7 +162,8 @@ export default function PartnerInventoryPage() {
           <Card className="partner-inventory__override-card">
             <h2>Room, rate, and stop-sell calendar</h2>
             <p>
-              Use zero to stop sales. The limit applies to every night in the selected date range.
+              Control seasonal rates, room limits, stay rules, arrivals, departures, and stop-sell
+              for the selected date range.
             </p>
             <form className="booking-page__guest-form" onSubmit={saveOverride}>
               <label className="ui-field">
@@ -191,7 +200,31 @@ export default function PartnerInventoryPage() {
                   placeholder="Maintenance, allotment, or stop-sell"
                   required
                 />
+                <Input
+                  label="Minimum stay (optional)"
+                  max={30}
+                  min={1}
+                  name="minimumStayNights"
+                  placeholder="No restriction"
+                  type="number"
+                />
+                <Input
+                  label="Maximum stay (optional)"
+                  max={90}
+                  min={1}
+                  name="maximumStayNights"
+                  placeholder="No restriction"
+                  type="number"
+                />
               </div>
+              <label className="supplier-form__check">
+                <input name="closedToArrival" type="checkbox" /> Do not allow check-in on these
+                dates
+              </label>
+              <label className="supplier-form__check">
+                <input name="closedToDeparture" type="checkbox" /> Do not allow check-out on these
+                dates
+              </label>
               <label className="supplier-form__check">
                 <input name="stopSell" type="checkbox" /> Stop selling this room for the selected
                 dates

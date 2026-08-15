@@ -70,6 +70,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Editable supplier room definitions and normalized multi-rate-plan management with meal plans,
   refundable policies, taxes, and enforced minimum/maximum stay restrictions; the additive
   migration backfills every existing room without changing its public rate-plan identifier
+- Date-level Hotel PMS controls for seasonal pricing, availability limits, stop-sell,
+  closed-to-arrival, closed-to-departure, and minimum/maximum stays, enforced by customer search
+  and booking quote validation
 - Supplier-managed car fleets with vehicle pricing and dated availability controls
 - Booking dashboards, hotel amendment review, and append-only partner activity history
 - Integration-key compatibility for approved server-to-server partner operations without exposing a

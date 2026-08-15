@@ -182,6 +182,10 @@ model PartnerHotelInventoryDay {
   stayDate       String
   availableRooms Int
   nightlyRate    Int?
+  minimumStayNights Int?
+  maximumStayNights Int?
+  closedToArrival Boolean         @default(false)
+  closedToDeparture Boolean       @default(false)
   currency       String          @default("INR")
   stopSell       Boolean         @default(false)
   note           String

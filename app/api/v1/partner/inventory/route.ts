@@ -69,6 +69,16 @@ export async function POST(request: Request): Promise<Response> {
     typeof values.nightlyRate === 'number' && values.nightlyRate > 0
       ? values.nightlyRate
       : undefined;
+  const minimumStayNights =
+    typeof values.minimumStayNights === 'number' && values.minimumStayNights > 0
+      ? values.minimumStayNights
+      : undefined;
+  const maximumStayNights =
+    typeof values.maximumStayNights === 'number' && values.maximumStayNights > 0
+      ? values.maximumStayNights
+      : undefined;
+  const closedToArrival = values.closedToArrival === true;
+  const closedToDeparture = values.closedToDeparture === true;
   const stopSell = values.stopSell === true || availableRooms === 0;
   try {
     const data = await hotelBookingService.setPartnerInventoryOverride(
@@ -100,8 +110,12 @@ export async function POST(request: Request): Promise<Response> {
       if (property) {
         await partnerOperationsService.setHotelCalendar({
           availableRooms,
+          closedToArrival,
+          closedToDeparture,
           endDate: checkOutDate,
           nightlyRate,
+          maximumStayNights,
+          minimumStayNights,
           note,
           partnerId: access.partnerId,
           propertyId: property.id,
@@ -120,6 +134,10 @@ export async function POST(request: Request): Promise<Response> {
         checkInDate,
         checkOutDate,
         nightlyRate,
+        maximumStayNights,
+        minimumStayNights,
+        closedToArrival,
+        closedToDeparture,
         stopSell,
       },
       summary: 'Room inventory limit updated.',
