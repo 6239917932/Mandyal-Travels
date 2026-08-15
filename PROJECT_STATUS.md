@@ -72,6 +72,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   migration backfills every existing room without changing its public rate-plan identifier
 - Structured free-cancellation cutoffs on supplier rates, validated from 0 to 720 hours and used by
   customer refund-eligibility decisions
+- Refund cutoffs anchored to each property's configured check-in time and IANA timezone rather than
+  UTC midnight, with invalid timezone data failing closed
 - Date-level Hotel PMS controls for seasonal pricing, availability limits, stop-sell,
   closed-to-arrival, closed-to-departure, and minimum/maximum stays, enforced by customer search
   and booking quote validation

@@ -71,15 +71,60 @@ function calculateNights(checkInDate: string, checkOutDate: string): number {
 
 function isRefundEligible(
   checkInDate: string | undefined,
+  checkInTime: string | undefined,
+  timezone: string | undefined,
   refundable: boolean,
   cutoffHours: number | undefined,
 ): boolean {
-  if (!refundable || !checkInDate || cutoffHours === undefined) {
+  if (!refundable || !checkInDate || !checkInTime || cutoffHours === undefined) {
     return false;
   }
-
-  const checkIn = new Date(`${checkInDate}T00:00:00Z`).getTime();
+  const checkIn = localDateTimeToUtc(checkInDate, checkInTime, timezone ?? 'Asia/Kolkata');
   return Number.isFinite(checkIn) && Date.now() < checkIn - cutoffHours * 60 * 60 * 1000;
+}
+
+function localDateTimeToUtc(date: string, time: string, timezone: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!match || !timeMatch) return Number.NaN;
+  const localWallClock = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(timeMatch[1]),
+    Number(timeMatch[2]),
+  );
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      day: '2-digit',
+      hour: '2-digit',
+      hour12: false,
+      minute: '2-digit',
+      month: '2-digit',
+      timeZone: timezone,
+      year: 'numeric',
+    });
+    let candidate = localWallClock;
+    for (let pass = 0; pass < 2; pass += 1) {
+      const parts = Object.fromEntries(
+        formatter
+          .formatToParts(new Date(candidate))
+          .filter((part) => part.type !== 'literal')
+          .map((part) => [part.type, Number(part.value)]),
+      );
+      const renderedWallClock = Date.UTC(
+        parts.year,
+        parts.month - 1,
+        parts.day,
+        parts.hour === 24 ? 0 : parts.hour,
+        parts.minute,
+      );
+      candidate += localWallClock - renderedWallClock;
+    }
+    return candidate;
+  } catch {
+    return Number.NaN;
+  }
 }
 
 export class HotelBookingService {
@@ -405,6 +450,8 @@ export class HotelBookingService {
     const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
     const refundable = isRefundEligible(
       quote?.checkInDate,
+      hotel?.checkInTime,
+      hotel?.propertyProfile?.timezone,
       ratePlan?.cancellationPolicy.refundable ?? false,
       ratePlan?.cancellationPolicy.freeCancellationUntilHoursBeforeCheckIn,
     );
