@@ -90,6 +90,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   shared key in browser forms
 - Integration-key requests require a validated active supplier identifier; an integration key alone
   cannot enumerate cross-supplier bookings, properties, inventory, amendments, reviews, or exports
+- Supplier-scoped activity history with server-side action, record-type, and text filters, bounded
+  pagination, actor attribution, and immutable operational audit records
 - Quote, availability-lock, booking, guest, payment-transaction, inventory-override, and amendment
   persistence
 - Pagination and bounded query sizes for operational lists
@@ -152,6 +154,6 @@ room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overri
 supplier-scoped.
 
 The current Hotel supplier milestone passes Prisma Client generation, strict TypeScript, ESLint,
-a Next.js production build with all 83 routes, and clean-database verification of all 37 migrations
+a Next.js production build with all 84 routes, and clean-database verification of all 37 migrations
 with foreign-key integrity enabled. Provider integration work must preserve those checks and add
 provider-specific automated tests before going live.

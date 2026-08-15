@@ -260,6 +260,9 @@ export default async function PartnerWorkspacePage() {
         <section>
           <p className="hotel-page__eyebrow">Accountability</p>
           <h2>Recent partner activity</h2>
+          <Link className="home-card__link" href="/partner/activity">
+            View complete activity log
+          </Link>
           <Card className="partner-workspace__audit">
             {partner.auditEntries.map((entry) => (
               <div key={entry.id}>
