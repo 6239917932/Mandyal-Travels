@@ -44,6 +44,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   availability and pricing safeguards
 - Promotion validation, protected demonstration payment forms, confirmation documents, and unified
   customer travel history
+- Flight, Bus, and Car confirmations, tickets, itineraries, and vouchers require the signed-in
+  customer to own the matching persisted trip; URL parameters alone cannot unlock documents
 - Customer hotel cancellation/amendment handling and account-bound booking access
 - Verified-stay hotel reviews restricted to signed-in customers with a completed confirmed booking
 - Protected hotel-review moderation with rejection notes, supplier-scoped public responses, and

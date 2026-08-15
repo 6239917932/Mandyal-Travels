@@ -4,6 +4,7 @@ import { PrintDocumentButton } from '@/components/booking/PrintDocumentButton';
 import { CarPaidAmount } from '@/components/car/CarPaidAmount';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 export const metadata: Metadata = { title: 'Car rental voucher' };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 export default async function CarVoucherPage({
@@ -16,9 +17,12 @@ export default async function CarVoucherPage({
   const { confirmationCode } = await params;
   const queryParams = await searchParams,
     criteria = createCarSearchCriteria(queryParams),
-    offerId = first(queryParams.offerId),
-    offer = offerId ? await carService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer)
+    offerId = first(queryParams.offerId);
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? carService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'CAR'),
+  ]);
+  if (!offer || !ownsConfirmation)
     return (
       <div className="car-booking-page">
         <p>Rental voucher unavailable.</p>

@@ -5,6 +5,7 @@ import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { Card } from '@/components/ui/Card';
 import { flightService } from '@/services/flightService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight confirmed' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -18,8 +19,11 @@ export default async function FlightConfirmationPage({
   const criteria = createFlightSearchCriteria(params);
   const offerId = first(params.offerId);
   const confirmationCode = first(params.confirmationCode);
-  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || !confirmationCode)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? flightService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'FLIGHT'),
+  ]);
+  if (!offer || !confirmationCode || !ownsConfirmation)
     return (
       <div className="flight-booking-page">
         <Card className="flight-booking-page__empty">

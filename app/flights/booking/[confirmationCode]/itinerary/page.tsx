@@ -4,6 +4,7 @@ import { FlightItineraryActions } from '@/components/flight/FlightItineraryActio
 import { FlightPaidAmount } from '@/components/flight/FlightPaidAmount';
 import { flightService } from '@/services/flightService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Flight itinerary' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -19,8 +20,11 @@ export default async function FlightItineraryPage({
   const query = await searchParams;
   const criteria = createFlightSearchCriteria(query);
   const offerId = first(query.offerId);
-  const offer = offerId ? await flightService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? flightService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'FLIGHT'),
+  ]);
+  if (!offer || !ownsConfirmation)
     return (
       <main className="flight-itinerary">
         <h1>Itinerary unavailable</h1>

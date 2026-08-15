@@ -6,6 +6,7 @@ import { BusPaidAmount } from '@/components/bus/BusPaidAmount';
 import { BusTicketPassengerDetails } from '@/components/bus/BusTicketPassengerDetails';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
+import { hasOwnedTravelConfirmation } from '@/lib/travelConfirmationAccess';
 
 export const metadata: Metadata = { title: 'Bus ticket' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -27,8 +28,11 @@ export default async function BusTicketPage({
   const criteria = createBusSearchCriteria(query);
   const offerId = first(query.offerId);
   const seats = (first(query.seats) ?? '').split(',').filter(Boolean);
-  const offer = offerId ? await busService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer)
+  const [offer, ownsConfirmation] = await Promise.all([
+    offerId ? busService.revalidateOffer(offerId, criteria) : undefined,
+    hasOwnedTravelConfirmation(confirmationCode, 'BUS'),
+  ]);
+  if (!offer || !ownsConfirmation)
     return (
       <main className="booking-document-page">
         <h1>Ticket unavailable</h1>
