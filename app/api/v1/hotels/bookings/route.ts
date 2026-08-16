@@ -36,6 +36,10 @@ function isCreateBookingRequest(value: unknown): value is CreateHotelBookingRequ
     typeof request.hotelSlug === 'string' &&
     request.hotelSlug.length > 0 &&
     request.hotelSlug.length <= 120 &&
+    (request.paymentIntentId === undefined ||
+      (typeof request.paymentIntentId === 'string' &&
+        request.paymentIntentId.length > 0 &&
+        request.paymentIntentId.length <= 200)) &&
     (request.promotionCode === undefined ||
       (typeof request.promotionCode === 'string' && request.promotionCode.length <= 50)) &&
     typeof request.quoteId === 'string' &&

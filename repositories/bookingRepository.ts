@@ -2,6 +2,8 @@ import type { HotelBookingRecord } from '@/types/commerce';
 import type { Prisma } from '@/generated/prisma/client';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { createCaptureAccounting } from '@/lib/payments/accounting';
+import type { ConfirmedPaymentContext } from '@/services/paymentConfirmationService';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 export type BusinessBookingContext = {
@@ -96,6 +98,7 @@ export interface BookingRepository {
     booking: HotelBookingRecord,
     idempotencyKey: string,
     accessTokenHash: string,
+    paymentContext: ConfirmedPaymentContext,
     businessContext?: BusinessBookingContext,
   ): Promise<void>;
 }
@@ -175,8 +178,10 @@ export class InMemoryBookingRepository implements BookingRepository {
     booking: HotelBookingRecord,
     idempotencyKey: string,
     accessTokenHash: string,
+    paymentContext: ConfirmedPaymentContext,
     businessContext?: BusinessBookingContext,
   ): Promise<void> {
+    void paymentContext;
     void businessContext;
     this.bookingsByIdempotencyKey.set(idempotencyKey, booking);
     this.tokenHashesByConfirmationCode.set(booking.confirmationCode, accessTokenHash);
@@ -349,6 +354,7 @@ export class PrismaBookingRepository implements BookingRepository {
     booking: HotelBookingRecord,
     idempotencyKey: string,
     accessTokenHash: string,
+    paymentContext: ConfirmedPaymentContext,
     businessContext?: BusinessBookingContext,
   ): Promise<void> {
     await prisma.$transaction(async (transaction) => {
@@ -380,7 +386,25 @@ export class PrismaBookingRepository implements BookingRepository {
         }
       }
 
-      await transaction.booking.create({
+      const property = await transaction.partnerProperty.findUnique({
+        select: {
+          partner: { select: { commissionBasisPoints: true, id: true } },
+        },
+        where: { hotelSlug: booking.hotelSlug },
+      });
+      const taxComponents = await transaction.priceComponent.aggregate({
+        _sum: { amount: true },
+        where: { quoteId: booking.quoteId, type: 'tax-and-fee' },
+      });
+      const taxAmount = Math.min(booking.paymentAmount, taxComponents._sum.amount ?? 0);
+      const accounting = createCaptureAccounting({
+        amount: booking.paymentAmount,
+        commissionBasisPoints: property?.partner.commissionBasisPoints ?? 1000,
+        partnerId: property?.partner.id,
+        taxAmount,
+      });
+
+      const createdBooking = await transaction.booking.create({
         data: {
           accessTokenHash,
           availabilityLockId: booking.availabilityLockId,
@@ -395,15 +419,54 @@ export class PrismaBookingRepository implements BookingRepository {
           payment: {
             create: {
               amount: booking.paymentAmount,
+              checkoutIntentId: paymentContext.checkoutIntentId,
               currency: booking.currency,
-              provider: 'mock',
-              providerRef: `mock-${booking.id}`,
+              environment: paymentContext.environment,
+              provider: paymentContext.provider,
+              providerAmount:
+                paymentContext.reconciliationStatus === 'MATCHED'
+                  ? booking.paymentAmount
+                  : undefined,
+              providerCurrency:
+                paymentContext.reconciliationStatus === 'MATCHED' ? booking.currency : undefined,
+              providerRef: paymentContext.providerRef,
+              reconciliationStatus: paymentContext.reconciliationStatus,
               status: booking.paymentStatus,
             },
           },
           quoteId: booking.quoteId,
           status: booking.status,
           totalAmount: booking.totalAmount,
+        },
+        include: { payment: { select: { id: true } } },
+      });
+
+      const paymentId = createdBooking.payment?.id;
+      if (!paymentId) throw new Error('Captured booking payment was not created.');
+      await transaction.paymentAllocation.createMany({
+        data: accounting.allocations.map((allocation) => ({
+          ...allocation,
+          currency: booking.currency,
+          partnerId: property?.partner.id,
+          paymentId,
+        })),
+      });
+      await transaction.financialJournal.create({
+        data: {
+          currency: booking.currency,
+          description: `Payment captured for booking ${booking.confirmationCode}`,
+          paymentId,
+          postings: {
+            create: accounting.postings.map((posting) => ({
+              ...posting,
+            })),
+          },
+          reference: `CAPTURE-${paymentContext.providerRef}`,
+          sourceId: paymentId,
+          sourceType: 'PAYMENT_CAPTURE',
+          status: 'POSTED',
+          totalCredit: booking.paymentAmount,
+          totalDebit: booking.paymentAmount,
         },
       });
 

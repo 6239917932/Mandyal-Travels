@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { createRefundPostings } from '@/lib/payments/accounting';
 import {
   createLedgerData,
   isRefundDecision,
@@ -44,6 +45,21 @@ export async function PATCH(request: Request, context: RouteContext) {
         where: { id: current.id },
       });
       if (status === 'APPROVED') {
+        const postings = createRefundPostings(current.amount);
+        await transaction.financialJournal.create({
+          data: {
+            createdByUserId: administrator.id,
+            currency: current.currency,
+            description: `Approved refund for ${current.reason}`,
+            postings: { create: postings },
+            reference: `REFUND-${current.id}`,
+            refundId: current.id,
+            sourceId: current.id,
+            sourceType: 'REFUND_APPROVED',
+            totalCredit: current.amount,
+            totalDebit: current.amount,
+          },
+        });
         await transaction.financialLedgerEntry.create({
           data: createLedgerData({
             amount: -current.amount,

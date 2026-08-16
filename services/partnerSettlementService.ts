@@ -17,11 +17,6 @@ function dateBoundary(value: string, end: boolean): Date {
   return parsed;
 }
 
-function commissionBasisPoints(): number {
-  const value = Number(process.env.SETTLEMENT_COMMISSION_BPS ?? '1000');
-  return Number.isInteger(value) && value >= 0 && value <= 5000 ? value : 1000;
-}
-
 export const partnerSettlementService = {
   async create(partnerId: string, periodStart: string, periodEnd: string) {
     const start = dateBoundary(periodStart, false);
@@ -37,51 +32,102 @@ export const partnerSettlementService = {
     });
     if (!partner)
       throw new PartnerSettlementError('PARTNER_NOT_FOUND', 'The supplier was not found.');
-    const [hotelBookings, carReservations, busReservations] = await Promise.all([
-      prisma.booking.findMany({
-        select: { confirmationCode: true, totalAmount: true },
-        where: {
-          createdAt: { gte: start, lte: end },
-          hotelSlug: { in: partner.properties.map((property) => property.hotelSlug) },
-          payment: { status: 'captured' },
+    void start;
+    void end;
+    const bookings = await prisma.booking.findMany({
+      include: {
+        payment: { include: { allocations: true } },
+        quote: { select: { checkOutDate: true } },
+      },
+      where: {
+        hotelSlug: { in: partner.properties.map((property) => property.hotelSlug) },
+        operationalStatus: 'CHECKED_OUT',
+        payment: {
+          environment: 'LIVE',
+          reconciliationStatus: 'MATCHED',
+          status: 'captured',
         },
-      }),
-      prisma.partnerVehicleReservation.findMany({
-        select: { confirmationCode: true, totalAmount: true },
-        where: {
-          createdAt: { gte: start, lte: end },
-          partnerId,
-          status: { in: ['CONFIRMED', 'COMPLETED'] },
-        },
-      }),
-      prisma.partnerBusReservation.findMany({
-        select: { confirmationCode: true, totalAmount: true },
-        where: {
-          createdAt: { gte: start, lte: end },
-          partnerId,
-          status: { in: ['CONFIRMED', 'COMPLETED'] },
-        },
-      }),
-    ]);
-    const lines = [...hotelBookings, ...carReservations, ...busReservations];
-    const grossAmount = lines.reduce((total, line) => total + line.totalAmount, 0);
-    const basisPoints = commissionBasisPoints();
-    const commissionAmount = Math.round((grossAmount * basisPoints) / 10_000);
-    return prisma.partnerSettlement.create({
-      data: {
-        bookingCount: lines.length,
-        calculationJson: JSON.stringify({
-          commissionBasisPoints: basisPoints,
-          references: lines.map((line) => line.confirmationCode),
-        }),
-        commissionAmount,
-        grossAmount,
-        netAmount: grossAmount - commissionAmount,
-        partnerId,
-        periodEnd,
-        periodStart,
+        quote: { checkOutDate: { gte: periodStart, lte: periodEnd } },
+        settlementLine: null,
+        status: 'confirmed',
       },
     });
+    const now = Date.now();
+    const eligibleBookings = bookings.filter((booking) => {
+      const eligibleAt =
+        new Date(`${booking.quote.checkOutDate}T00:00:00.000Z`).getTime() +
+        partner.settlementDelayDays * 86_400_000;
+      return Number.isFinite(eligibleAt) && eligibleAt <= now;
+    });
+    if (eligibleBookings.length === 0) {
+      throw new PartnerSettlementError(
+        'NO_ELIGIBLE_TRANSACTIONS',
+        'No checked-out, reconciled live payments are eligible for this settlement period.',
+      );
+    }
+    const settlementLines = eligibleBookings.map((booking) => {
+      if (!booking.payment) throw new Error('Eligible booking is missing its payment.');
+      const allocation = (type: string) =>
+        booking.payment?.allocations.find((item) => item.allocationType === type)?.amount ?? 0;
+      const commissionAmount = allocation('PLATFORM_COMMISSION');
+      const taxWithheldAmount = allocation('TAX_PAYABLE');
+      const netAmount = allocation('SUPPLIER_PAYABLE');
+      if (commissionAmount + taxWithheldAmount + netAmount !== booking.payment.amount) {
+        throw new PartnerSettlementError(
+          'PAYMENT_ALLOCATION_INVALID',
+          `Payment allocations are incomplete for ${booking.confirmationCode}.`,
+        );
+      }
+      return {
+        bookingId: booking.id,
+        commissionAmount,
+        currency: booking.payment.currency,
+        eligibleAt: new Date(
+          new Date(`${booking.quote.checkOutDate}T00:00:00.000Z`).getTime() +
+            partner.settlementDelayDays * 86_400_000,
+        ),
+        grossAmount: booking.payment.amount,
+        netAmount,
+        partnerId,
+        reference: booking.confirmationCode,
+        sourceId: booking.id,
+        sourceType: 'HOTEL_BOOKING',
+        taxWithheldAmount,
+      };
+    });
+    const currency = settlementLines[0]?.currency;
+    if (!currency || settlementLines.some((line) => line.currency !== currency)) {
+      throw new PartnerSettlementError(
+        'SETTLEMENT_CURRENCY_MISMATCH',
+        'A settlement may contain only one currency.',
+      );
+    }
+    const grossAmount = settlementLines.reduce((total, line) => total + line.grossAmount, 0);
+    const commissionAmount = settlementLines.reduce(
+      (total, line) => total + line.commissionAmount,
+      0,
+    );
+    const netAmount = settlementLines.reduce((total, line) => total + line.netAmount, 0);
+    return prisma.$transaction(async (transaction) =>
+      transaction.partnerSettlement.create({
+        data: {
+          bookingCount: settlementLines.length,
+          calculationJson: JSON.stringify({
+            allocationSource: 'CAPTURE_JOURNAL',
+            currency,
+            settlementDelayDays: partner.settlementDelayDays,
+          }),
+          commissionAmount,
+          grossAmount,
+          lines: { create: settlementLines },
+          netAmount,
+          partnerId,
+          periodEnd,
+          periodStart,
+        },
+        include: { lines: true },
+      }),
+    );
   },
 
   async transition(

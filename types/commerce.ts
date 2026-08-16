@@ -174,6 +174,7 @@ export interface CreateHotelBookingRequest {
   businessTravelRequestId?: string;
   guest: HotelBookingRecord['guest'];
   hotelSlug: string;
+  paymentIntentId?: string;
   promotionCode?: string;
   quoteId: string;
 }

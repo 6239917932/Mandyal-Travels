@@ -66,11 +66,16 @@ for (const name of [
   'PUBLIC_APP_ORIGIN',
   'PAYMENT_GATEWAY_ENDPOINT',
   'PAYMENT_GATEWAY_API_KEY',
+  'PAYMENT_PROVIDER_ID',
   'PAYMENT_PROVIDER_ALLOWED_HOSTS',
   'PAYMENT_WEBHOOK_SECRET',
+  'PAYOUT_PROVIDER_ID',
+  'PAYOUT_PROVIDER_ENDPOINT',
+  'PAYOUT_PROVIDER_API_KEY',
+  'PAYOUT_PROVIDER_ALLOWED_HOSTS',
 ]) {
   if (!(process.env[name] ?? '').trim())
-    failures.push(`${name} is required for production checkout.`);
+    failures.push(`${name} is required for production money movement.`);
 }
 try {
   const publicOrigin = new URL(process.env.PUBLIC_APP_ORIGIN ?? '');
@@ -97,10 +102,22 @@ if (paymentApiKey.length < 16)
   failures.push('PAYMENT_GATEWAY_API_KEY must contain at least 16 characters.');
 if (/replace|example|change-me/i.test(paymentApiKey))
   failures.push('PAYMENT_GATEWAY_API_KEY still contains a placeholder value.');
+for (const name of ['PAYMENT_PROVIDER_ID', 'PAYOUT_PROVIDER_ID']) {
+  const value = process.env[name] ?? '';
+  if (!/^[a-z0-9][a-z0-9_-]{0,49}$/.test(value) || /configured|example|replace/i.test(value)) {
+    failures.push(`${name} must identify the real configured provider.`);
+  }
+}
+const payoutApiKey = process.env.PAYOUT_PROVIDER_API_KEY ?? '';
+if (payoutApiKey.length < 16)
+  failures.push('PAYOUT_PROVIDER_API_KEY must contain at least 16 characters.');
+if (/replace|example|change-me/i.test(payoutApiKey))
+  failures.push('PAYOUT_PROVIDER_API_KEY still contains a placeholder value.');
 
 for (const [endpointName, hostsName] of [
   ['PAYMENT_GATEWAY_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
   ['PAYMENT_GATEWAY_REFUND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['PAYOUT_PROVIDER_ENDPOINT', 'PAYOUT_PROVIDER_ALLOWED_HOSTS'],
   ['MEDIA_SIGNING_ENDPOINT', 'MEDIA_PROVIDER_ALLOWED_HOSTS'],
   ['EMAIL_PROVIDER_ENDPOINT', 'EMAIL_PROVIDER_ALLOWED_HOSTS'],
   ['MOBILE_MESSAGING_ENDPOINT', 'MOBILE_MESSAGING_ALLOWED_HOSTS'],

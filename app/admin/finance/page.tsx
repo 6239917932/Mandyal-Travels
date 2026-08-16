@@ -23,7 +23,17 @@ export default async function AdminFinancePage() {
   const administrator = await getPlatformAdmin();
   if (!administrator) redirect('/login?returnTo=/admin/finance');
 
-  const [payments, refunds, captured, refunded, discrepancies, ledger] = await Promise.all([
+  const [
+    payments,
+    refunds,
+    captured,
+    refunded,
+    discrepancies,
+    ledger,
+    journals,
+    payoutBatches,
+    supplierPayable,
+  ] = await Promise.all([
     prisma.paymentTransaction.findMany({
       include: { booking: { select: { confirmationCode: true, hotelSlug: true } } },
       orderBy: { createdAt: 'desc' },
@@ -41,6 +51,25 @@ export default async function AdminFinancePage() {
     prisma.refundRequest.aggregate({ _sum: { amount: true }, where: { status: 'APPROVED' } }),
     prisma.paymentTransaction.count({ where: { reconciliationStatus: 'DISCREPANCY' } }),
     prisma.financialLedgerEntry.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
+    prisma.financialJournal.findMany({
+      include: { postings: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+    prisma.partnerPayoutBatch.findMany({
+      include: {
+        instructions: {
+          include: { partner: { select: { name: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+    }),
+    prisma.paymentAllocation.aggregate({
+      _sum: { amount: true },
+      where: { allocationType: 'SUPPLIER_PAYABLE' },
+    }),
   ]);
 
   return (
@@ -82,6 +111,10 @@ export default async function AdminFinancePage() {
           <span>Pending refunds</span>
           <strong>{refunds.filter((refund) => refund.status === 'PENDING').length}</strong>
         </Card>
+        <Card className="admin-metric">
+          <span>Allocated to suppliers</span>
+          <strong>{money(supplierPayable._sum.amount ?? 0, 'INR')}</strong>
+        </Card>
       </div>
 
       <div className="account-trips">
@@ -115,6 +148,7 @@ export default async function AdminFinancePage() {
                     <td>
                       <strong>{payment.provider}</strong>
                       <span>{payment.providerRef}</span>
+                      <span>{payment.environment} environment</span>
                       <span>{date(payment.createdAt)}</span>
                     </td>
                     <td>
@@ -198,7 +232,119 @@ export default async function AdminFinancePage() {
       <div className="account-trips">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Accounting trace</p>
-          <h2>Financial ledger</h2>
+          <h2>Balanced financial journals</h2>
+          <p>
+            Every captured payment and approved refund produces immutable debit and credit postings.
+            Unbalanced journals are rejected before storage.
+          </p>
+        </div>
+        <Card className="business-report__table-card">
+          <div className="business-report__table-scroll">
+            <table className="business-report__table">
+              <thead>
+                <tr>
+                  <th>Created</th>
+                  <th>Journal</th>
+                  <th>Reference</th>
+                  <th>Postings</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {journals.map((journal) => (
+                  <tr key={journal.id}>
+                    <td>{date(journal.createdAt)}</td>
+                    <td>
+                      <strong>{journal.sourceType}</strong>
+                      <span>{journal.status}</span>
+                    </td>
+                    <td>{journal.reference}</td>
+                    <td>
+                      {journal.postings.map((posting) => (
+                        <span key={posting.id}>
+                          {posting.direction} {posting.accountCode}:{' '}
+                          {money(posting.amount, journal.currency)}
+                        </span>
+                      ))}
+                    </td>
+                    <td>
+                      <strong>{money(journal.totalDebit, journal.currency)}</strong>
+                    </td>
+                  </tr>
+                ))}
+                {journals.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>Journals appear after verified captures and refunds.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Supplier money movement</p>
+          <h2>Tokenized payout batches</h2>
+          <p>
+            Only approved settlements with a verified provider-tokenized destination may enter a
+            payout batch. Raw bank account details are never stored here.
+          </p>
+        </div>
+        <Card className="business-report__table-card">
+          <div className="business-report__table-scroll">
+            <table className="business-report__table">
+              <thead>
+                <tr>
+                  <th>Created</th>
+                  <th>Batch</th>
+                  <th>Suppliers</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payoutBatches.map((batch) => (
+                  <tr key={batch.id}>
+                    <td>{date(batch.createdAt)}</td>
+                    <td>
+                      <strong>{batch.id}</strong>
+                      <span>{batch.providerBatchRef || 'Not submitted to provider'}</span>
+                    </td>
+                    <td>
+                      {batch.instructions.map((instruction) => (
+                        <span key={instruction.id}>
+                          {instruction.partner.name} · {instruction.status} ·{' '}
+                          {money(instruction.amount, instruction.currency)}
+                        </span>
+                      ))}
+                    </td>
+                    <td>
+                      <strong>{batch.status}</strong>
+                      <span>{batch.instructionCount} instruction(s)</span>
+                    </td>
+                    <td>
+                      <strong>{money(batch.totalAmount, batch.currency)}</strong>
+                    </td>
+                  </tr>
+                ))}
+                {payoutBatches.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No governed payout batches have been created.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Compatibility trace</p>
+          <h2>Legacy financial ledger</h2>
+          <p>Retained for existing reports while balanced journals become the source of truth.</p>
         </div>
         <Card className="business-report__table-card">
           <div className="business-report__table-scroll">

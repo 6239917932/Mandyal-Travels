@@ -5,7 +5,13 @@ import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 
 type Context = { params: Promise<{ provider: string }> };
-type ProviderEvent = { id?: unknown; type?: unknown; paymentReference?: unknown };
+type ProviderEvent = {
+  amount?: unknown;
+  currency?: unknown;
+  id?: unknown;
+  paymentReference?: unknown;
+  type?: unknown;
+};
 
 const PROVIDER_PATTERN = /^[a-z0-9][a-z0-9_-]{0,49}$/;
 
@@ -59,6 +65,19 @@ export async function POST(request: Request, context: Context) {
         : undefined;
   try {
     await prisma.$transaction(async (transaction) => {
+      const intent = await transaction.paymentCheckoutIntent.findUnique({
+        where: { providerRef: paymentReference },
+      });
+      const captureMatches =
+        eventType !== 'payment.captured' ||
+        (typeof parsed.amount === 'number' &&
+          Number.isSafeInteger(parsed.amount) &&
+          parsed.amount > 0 &&
+          parsed.amount === intent?.amount &&
+          isBoundedProviderValue(parsed.currency, 10) &&
+          parsed.currency === intent?.currency);
+      const accepted =
+        Boolean(intent) && intent?.provider === provider && Boolean(intentStatus) && captureMatches;
       await transaction.paymentProviderEvent.create({
         data: {
           provider,
@@ -66,13 +85,22 @@ export async function POST(request: Request, context: Context) {
           eventType,
           providerRef: paymentReference,
           payloadHash: paymentPayloadHash(payload),
-          status: intentStatus ? 'PROCESSED' : 'IGNORED',
+          errorMessage: accepted
+            ? ''
+            : !intent
+              ? 'Unknown payment reference.'
+              : intent.provider !== provider
+                ? 'Provider does not match checkout intent.'
+                : !captureMatches
+                  ? 'Captured amount or currency does not match checkout intent.'
+                  : 'Unsupported payment event type.',
+          status: accepted ? 'PROCESSED' : intentStatus ? 'REJECTED' : 'IGNORED',
           processedAt: new Date(),
         },
       });
-      if (intentStatus)
+      if (accepted && intentStatus)
         await transaction.paymentCheckoutIntent.updateMany({
-          where: { providerRef: paymentReference },
+          where: { id: intent?.id, status: 'CREATED' },
           data: {
             status: intentStatus,
             capturedAt: intentStatus === 'CAPTURED' ? new Date() : null,
