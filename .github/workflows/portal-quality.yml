@@ -35,3 +35,14 @@ jobs:
 
       - name: Verify portal
         run: npm run check
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build standalone web image
+        run: docker build --target runner --tag mandyal-travels:${{ github.sha }} .

@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 15 August 2026
+Last reviewed: 17 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -168,6 +168,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Health/readiness endpoint at `/api/v1/health` verifies database access and core customer,
   organization, booking, and company-request schema availability, plus pending and dead-letter
   integration-event health
+- Provider-neutral standalone container packaging with a non-root runtime, a separate migration
+  task, process liveness at `/api/v1/health/live`, database readiness at `/api/v1/health`, secret-free
+  build context, and a guarded one-replica SQLite preview for deployment rehearsals
 - Transactional hotel-booking integration outbox with deduplication, worker leases, bounded
   exponential retry, dead-letter handling, and a provider-neutral delivery adapter
 - Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
@@ -212,6 +215,10 @@ credentials, contracts, or signed-off business rules:
 
 The current company statements intentionally identify themselves as reporting statements, not GST
 tax invoices.
+
+The portable container is a verified build foundation, not completion of item 6. The current Prisma
+client and migration history remain SQLite-specific, while production preflight requires PostgreSQL;
+the reviewed provider and data cutover in `docs/PRODUCTION_DATA_PLATFORM.md` remains mandatory.
 
 ## Release procedure
 
@@ -293,7 +300,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 55 regression tests, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 97 generated route entries, and
-clean-database verification of all 47 migrations with foreign-key integrity enabled. Provider
-integration work must preserve those checks and add provider-specific automated tests before going live.
+The current travel-domain milestone passes 93 regression tests, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 123 generated route entries,
+clean-database verification of all 65 migrations with foreign-key integrity enabled, and the
+portable deployment contract. Provider integration work must preserve those checks and add
+provider-specific automated tests before going live.

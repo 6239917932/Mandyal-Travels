@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test:domain": "node --experimental-strip-types --test tests/*.test.mts",
     "test:hotel": "npm run test:domain",
-    "check": "npm run lint && npm run typecheck && npm run test:domain && npm run db:verify-migrations && npm run build -- --webpack",
+    "check": "npm run lint && npm run typecheck && npm run test:domain && npm run db:verify-migrations && npm run deployment:verify && npm run build -- --webpack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "admin:grant": "node scripts/grant-platform-admin.mjs",
@@ -22,6 +22,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:backup": "node scripts/backup-database.mjs",
+    "deployment:verify": "node scripts/verify-deployment-contract.mjs",
     "release:verify-env": "node scripts/verify-release-env.mjs",
     "postinstall": "prisma generate"
   },
