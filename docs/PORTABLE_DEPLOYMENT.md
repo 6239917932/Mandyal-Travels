@@ -49,12 +49,13 @@ been backed up.
 
 ## Production promotion gate
 
-The portal currently generates a SQLite Prisma client and its migration history is SQLite SQL. A real
-production release therefore remains blocked even though the web artifact is portable. Complete the
+The portal still runs locally with the SQLite Prisma client and SQLite migration history. A reviewed,
+synchronized PostgreSQL schema and 72-table native baseline now exist as a deployment contract, but a
+real production release remains blocked even though the web artifact is portable. Complete the
 reviewed steps in `docs/PRODUCTION_DATA_PLATFORM.md`: provision managed PostgreSQL, add its Prisma
-driver adapter, generate a PostgreSQL-native baseline, rehearse and reconcile the data transfer,
-verify restore/failover, and approve a reversible cutover window. Never replay the SQLite migration
-files against PostgreSQL and never silently change the working local database provider.
+driver adapter, rehearse and reconcile the data transfer, verify restore/failover, and approve a
+reversible cutover window. Never replay the SQLite migration files against PostgreSQL and never
+silently change the working local database provider.
 
 After that cutover is implemented, the release owner must also activate the approved secret store,
 off-site backups, scheduler/worker, observability, TLS edge, and any finalized payment or supplier

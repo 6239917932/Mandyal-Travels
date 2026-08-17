@@ -180,6 +180,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
+- Deterministic PostgreSQL schema materialization with a reviewable 72-table native baseline, Prisma
+  Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
 
@@ -216,9 +218,11 @@ credentials, contracts, or signed-off business rules:
 The current company statements intentionally identify themselves as reporting statements, not GST
 tax invoices.
 
-The portable container is a verified build foundation, not completion of item 6. The current Prisma
-client and migration history remain SQLite-specific, while production preflight requires PostgreSQL;
-the reviewed provider and data cutover in `docs/PRODUCTION_DATA_PLATFORM.md` remains mandatory.
+The portable container and synchronized PostgreSQL schema/baseline are verified foundations, not
+completion of item 6. The active development runtime and historical migrations remain SQLite-specific,
+while production preflight requires PostgreSQL. The approved runtime adapter, managed provider,
+rehearsal, reconciliation, restore testing, and reversible cutover in
+`docs/PRODUCTION_DATA_PLATFORM.md` remain mandatory.
 
 ## Release procedure
 
@@ -302,6 +306,7 @@ until completion, and completed rentals remain included in confirmed-value perfo
 
 The current travel-domain milestone passes 93 regression tests, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 123 generated route entries,
-clean-database verification of all 65 migrations with foreign-key integrity enabled, and the
-portable deployment contract. Provider integration work must preserve those checks and add
+clean-database verification of all 65 SQLite migrations with foreign-key integrity enabled, a
+synchronized 72-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+integration work must preserve those checks and add
 provider-specific automated tests before going live.
