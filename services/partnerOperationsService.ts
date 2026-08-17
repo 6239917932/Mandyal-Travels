@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import type { Prisma } from '@/generated/prisma/client';
 import {
   availablePhysicalRooms,
@@ -656,7 +657,7 @@ export const partnerOperationsService = {
     }
     return prisma.partnerProperty.create({
       data: {
-        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
+        amenitiesJson: JSON.stringify(normalizeHotelAmenityList(input.amenities).slice(0, 100)),
         checkInTime: input.checkInTime,
         checkOutTime: input.checkOutTime,
         city: normalizeText(input.city, 80),
@@ -797,7 +798,7 @@ export const partnerOperationsService = {
     return prisma.$transaction(async (transaction) => {
       const room = await transaction.partnerRoomType.create({
         data: {
-          amenitiesJson: JSON.stringify(normalizedList(input.amenities, 50)),
+          amenitiesJson: JSON.stringify(normalizeHotelAmenityList(input.amenities).slice(0, 50)),
           bedDescription: normalizeText(input.bedDescription, 160),
           cancellationDescription: normalizeText(input.cancellationDescription, 300),
           description: normalizeText(input.description, 800),
@@ -1116,7 +1117,7 @@ export const partnerOperationsService = {
     }
     return prisma.partnerRoomType.update({
       data: {
-        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 50)),
+        amenitiesJson: JSON.stringify(normalizeHotelAmenityList(input.amenities).slice(0, 50)),
         bedDescription: normalizeText(input.bedDescription, 160),
         description: normalizeText(input.description, 800),
         inventoryCount: input.inventoryCount,
@@ -1544,7 +1545,7 @@ export const partnerOperationsService = {
       data: {
         approvalNote: '',
         approvalStatus: 'PENDING_REVIEW',
-        amenitiesJson: JSON.stringify(normalizedList(input.amenities, 100)),
+        amenitiesJson: JSON.stringify(normalizeHotelAmenityList(input.amenities).slice(0, 100)),
         childrenAllowed: input.childrenAllowed,
         imageUrl,
         imageUrlsJson: JSON.stringify(imageUrls),

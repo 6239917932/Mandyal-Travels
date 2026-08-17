@@ -1,4 +1,5 @@
 import type { HotelAmenityGroup } from '@/constants/hotelAmenities';
+import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 
 export function AmenityChecklist({
   defaultValues = [],
@@ -11,7 +12,7 @@ export function AmenityChecklist({
   legend: string;
   name: string;
 }) {
-  const selected = new Set(defaultValues);
+  const selected = new Set(normalizeHotelAmenityList(defaultValues));
   return (
     <fieldset className="amenity-checklist">
       <legend>{legend}</legend>
