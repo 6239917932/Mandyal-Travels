@@ -1,4 +1,5 @@
 import { mockHotels } from '@/constants/hotelData';
+import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import { prisma } from '@/lib/prisma';
 import type { Hotel } from '@/types/hotel';
 
@@ -48,11 +49,13 @@ export class InMemoryHotelRepository implements HotelRepository {
           if (lower.includes('airport') || lower.includes('shuttle')) return 'transport' as const;
           return 'general' as const;
         };
-        const amenities = parseList(property.amenitiesJson).map((name, index) => ({
-          category: amenityCategory(name),
-          id: `managed-${property.id}-${index}`,
-          name,
-        }));
+        const amenities = normalizeHotelAmenityList(parseList(property.amenitiesJson)).map(
+          (name, index) => ({
+            category: amenityCategory(name),
+            id: `managed-${property.id}-${index}`,
+            name,
+          }),
+        );
         return {
           amenities,
           checkInTime: property.checkInTime,
@@ -102,11 +105,13 @@ export class InMemoryHotelRepository implements HotelRepository {
           },
           reviewSummary: { averageRating: 0, reviewCount: 0 },
           rooms: property.rooms.map((room) => ({
-            amenities: parseList(room.amenitiesJson).map((name, index) => ({
-              category: amenityCategory(name),
-              id: `managed-${room.id}-${index}`,
-              name,
-            })),
+            amenities: normalizeHotelAmenityList(parseList(room.amenitiesJson)).map(
+              (name, index) => ({
+                category: amenityCategory(name),
+                id: `managed-${room.id}-${index}`,
+                name,
+              }),
+            ),
             bedDescription: room.bedDescription,
             description: room.description,
             images: [

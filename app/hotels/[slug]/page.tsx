@@ -68,7 +68,7 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
             <Image
               alt={primaryImage.alt}
               fill
-              priority
+              preload
               sizes="(min-width: 1024px) 66vw, 100vw"
               src={primaryImage.url}
             />

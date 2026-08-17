@@ -79,8 +79,13 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
 
           <div className="hotel-result-list">
             {resultPage.results.length > 0 ? (
-              resultPage.results.map((result) => (
-                <HotelResultCard criteria={criteria} key={result.hotel.id} result={result} />
+              resultPage.results.map((result, index) => (
+                <HotelResultCard
+                  criteria={criteria}
+                  eagerImage={index === 0}
+                  key={result.hotel.id}
+                  result={result}
+                />
               ))
             ) : (
               <p className="hotel-page__empty-state">

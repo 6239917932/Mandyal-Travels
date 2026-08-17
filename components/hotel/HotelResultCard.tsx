@@ -6,6 +6,7 @@ import type { HotelSearchCriteria, HotelSearchResult } from '@/types/hotel';
 
 interface HotelResultCardProps {
   criteria: HotelSearchCriteria;
+  eagerImage?: boolean;
   result: HotelSearchResult;
 }
 
@@ -17,7 +18,7 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
-export function HotelResultCard({ criteria, result }: HotelResultCardProps) {
+export function HotelResultCard({ criteria, eagerImage = false, result }: HotelResultCardProps) {
   const { hotel, minimumNightlyRate, nights, totalStayPrice } = result;
   const primaryImage = hotel.images.find((image) => image.isPrimary) ?? hotel.images[0];
 
@@ -28,6 +29,7 @@ export function HotelResultCard({ criteria, result }: HotelResultCardProps) {
           alt={primaryImage.alt}
           className="hotel-result-card__image"
           height={420}
+          loading={eagerImage ? 'eager' : 'lazy'}
           src={primaryImage.url}
           width={640}
         />

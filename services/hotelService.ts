@@ -9,6 +9,7 @@ import {
 } from '@/repositories/inventoryOverrideRepository';
 import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
 import { distanceInKilometres } from '@/lib/hotel/geo';
+import { hotelAmenityMatches } from '@/lib/hotel/amenities';
 import type {
   Hotel,
   HotelRatePlan,
@@ -101,7 +102,6 @@ export class HotelService {
 
     const hotels = await this.hotelRepository.findAll();
 
-    const normalizedAmenity = filters.amenity.toLowerCase();
     const usesRadius =
       filters.radiusKm > 0 &&
       filters.centerLatitude !== undefined &&
@@ -115,10 +115,8 @@ export class HotelService {
             { latitude: hotel.location.latitude, longitude: hotel.location.longitude },
           ) <= filters.radiusKm) &&
         hotel.starRating >= filters.minimumStarRating &&
-        (!normalizedAmenity ||
-          hotel.amenities.some((amenity) =>
-            amenity.name.toLowerCase().includes(normalizedAmenity),
-          )),
+        (!filters.amenity ||
+          hotel.amenities.some((amenity) => hotelAmenityMatches(amenity.name, filters.amenity))),
     );
 
     const results = await Promise.all(

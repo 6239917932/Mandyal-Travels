@@ -6,8 +6,8 @@ export interface HotelDiscoveryAdapter {
 }
 
 const AMENITY_TERMS = [
-  { aliases: ['wifi', 'wi-fi'], value: 'Free Wi-Fi' },
-  { aliases: ['parking'], value: 'Free parking' },
+  { aliases: ['wifi', 'wi-fi'], value: 'Free high-speed Wi-Fi' },
+  { aliases: ['parking'], value: 'Free on-site parking' },
   { aliases: ['restaurant', 'dining'], value: 'Restaurant' },
   { aliases: ['pool', 'swimming'], value: 'Swimming pool' },
   { aliases: ['spa', 'wellness'], value: 'Spa' },
