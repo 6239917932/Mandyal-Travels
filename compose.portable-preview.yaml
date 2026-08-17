@@ -1,0 +1,43 @@
+name: mandyal-travels-portable-preview
+
+services:
+  migrate:
+    build:
+      context: .
+      target: operations
+    command: ['npm', 'run', 'db:deploy']
+    environment:
+      DATABASE_URL: file:/data/portal.db
+    restart: 'no'
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - portal-data:/data
+
+  app:
+    build:
+      context: .
+      target: runner
+    cap_drop:
+      - ALL
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      BOOKING_TOKEN_SECRET: ${BOOKING_TOKEN_SECRET:?Set BOOKING_TOKEN_SECRET in the local shell}
+      DATABASE_URL: file:/data/portal.db
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Set MFA_ENCRYPTION_KEY in the local shell}
+      PARTNER_ADMIN_KEY: ${PARTNER_ADMIN_KEY:?Set PARTNER_ADMIN_KEY in the local shell}
+      PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:-http://localhost:3000}
+    init: true
+    ports:
+      - '127.0.0.1:${PORT:-3000}:3000'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    volumes:
+      - portal-data:/data
+
+volumes:
+  portal-data:
