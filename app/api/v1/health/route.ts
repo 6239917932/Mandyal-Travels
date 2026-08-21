@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { emitOperationalEvent } from '@/lib/observability/operations';
 
 const RESPONSE_HEADERS = { 'Cache-Control': 'no-store' };
 
@@ -39,6 +40,11 @@ export async function GET() {
       { headers: RESPONSE_HEADERS },
     );
   } catch (error) {
+    emitOperationalEvent({
+      event: 'health.readiness.failed',
+      result: 'failure',
+      severity: 'error',
+    });
     console.error('Portal readiness check failed.', error);
     return Response.json(
       {

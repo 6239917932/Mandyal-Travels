@@ -33,8 +33,26 @@ jobs:
       - name: Generate database client
         run: npm run db:generate
 
+      - name: Apply CI database migrations
+        run: npm run db:deploy
+
       - name: Verify portal
         run: npm run check
+
+      - name: Start production portal
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3000 > portal-runtime.log 2>&1 &
+          echo $! > portal-runtime.pid
+
+      - name: Wait for production portal
+        run: node scripts/wait-for-runtime.mjs
+
+      - name: Verify live routes, accessibility, and bounded load
+        run: npm run test:runtime
+
+      - name: Show runtime log after failure
+        if: failure()
+        run: cat portal-runtime.log || true
 
   container:
     runs-on: ubuntu-latest
