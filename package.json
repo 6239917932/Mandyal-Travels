@@ -11,6 +11,10 @@
     "typecheck": "tsc --noEmit",
     "test:domain": "node --experimental-strip-types --test tests/*.test.mts",
     "test:hotel": "npm run test:domain",
+    "test:smoke": "node scripts/smoke-portal.mjs",
+    "test:a11y": "node scripts/verify-accessibility.mjs",
+    "test:load": "node scripts/load-smoke.mjs",
+    "test:runtime": "npm run test:smoke && npm run test:a11y && npm run test:load",
     "check": "npm run lint && npm run typecheck && npm run test:domain && npm run db:verify-migrations && npm run db:verify:postgresql && npm run deployment:verify && npm run build -- --webpack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -25,6 +29,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:backup": "node scripts/backup-database.mjs",
+    "db:verify-backup": "node scripts/verify-backup-restore.mjs",
     "deployment:verify": "node scripts/verify-deployment-contract.mjs",
     "release:verify-env": "node scripts/verify-release-env.mjs",
     "postinstall": "prisma generate"
