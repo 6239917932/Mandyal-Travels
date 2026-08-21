@@ -2370,42 +2370,61 @@
   min-height: 2.75rem;
 }
 
-.hotel-map-results {
-  display: grid;
-  gap: var(--space-5);
-  margin-top: var(--space-6);
+.hotel-location-map {
+  background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.hotel-location-map__content {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
   padding: var(--space-5);
 }
 
-.hotel-map-results h2,
-.hotel-map-results p {
-  margin-top: 0;
+.hotel-location-map__content h2 {
+  color: var(--color-brand-900);
+  margin: 0;
 }
 
-.hotel-map-results ol {
-  display: grid;
-  gap: var(--space-2);
-  padding-left: var(--space-5);
+.hotel-location-map__content p:last-child {
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0 0;
 }
 
-.hotel-map-results a {
-  color: var(--color-brand-700);
-}
-
-.hotel-map-results iframe {
-  width: 100%;
-  min-height: 22rem;
-  border: 0;
+.hotel-location-map__link {
+  border: 1px solid var(--color-brand-600);
   border-radius: var(--radius-md);
+  color: var(--color-brand-700);
+  font-weight: 700;
+  padding: 0.7rem 1rem;
+  text-decoration: none;
 }
 
-@media (min-width: 768px) {
-  .hotel-map-results {
-    grid-template-columns: minmax(16rem, 0.8fr) minmax(24rem, 1.2fr);
-  }
+.hotel-location-map__link:hover,
+.hotel-location-map__link:focus-visible {
+  background: var(--color-brand-50);
+}
+
+.hotel-location-map iframe {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  display: block;
+  min-height: 20rem;
+  width: 100%;
+}
+
+.hotel-location-map__note {
+  background: var(--color-brand-50);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
 }
 
 .hotel-results-pagination {

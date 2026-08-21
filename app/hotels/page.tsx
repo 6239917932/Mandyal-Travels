@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
-import { HotelMapResults } from '@/components/hotel/HotelMapResults';
 import { hotelService } from '@/services/hotelService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
@@ -62,7 +61,6 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
         <div className="hotel-page__container">
           <HotelSearchForm criteria={criteria} filters={filters} />
           <HotelDiscoveryAssistant criteria={criteria} />
-          <HotelMapResults results={resultPage.results} />
 
           <div className="hotel-page__results-heading">
             <div>

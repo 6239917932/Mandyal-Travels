@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { RoomSelectionButton } from '@/components/hotel/RoomSelectionButton';
 import { HotelReviewForm } from '@/components/hotel/HotelReviewForm';
+import { HotelLocationMap } from '@/components/hotel/HotelLocationMap';
 import { hotelService } from '@/services/hotelService';
 import { hotelReviewService } from '@/services/hotelReviewService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
@@ -111,6 +112,13 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                 </div>
               </div>
             </Card>
+
+            <HotelLocationMap
+              address={hotel.location.address}
+              hotelName={hotel.name}
+              latitude={hotel.location.latitude}
+              longitude={hotel.location.longitude}
+            />
 
             <section className="hotel-details-page__section">
               <p className="hotel-page__eyebrow">Choose a room</p>
@@ -263,14 +271,6 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                       </ul>
                     </>
                   ) : null}
-                  <a
-                    className="home-card__link"
-                    href={`https://www.openstreetmap.org/?mlat=${hotel.location.latitude}&mlon=${hotel.location.longitude}#map=15/${hotel.location.latitude}/${hotel.location.longitude}`}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    View location on map
-                  </a>
                 </>
               ) : null}
             </Card>
