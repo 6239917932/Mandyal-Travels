@@ -25,7 +25,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
     <header className="site-header">
       <div className="site-header__inner">
         <Link className="site-logo" href="/" onClick={closeMenu}>
-          <MandyalLogo size="compact" />
+          <MandyalLogo showTagline size="standard" />
         </Link>
 
         <button

@@ -41,11 +41,11 @@ const offers = [
 export default function OffersPage() {
   return (
     <div className="home-page">
-      <section className="home-hero">
+      <section className="home-hero home-hero--interior">
         <div className="home-container">
           <p className="home-hero__eyebrow">Offers and promotions</p>
           <h1 className="home-hero__title">Find more value for your next journey.</h1>
-          <p className="home-hero__description">
+          <p className="home-section__note">
             Browse Mandyal Travels promotional previews across hotels, flights, buses, and cars.
             Eligibility and final pricing are confirmed during booking.
           </p>

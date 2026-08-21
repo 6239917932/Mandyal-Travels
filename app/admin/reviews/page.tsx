@@ -18,7 +18,7 @@ export default async function AdminHotelReviewsPage() {
     where: { status: 'PENDING' },
   });
   return (
-    <section className="account-page platform-admin-page review-governance">
+    <section className="account-page platform-admin-page review-governance admin-workspace">
       <Link className="hotel-details-page__back-link" href="/admin">
         Back to operations
       </Link>
@@ -48,8 +48,14 @@ export default async function AdminHotelReviewsPage() {
           </Card>
         ))}
         {reviews.length === 0 ? (
-          <Card>
-            <strong>No hotel reviews are awaiting moderation.</strong>
+          <Card className="admin-empty-state admin-empty-state--card">
+            <div>
+              <span className="admin-empty-state__icon" aria-hidden="true">
+                ✓
+              </span>
+              <strong>Review queue is clear</strong>
+              <p>No hotel reviews are awaiting moderation.</p>
+            </div>
           </Card>
         ) : null}
       </div>

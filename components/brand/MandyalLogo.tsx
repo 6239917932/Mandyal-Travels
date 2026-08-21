@@ -26,24 +26,25 @@ export function MandyalLogo({
         aria-hidden="true"
         className="mandyal-logo__symbol"
         focusable="false"
-        viewBox="0 0 64 64"
+        viewBox="0 0 96 64"
       >
-        <rect className="mandyal-logo__background" height="60" rx="17" width="60" x="2" y="2" />
-        <circle className="mandyal-logo__sun" cx="46" cy="17" r="5" />
+        <rect className="mandyal-logo__background" height="60" rx="17" width="92" x="2" y="2" />
+        <circle className="mandyal-logo__sun" cx="68" cy="17" r="8" />
         <path
           className="mandyal-logo__mountain mandyal-logo__mountain--back"
-          d="M8 47 22 24l8 12 9-17 17 28H8Z"
+          d="M6 48 27 25l9 10 14-23 14 19 8-9 18 26H6Z"
         />
         <path
           className="mandyal-logo__snow"
-          d="m17 33 5-9 5 8 3-4 3 5 6-14 8 13-5-4-3 5-4-4-5 7-8-6-5 7-4-4Z"
+          d="m21 32 6-7 6 7 3-3 4 5 10-22 11 15-6-5-5 7-4-5-7 12-6-5-5 6-4-3Z"
         />
-        <path className="mandyal-logo__ground" d="M8 47h48v6H8z" />
+        <path className="mandyal-logo__ground" d="M7 47h82v7H7z" />
         <path
           className="mandyal-logo__route"
-          d="M18 52c1-8 13-7 14-15 .8 7 12 7 14 15"
+          d="M25 54c3-10 19-9 23-19 1 9 17 9 22 19"
           fill="none"
         />
+        <path className="mandyal-logo__bird" d="M78 17c3-3 6-3 9 0m-6 5c3-3 6-3 9 0" />
       </svg>
 
       <span className="mandyal-logo__copy">

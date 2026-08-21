@@ -35,7 +35,7 @@ export default async function AdminPartnersPage() {
     }),
   ]);
   return (
-    <section className="account-page supplier-admin">
+    <section className="account-page supplier-admin admin-workspace">
       <div className="partner-page__heading">
         <div>
           <p className="hotel-page__eyebrow">Platform administration</p>
