@@ -16,7 +16,7 @@ export default async function AdminNotificationsPage() {
     }),
   ]);
   return (
-    <section className="account-page">
+    <section className="account-page admin-workspace">
       <div className="partner-page__heading">
         <div>
           <p className="hotel-page__eyebrow">Provider-ready communications</p>

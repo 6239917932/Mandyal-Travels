@@ -53,21 +53,33 @@ export function AdminNotificationManager({
       <form className="ui-card supplier-form" onSubmit={submit}>
         <h2>Create or version template</h2>
         <div className="supplier-form__grid">
-          <input name="templateKey" required placeholder="HOTEL_BOOKING_CONFIRMED" />
-          <select name="channel">
-            <option>EMAIL</option>
-            <option>SMS</option>
-            <option>WHATSAPP</option>
-            <option>PUSH</option>
-          </select>
-          <input name="subject" placeholder="Subject (email only)" />
-          <textarea
-            name="body"
-            required
-            minLength={5}
-            maxLength={5000}
-            placeholder="Template body; provider adapters render approved variables."
-          />
+          <label>
+            Template key
+            <input name="templateKey" required placeholder="HOTEL_BOOKING_CONFIRMED" />
+          </label>
+          <label>
+            Delivery channel
+            <select name="channel">
+              <option>EMAIL</option>
+              <option>SMS</option>
+              <option>WHATSAPP</option>
+              <option>PUSH</option>
+            </select>
+          </label>
+          <label>
+            Message subject
+            <input name="subject" placeholder="Subject (email only)" />
+          </label>
+          <label>
+            Template body
+            <textarea
+              name="body"
+              required
+              minLength={5}
+              maxLength={5000}
+              placeholder="Template body; provider adapters render approved variables."
+            />
+          </label>
         </div>
         <button className="ui-button ui-button--primary">Save active template</button>
       </form>

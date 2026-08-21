@@ -913,6 +913,204 @@
   resize: vertical;
 }
 
+/* Shared visual language for administration and operational workspaces. */
+.admin-workspace {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.admin-workspace .partner-page__heading,
+.admin-workspace > .account-trips__heading {
+  align-items: center;
+  background: linear-gradient(135deg, var(--color-white), var(--color-brand-50));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  border-top: 0.3rem solid var(--color-brand-500);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.admin-workspace .partner-page__heading h1,
+.admin-workspace > .account-trips__heading h1 {
+  color: var(--color-brand-950);
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  line-height: 1.05;
+  margin: 0.25rem 0 0.6rem;
+}
+
+.admin-workspace .partner-page__heading .ui-button,
+.admin-workspace > .account-trips__heading .ui-button {
+  box-shadow: 0 0.55rem 1.2rem rgb(16 88 145 / 15%);
+  min-height: 3rem;
+  min-width: 10rem;
+}
+
+.admin-workspace .supplier-form.ui-card,
+.admin-workspace .supplier-form:not(.partner-property-manager__room-form) {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-top: 0.25rem solid var(--color-brand-500);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.admin-workspace .supplier-form h2 {
+  color: var(--color-brand-950);
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.admin-workspace .supplier-form__grid > label,
+.admin-workspace .supplier-form > label {
+  color: var(--color-brand-900);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 750;
+  gap: 0.5rem;
+}
+
+.admin-workspace .supplier-form input:not([type='checkbox']):not([type='radio']),
+.admin-workspace .supplier-form select,
+.admin-workspace .supplier-form textarea {
+  background: var(--color-white);
+  border: 1px solid #b9cce0;
+  border-radius: var(--radius-md);
+  color: var(--color-brand-950);
+  font: inherit;
+  min-height: 3rem;
+  padding: 0.75rem 0.85rem;
+  width: 100%;
+}
+
+.admin-workspace .supplier-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.admin-workspace .supplier-form input:focus-visible,
+.admin-workspace .supplier-form select:focus-visible,
+.admin-workspace .supplier-form textarea:focus-visible {
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 0.2rem rgb(31 108 166 / 15%);
+  outline: none;
+}
+
+.admin-workspace .supplier-form fieldset {
+  align-items: center;
+  background: var(--color-brand-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.admin-workspace .supplier-form fieldset label {
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+}
+
+.admin-workspace .supplier-form .ui-button,
+.admin-workspace .supplier-form > button {
+  box-shadow: 0 0.55rem 1.2rem rgb(16 88 145 / 18%);
+  justify-self: start;
+  min-height: 3rem;
+  min-width: 12rem;
+  width: auto;
+}
+
+.admin-workspace .partner-bookings__summary,
+.admin-workspace .supplier-admin__grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.admin-workspace .partner-bookings__summary .ui-card,
+.admin-workspace .supplier-admin__grid .ui-card {
+  border-top: 0.22rem solid var(--color-brand-500);
+  min-height: 7.5rem;
+  padding: 1.25rem;
+}
+
+.admin-empty-state--card {
+  align-items: center;
+  background: linear-gradient(145deg, var(--color-white), #eef8f2);
+  border: 1px solid #b9dfca;
+  display: grid;
+  min-height: 14rem;
+  place-items: center;
+  text-align: center;
+}
+
+.admin-empty-state--card > div {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+}
+
+.admin-empty-state--card strong {
+  color: var(--color-brand-950);
+  font-size: 1.15rem;
+}
+
+.admin-empty-state--card p {
+  margin: 0;
+}
+
+.admin-empty-state__icon {
+  align-items: center;
+  background: #daf2e4;
+  border-radius: 999px;
+  color: #08733e;
+  display: inline-flex;
+  font-size: 1.35rem;
+  font-weight: 900;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.admin-workspace .business-report__table-scroll {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  padding: 0.75rem;
+}
+
+.admin-workspace .business-report__table {
+  min-width: 54rem;
+}
+
+.admin-workspace .business-report__table th {
+  background: var(--color-brand-50);
+  color: var(--color-brand-800);
+}
+
+@media (max-width: 720px) {
+  .admin-workspace .partner-page__heading,
+  .admin-workspace > .account-trips__heading {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .admin-workspace .partner-page__heading .ui-button,
+  .admin-workspace > .account-trips__heading .ui-button,
+  .admin-workspace .supplier-form .ui-button,
+  .admin-workspace .supplier-form > button {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
 .partner-property-manager__setup,
 .partner-property-manager__catalogue,
 .partner-property-manager__property,

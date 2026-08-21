@@ -25,7 +25,7 @@ export default async function AdminPromotionsPage() {
   const now = new Date();
 
   return (
-    <section className="account-page platform-admin-page">
+    <section className="account-page platform-admin-page admin-workspace">
       <header className="admin-hero">
         <div className="admin-hero__content">
           <p className="admin-hero__eyebrow">Versioned commercial rules</p>

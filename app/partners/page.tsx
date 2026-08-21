@@ -31,7 +31,7 @@ const partnerOptions = [
 export default function PartnersPage() {
   return (
     <div className="home-page">
-      <section className="home-hero">
+      <section className="home-hero home-hero--interior">
         <div className="home-container">
           <p className="home-hero__eyebrow">Mandyal Travels partner network</p>
           <h1 className="home-hero__title">Connect your travel inventory to more customers.</h1>
@@ -43,7 +43,7 @@ export default function PartnersPage() {
             <Link className="home-link-button home-link-button--primary" href="/partners/apply">
               Request partner onboarding
             </Link>
-            <Link className="home-link-button home-link-button--secondary" href="/partner">
+            <Link className="home-link-button home-link-button--glass" href="/partner">
               Open partner operations
             </Link>
           </div>

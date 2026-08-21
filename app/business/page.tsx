@@ -21,7 +21,7 @@ const businessOptions = [
 export default function BusinessTravelPage() {
   return (
     <div className="home-page">
-      <section className="home-hero">
+      <section className="home-hero home-hero--interior">
         <div className="home-container">
           <p className="home-hero__eyebrow">Mandyal Travels for Business</p>
           <h1 className="home-hero__title">Travel management built around your organization.</h1>
@@ -42,7 +42,7 @@ export default function BusinessTravelPage() {
             >
               Create a business account
             </Link>
-            <Link className="home-link-button home-link-button--secondary" href="/login">
+            <Link className="home-link-button home-link-button--glass" href="/login">
               Sign in
             </Link>
           </div>
