@@ -54,7 +54,12 @@ if (!process.env.DATABASE_URL) failures.push('DATABASE_URL is required.');
 if ((process.env.DATABASE_URL ?? '').startsWith('file:')) {
   failures.push('Production DATABASE_URL must use a managed relational database, not SQLite.');
 }
-for (const name of ['BOOKING_TOKEN_SECRET', 'PARTNER_ADMIN_KEY', 'MFA_ENCRYPTION_KEY']) {
+for (const name of [
+  'BOOKING_TOKEN_SECRET',
+  'PARTNER_ADMIN_KEY',
+  'MFA_ENCRYPTION_KEY',
+  'NOTIFICATION_WORKER_SECRET',
+]) {
   const value = process.env[name] ?? '';
   if (value.length < 32) failures.push(`${name} must contain at least 32 characters.`);
   if (/replace|example|change-me/i.test(value))
