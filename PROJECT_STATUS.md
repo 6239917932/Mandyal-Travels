@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 17 August 2026
+Last reviewed: 22 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -185,6 +185,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 
 ### Security and reliability controls
 
+- Versioned legal and policy center covering privacy, terms, cancellation and refunds, and cookies,
+  with an explicit draft-approval state and marketing consent tied to the applicable privacy version
 - Password hashing, server-side sessions, secure cookie settings, login/register throttling,
   account-scoped active-session controls, and session revocation after a password change
 - Content-security policy, anti-framing, content-type, referrer, permissions, and production HTTPS
@@ -212,8 +214,8 @@ credentials, contracts, or signed-off business rules:
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
 6. Production database, off-site encrypted backup storage, monitoring, alerting, domain/DNS, TLS,
    hosting, and a scheduler/worker for the prepared integration outbox
-7. Legal pages and approved customer communications: privacy, terms, cancellation, refunds, and
-   consent wording
+7. Operational legal-policy drafts now exist in the portal; independent legal approval and final
+   jurisdiction-specific wording are still required before launch.
 
 The current company statements intentionally identify themselves as reporting statements, not GST
 tax invoices.
