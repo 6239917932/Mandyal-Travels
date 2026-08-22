@@ -105,7 +105,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
     ]);
 
   return (
-    <section className="account-page business-report admin-record-page">
+    <section className="account-page business-report admin-record-page admin-workspace">
       <div className="partner-page__heading">
         <div>
           <p className="hotel-page__eyebrow">Authorized account servicing</p>

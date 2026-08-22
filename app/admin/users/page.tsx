@@ -79,7 +79,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const now = new Date();
 
   return (
-    <section className="account-page business-report">
+    <section className="account-page business-report admin-workspace">
       <div className="partner-page__heading">
         <div>
           <p className="hotel-page__eyebrow">Mandyal operations</p>
