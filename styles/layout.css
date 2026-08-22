@@ -233,7 +233,7 @@
   }
 
   .site-footer__inner {
-    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
   }
 }
 

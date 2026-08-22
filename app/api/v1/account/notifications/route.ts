@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -53,7 +54,8 @@ export async function PATCH(request: Request) {
         data: {
           userId: user.id,
           purpose: 'MARKETING_COMMUNICATIONS',
-          policyVersion: 'privacy-v2.1-pending-legal-approval',
+          policyVersion: PRIVACY_CONSENT_VERSION,
+          source: 'ACCOUNT_PREFERENCES',
           status: marketingEmail ? 'GRANTED' : 'WITHDRAWN',
           withdrawnAt: marketingEmail ? null : new Date(),
         },

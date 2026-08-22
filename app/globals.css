@@ -4,6 +4,7 @@
 @import '../styles/layout.css';
 @import '../styles/home.css';
 @import '../styles/hotel.css';
+@import '../styles/legal.css';
 
 * {
   box-sizing: border-box;

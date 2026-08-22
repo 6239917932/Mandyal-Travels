@@ -29,6 +29,16 @@ export function SiteFooter() {
         </div>
 
         <div>
+          <p className="site-footer__heading">Legal</p>
+          <nav aria-label="Legal navigation" className="site-footer__links">
+            <Link href="/legal/privacy">Privacy</Link>
+            <Link href="/legal/terms">Terms</Link>
+            <Link href="/legal/cancellation-refunds">Cancellation &amp; refunds</Link>
+            <Link href="/legal/cookies">Cookie notice</Link>
+          </nav>
+        </div>
+
+        <div>
           <p className="site-footer__heading">Need help?</p>
           <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
         </div>

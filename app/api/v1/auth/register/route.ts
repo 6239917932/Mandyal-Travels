@@ -11,6 +11,7 @@ import {
 import { createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidName, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await hashPassword(password);
+  const marketingConsentGranted = body.marketingConsent === true;
   let user;
   try {
     user = await prisma.$transaction(async (transaction) => {
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
           email,
           firstName,
           lastName,
-          marketingConsentAt: body.marketingConsent === true ? new Date() : null,
+          marketingConsentAt: marketingConsentGranted ? new Date() : null,
           passwordHash,
           role: ['agent', 'business'].includes(accountType) ? 'BUSINESS_ADMIN' : 'CUSTOMER',
         },
@@ -112,6 +114,18 @@ export async function POST(request: Request) {
               },
             },
             type: accountType === 'agent' ? 'TRAVEL_AGENCY' : 'CORPORATE',
+          },
+        });
+      }
+
+      if (marketingConsentGranted) {
+        await transaction.userConsentRecord.create({
+          data: {
+            userId: createdUser.id,
+            purpose: 'MARKETING_COMMUNICATIONS',
+            policyVersion: PRIVACY_CONSENT_VERSION,
+            source: 'ACCOUNT_REGISTRATION',
+            status: 'GRANTED',
           },
         });
       }
