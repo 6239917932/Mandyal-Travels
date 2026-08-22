@@ -39,7 +39,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
   if (!partner) notFound();
   const assigned = new Set(partner.properties.map((property) => property.hotelSlug));
   return (
-    <section className="account-page">
+    <section className="account-page admin-workspace">
       <div className="partner-page__heading">
         <div>
           <p className="hotel-page__eyebrow">Authorized supplier servicing</p>

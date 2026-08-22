@@ -975,30 +975,67 @@
   gap: var(--space-6);
 }
 
-.admin-workspace .partner-page__heading,
+.admin-workspace > .partner-page__heading,
 .admin-workspace > .account-trips__heading {
   align-items: center;
-  background: linear-gradient(135deg, var(--color-white), var(--color-brand-50));
-  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle at 92% 12%, rgb(48 132 196 / 36%), transparent 34%),
+    linear-gradient(135deg, var(--color-brand-950), var(--color-brand-800));
+  border: 1px solid rgb(111 181 229 / 28%);
   border-radius: var(--radius-xl);
-  border-top: 0.3rem solid var(--color-brand-500);
-  box-shadow: var(--shadow-sm);
-  padding: clamp(1.25rem, 3vw, 2rem);
+  box-shadow: var(--shadow-md);
+  color: var(--color-white);
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr) auto;
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 3rem);
 }
 
-.admin-workspace .partner-page__heading h1,
+.admin-workspace > .partner-page__heading h1,
 .admin-workspace > .account-trips__heading h1 {
-  color: var(--color-brand-950);
+  color: var(--color-white);
   font-size: clamp(1.8rem, 4vw, 2.75rem);
   line-height: 1.05;
   margin: 0.25rem 0 0.6rem;
 }
 
-.admin-workspace .partner-page__heading .ui-button,
+.admin-workspace > .partner-page__heading p,
+.admin-workspace > .account-trips__heading p {
+  color: rgb(236 247 255 / 92%);
+}
+
+.admin-workspace > .partner-page__heading .eyebrow,
+.admin-workspace > .partner-page__heading .hotel-page__eyebrow,
+.admin-workspace > .account-trips__heading .eyebrow,
+.admin-workspace > .account-trips__heading .hotel-page__eyebrow {
+  color: var(--color-accent-600);
+}
+
+.admin-workspace > .partner-page__heading .ui-button,
 .admin-workspace > .account-trips__heading .ui-button {
-  box-shadow: 0 0.55rem 1.2rem rgb(16 88 145 / 15%);
+  background: rgb(255 255 255 / 8%);
+  border-color: rgb(255 255 255 / 58%);
+  box-shadow: 0 0.55rem 1.2rem rgb(0 20 45 / 22%);
+  color: var(--color-white);
   min-height: 3rem;
   min-width: 10rem;
+}
+
+.admin-workspace > .partner-page__heading .ui-button:hover,
+.admin-workspace > .partner-page__heading .ui-button:focus-visible,
+.admin-workspace > .account-trips__heading .ui-button:hover,
+.admin-workspace > .account-trips__heading .ui-button:focus-visible {
+  background: rgb(255 255 255 / 18%);
+  border-color: var(--color-white);
+  color: var(--color-white);
+}
+
+.admin-workspace > .partner-page__heading .ui-button:active,
+.admin-workspace > .account-trips__heading .ui-button:active {
+  background: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-brand-950);
 }
 
 .admin-workspace .supplier-form.ui-card,
@@ -1152,13 +1189,14 @@
 }
 
 @media (max-width: 720px) {
-  .admin-workspace .partner-page__heading,
+  .admin-workspace > .partner-page__heading,
   .admin-workspace > .account-trips__heading {
     align-items: stretch;
     display: grid;
+    grid-template-columns: 1fr;
   }
 
-  .admin-workspace .partner-page__heading .ui-button,
+  .admin-workspace > .partner-page__heading .ui-button,
   .admin-workspace > .account-trips__heading .ui-button,
   .admin-workspace .supplier-form .ui-button,
   .admin-workspace .supplier-form > button {
