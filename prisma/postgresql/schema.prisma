@@ -50,6 +50,9 @@ model User {
   privacyRequests             DataPrivacyRequest[]
   updatedPlatformFeatureFlags PlatformFeatureFlag[]       @relation("PlatformFeatureFlagUpdater")
   platformFeatureFlagEvents   PlatformFeatureFlagEvent[]  @relation("PlatformFeatureFlagEventActor")
+  createdDestinationContent   DestinationContent[]        @relation("DestinationContentCreator")
+  updatedDestinationContent   DestinationContent[]        @relation("DestinationContentUpdater")
+  destinationContentEvents    DestinationContentEvent[]   @relation("DestinationContentEventActor")
 }
 
 model PasswordResetToken {
@@ -1548,5 +1551,49 @@ model PlatformFeatureFlagEvent {
   actor       User                @relation("PlatformFeatureFlagEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
   @@index([flagKey, createdAt])
+  @@index([createdAt])
+}
+
+model DestinationContent {
+  id              String                    @id @default(cuid())
+  slug            String                    @unique
+  name            String
+  state           String
+  country         String                    @default("India")
+  summary         String
+  introduction    String
+  heroImageUrl    String
+  bestTimeToVisit String
+  highlightsJson  String                    @default("[]")
+  travelTipsJson  String                    @default("[]")
+  status          String                    @default("DRAFT")
+  version         Int                       @default(1)
+  changeReason    String
+  createdByUserId String
+  updatedByUserId String
+  publishedAt     DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  createdBy       User                      @relation("DestinationContentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy       User                      @relation("DestinationContentUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  events          DestinationContentEvent[]
+
+  @@index([status, updatedAt])
+  @@index([state, status, name])
+}
+
+model DestinationContentEvent {
+  id            String             @id @default(cuid())
+  destinationId String
+  actorUserId   String
+  action        String
+  status        String
+  version       Int
+  reason        String
+  createdAt     DateTime           @default(now())
+  destination   DestinationContent @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  actor         User               @relation("DestinationContentEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([destinationId, createdAt])
   @@index([createdAt])
 }

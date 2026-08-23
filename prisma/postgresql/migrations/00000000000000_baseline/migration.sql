@@ -1347,6 +1347,45 @@ CREATE TABLE "PlatformFeatureFlagEvent" (
     CONSTRAINT "PlatformFeatureFlagEvent_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "DestinationContent" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "state" TEXT NOT NULL,
+    "country" TEXT NOT NULL DEFAULT 'India',
+    "summary" TEXT NOT NULL,
+    "introduction" TEXT NOT NULL,
+    "heroImageUrl" TEXT NOT NULL,
+    "bestTimeToVisit" TEXT NOT NULL,
+    "highlightsJson" TEXT NOT NULL DEFAULT '[]',
+    "travelTipsJson" TEXT NOT NULL DEFAULT '[]',
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "changeReason" TEXT NOT NULL,
+    "createdByUserId" TEXT NOT NULL,
+    "updatedByUserId" TEXT NOT NULL,
+    "publishedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DestinationContent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DestinationContentEvent" (
+    "id" TEXT NOT NULL,
+    "destinationId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DestinationContentEvent_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -1938,6 +1977,21 @@ CREATE INDEX "PlatformFeatureFlagEvent_flagKey_createdAt_idx" ON "PlatformFeatur
 -- CreateIndex
 CREATE INDEX "PlatformFeatureFlagEvent_createdAt_idx" ON "PlatformFeatureFlagEvent"("createdAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "DestinationContent_slug_key" ON "DestinationContent"("slug");
+
+-- CreateIndex
+CREATE INDEX "DestinationContent_status_updatedAt_idx" ON "DestinationContent"("status", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "DestinationContent_state_status_name_idx" ON "DestinationContent"("state", "status", "name");
+
+-- CreateIndex
+CREATE INDEX "DestinationContentEvent_destinationId_createdAt_idx" ON "DestinationContentEvent"("destinationId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "DestinationContentEvent_createdAt_idx" ON "DestinationContentEvent"("createdAt");
+
 -- AddForeignKey
 ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -2249,3 +2303,15 @@ ALTER TABLE "PlatformFeatureFlagEvent" ADD CONSTRAINT "PlatformFeatureFlagEvent_
 
 -- AddForeignKey
 ALTER TABLE "PlatformFeatureFlagEvent" ADD CONSTRAINT "PlatformFeatureFlagEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DestinationContent" ADD CONSTRAINT "DestinationContent_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DestinationContent" ADD CONSTRAINT "DestinationContent_updatedByUserId_fkey" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_destinationId_fkey" FOREIGN KEY ("destinationId") REFERENCES "DestinationContent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

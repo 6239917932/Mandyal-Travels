@@ -23,6 +23,8 @@ and release checklist.
   bounded search, product/status/date filters, customer links, and complete independent pagination
 - Protected read-only hotel supply catalog with internal PMS/API provenance, governance filters,
   deterministic content-readiness checks, and links to existing human review controls
+- Governed destination content CMS with private drafts, human publication, optimistic versions,
+  append-only editorial history, and responsive public destination guides
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
