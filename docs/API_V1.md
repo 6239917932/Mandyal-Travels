@@ -35,6 +35,15 @@ Breaking changes require a new major API path. Additive fields may be introduced
 
 The live contract summary is available from `GET /api/v1/meta`. Provider-specific credentials, schemas, rate limits, certification evidence, and signed commercial obligations remain in the relevant integration runbook and are not committed to source control.
 
+## Customer booking support
+
+`POST /api/v1/account/support` requires an authenticated customer, bounded case details, and a
+supported category. When a booking reference is supplied, the API accepts it only when the
+corresponding hotel booking or Flight, Bus, or Car trip belongs to the signed-in customer. Created
+cases are rate limited and linked to the owned booking with an append-only creation event. A support
+case is a request for human review: it does not itself change or cancel inventory, issue a refund,
+or alter a payment.
+
 ## Account recovery
 
 `POST /api/v1/auth/password-reset/request` accepts an email address and always returns the same
