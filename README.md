@@ -29,6 +29,8 @@ and release checklist.
   append-only editorial history, and responsive public destination guides
 - Protected read-only administrator audit workbench unifying bounded platform, editorial,
   supplier, organization, support, and account-security history with exact timeline pagination
+- Protected administrator security posture for MFA adoption, session hygiene, security-event volume,
+  and identifier-free request-throttle monitoring with bounded filters and pagination
 - Governed privacy-request operations with customer status visibility, administrator due-date
   queues, strict human review transitions, optimistic versions, and immutable history
 - Protected administrator integration registry for hotel channels, flight suppliers, notification

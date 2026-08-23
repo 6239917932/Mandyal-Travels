@@ -86,6 +86,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   windows, pagination, capacity/rate-plan issue detection, seasonal price posture, and explicit
   stop-sale and restriction visibility without changing partner-owned PMS controls
 - Account security activity history for sign-ins, profile/password/preference changes, and session revocation
+- Protected read-only administrator security posture with aggregate MFA/session health, 24-hour
+  security-event volume, and identifier-free throttling evidence under bounded filters and pagination
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 
@@ -228,7 +230,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 74-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 79-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -361,8 +363,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 165 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 214 generated route entries,
+The current travel-domain milestone passes 169 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 215 generated route entries,
 clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
 synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
