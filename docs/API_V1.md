@@ -14,6 +14,19 @@ Breaking changes require a new major API path. Additive fields may be introduced
 
 The live contract summary is available from `GET /api/v1/meta`. Provider-specific credentials, schemas, rate limits, certification evidence, and signed commercial obligations remain in the relevant integration runbook and are not committed to source control.
 
+## Account recovery
+
+`POST /api/v1/auth/password-reset/request` accepts an email address and always returns the same
+accepted response for valid, unknown, and non-disclosable accounts. Requests are rate limited. When
+the account exists, delivery is scheduled after the response so provider latency cannot disclose
+account existence.
+
+`POST /api/v1/auth/password-reset/confirm` accepts a 256-bit one-time token plus matching new
+password fields. Tokens are stored only as SHA-256 hashes, expire after 30 minutes, and are claimed
+atomically before the password changes. Success invalidates every outstanding reset token and every
+browser session for the account. The email URL carries the raw token in a fragment so it is not sent
+to the web server in the initial request or included in referrer headers.
+
 ## Observability and security
 
 Logs and audit events should carry the request ID, authenticated actor ID, action, result, latency, and a non-sensitive entity reference. Authentication secrets, payment data, identity documents, raw supplier payloads, and notification recipients must be redacted. Cookie-authenticated writes are origin checked; privileged routes additionally enforce role and scoped supplier ownership.

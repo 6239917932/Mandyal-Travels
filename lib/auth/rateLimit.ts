@@ -5,7 +5,13 @@ import { prisma } from '@/lib/prisma';
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 type RateLimitAction =
-  'ANALYTICS_EVENT' | 'CUSTOMER_SUPPORT_CREATE' | 'LOGIN' | 'PASSWORD_CHANGE' | 'REGISTER';
+  | 'ANALYTICS_EVENT'
+  | 'CUSTOMER_SUPPORT_CREATE'
+  | 'LOGIN'
+  | 'PASSWORD_CHANGE'
+  | 'PASSWORD_RESET_CONFIRM'
+  | 'PASSWORD_RESET_REQUEST'
+  | 'REGISTER';
 
 type RateLimitOptions = {
   action: RateLimitAction;

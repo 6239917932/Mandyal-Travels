@@ -7,7 +7,13 @@ import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-type LoginPageProps = { searchParams: Promise<{ passwordChanged?: string; returnTo?: string }> };
+type LoginPageProps = {
+  searchParams: Promise<{
+    passwordChanged?: string;
+    passwordReset?: string;
+    returnTo?: string;
+  }>;
+};
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const values = await searchParams;
@@ -24,9 +30,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </div>
       <AuthForm
         message={
-          values.passwordChanged === '1'
-            ? 'Your password was updated. Sign in again on this device.'
-            : undefined
+          values.passwordReset === '1'
+            ? 'Your password was reset. Sign in with your new password.'
+            : values.passwordChanged === '1'
+              ? 'Your password was updated. Sign in again on this device.'
+              : undefined
         }
         mode="login"
         returnTo={returnTo ?? undefined}

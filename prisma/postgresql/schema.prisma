@@ -43,10 +43,24 @@ model User {
   moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
   analyticsEvents             AnalyticsEvent[]
   notificationDeliveries      NotificationDelivery[]
+  passwordResetTokens         PasswordResetToken[]
   mfaCredential               UserMfaCredential?
   mfaRecoveryCodes            UserMfaRecoveryCode[]
   consentRecords              UserConsentRecord[]
   privacyRequests             DataPrivacyRequest[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, usedAt])
 }
 
 model UserConsentRecord {
