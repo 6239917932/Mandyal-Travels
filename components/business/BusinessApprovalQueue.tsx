@@ -18,8 +18,8 @@ type BusinessApprovalRequest = {
   id: string;
   policyReason: string;
   productType: string;
-  requesterEmail: string;
-  requesterName: string;
+  travellerEmail: string;
+  travellerName: string;
   reviewNote: string | null;
   startDate: string;
   status: string;
@@ -95,7 +95,7 @@ export function BusinessApprovalQueue({ requests }: BusinessApprovalQueueProps) 
             <div>
               <h3>{request.title}</h3>
               <p>
-                {request.requesterName} · {request.requesterEmail}
+                {request.travellerName} · {request.travellerEmail}
               </p>
               <small>{request.policyReason}</small>
             </div>

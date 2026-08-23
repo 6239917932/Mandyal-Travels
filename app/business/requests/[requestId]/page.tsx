@@ -54,9 +54,10 @@ export default async function BusinessTravelRequestPage({
   const { requestId } = await params;
   const request = await prisma.businessTravelRequest.findFirst({
     include: {
+      agencyCustomerLink: { include: { agencyCustomer: true } },
       customerTrip: { select: { confirmationCode: true } },
       hotelBooking: { select: { confirmationCode: true } },
-      organization: { select: { name: true } },
+      organization: { select: { name: true, type: true } },
       policyVersion: { select: { version: true } },
       requester: { select: { email: true, firstName: true, lastName: true } },
       reviewedBy: { select: { email: true, firstName: true, lastName: true } },
@@ -78,8 +79,13 @@ export default async function BusinessTravelRequestPage({
   const policyVersion = request.policyVersion?.version ?? snapshot.version ?? null;
   const bookingReference =
     request.customerTrip?.confirmationCode ?? request.hotelBooking?.confirmationCode ?? null;
+  const isAgencyRequest = Boolean(request.agencyCustomerLink);
   const backHref =
-    membership.role === 'ADMIN' ? '/business/dashboard' : '/account#company-travel-request';
+    membership.role === 'ADMIN'
+      ? request.organization.type === 'TRAVEL_AGENCY'
+        ? '/agent'
+        : '/business/dashboard'
+      : '/account#company-travel-request';
 
   return (
     <section className="account-page business-request-record">
@@ -91,7 +97,12 @@ export default async function BusinessTravelRequestPage({
         </div>
         <div className="manage-booking__document-actions">
           <Link className="ui-button ui-button--secondary" href={backHref}>
-            Back to {membership.role === 'ADMIN' ? 'business workspace' : 'my account'}
+            Back to{' '}
+            {membership.role === 'ADMIN'
+              ? request.organization.type === 'TRAVEL_AGENCY'
+                ? 'agent workspace'
+                : 'business workspace'
+              : 'my account'}
           </Link>
           {request.status === 'BOOKED' && membership.role === 'ADMIN' ? (
             <Link
@@ -131,11 +142,17 @@ export default async function BusinessTravelRequestPage({
       <Card>
         <div className="business-request-record__details">
           <div>
-            <span>Traveller</span>
+            <span>{isAgencyRequest ? 'Agency customer' : 'Traveller'}</span>
             <strong>
-              {request.requester.firstName} {request.requester.lastName}
+              {request.agencyCustomerLink?.agencyCustomer.displayName ??
+                `${request.requester.firstName} ${request.requester.lastName}`}
             </strong>
-            <small>{request.requester.email}</small>
+            <small>
+              {request.agencyCustomerLink?.agencyCustomer.email ?? request.requester.email}
+            </small>
+            {request.agencyCustomerLink?.agencyCustomer.phone ? (
+              <small>{request.agencyCustomerLink.agencyCustomer.phone}</small>
+            ) : null}
           </div>
           <div>
             <span>Travel dates</span>

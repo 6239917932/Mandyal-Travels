@@ -96,6 +96,7 @@ export default async function AgentWorkspacePage() {
           title: businessTravelRequest.title,
         }))}
         key={`${agencyWorkspaceRevision}:requests`}
+        organizationName={membership.organization.name}
       />
       <AgencyCustomerManager
         initialCustomers={agencyCustomers.map((customer) => ({

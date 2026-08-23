@@ -16,6 +16,9 @@ within the agency.
 by the same agency, a supported product, governed travel dates, and integer INR estimated value.
 The created organization request retains its agency-customer attribution and policy snapshot.
 Reusing the key with different customer, organization, actor, or request details is rejected.
+An approved attributed request may be serviced by its creating agent or another administrator of
+the same `TRAVEL_AGENCY`; this team access never applies to ordinary company requests. Checkout
+still revalidates request status, product, dates, amount, policy cabin, inventory, and final price.
 
 `GET /api/v1/agent/reports/export` provides a filterable CSV of customer-attributed requests. It
 applies the authenticated travel agency's scope to both the request and customer relation, includes
