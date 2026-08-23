@@ -19,6 +19,8 @@ and release checklist.
   filters, oldest-open ordering, pagination, and audited human resolution controls
 - Administrator-only platform configuration with reason-required, version-safe, audited release
   controls for guided trip planning and new partner applications
+- Read-only administrator booking operations across Hotel, Flight, Bus, and Car records with
+  bounded search, product/status/date filters, customer links, and complete independent pagination
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
