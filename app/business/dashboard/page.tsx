@@ -73,6 +73,9 @@ export default async function BusinessDashboardPage() {
   if (!membership) redirect('/business');
 
   const requestInclude = {
+    agencyCustomerLink: {
+      select: { agencyCustomer: { select: { displayName: true, email: true } } },
+    },
     customerTrip: { select: { confirmationCode: true } },
     hotelBooking: { select: { confirmationCode: true } },
     requester: { select: { email: true, firstName: true, lastName: true } },
@@ -217,8 +220,11 @@ export default async function BusinessDashboardPage() {
             id: request.id,
             policyReason: request.policyReason,
             productType: request.productType,
-            requesterEmail: request.requester.email,
-            requesterName: `${request.requester.firstName} ${request.requester.lastName}`,
+            travellerEmail:
+              request.agencyCustomerLink?.agencyCustomer.email ?? request.requester.email,
+            travellerName:
+              request.agencyCustomerLink?.agencyCustomer.displayName ??
+              `${request.requester.firstName} ${request.requester.lastName}`,
             reviewNote: request.reviewNote,
             startDate: request.startDate,
             status: request.status,

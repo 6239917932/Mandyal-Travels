@@ -1,8 +1,10 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AgencyCustomerView } from '@/components/agent/AgencyCustomerManager';
+import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 
 export type AgencyTravelRequestView = {
@@ -26,9 +28,11 @@ type RequestResponse = {
 export function AgencyTravelRequestManager({
   customers,
   initialRequests,
+  organizationName,
 }: {
   customers: AgencyCustomerView[];
   initialRequests: AgencyTravelRequestView[];
+  organizationName: string;
 }) {
   const router = useRouter();
   const activeCustomers = customers.filter((customer) => customer.status === 'ACTIVE');
@@ -147,10 +151,35 @@ export function AgencyTravelRequestManager({
                 style: 'currency',
               }).format(request.estimatedAmount)}
             </p>
+            <div className="account-trip__actions">
+              {request.status === 'APPROVED' && isBusinessProduct(request.productType) ? (
+                <BusinessRequestCheckoutLink
+                  id={request.id}
+                  organizationName={organizationName}
+                  productType={request.productType}
+                  title={request.title}
+                />
+              ) : null}
+              <Link
+                className="ui-button ui-button--secondary"
+                href={`/business/requests/${request.id}`}
+              >
+                View request record
+              </Link>
+            </div>
+            {request.status === 'PENDING' ? (
+              <p className="business-request__guidance">
+                Approve this request in Agency operations before booking.
+              </p>
+            ) : null}
           </article>
         ))}
       </div>
       {requests.length === 0 ? <p>No customer travel requests have been created yet.</p> : null}
     </div>
   );
+}
+
+function isBusinessProduct(productType: string): productType is 'FLIGHT' | 'HOTEL' | 'BUS' | 'CAR' {
+  return ['FLIGHT', 'HOTEL', 'BUS', 'CAR'].includes(productType);
 }

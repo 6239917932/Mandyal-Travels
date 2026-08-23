@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { quoteRepository } from '@/repositories/quoteRepository';
 import { busService } from '@/services/busService';
 import { carService } from '@/services/carService';
+import { buildBusinessCheckoutAccessWhere } from '@/services/businessCheckoutAccess';
 import { flightService } from '@/services/flightService';
 import { resolvePromotionRule } from '@/services/promotionService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
@@ -205,7 +206,7 @@ export async function validateBusinessCheckout({
 }) {
   const travelRequest = await prisma.businessTravelRequest.findFirst({
     include: { organization: true },
-    where: { id: requestId, requesterId: userId },
+    where: buildBusinessCheckoutAccessWhere(requestId, userId),
   });
 
   if (!travelRequest) {

@@ -86,6 +86,10 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Agency-only customer reporting with customer, product, status, travel-date, and search filters;
   paginated records and formula-safe bounded CSV export preserve historical attribution without
   exposing private customer servicing notes
+- Approval-gated agency booking controls hand attributed requests into the matching Hotel, Flight,
+  Bus, or Car journey; request and approval screens identify the actual agency customer, and another
+  administrator of the same travel agency may safely service the request without gaining access to
+  ordinary company requests
 - Organization contact and billing profile, traveller invitations, membership removal, and
   administrator/traveller roles
 - Versioned travel policy with approval requirement, default flight cabin, and maximum trip amount
@@ -314,7 +318,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 121 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 122 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 138 generated route entries,
 clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
 synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
