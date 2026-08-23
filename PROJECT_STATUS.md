@@ -88,6 +88,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Human-governed administrator finance workbench with exact payment, discrepancy, and refund totals;
   independent bounded payment/refund pagination; closed-catalogue filters; private provider
   correlation; captured-payment reconciliation enforcement; and state-correct refund retry actions
+- Governed administrator promotion workbench with exact campaign posture, bounded search and
+  pagination, authoritative stored-code states, version-safe reason-required activation,
+  append-only change history, and fail-closed usage caps until redemption attribution exists
 - Protected read-only administrator inventory and rate directory with bounded search, 7/30/90-day
   windows, pagination, capacity/rate-plan issue detection, seasonal price posture, and explicit
   stop-sale and restriction visibility without changing partner-owned PMS controls
@@ -372,9 +375,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 182 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 187 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
-clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
-synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+clean-database verification of all 71 SQLite migrations with foreign-key integrity enabled, a
+synchronized 80-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.

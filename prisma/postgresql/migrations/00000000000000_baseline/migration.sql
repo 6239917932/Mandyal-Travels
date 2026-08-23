@@ -1327,6 +1327,21 @@ CREATE TABLE "PromotionCampaign" (
 );
 
 -- CreateTable
+CREATE TABLE "PromotionCampaignEvent" (
+    "id" TEXT NOT NULL,
+    "campaignId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromActive" BOOLEAN NOT NULL,
+    "toActive" BOOLEAN NOT NULL,
+    "reason" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PromotionCampaignEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "RoomInventoryOverride" (
     "id" TEXT NOT NULL,
     "roomTypeId" TEXT NOT NULL,
@@ -1989,6 +2004,15 @@ CREATE INDEX "PromotionCampaign_active_startsAt_endsAt_idx" ON "PromotionCampaig
 CREATE INDEX "PromotionCampaign_updatedAt_idx" ON "PromotionCampaign"("updatedAt");
 
 -- CreateIndex
+CREATE INDEX "PromotionCampaignEvent_campaignId_createdAt_idx" ON "PromotionCampaignEvent"("campaignId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PromotionCampaignEvent_actorUserId_createdAt_idx" ON "PromotionCampaignEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PromotionCampaignEvent_createdAt_idx" ON "PromotionCampaignEvent"("createdAt");
+
+-- CreateIndex
 CREATE INDEX "RoomInventoryOverride_roomTypeId_stayDate_idx" ON "RoomInventoryOverride"("roomTypeId", "stayDate");
 
 -- CreateIndex
@@ -2329,6 +2353,12 @@ ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_
 
 -- AddForeignKey
 ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionCampaignEvent" ADD CONSTRAINT "PromotionCampaignEvent_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "PromotionCampaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionCampaignEvent" ADD CONSTRAINT "PromotionCampaignEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PlatformFeatureFlag" ADD CONSTRAINT "PlatformFeatureFlag_updatedByUserId_fkey" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

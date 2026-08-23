@@ -66,7 +66,7 @@ export function AdminPromotionCreateForm() {
           <input min={1} name="minimumSubtotal" type="number" required />
         </label>
         <label>
-          Optional usage cap
+          Reserved usage cap (activation blocked until redemption tracking exists)
           <input min={1} name="usageLimit" type="number" />
         </label>
         <label>
@@ -105,19 +105,25 @@ export function AdminPromotionCreateForm() {
 export function AdminPromotionStatus({
   active,
   campaignId,
+  version,
 }: {
   active: boolean;
   campaignId: string;
+  version: number;
 }) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  async function update() {
+  async function update(formData: FormData) {
     setPending(true);
     setError('');
     try {
       const response = await fetch(`/api/v1/admin/promotions/${encodeURIComponent(campaignId)}`, {
-        body: JSON.stringify({ active: !active }),
+        body: JSON.stringify({
+          active: !active,
+          expectedVersion: version,
+          reason: formData.get('reason'),
+        }),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
@@ -131,8 +137,12 @@ export function AdminPromotionStatus({
     }
   }
   return (
-    <div>
-      <button className="ui-button ui-button--secondary" disabled={pending} onClick={update}>
+    <form action={update} className="admin-finance-actions__form">
+      <label>
+        Required change reason
+        <textarea maxLength={500} minLength={10} name="reason" required />
+      </label>
+      <button className="ui-button ui-button--secondary" disabled={pending}>
         {pending ? 'Saving…' : active ? 'Pause' : 'Activate'}
       </button>
       {error ? (
@@ -140,6 +150,6 @@ export function AdminPromotionStatus({
           {error}
         </span>
       ) : null}
-    </div>
+    </form>
   );
 }

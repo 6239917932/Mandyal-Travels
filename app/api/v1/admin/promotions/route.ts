@@ -48,21 +48,35 @@ export async function POST(request: Request) {
     );
   }
   try {
-    const campaign = await prisma.promotionCampaign.create({
-      data: {
-        code,
-        createdByUserId: administrator.id,
-        description,
-        endsAt,
-        maximumDiscount,
-        minimumSubtotal,
-        name,
-        percentOff,
-        productsJson: JSON.stringify(products),
-        startsAt,
-        updatedByUserId: administrator.id,
-        usageLimit,
-      },
+    const campaign = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.promotionCampaign.create({
+        data: {
+          code,
+          createdByUserId: administrator.id,
+          description,
+          endsAt,
+          maximumDiscount,
+          minimumSubtotal,
+          name,
+          percentOff,
+          productsJson: JSON.stringify(products),
+          startsAt,
+          updatedByUserId: administrator.id,
+          usageLimit,
+        },
+      });
+      await transaction.promotionCampaignEvent.create({
+        data: {
+          action: 'CREATED',
+          actorUserId: administrator.id,
+          campaignId: created.id,
+          fromActive: false,
+          reason: 'Campaign created in a paused state for commercial review.',
+          toActive: false,
+          version: created.version,
+        },
+      });
+      return created;
     });
     return NextResponse.json({ data: { id: campaign.id } }, { status: 201 });
   } catch (error) {
