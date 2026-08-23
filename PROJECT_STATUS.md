@@ -132,9 +132,12 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   optimistic versions, reason-required append-only history, bounded administration, and responsive
   public destination guides that route customers into inventory-backed search and trip planning
 - Protected read-only administrator audit workbench combining platform configuration, destination
-  content, supplier, organization, customer-support, and account-security records with closed-domain
+  content, supplier, organization, customer-support, privacy-review, and account-security records with closed-domain
   filters, bounded search and date ranges, exact merged timeline pagination, and explicit deep-history
   limits; it exposes no operational, inventory, payment, refund, or reconciliation mutation
+- Privacy operations queue for customer access, correction, deletion, and restriction requests with
+  30-day targets, overdue visibility, bounded filters and pagination, required human review notes,
+  optimistic versions, immutable events, customer status visibility, and no automatic data deletion
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
@@ -349,9 +352,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 151 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 149 generated route entries,
-clean-database verification of all 69 SQLite migrations with foreign-key integrity enabled, a
-synchronized 78-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 153 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 151 generated route entries,
+clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
+synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.

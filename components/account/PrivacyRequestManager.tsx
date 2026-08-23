@@ -4,9 +4,35 @@ import { useState } from 'react';
 
 import { readJsonResponse } from '@/lib/api/clientResponse';
 
-export function PrivacyRequestManager() {
+type PrivacyRequestRecord = {
+  dueAt: string;
+  id: string;
+  requestType: string;
+  requestedAt: string;
+  resolutionNote: string;
+  status: string;
+};
+
+export function PrivacyRequestManager({
+  initialRequests,
+}: {
+  initialRequests: PrivacyRequestRecord[];
+}) {
   const [requestType, setRequestType] = useState('ACCESS');
   const [message, setMessage] = useState('');
+  const [requests, setRequests] = useState<PrivacyRequestRecord[]>(initialRequests);
+
+  async function loadRequests() {
+    try {
+      const response = await fetch('/api/v1/account/privacy', { cache: 'no-store' });
+      const result = await readJsonResponse<{ data?: { requests: PrivacyRequestRecord[] } }>(
+        response,
+      );
+      if (response.ok) setRequests(result?.data?.requests ?? []);
+    } catch {
+      // Submission remains available when the request history cannot be loaded.
+    }
+  }
 
   async function submitRequest() {
     const response = await fetch('/api/v1/account/privacy', {
@@ -24,6 +50,7 @@ export function PrivacyRequestManager() {
           : 'Your privacy request was recorded and is due for review within 30 days.'
         : (result?.error ?? 'The request could not be recorded.'),
     );
+    if (response.ok) await loadRequests();
   }
 
   return (
@@ -57,6 +84,28 @@ export function PrivacyRequestManager() {
         Submit privacy request
       </button>
       {message ? <p role="status">{message}</p> : null}
+      {requests.length ? (
+        <div className="account-trips__list">
+          <h3>Your recent privacy requests</h3>
+          {requests.map((request) => (
+            <article className="account-trip ui-card ui-card--padded" key={request.id}>
+              <div className="account-trip__topline">
+                <strong>{request.requestType}</strong>
+                <span>{request.status.replaceAll('_', ' ')}</span>
+              </div>
+              <p>
+                Review target:{' '}
+                {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(
+                  new Date(request.dueAt),
+                )}
+              </p>
+              {request.resolutionNote ? (
+                <p>Latest operations note: {request.resolutionNote}</p>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

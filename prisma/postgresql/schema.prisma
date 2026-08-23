@@ -48,6 +48,8 @@ model User {
   mfaRecoveryCodes            UserMfaRecoveryCode[]
   consentRecords              UserConsentRecord[]
   privacyRequests             DataPrivacyRequest[]
+  reviewedPrivacyRequests     DataPrivacyRequest[]        @relation("PrivacyRequestReviewer")
+  privacyRequestEvents        DataPrivacyRequestEvent[]   @relation("PrivacyRequestEventActor")
   updatedPlatformFeatureFlags PlatformFeatureFlag[]       @relation("PlatformFeatureFlagUpdater")
   platformFeatureFlagEvents   PlatformFeatureFlagEvent[]  @relation("PlatformFeatureFlagEventActor")
   createdDestinationContent   DestinationContent[]        @relation("DestinationContentCreator")
@@ -84,18 +86,40 @@ model UserConsentRecord {
 }
 
 model DataPrivacyRequest {
-  id             String    @id @default(cuid())
-  userId         String
-  requestType    String
-  status         String    @default("OPEN")
-  requestedAt    DateTime  @default(now())
-  dueAt          DateTime
-  completedAt    DateTime?
-  resolutionNote String    @default("")
-  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id               String                    @id @default(cuid())
+  userId           String
+  reviewedByUserId String?
+  requestType      String
+  status           String                    @default("OPEN")
+  version          Int                       @default(1)
+  requestedAt      DateTime                  @default(now())
+  dueAt            DateTime
+  completedAt      DateTime?
+  resolutionNote   String                    @default("")
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reviewedBy       User?                     @relation("PrivacyRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  events           DataPrivacyRequestEvent[]
 
   @@index([userId, requestType, requestedAt])
   @@index([status, dueAt])
+  @@index([reviewedByUserId])
+}
+
+model DataPrivacyRequestEvent {
+  id          String             @id @default(cuid())
+  requestId   String
+  actorUserId String
+  action      String
+  fromStatus  String
+  toStatus    String
+  note        String
+  version     Int
+  createdAt   DateTime           @default(now())
+  request     DataPrivacyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor       User               @relation("PrivacyRequestEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model UserMfaCredential {
