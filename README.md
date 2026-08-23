@@ -31,6 +31,8 @@ and release checklist.
   supplier, organization, support, and account-security history with exact timeline pagination
 - Protected administrator security posture for MFA adoption, session hygiene, security-event volume,
   and identifier-free request-throttle monitoring with bounded filters and pagination
+- Human-governed administrator risk workbench with bounded history, aging posture, private subject
+  correlation, redacted narratives, and reason-required review outcomes
 - Governed privacy-request operations with customer status visibility, administrator due-date
   queues, strict human review transitions, optimistic versions, and immutable history
 - Protected administrator integration registry for hotel channels, flight suppliers, notification

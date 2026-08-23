@@ -190,6 +190,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/operations">
               Exception queues
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/risk">
+              Risk review
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/admin/integrations">
               Integration registry
             </Link>

@@ -2,10 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import {
-  AdminIntegrationEventActions,
-  AdminRiskSignalActions,
-} from '@/components/admin/AdminOperationsQueueActions';
+import { AdminIntegrationEventActions } from '@/components/admin/AdminOperationsQueueActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
@@ -21,16 +18,11 @@ function date(value: Date) {
 export default async function AdminOperationsPage() {
   const administrator = await getPlatformAdmin();
   if (!administrator) redirect('/login?returnTo=/admin/operations');
-  const [events, signals, deadLetters, openSignals] = await Promise.all([
+  const [events, deadLetters, openSignals] = await Promise.all([
     prisma.integrationOutboxEvent.findMany({
       orderBy: { createdAt: 'asc' },
       take: 100,
       where: { status: { in: ['PENDING', 'DEAD_LETTER'] } },
-    }),
-    prisma.riskSignal.findMany({
-      orderBy: [{ severity: 'desc' }, { createdAt: 'asc' }],
-      take: 100,
-      where: { status: 'OPEN' },
     }),
     prisma.integrationOutboxEvent.count({ where: { status: 'DEAD_LETTER' } }),
     prisma.riskSignal.count({ where: { status: 'OPEN' } }),
@@ -47,6 +39,9 @@ export default async function AdminOperationsPage() {
           </p>
           <Link className="ui-button ui-button--secondary" href="/admin">
             Back to operations
+          </Link>
+          <Link className="ui-button ui-button--secondary" href="/admin/risk">
+            Open full risk workbench
           </Link>
         </div>
       </header>
@@ -118,52 +113,6 @@ export default async function AdminOperationsPage() {
                 {events.length === 0 ? (
                   <tr>
                     <td colSpan={5}>No integration exceptions require action.</td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-      <div className="account-trips">
-        <div className="account-trips__heading">
-          <p className="hotel-page__eyebrow">Human review required</p>
-          <h2>Suspicious activity</h2>
-        </div>
-        <Card className="business-report__table-card">
-          <div className="business-report__table-scroll">
-            <table className="business-report__table">
-              <thead>
-                <tr>
-                  <th>Signal</th>
-                  <th>Subject</th>
-                  <th>Summary</th>
-                  <th>Created</th>
-                  <th>Review</th>
-                </tr>
-              </thead>
-              <tbody>
-                {signals.map((signal) => (
-                  <tr key={signal.id}>
-                    <td>
-                      <strong>{signal.severity}</strong>
-                      <span>{signal.signalType}</span>
-                      <span>{signal.source}</span>
-                    </td>
-                    <td>
-                      <strong>{signal.subjectType}</strong>
-                      <span>{signal.subjectId}</span>
-                    </td>
-                    <td>{signal.summary}</td>
-                    <td>{date(signal.createdAt)}</td>
-                    <td>
-                      <AdminRiskSignalActions signalId={signal.id} />
-                    </td>
-                  </tr>
-                ))}
-                {signals.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No suspicious-activity signals are open.</td>
                   </tr>
                 ) : null}
               </tbody>
