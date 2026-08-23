@@ -193,6 +193,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/configuration">
               Platform configuration
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/audit">
+              Audit workbench
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out
