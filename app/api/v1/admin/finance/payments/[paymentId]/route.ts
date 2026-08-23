@@ -40,6 +40,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const payment = await prisma.$transaction(async (transaction) => {
       const current = await transaction.paymentTransaction.findUnique({ where: { id: paymentId } });
       if (!current) return null;
+      if (current.status !== 'captured') throw new Error('PAYMENT_NOT_CAPTURED');
       if (
         status === 'MATCHED' &&
         !reconciliationMatchesPayment({
@@ -91,6 +92,12 @@ export async function PATCH(request: Request, context: RouteContext) {
           error:
             'Provider amount and currency must match before reconciliation can be marked matched.',
         },
+        { status: 409 },
+      );
+    }
+    if (error instanceof Error && error.message === 'PAYMENT_NOT_CAPTURED') {
+      return NextResponse.json(
+        { error: 'Only captured payments can be reconciled.' },
         { status: 409 },
       );
     }
