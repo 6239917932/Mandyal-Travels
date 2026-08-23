@@ -11,6 +11,11 @@ import { propertyAmenityGroups, roomAmenityGroups } from '@/constants/hotelAmeni
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
+const DIRECT_IMAGE_URL_HELP =
+  'Paste a direct public HTTPS image URL from images.unsplash.com. Google search pages, ordinary webpages, Drive sharing links, local files, and video links are not accepted.';
+const MEDIA_UPLOAD_HELP =
+  'Photos only for now. Secure photo and video uploads will be enabled after a media-storage provider is connected.';
+
 type RatePlan = {
   cancellationDescription: string;
   freeCancellationHours: number;
@@ -846,7 +851,7 @@ export function PartnerPropertyManager({
                 <span>05</span>
                 <div>
                   <strong>Property media</strong>
-                  <small>Add a cover image and gallery URLs; uploads can be connected later</small>
+                  <small>{MEDIA_UPLOAD_HELP}</small>
                 </div>
               </div>
               <Input
@@ -855,6 +860,7 @@ export function PartnerPropertyManager({
                 placeholder="Secure images.unsplash.com URL"
                 type="url"
               />
+              <small>{DIRECT_IMAGE_URL_HELP}</small>
               <label className="ui-field">
                 <span className="ui-field__label">
                   Gallery photo URLs (one per line, maximum 12)
@@ -864,6 +870,7 @@ export function PartnerPropertyManager({
                   name="imageUrls"
                   placeholder={'https://images.unsplash.com/...\nhttps://images.unsplash.com/...'}
                 />
+                <small>{DIRECT_IMAGE_URL_HELP}</small>
               </label>
               <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
                 Save draft property
@@ -1141,6 +1148,7 @@ export function PartnerPropertyManager({
                     required
                     type="url"
                   />
+                  <small>{DIRECT_IMAGE_URL_HELP}</small>
                   <label className="ui-field">
                     <span className="ui-field__label">
                       Gallery photo URLs (one per line, maximum 12)
@@ -1150,6 +1158,7 @@ export function PartnerPropertyManager({
                       defaultValue={stringListFromJson(property.imageUrlsJson).join('\n')}
                       name="imageUrls"
                     />
+                    <small>{DIRECT_IMAGE_URL_HELP}</small>
                   </label>
                   <Button fullWidth isLoading={isSaving} type="submit">
                     Save property content
@@ -1493,6 +1502,7 @@ export function PartnerPropertyManager({
                             required
                             type="url"
                           />
+                          <small>{DIRECT_IMAGE_URL_HELP}</small>
                         </div>
                         <AmenityChecklist
                           defaultValues={stringListFromJson(room.amenitiesJson)}
@@ -1781,6 +1791,7 @@ export function PartnerPropertyManager({
                       placeholder="Secure images.unsplash.com URL"
                       type="url"
                     />
+                    <small>{DIRECT_IMAGE_URL_HELP}</small>
                   </div>
                   <AmenityChecklist
                     groups={roomAmenityGroups}
