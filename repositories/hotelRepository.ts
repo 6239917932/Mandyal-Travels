@@ -71,7 +71,7 @@ export class InMemoryHotelRepository implements HotelRepository {
           ],
           inventory: {
             externalPropertyId: property.id,
-            source: 'supplier',
+            source: 'direct',
             supplierName: property.partner.name,
           },
           location: {

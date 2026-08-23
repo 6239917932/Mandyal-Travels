@@ -34,7 +34,9 @@ export function HotelResultCard({ criteria, eagerImage = false, result }: HotelR
           width={640}
         />
         <span className="hotel-result-card__source">
-          {hotel.inventory.source === 'direct' ? 'Verified partner stay' : 'Supplier inventory'}
+          {hotel.inventory.source === 'direct'
+            ? 'Managed partner property'
+            : 'API supplier inventory'}
         </span>
       </div>
 
