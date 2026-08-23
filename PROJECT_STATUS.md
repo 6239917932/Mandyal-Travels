@@ -125,6 +125,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Read-only platform booking directory across Hotel, Flight, Bus, and Car records with bounded
   reference/traveller search, product/status/date filters, accurate filtered totals, customer
   servicing links, independent pagination, and explicit empty states
+- Read-only administrator hotel supply catalog with bounded property/supplier/destination search,
+  approval/publication/source/content filters, internal-only PMS versus external API provenance,
+  deterministic content-readiness checks, and links to existing human review controls
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
@@ -339,8 +342,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 139 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 142 generated route entries,
+The current travel-domain milestone passes 143 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 143 generated route entries,
 clean-database verification of all 68 SQLite migrations with foreign-key integrity enabled, a
 synchronized 76-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
