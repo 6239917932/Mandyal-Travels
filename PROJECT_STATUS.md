@@ -113,6 +113,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
 - Customer support servicing with required resolution notes and append-only case events
+- Dedicated platform support workbench with separate customer and company queues, bounded
+  multi-field search, status filters, oldest-open ordering, complete pagination, account links, and
+  the existing audited human resolution actions; no AI provider or automated decision is implied
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
@@ -327,8 +330,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 127 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 138 generated route entries,
+The current travel-domain milestone passes 130 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 139 generated route entries,
 clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
 synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
