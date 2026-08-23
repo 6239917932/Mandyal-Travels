@@ -8,7 +8,10 @@ export async function PATCH(_request: Request, context: Context): Promise<Respon
       { status: 401 },
     );
   const { deliveryId } = await context.params;
-  const delivery = await prisma.notificationDelivery.findUnique({ where: { id: deliveryId } });
+  const delivery = await prisma.notificationDelivery.findUnique({
+    select: { id: true, status: true },
+    where: { id: deliveryId },
+  });
   if (!delivery)
     return Response.json(
       { error: { code: 'DELIVERY_NOT_FOUND', message: 'The delivery was not found.' } },
@@ -24,10 +27,20 @@ export async function PATCH(_request: Request, context: Context): Promise<Respon
       },
       { status: 409 },
     );
-  return Response.json({
-    data: await prisma.notificationDelivery.update({
-      data: { lastError: '', nextAttemptAt: new Date(), status: 'QUEUED' },
-      where: { id: delivery.id },
-    }),
+  const nextAttemptAt = new Date();
+  const retry = await prisma.notificationDelivery.updateMany({
+    data: { lastError: '', nextAttemptAt, status: 'QUEUED' },
+    where: { id: delivery.id, status: { in: ['FAILED', 'DEAD_LETTER'] } },
   });
+  if (retry.count !== 1)
+    return Response.json(
+      {
+        error: {
+          code: 'DELIVERY_NOT_RETRYABLE',
+          message: 'Only failed deliveries can be retried.',
+        },
+      },
+      { status: 409 },
+    );
+  return Response.json({ data: { id: delivery.id, nextAttemptAt, status: 'QUEUED' } });
 }

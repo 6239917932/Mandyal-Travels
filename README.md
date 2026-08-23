@@ -39,6 +39,8 @@ and release checklist.
   delivery, and outbox health that reports secret presence without exposing secret references
 - Protected flight-supplier operation ledger with bounded status/environment filters, retry posture,
   correlation trace, and redacted provider/error evidence indicators
+- Governed administrator notification operations with complete bounded delivery history, private
+  recipient correlation, presence-only provider/error evidence, and conditional retry controls
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
