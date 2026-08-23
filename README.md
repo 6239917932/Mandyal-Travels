@@ -12,6 +12,7 @@ and release checklist.
 - Bus search, seat selection, and booking journey
 - Car rental search and booking journey
 - Inventory and availability controls
+- Partner-scoped hotel occupancy and calendar-capacity decision support with human-only actions
 - Customer accounts and unified trip history
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases

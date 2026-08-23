@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { HotelOccupancyInsights } from '@/components/partner/HotelOccupancyInsights';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
+import { buildHotelOccupancyInsights } from '@/services/hotelOccupancyInsightService';
 
 export const metadata: Metadata = { title: 'Partner performance reports' };
 
@@ -357,24 +359,59 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
     hotelSlug: { in: hotelSlugs },
     quote: { checkInDate: { gte: from, lte: through } },
   };
-  const matchingCount =
-    validRange && hotelSlugs.length ? await prisma.booking.count({ where: bookingWhere }) : 0;
-  const isBounded = matchingCount <= MAX_REPORT_ROWS;
-  const bookings =
-    validRange && isBounded && matchingCount
-      ? await prisma.booking.findMany({
-          orderBy: { createdAt: 'desc' },
-          select: {
-            hotelSlug: true,
-            operationalStatus: true,
-            payment: { select: { amount: true, status: true } },
-            quote: { select: { nights: true, rooms: true } },
-            status: true,
-            totalAmount: true,
-          },
-          where: bookingWhere,
-        })
-      : [];
+  const occupancyBookingWhere = {
+    hotelSlug: { in: hotelSlugs },
+    operationalStatus: { not: 'NO_SHOW' },
+    quote: { checkInDate: { lte: through }, checkOutDate: { gt: from } },
+    status: 'confirmed',
+  };
+  const [matchingCount, occupancyBookingCount] =
+    validRange && hotelSlugs.length
+      ? await Promise.all([
+          prisma.booking.count({ where: bookingWhere }),
+          prisma.booking.count({ where: occupancyBookingWhere }),
+        ])
+      : [0, 0];
+  const isBounded = matchingCount <= MAX_REPORT_ROWS && occupancyBookingCount <= MAX_REPORT_ROWS;
+  const [bookings, occupancyBookings, roomTypes, inventoryDays] =
+    validRange && isBounded && hotelSlugs.length
+      ? await Promise.all([
+          prisma.booking.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+              hotelSlug: true,
+              operationalStatus: true,
+              payment: { select: { amount: true, status: true } },
+              quote: { select: { nights: true, rooms: true } },
+              status: true,
+              totalAmount: true,
+            },
+            where: bookingWhere,
+          }),
+          prisma.booking.findMany({
+            select: {
+              hotelSlug: true,
+              quote: { select: { checkInDate: true, checkOutDate: true, rooms: true } },
+            },
+            where: occupancyBookingWhere,
+          }),
+          prisma.partnerRoomType.findMany({
+            select: {
+              inventoryCount: true,
+              property: { select: { displayName: true, hotelSlug: true } },
+              roomTypeId: true,
+            },
+            where: { property: { hotelSlug: { in: hotelSlugs } }, status: 'ACTIVE' },
+          }),
+          prisma.partnerHotelInventoryDay.findMany({
+            select: { availableRooms: true, roomTypeId: true, stayDate: true, stopSell: true },
+            where: {
+              property: { hotelSlug: { in: hotelSlugs } },
+              stayDate: { gte: from, lte: through },
+            },
+          }),
+        ])
+      : [[], [], [], []];
 
   const confirmed = bookings.filter((booking) => booking.status === 'confirmed');
   const captured = confirmed.filter((booking) => booking.payment?.status === 'captured');
@@ -407,7 +444,23 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
       return { bookings: propertyBookings.length, hotelSlug, propertyRoomNights, propertyValue };
     })
     .filter((row) => row.bookings > 0);
-
+  const occupancyInsights = buildHotelOccupancyInsights({
+    bookings: occupancyBookings.map((booking) => ({
+      checkInDate: booking.quote.checkInDate,
+      checkOutDate: booking.quote.checkOutDate,
+      hotelSlug: booking.hotelSlug,
+      rooms: booking.quote.rooms,
+    })),
+    from,
+    inventoryDays,
+    roomTypes: roomTypes.map((room) => ({
+      hotelSlug: room.property.hotelSlug,
+      inventoryCount: room.inventoryCount,
+      propertyName: room.property.displayName,
+      roomTypeId: room.roomTypeId,
+    })),
+    through,
+  });
   return (
     <section className="account-page partner-workspace">
       <div className="account-page__container">
@@ -499,6 +552,7 @@ export default async function PartnerReportsPage({ searchParams }: PartnerReport
                 {propertyRows.length === 0 ? <p>No bookings arrived during this period.</p> : null}
               </div>
             </Card>
+            <HotelOccupancyInsights insights={occupancyInsights} />
           </>
         ) : null}
       </div>
