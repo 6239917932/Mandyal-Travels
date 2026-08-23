@@ -102,7 +102,15 @@ export function AdminPaymentActions({
   );
 }
 
-export function AdminRefundActions({ refundId }: { refundId: string }) {
+export function AdminRefundActions({
+  canReject = true,
+  isRetry = false,
+  refundId,
+}: {
+  canReject?: boolean;
+  isRetry?: boolean;
+  refundId: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -133,11 +141,13 @@ export function AdminRefundActions({ refundId }: { refundId: string }) {
     <form action={review} className="admin-finance-actions__form">
       <input maxLength={500} name="note" placeholder="Decision note (required for rejection)" />
       <button disabled={isPending} name="decision" value="APPROVE">
-        Approve
+        {isRetry ? 'Retry provider refund' : 'Approve'}
       </button>
-      <button disabled={isPending} name="decision" value="REJECT">
-        Reject
-      </button>
+      {canReject ? (
+        <button disabled={isPending} name="decision" value="REJECT">
+          Reject
+        </button>
+      ) : null}
       {error ? (
         <span className="auth-form__error" role="alert">
           {error}

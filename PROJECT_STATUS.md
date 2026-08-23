@@ -85,6 +85,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Governed administrator notification operations with bounded delivery search, status/channel/time
   filters, complete pagination, stale-lease posture, private recipient correlation, presence-only
   provider/error evidence, and concurrency-safe failed-delivery retry controls
+- Human-governed administrator finance workbench with exact payment, discrepancy, and refund totals;
+  independent bounded payment/refund pagination; closed-catalogue filters; private provider
+  correlation; captured-payment reconciliation enforcement; and state-correct refund retry actions
 - Protected read-only administrator inventory and rate directory with bounded search, 7/30/90-day
   windows, pagination, capacity/rate-plan issue detection, seasonal price posture, and explicit
   stop-sale and restriction visibility without changing partner-owned PMS controls
@@ -369,7 +372,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 177 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 182 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
 clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
 synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider

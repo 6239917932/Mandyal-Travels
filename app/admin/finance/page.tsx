@@ -1,11 +1,27 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import type { Prisma } from '@/generated/prisma/client';
 
 import { AdminPaymentActions, AdminRefundActions } from '@/components/admin/AdminFinanceActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import {
+  ADMIN_FINANCE_PAGE_SIZE,
+  ADMIN_FINANCE_RESULT_LIMIT,
+  ADMIN_FINANCE_WINDOWS,
+  ADMIN_PAYMENT_STATUSES,
+  ADMIN_RECONCILIATION_STATUSES,
+  ADMIN_REFUND_STATUSES,
+  adminFinancePath,
+  canOperateOnPayment,
+  financeWindowStart,
+  normalizeAdminFinanceFilters,
+  privateProviderReference,
+  redactFinanceNarrative,
+  refundReviewPosture,
+} from '@/services/adminFinanceWorkbenchService';
 
 export const metadata: Metadata = { title: 'Finance operations' };
 
@@ -19,37 +35,73 @@ function date(value: Date) {
   );
 }
 
-export default async function AdminFinancePage() {
+type SearchValue = string | string[] | undefined;
+type Props = {
+  searchParams: Promise<{
+    paymentPage?: SearchValue;
+    paymentStatus?: SearchValue;
+    q?: SearchValue;
+    reconciliation?: SearchValue;
+    refundPage?: SearchValue;
+    refundStatus?: SearchValue;
+    window?: SearchValue;
+  }>;
+};
+
+export default async function AdminFinancePage({ searchParams }: Props) {
   const administrator = await getPlatformAdmin();
   if (!administrator) redirect('/login?returnTo=/admin/finance');
 
+  const filters = normalizeAdminFinanceFilters(await searchParams);
+  const start = financeWindowStart(filters.window, new Date());
+  const paymentWhere: Prisma.PaymentTransactionWhereInput = {
+    ...(filters.paymentStatus === 'ALL' ? {} : { status: filters.paymentStatus }),
+    ...(filters.reconciliation === 'ALL' ? {} : { reconciliationStatus: filters.reconciliation }),
+    ...(start ? { createdAt: { gte: start } } : {}),
+    ...(filters.query
+      ? {
+          OR: [
+            { id: { contains: filters.query } },
+            { provider: { contains: filters.query } },
+            { providerRef: { contains: filters.query } },
+            { booking: { is: { confirmationCode: { contains: filters.query } } } },
+            { booking: { is: { hotelSlug: { contains: filters.query } } } },
+          ],
+        }
+      : {}),
+  };
+  const refundWhere: Prisma.RefundRequestWhereInput = {
+    ...(filters.refundStatus === 'ALL' ? {} : { status: filters.refundStatus }),
+    ...(start ? { createdAt: { gte: start } } : {}),
+    ...(filters.query
+      ? {
+          OR: [
+            { id: { contains: filters.query } },
+            { payment: { is: { providerRef: { contains: filters.query } } } },
+            { booking: { is: { confirmationCode: { contains: filters.query } } } },
+          ],
+        }
+      : {}),
+  };
+
   const [
-    payments,
-    refunds,
+    paymentCount,
+    refundCount,
     captured,
     refunded,
     discrepancies,
+    pendingRefunds,
     ledger,
     journals,
     payoutBatches,
     supplierPayable,
   ] = await Promise.all([
-    prisma.paymentTransaction.findMany({
-      include: { booking: { select: { confirmationCode: true, hotelSlug: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    }),
-    prisma.refundRequest.findMany({
-      include: {
-        booking: { select: { confirmationCode: true } },
-        payment: { select: { providerRef: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    }),
+    prisma.paymentTransaction.count({ where: paymentWhere }),
+    prisma.refundRequest.count({ where: refundWhere }),
     prisma.paymentTransaction.aggregate({ _sum: { amount: true }, where: { status: 'captured' } }),
     prisma.refundRequest.aggregate({ _sum: { amount: true }, where: { status: 'APPROVED' } }),
     prisma.paymentTransaction.count({ where: { reconciliationStatus: 'DISCREPANCY' } }),
+    prisma.refundRequest.count({ where: { status: 'PENDING' } }),
     prisma.financialLedgerEntry.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
     prisma.financialJournal.findMany({
       include: { postings: true },
@@ -71,6 +123,32 @@ export default async function AdminFinancePage() {
       where: { allocationType: 'SUPPLIER_PAYABLE' },
     }),
   ]);
+  const paymentBoundedCount = Math.min(paymentCount, ADMIN_FINANCE_RESULT_LIMIT);
+  const refundBoundedCount = Math.min(refundCount, ADMIN_FINANCE_RESULT_LIMIT);
+  const paymentPageCount = Math.max(1, Math.ceil(paymentBoundedCount / ADMIN_FINANCE_PAGE_SIZE));
+  const refundPageCount = Math.max(1, Math.ceil(refundBoundedCount / ADMIN_FINANCE_PAGE_SIZE));
+  const paymentPage = Math.min(filters.paymentPage, paymentPageCount);
+  const refundPage = Math.min(filters.refundPage, refundPageCount);
+  const [payments, refunds] = await Promise.all([
+    prisma.paymentTransaction.findMany({
+      include: { booking: { select: { confirmationCode: true, hotelSlug: true } } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      skip: (paymentPage - 1) * ADMIN_FINANCE_PAGE_SIZE,
+      take: ADMIN_FINANCE_PAGE_SIZE,
+      where: paymentWhere,
+    }),
+    prisma.refundRequest.findMany({
+      include: {
+        booking: { select: { confirmationCode: true } },
+        payment: { select: { provider: true, providerRef: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      skip: (refundPage - 1) * ADMIN_FINANCE_PAGE_SIZE,
+      take: ADMIN_FINANCE_PAGE_SIZE,
+      where: refundWhere,
+    }),
+  ]);
+  const activeFilters = { ...filters, paymentPage, refundPage };
 
   return (
     <section className="account-page platform-admin-page">
@@ -109,7 +187,7 @@ export default async function AdminFinancePage() {
         </Card>
         <Card className="admin-metric">
           <span>Pending refunds</span>
-          <strong>{refunds.filter((refund) => refund.status === 'PENDING').length}</strong>
+          <strong>{pendingRefunds.toLocaleString('en-IN')}</strong>
         </Card>
         <Card className="admin-metric">
           <span>Allocated to suppliers</span>
@@ -117,14 +195,98 @@ export default async function AdminFinancePage() {
         </Card>
       </div>
 
+      <form className="business-report__filters" method="get">
+        <label className="ui-field business-report__search">
+          <span className="ui-field__label">Payment or booking lookup</span>
+          <input
+            className="ui-input"
+            defaultValue={filters.query}
+            maxLength={100}
+            name="q"
+            placeholder="Booking, payment, provider, or hotel reference"
+            type="search"
+          />
+        </label>
+        <label className="ui-field">
+          <span className="ui-field__label">Payment status</span>
+          <select className="ui-input" defaultValue={filters.paymentStatus} name="paymentStatus">
+            {ADMIN_PAYMENT_STATUSES.map((item) => (
+              <option key={item} value={item}>
+                {item === 'ALL' ? 'All payment statuses' : item}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="ui-field">
+          <span className="ui-field__label">Reconciliation</span>
+          <select className="ui-input" defaultValue={filters.reconciliation} name="reconciliation">
+            {ADMIN_RECONCILIATION_STATUSES.map((item) => (
+              <option key={item} value={item}>
+                {item === 'ALL' ? 'All reconciliation states' : item.replaceAll('_', ' ')}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="ui-field">
+          <span className="ui-field__label">Refund status</span>
+          <select className="ui-input" defaultValue={filters.refundStatus} name="refundStatus">
+            {ADMIN_REFUND_STATUSES.map((item) => (
+              <option key={item} value={item}>
+                {item === 'ALL' ? 'All refund statuses' : item.replaceAll('_', ' ')}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="ui-field">
+          <span className="ui-field__label">Created within</span>
+          <select className="ui-input" defaultValue={filters.window} name="window">
+            {ADMIN_FINANCE_WINDOWS.map((item) => (
+              <option key={item} value={item}>
+                {item === 'ALL' ? 'All retained history' : `${item} days`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="business-report__filter-actions">
+          <button className="ui-button ui-button--primary" type="submit">
+            Apply filters
+          </button>
+          <Link className="ui-button ui-button--secondary" href="/admin/finance">
+            Clear
+          </Link>
+        </div>
+      </form>
+
+      <div className="partner-bookings__summary">
+        <Card>
+          <span>Matching payments</span>
+          <strong>{paymentCount.toLocaleString('en-IN')}</strong>
+        </Card>
+        <Card>
+          <span>Matching refunds</span>
+          <strong>{refundCount.toLocaleString('en-IN')}</strong>
+        </Card>
+        <Card>
+          <span>Provider disclosure</span>
+          <strong>Private references only</strong>
+        </Card>
+      </div>
+
+      {paymentCount > ADMIN_FINANCE_RESULT_LIMIT || refundCount > ADMIN_FINANCE_RESULT_LIMIT ? (
+        <Card className="ui-card--padded">
+          <strong>Deep-history limit reached.</strong>
+          <p>
+            Refine the filters to review records beyond the first{' '}
+            {ADMIN_FINANCE_RESULT_LIMIT.toLocaleString('en-IN')} matches in either register.
+          </p>
+        </Card>
+      ) : null}
+
       <div className="account-trips">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Reconciliation</p>
           <h2>Payment register</h2>
-          <p>
-            Latest 100 payments. Provider evidence must be entered before a payment is marked
-            matched.
-          </p>
+          <p>Provider evidence must be entered before a captured payment is marked matched.</p>
         </div>
         <Card className="business-report__table-card">
           <div className="business-report__table-scroll">
@@ -147,7 +309,10 @@ export default async function AdminFinancePage() {
                     </td>
                     <td>
                       <strong>{payment.provider}</strong>
-                      <span>{payment.providerRef}</span>
+                      <span>
+                        Private provider reference{' '}
+                        {privateProviderReference(payment.provider, payment.providerRef)}
+                      </span>
                       <span>{payment.environment} environment</span>
                       <span>{date(payment.createdAt)}</span>
                     </td>
@@ -157,14 +322,18 @@ export default async function AdminFinancePage() {
                     </td>
                     <td>
                       <strong>{payment.reconciliationStatus}</strong>
-                      <span>{payment.reconciliationNote || 'No note'}</span>
+                      <span>{redactFinanceNarrative(payment.reconciliationNote) || 'No note'}</span>
                     </td>
                     <td>
-                      <AdminPaymentActions
-                        amount={payment.amount}
-                        currency={payment.currency}
-                        paymentId={payment.id}
-                      />
+                      {canOperateOnPayment(payment.status) ? (
+                        <AdminPaymentActions
+                          amount={payment.amount}
+                          currency={payment.currency}
+                          paymentId={payment.id}
+                        />
+                      ) : (
+                        'Available after capture'
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -177,6 +346,31 @@ export default async function AdminFinancePage() {
             </table>
           </div>
         </Card>
+        <nav aria-label="Payment register pages" className="business-audit-pagination">
+          {paymentPage > 1 ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={adminFinancePath(activeFilters, { paymentPage: paymentPage - 1 })}
+            >
+              Previous payments
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span>
+            Payment page {paymentPage} of {paymentPageCount}
+          </span>
+          {paymentPage < paymentPageCount ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={adminFinancePath(activeFilters, { paymentPage: paymentPage + 1 })}
+            >
+              Next payments
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       </div>
 
       <div className="account-trips">
@@ -201,17 +395,30 @@ export default async function AdminFinancePage() {
                   <tr key={refund.id}>
                     <td>
                       <strong>{refund.booking.confirmationCode}</strong>
-                      <span>{refund.payment.providerRef}</span>
+                      <span>
+                        Private provider reference{' '}
+                        {privateProviderReference(
+                          refund.payment.provider,
+                          refund.payment.providerRef,
+                        )}
+                      </span>
                     </td>
                     <td>{money(refund.amount, refund.currency)}</td>
-                    <td>{refund.reason}</td>
+                    <td>{redactFinanceNarrative(refund.reason)}</td>
                     <td>
                       <strong>{refund.status}</strong>
-                      <span>{refund.reviewNote || date(refund.createdAt)}</span>
+                      <span>{refundReviewPosture(refund.status).replaceAll('_', ' ')}</span>
+                      <span>
+                        {redactFinanceNarrative(refund.reviewNote) || date(refund.createdAt)}
+                      </span>
                     </td>
                     <td>
-                      {refund.status === 'PENDING' ? (
-                        <AdminRefundActions refundId={refund.id} />
+                      {['PENDING', 'PROVIDER_FAILED'].includes(refund.status) ? (
+                        <AdminRefundActions
+                          canReject={refund.status === 'PENDING'}
+                          isRetry={refund.status === 'PROVIDER_FAILED'}
+                          refundId={refund.id}
+                        />
                       ) : (
                         'Reviewed'
                       )}
@@ -227,6 +434,31 @@ export default async function AdminFinancePage() {
             </table>
           </div>
         </Card>
+        <nav aria-label="Refund queue pages" className="business-audit-pagination">
+          {refundPage > 1 ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={adminFinancePath(activeFilters, { refundPage: refundPage - 1 })}
+            >
+              Previous refunds
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span>
+            Refund page {refundPage} of {refundPageCount}
+          </span>
+          {refundPage < refundPageCount ? (
+            <Link
+              className="ui-button ui-button--secondary"
+              href={adminFinancePath(activeFilters, { refundPage: refundPage + 1 })}
+            >
+              Next refunds
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       </div>
 
       <div className="account-trips">
@@ -258,7 +490,10 @@ export default async function AdminFinancePage() {
                       <strong>{journal.sourceType}</strong>
                       <span>{journal.status}</span>
                     </td>
-                    <td>{journal.reference}</td>
+                    <td>
+                      Private journal reference{' '}
+                      {privateProviderReference(journal.sourceType, journal.reference)}
+                    </td>
                     <td>
                       {journal.postings.map((posting) => (
                         <span key={posting.id}>
@@ -310,7 +545,11 @@ export default async function AdminFinancePage() {
                     <td>{date(batch.createdAt)}</td>
                     <td>
                       <strong>{batch.id}</strong>
-                      <span>{batch.providerBatchRef || 'Not submitted to provider'}</span>
+                      <span>
+                        {batch.providerBatchRef
+                          ? `Provider acknowledgement ${privateProviderReference('payout', batch.providerBatchRef)}`
+                          : 'Not submitted to provider'}
+                      </span>
                     </td>
                     <td>
                       {batch.instructions.map((instruction) => (
@@ -363,8 +602,11 @@ export default async function AdminFinancePage() {
                   <tr key={entry.id}>
                     <td>{date(entry.createdAt)}</td>
                     <td>{entry.entryType}</td>
-                    <td>{entry.reference}</td>
-                    <td>{entry.description}</td>
+                    <td>
+                      Private ledger reference{' '}
+                      {privateProviderReference(entry.entryType, entry.reference)}
+                    </td>
+                    <td>{redactFinanceNarrative(entry.description)}</td>
                     <td>
                       <strong>{money(entry.amount, entry.currency)}</strong>
                     </td>
