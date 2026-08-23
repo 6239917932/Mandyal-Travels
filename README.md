@@ -42,6 +42,8 @@ possible data loss, choose **No** and have the warning reviewed before continuin
 - Before a production deployment, replace both example secrets with independent random values of at
   least 32 characters. Placeholder or short secrets are rejected in production.
 - The `main` branch is the saved working baseline.
+- Public registration cannot create a platform administrator. It creates customer accounts or
+  organization-scoped business administrators only.
 
 ## Provision an internal operations administrator
 
@@ -54,6 +56,14 @@ npm run admin:grant -- administrator@example.com --confirm
 
 Sign in with that account to open the read-only operations console at `/admin`. The command refuses
 to replace a business administrator role so company and platform responsibilities remain separate.
+
+## Account recovery
+
+The sign-in page links to a secure forgotten-password flow. Reset tokens are random, stored only as
+hashes, expire after 30 minutes, work once, and revoke all browser sessions after use. Configure the
+provider-neutral email settings in `.env` and run the notification-capable Node.js or container
+runtime before enabling recovery in production. See `docs/ACCOUNT_RECOVERY.md` for the activation
+and verification checklist.
 
 ## Supplier onboarding and inventory
 

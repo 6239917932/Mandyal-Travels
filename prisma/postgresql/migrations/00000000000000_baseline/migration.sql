@@ -21,6 +21,18 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "PasswordResetToken" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "usedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "UserConsentRecord" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -1304,6 +1316,15 @@ CREATE TABLE "RoomInventoryOverride" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "PasswordResetToken_userId_expiresAt_idx" ON "PasswordResetToken"("userId", "expiresAt");
+
+-- CreateIndex
+CREATE INDEX "PasswordResetToken_expiresAt_usedAt_idx" ON "PasswordResetToken"("expiresAt", "usedAt");
+
+-- CreateIndex
 CREATE INDEX "UserConsentRecord_userId_purpose_recordedAt_idx" ON "UserConsentRecord"("userId", "purpose", "recordedAt");
 
 -- CreateIndex
@@ -1869,6 +1890,9 @@ CREATE INDEX "RoomInventoryOverride_roomTypeId_stayDate_idx" ON "RoomInventoryOv
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RoomInventoryOverride_roomTypeId_stayDate_key" ON "RoomInventoryOverride"("roomTypeId", "stayDate");
+
+-- AddForeignKey
+ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserConsentRecord" ADD CONSTRAINT "UserConsentRecord_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

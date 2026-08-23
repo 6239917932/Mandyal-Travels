@@ -147,6 +147,12 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
         {isRegister ? <small>Use at least 10 characters.</small> : null}
       </label>
 
+      {!isRegister ? (
+        <p className="auth-form__alternate">
+          <Link href="/forgot-password">Forgot your password?</Link>
+        </p>
+      ) : null}
+
       {isRegister ? (
         <label className="auth-form__checkbox">
           <input name="marketingConsent" type="checkbox" />

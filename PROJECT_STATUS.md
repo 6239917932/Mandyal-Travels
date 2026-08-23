@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 22 August 2026
+Last reviewed: 23 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -10,7 +10,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 ### Customer travel
 
 - Customer registration, sign-in, sign-out, secure browser sessions, active-session review and
-  other-device revocation, profile editing, and password changes
+  other-device revocation, profile editing, password changes, and provider-neutral forgotten-password
+  recovery with hashed 30-minute single-use tokens and full session revocation
 - Persistent booking-email, SMS-alert, WhatsApp-update, and marketing preferences
 - Hotel, flight, bus, and car search and booking demonstrations
 - Provider-neutral Flight search validation now enforces IATA-style airport codes, travel dates,
@@ -180,15 +181,16 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 72-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 73-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
 
 - Versioned legal and policy center covering privacy, terms, cancellation and refunds, and cookies,
   with an explicit draft-approval state and marketing consent tied to the applicable privacy version
-- Password hashing, server-side sessions, secure cookie settings, login/register throttling,
-  account-scoped active-session controls, and session revocation after a password change
+- Password hashing, server-side sessions, secure cookie settings, login/register/recovery throttling,
+  account-neutral reset responses, account-scoped active-session controls, and session revocation
+  after a password change or reset
 - Content-security policy, anti-framing, content-type, referrer, permissions, and production HTTPS
   response headers
 - Self-contained system font stack so production builds do not depend on Google Fonts availability
@@ -306,9 +308,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 110 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 130 generated route entries,
-clean-database verification of all 65 SQLite migrations with foreign-key integrity enabled, a
-synchronized 72-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 114 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 134 generated route entries,
+clean-database verification of all 66 SQLite migrations with foreign-key integrity enabled, a
+synchronized 73-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.
