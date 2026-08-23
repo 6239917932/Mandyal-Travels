@@ -33,6 +33,7 @@ export default async function PartnerWorkspacePage() {
   const access = await getPartnerAccess();
   if (!access?.partnerId || !access.userId) redirect('/partners');
   if (access.partnerType === 'BUS') redirect('/partner/bus-operations');
+  if (access.partnerType === 'FLIGHT') redirect('/partner/flights');
 
   const [partner, bookingSummary, pendingAmendments] = await Promise.all([
     prisma.supplyPartner.findUnique({

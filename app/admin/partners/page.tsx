@@ -36,7 +36,7 @@ export default async function AdminPartnersPage() {
   ]);
   return (
     <section className="account-page supplier-admin admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Platform administration</p>
           <h1>Supplier control center</h1>
@@ -47,7 +47,7 @@ export default async function AdminPartnersPage() {
         <Link className="ui-button ui-button--secondary" href="/admin">
           Operations console
         </Link>
-      </div>
+      </header>
       <div className="partner-bookings__summary">
         <Card>
           <span>Pending verification</span>

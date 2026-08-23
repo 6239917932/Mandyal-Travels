@@ -109,7 +109,7 @@ export default async function AdminOrganizationDetailPage({ params }: Props) {
 
   return (
     <section className="account-page business-report admin-record-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Authorized organization servicing</p>
           <h1>{organization.name}</h1>
@@ -118,7 +118,7 @@ export default async function AdminOrganizationDetailPage({ params }: Props) {
         <Link className="ui-button ui-button--secondary" href="/admin/organizations">
           Back to organization directory
         </Link>
-      </div>
+      </header>
 
       <div className="admin-record-summary">
         <Card>

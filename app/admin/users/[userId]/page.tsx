@@ -106,7 +106,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
 
   return (
     <section className="account-page business-report admin-record-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Authorized account servicing</p>
           <h1>
@@ -117,7 +117,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
         <Link className="ui-button ui-button--secondary" href="/admin/users">
           Back to user directory
         </Link>
-      </div>
+      </header>
 
       <div className="admin-record-summary">
         <Card>

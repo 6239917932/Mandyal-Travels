@@ -83,8 +83,8 @@ export default function PartnersPage() {
               <span className="travel-option__number">01</span>
               <h3>Bookings</h3>
               <p>Monitor hotel reservations, stay dates, payment state, and room allocation.</p>
-              <Link className="home-card__link" href="/partner/bookings">
-                Open bookings
+              <Link className="home-card__link" href="/partner">
+                Open supplier workspace
               </Link>
             </Card>
             <Card className="travel-option">
@@ -93,16 +93,16 @@ export default function PartnersPage() {
               <p>
                 Review sellable rooms, active holds, confirmed allocations, and stop-sell limits.
               </p>
-              <Link className="home-card__link" href="/partner/inventory">
-                Open inventory
+              <Link className="home-card__link" href="/partner">
+                Open supplier workspace
               </Link>
             </Card>
             <Card className="travel-option">
               <span className="travel-option__number">03</span>
               <h3>Amendments</h3>
               <p>Review requested hotel date changes with availability and repricing checks.</p>
-              <Link className="home-card__link" href="/partner/amendments">
-                Open amendments
+              <Link className="home-card__link" href="/partner">
+                Open supplier workspace
               </Link>
             </Card>
           </div>

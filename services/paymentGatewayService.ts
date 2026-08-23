@@ -4,7 +4,11 @@ import {
   isAllowedProviderEndpoint,
   parseAllowedProviderHosts,
 } from '@/lib/integrations/providerEndpoint';
-import { isSafeHostedCheckoutUrl, paymentIntentExpiry } from '@/lib/payments/gateway';
+import {
+  isCompletedProviderRefundStatus,
+  isSafeHostedCheckoutUrl,
+  paymentIntentExpiry,
+} from '@/lib/payments/gateway';
 
 function paymentProviderConfiguration(endpoint: string | undefined) {
   const allowedHosts = parseAllowedProviderHosts(process.env.PAYMENT_PROVIDER_ALLOWED_HOSTS);
@@ -86,5 +90,9 @@ export async function dispatchProviderRefund(input: {
   const payload = (await response.json()) as { id?: unknown; status?: unknown };
   if (typeof payload.id !== 'string' || typeof payload.status !== 'string')
     throw new Error('PAYMENT_PROVIDER_INVALID_RESPONSE');
-  return { providerRefundRef: payload.id.slice(0, 200), status: payload.status.slice(0, 50) };
+  const status = payload.status.trim().toUpperCase().slice(0, 50);
+  if (!isCompletedProviderRefundStatus(status)) {
+    throw new Error('PAYMENT_REFUND_NOT_COMPLETED');
+  }
+  return { providerRefundRef: payload.id.slice(0, 200), status };
 }

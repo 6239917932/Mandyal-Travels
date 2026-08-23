@@ -1,0 +1,6 @@
+import type { ReactNode } from 'react';
+import { requirePartnerType } from '@/lib/partnerRouteGuard';
+export default async function FleetLayout({ children }: { children: ReactNode }) {
+  await requirePartnerType('CAR');
+  return children;
+}

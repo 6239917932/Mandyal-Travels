@@ -3,11 +3,13 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
   createLedgerData,
   isReconciliationState,
   normalizeFinanceNote,
   normalizeMoney,
+  reconciliationMatchesPayment,
 } from '@/services/adminFinanceService';
 
 type RouteContext = { params: Promise<{ paymentId: string }> };
@@ -38,6 +40,17 @@ export async function PATCH(request: Request, context: RouteContext) {
     const payment = await prisma.$transaction(async (transaction) => {
       const current = await transaction.paymentTransaction.findUnique({ where: { id: paymentId } });
       if (!current) return null;
+      if (
+        status === 'MATCHED' &&
+        !reconciliationMatchesPayment({
+          paymentAmount: current.amount,
+          paymentCurrency: current.currency,
+          providerAmount,
+          providerCurrency,
+        })
+      ) {
+        throw new Error('RECONCILIATION_MISMATCH');
+      }
       const updated = await transaction.paymentTransaction.update({
         data: {
           providerAmount,
@@ -72,6 +85,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!payment) return NextResponse.json({ error: 'Payment was not found.' }, { status: 404 });
     return NextResponse.json({ data: { id: payment.id, status: payment.reconciliationStatus } });
   } catch (error) {
+    if (error instanceof Error && error.message === 'RECONCILIATION_MISMATCH') {
+      return NextResponse.json(
+        {
+          error:
+            'Provider amount and currency must match before reconciliation can be marked matched.',
+        },
+        { status: 409 },
+      );
+    }
     console.error('Payment reconciliation failed.', error);
     return NextResponse.json({ error: 'The payment could not be reconciled.' }, { status: 500 });
   }
@@ -96,25 +118,33 @@ export async function POST(request: Request, context: RouteContext) {
   }
   const { paymentId } = await context.params;
   try {
-    const refund = await prisma.$transaction(async (transaction) => {
-      const payment = await transaction.paymentTransaction.findUnique({ where: { id: paymentId } });
-      if (!payment || payment.status !== 'captured' || amount > payment.amount) return null;
-      const pendingTotal = await transaction.refundRequest.aggregate({
-        _sum: { amount: true },
-        where: { paymentId, status: { in: ['PENDING', 'APPROVED'] } },
-      });
-      if ((pendingTotal._sum.amount ?? 0) + amount > payment.amount) return null;
-      return transaction.refundRequest.create({
-        data: {
-          amount,
-          bookingId: payment.bookingId,
-          currency: payment.currency,
-          paymentId,
-          reason,
-          requestedByUserId: administrator.id,
-        },
-      });
-    });
+    const refund = await prisma.$transaction(
+      async (transaction) => {
+        const payment = await transaction.paymentTransaction.findUnique({
+          where: { id: paymentId },
+        });
+        if (!payment || payment.status !== 'captured' || amount > payment.amount) return null;
+        const pendingTotal = await transaction.refundRequest.aggregate({
+          _sum: { amount: true },
+          where: {
+            paymentId,
+            status: { in: ['PENDING', 'PROCESSING', 'PROVIDER_FAILED', 'APPROVED'] },
+          },
+        });
+        if ((pendingTotal._sum.amount ?? 0) + amount > payment.amount) return null;
+        return transaction.refundRequest.create({
+          data: {
+            amount,
+            bookingId: payment.bookingId,
+            currency: payment.currency,
+            paymentId,
+            reason,
+            requestedByUserId: administrator.id,
+          },
+        });
+      },
+      { isolationLevel: 'Serializable' },
+    );
     if (!refund) {
       return NextResponse.json(
         { error: 'The refund exceeds the captured or remaining refundable amount.' },
@@ -123,6 +153,12 @@ export async function POST(request: Request, context: RouteContext) {
     }
     return NextResponse.json({ data: { id: refund.id, status: refund.status } }, { status: 201 });
   } catch (error) {
+    if (hasPrismaErrorCode(error, 'P2034')) {
+      return NextResponse.json(
+        { error: 'The refundable balance changed. Review it and try again.' },
+        { status: 409 },
+      );
+    }
     console.error('Refund request creation failed.', error);
     return NextResponse.json(
       { error: 'The refund request could not be created.' },

@@ -3,11 +3,15 @@ import { readJsonObject } from '@/lib/api/request';
 import { normalizeProviderCode } from '@/lib/flight/supplierOperations';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
+import { canManageFlightConnections } from '@/lib/partner/permissions';
 
 export async function GET(request: Request) {
   const access = await getPartnerAccess(request);
-  if (!access?.partnerId || access.partnerType !== 'FLIGHT')
-    return NextResponse.json({ error: 'Flight supplier access required.' }, { status: 403 });
+  if (!canManageFlightConnections(access))
+    return NextResponse.json(
+      { error: 'Flight supplier administrator access required.' },
+      { status: 403 },
+    );
   const connections = await prisma.flightSupplierConnection.findMany({
     where: { partnerId: access.partnerId },
     include: { operations: { orderBy: { createdAt: 'desc' }, take: 10 } },
@@ -18,8 +22,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await getPartnerAccess(request);
-  if (!access?.partnerId || access.partnerType !== 'FLIGHT')
-    return NextResponse.json({ error: 'Flight supplier access required.' }, { status: 403 });
+  if (!canManageFlightConnections(access))
+    return NextResponse.json(
+      { error: 'Flight supplier administrator access required.' },
+      { status: 403 },
+    );
   const body = await readJsonObject(request);
   try {
     const providerCode = normalizeProviderCode(

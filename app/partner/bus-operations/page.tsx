@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { PartnerBusOperations } from '@/components/partner/PartnerBusOperations';
 import { getPartnerAccess } from '@/lib/partnerAuth';
+import { formatLocalCalendarDate } from '@/utils/localDate';
 export const metadata: Metadata = { title: 'Bus route and trip operations' };
 export default async function PartnerBusOperationsPage() {
   const access = await getPartnerAccess();
@@ -31,7 +32,10 @@ export default async function PartnerBusOperationsPage() {
           </Link>
         </div>
       </div>
-      <PartnerBusOperations canCreateRoutes={access.memberRole === 'ADMIN'} />
+      <PartnerBusOperations
+        canCreateRoutes={access.memberRole === 'ADMIN'}
+        today={formatLocalCalendarDate(new Date())}
+      />
     </section>
   );
 }

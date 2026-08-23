@@ -31,7 +31,7 @@ export default async function AdminAnalyticsPage() {
   ]);
   return (
     <section className="account-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Privacy-minimized operations intelligence</p>
           <h1>Platform analytics</h1>
@@ -43,7 +43,7 @@ export default async function AdminAnalyticsPage() {
         <Link className="ui-button ui-button--secondary" href="/admin">
           Operations console
         </Link>
-      </div>
+      </header>
       <div className="partner-bookings__summary">
         <Card>
           <span>Hotel bookings</span>

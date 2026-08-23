@@ -24,6 +24,18 @@ export function normalizeMoney(value: unknown) {
   return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
 }
 
+export function reconciliationMatchesPayment(input: {
+  paymentAmount: number;
+  paymentCurrency: string;
+  providerAmount: number;
+  providerCurrency: string;
+}): boolean {
+  return (
+    input.providerAmount === input.paymentAmount &&
+    input.providerCurrency.toUpperCase() === input.paymentCurrency.toUpperCase()
+  );
+}
+
 export function createLedgerData(input: {
   amount: number;
   createdByUserId: string;

@@ -9,6 +9,7 @@ import {
   isRefundDecision,
   normalizeFinanceNote,
 } from '@/services/adminFinanceService';
+import { dispatchProviderRefund } from '@/services/paymentGatewayService';
 
 type RouteContext = { params: Promise<{ refundId: string }> };
 
@@ -31,51 +32,115 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
   const { refundId } = await context.params;
   try {
-    const refund = await prisma.$transaction(async (transaction) => {
-      const current = await transaction.refundRequest.findUnique({ where: { id: refundId } });
-      if (!current || current.status !== 'PENDING') return null;
-      const status = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
-      const updated = await transaction.refundRequest.update({
+    if (decision === 'REJECT') {
+      const rejected = await prisma.refundRequest.updateMany({
         data: {
           reviewNote: note,
           reviewedAt: new Date(),
           reviewedByUserId: administrator.id,
-          status,
+          status: 'REJECTED',
         },
-        where: { id: current.id },
+        where: { id: refundId, status: 'PENDING' },
       });
-      if (status === 'APPROVED') {
-        const postings = createRefundPostings(current.amount);
+      if (rejected.count !== 1) {
+        return NextResponse.json(
+          { error: 'Only pending refunds can be reviewed.' },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ data: { id: refundId, status: 'REJECTED' } });
+    }
+
+    const claimed = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.refundRequest.updateMany({
+        data: { status: 'PROCESSING' },
+        where: { id: refundId, status: { in: ['PENDING', 'PROVIDER_FAILED'] } },
+      });
+      if (result.count !== 1) return null;
+      return transaction.refundRequest.findUnique({
+        include: { payment: { select: { providerRef: true } } },
+        where: { id: refundId },
+      });
+    });
+    if (!claimed) {
+      return NextResponse.json(
+        { error: 'Only pending or failed refunds can be approved.' },
+        { status: 409 },
+      );
+    }
+
+    let providerRefundRef: string;
+    try {
+      const providerResult = await dispatchProviderRefund({
+        amount: claimed.amount,
+        currency: claimed.currency,
+        idempotencyKey: `refund-${claimed.id}`,
+        providerPaymentRef: claimed.payment.providerRef,
+        reason: claimed.reason,
+      });
+      providerRefundRef = providerResult.providerRefundRef;
+    } catch (error) {
+      await prisma.refundRequest.updateMany({
+        data: { status: 'PROVIDER_FAILED' },
+        where: { id: claimed.id, status: 'PROCESSING' },
+      });
+      console.error('Provider refund dispatch failed.', error);
+      return NextResponse.json(
+        { error: 'The provider did not complete the refund. It remains available for retry.' },
+        { status: 503 },
+      );
+    }
+
+    const refund = await prisma.$transaction(async (transaction) => {
+      const completed = await transaction.refundRequest.updateMany({
+        data: {
+          providerRefundRef,
+          reviewNote: note,
+          reviewedAt: new Date(),
+          reviewedByUserId: administrator.id,
+          status: 'APPROVED',
+        },
+        where: { id: claimed.id, status: 'PROCESSING' },
+      });
+      if (completed.count !== 1) return null;
+      const existingJournal = await transaction.financialJournal.findUnique({
+        where: { reference: `REFUND-${claimed.id}` },
+      });
+      if (!existingJournal) {
+        const postings = createRefundPostings(claimed.amount);
         await transaction.financialJournal.create({
           data: {
             createdByUserId: administrator.id,
-            currency: current.currency,
-            description: `Approved refund for ${current.reason}`,
+            currency: claimed.currency,
+            description: `Completed provider refund for ${claimed.reason}`,
             postings: { create: postings },
-            reference: `REFUND-${current.id}`,
-            refundId: current.id,
-            sourceId: current.id,
+            reference: `REFUND-${claimed.id}`,
+            refundId: claimed.id,
+            sourceId: claimed.id,
             sourceType: 'REFUND_APPROVED',
-            totalCredit: current.amount,
-            totalDebit: current.amount,
+            totalCredit: claimed.amount,
+            totalDebit: claimed.amount,
           },
         });
         await transaction.financialLedgerEntry.create({
           data: createLedgerData({
-            amount: -current.amount,
+            amount: -claimed.amount,
             createdByUserId: administrator.id,
-            currency: current.currency,
-            description: `Approved refund for ${current.reason}`,
+            currency: claimed.currency,
+            description: `Completed provider refund for ${claimed.reason}`,
             entryType: 'REFUND_APPROVED',
-            reference: current.id,
-            refundId: current.id,
+            reference: claimed.id,
+            refundId: claimed.id,
           }),
         });
       }
-      return updated;
+      return transaction.refundRequest.findUnique({ where: { id: claimed.id } });
     });
     if (!refund) {
-      return NextResponse.json({ error: 'Only pending refunds can be reviewed.' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'The refund state changed while it was processed.' },
+        { status: 409 },
+      );
     }
     return NextResponse.json({ data: { id: refund.id, status: refund.status } });
   } catch (error) {

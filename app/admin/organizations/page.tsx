@@ -79,7 +79,7 @@ export default async function AdminOrganizationsPage({
 
   return (
     <section className="account-page business-report admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Mandyal operations</p>
           <h1>Organization directory</h1>
@@ -88,7 +88,7 @@ export default async function AdminOrganizationsPage({
         <Link className="ui-button ui-button--secondary" href="/admin">
           Back to operations console
         </Link>
-      </div>
+      </header>
 
       <form className="business-report__filters" method="get">
         <div className="ui-field business-report__search">

@@ -25,8 +25,13 @@ type Route = {
   status: string;
   trips: Trip[];
 };
-const today = () => new Date().toISOString().slice(0, 10);
-export function PartnerBusOperations({ canCreateRoutes }: { canCreateRoutes: boolean }) {
+export function PartnerBusOperations({
+  canCreateRoutes,
+  today,
+}: {
+  canCreateRoutes: boolean;
+  today: string;
+}) {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [error, setError] = useState<string>();
   const [message, setMessage] = useState<string>();
@@ -213,7 +218,7 @@ export function PartnerBusOperations({ canCreateRoutes }: { canCreateRoutes: boo
             >
               <h3>Schedule a dated trip</h3>
               <div className="supplier-form__grid">
-                <Input label="Service date" min={today()} name="serviceDate" required type="date" />
+                <Input label="Service date" min={today} name="serviceDate" required type="date" />
                 <Input label="Departure time" name="departureTime" required type="time" />
                 <Input label="Arrival time" name="arrivalTime" required type="time" />
                 <Input

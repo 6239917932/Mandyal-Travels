@@ -9,6 +9,30 @@ export function paymentIntentExpiry(now = new Date()): Date {
   return new Date(now.getTime() + 20 * 60 * 1_000);
 }
 
+export function isCheckoutQuotePayable(
+  quote: {
+    bookingId?: string | null;
+    lockExpiresAt: Date;
+    lockStatus: string;
+    quoteExpiresAt: Date;
+  },
+  now = new Date(),
+): boolean {
+  return (
+    !quote.bookingId &&
+    quote.lockStatus === 'ACTIVE' &&
+    quote.lockExpiresAt > now &&
+    quote.quoteExpiresAt > now
+  );
+}
+
+export function isCompletedProviderRefundStatus(value: unknown): boolean {
+  return (
+    typeof value === 'string' &&
+    ['APPROVED', 'COMPLETED', 'PROCESSED', 'SUCCEEDED'].includes(value.trim().toUpperCase())
+  );
+}
+
 export function paymentPayloadHash(payload: string): string {
   return createHash('sha256').update(payload).digest('hex');
 }

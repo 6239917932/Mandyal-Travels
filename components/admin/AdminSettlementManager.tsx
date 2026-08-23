@@ -21,29 +21,39 @@ export function AdminSettlementManager({
 }) {
   const router = useRouter();
   const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
   async function send(endpoint: string, body: Record<string, string>, method: 'POST' | 'PATCH') {
+    if (busy) return;
     setError(undefined);
-    const response = await fetch(endpoint, {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-      method,
-    });
-    const result: unknown = await response.json().catch(() => undefined);
-    if (!response.ok) {
-      setError(
-        result &&
-          typeof result === 'object' &&
-          'error' in result &&
-          result.error &&
-          typeof result.error === 'object' &&
-          'message' in result.error &&
-          typeof result.error.message === 'string'
-          ? result.error.message
-          : 'Settlement operation failed.',
-      );
-      return;
+    setBusy(true);
+    try {
+      const response = await fetch(endpoint, {
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+        method,
+      });
+      const result: unknown = await response.json().catch(() => undefined);
+      if (!response.ok) {
+        const apiError =
+          result && typeof result === 'object' && 'error' in result ? result.error : undefined;
+        setError(
+          typeof apiError === 'string'
+            ? apiError
+            : apiError &&
+                typeof apiError === 'object' &&
+                'message' in apiError &&
+                typeof apiError.message === 'string'
+              ? apiError.message
+              : 'Settlement operation failed.',
+        );
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError('The settlement service could not be reached. No action was recorded.');
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   }
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +65,11 @@ export function AdminSettlementManager({
   }
   return (
     <div className="partner-channel-manager">
-      {error ? <p className="form-status form-status--error">{error}</p> : null}
+      {error ? (
+        <p className="form-status form-status--error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <form className="supplier-form ui-card" onSubmit={create}>
         <h2>Calculate settlement</h2>
         <div className="supplier-form__grid">
@@ -81,8 +95,8 @@ export function AdminSettlementManager({
             <input name="periodEnd" required type="date" />
           </label>
         </div>
-        <button className="ui-button ui-button--primary" type="submit">
-          Create draft
+        <button className="ui-button ui-button--primary" disabled={busy} type="submit">
+          {busy ? 'Working…' : 'Create draft'}
         </button>
       </form>
       {settlements.map((settlement) => (
@@ -110,10 +124,11 @@ export function AdminSettlementManager({
               <input name="paymentReference" placeholder="Payment reference (when marking paid)" />
               <button
                 className="ui-button ui-button--secondary"
+                disabled={busy}
                 name="action"
                 value={settlement.status === 'DRAFT' ? 'APPROVE' : 'MARK_PAID'}
               >
-                {settlement.status === 'DRAFT' ? 'Approve' : 'Mark paid'}
+                {busy ? 'Working…' : settlement.status === 'DRAFT' ? 'Approve' : 'Mark paid'}
               </button>
             </form>
           ) : null}

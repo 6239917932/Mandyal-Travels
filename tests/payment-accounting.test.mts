@@ -5,7 +5,9 @@ import {
   assertBalancedJournal,
   createCaptureAccounting,
   createRefundPostings,
+  prorateCaptureAllocations,
 } from '../lib/payments/accounting.ts';
+import { reconciliationMatchesPayment } from '../services/adminFinanceService.ts';
 
 test('capture accounting allocates the exact captured amount and balances', () => {
   const result = createCaptureAccounting({
@@ -54,5 +56,56 @@ test('journal assertion rejects unbalanced postings', () => {
       { accountCode: 'A', amount: 100, description: 'Debit', direction: 'DEBIT' },
       { accountCode: 'B', amount: 99, description: 'Credit', direction: 'CREDIT' },
     ]),
+  );
+});
+
+test('matched reconciliation requires exact provider money', () => {
+  assert.equal(
+    reconciliationMatchesPayment({
+      paymentAmount: 11_800,
+      paymentCurrency: 'INR',
+      providerAmount: 11_800,
+      providerCurrency: 'inr',
+    }),
+    true,
+  );
+  assert.equal(
+    reconciliationMatchesPayment({
+      paymentAmount: 11_800,
+      paymentCurrency: 'INR',
+      providerAmount: 11_799,
+      providerCurrency: 'INR',
+    }),
+    false,
+  );
+  assert.equal(
+    reconciliationMatchesPayment({
+      paymentAmount: 11_800,
+      paymentCurrency: 'INR',
+      providerAmount: 11_800,
+      providerCurrency: 'USD',
+    }),
+    false,
+  );
+});
+
+test('approved refunds reduce settlement allocations and preserve the exact remainder', () => {
+  assert.deepEqual(
+    prorateCaptureAllocations({
+      capturedAmount: 11_800,
+      commissionAmount: 1_000,
+      refundedAmount: 2_950,
+      taxAmount: 1_800,
+    }),
+    { commissionAmount: 750, grossAmount: 8_850, supplierAmount: 6_750, taxAmount: 1_350 },
+  );
+  assert.deepEqual(
+    prorateCaptureAllocations({
+      capturedAmount: 11_800,
+      commissionAmount: 1_000,
+      refundedAmount: 11_800,
+      taxAmount: 1_800,
+    }),
+    { commissionAmount: 0, grossAmount: 0, supplierAmount: 0, taxAmount: 0 },
   );
 });

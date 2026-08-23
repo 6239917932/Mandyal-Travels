@@ -19,7 +19,10 @@ function workerUrl() {
 
   const url = new URL('/api/v1/internal/workers/notifications', origin);
   const localHostnames = new Set(['localhost', '127.0.0.1', '::1']);
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && localHostnames.has(url.hostname))) {
+  if (
+    url.protocol !== 'https:' &&
+    !(url.protocol === 'http:' && localHostnames.has(url.hostname))
+  ) {
     throw new Error('PUBLIC_APP_ORIGIN must use HTTPS outside local development.');
   }
   return url;
@@ -28,7 +31,9 @@ function workerUrl() {
 async function main() {
   const secret = (process.env.NOTIFICATION_WORKER_SECRET ?? '').trim();
   if (secret.length < MINIMUM_SECRET_LENGTH) {
-    throw new Error(`NOTIFICATION_WORKER_SECRET must contain at least ${MINIMUM_SECRET_LENGTH} characters.`);
+    throw new Error(
+      `NOTIFICATION_WORKER_SECRET must contain at least ${MINIMUM_SECRET_LENGTH} characters.`,
+    );
   }
 
   const batchSize = boundedInteger(
@@ -72,7 +77,9 @@ async function main() {
   }
 
   const safeSummary = Object.fromEntries(
-    Object.entries(summary).filter(([, value]) => typeof value === 'number' && Number.isFinite(value)),
+    Object.entries(summary).filter(
+      ([, value]) => typeof value === 'number' && Number.isFinite(value),
+    ),
   );
   process.stdout.write(`Notification delivery completed: ${JSON.stringify(safeSummary)}\n`);
 }

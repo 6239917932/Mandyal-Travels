@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useState, useSyncExternalStore, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -13,16 +13,17 @@ import type {
   PartnerInventoryRatePlanRecord,
   PartnerInventoryRecord,
 } from '@/types/commerce';
-
-function futureDate(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
+import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
+import { formatLocalCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
 export default function PartnerInventoryPage() {
-  const [checkInDate, setCheckInDate] = useState(futureDate(1));
-  const [checkOutDate, setCheckOutDate] = useState(futureDate(4));
+  const today = useSyncExternalStore(
+    () => () => undefined,
+    () => formatLocalCalendarDate(new Date()),
+    () => '',
+  );
+  const [checkInDate, setCheckInDate] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
   const [inventory, setInventory] = useState<PartnerInventoryRecord[]>([]);
   const [calendar, setCalendar] = useState<PartnerHotelCalendarRecord[]>([]);
   const [ratePlans, setRatePlans] = useState<PartnerInventoryRatePlanRecord[]>([]);
@@ -32,6 +33,8 @@ export default function PartnerInventoryPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState<string>();
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
+  const resolvedCheckInDate = checkInDate || offsetLocalCalendarDate(today, 1);
+  const resolvedCheckOutDate = checkOutDate || offsetLocalCalendarDate(today, 4);
 
   async function loadInventory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,7 +42,10 @@ export default function PartnerInventoryPage() {
     setIsLoading(true);
     setHasLoaded(false);
     try {
-      const params = new URLSearchParams({ checkInDate, checkOutDate });
+      const params = new URLSearchParams({
+        checkInDate: resolvedCheckInDate,
+        checkOutDate: resolvedCheckOutDate,
+      });
       const response = await fetch(`/api/v1/partner/inventory?${params}`);
       const result = await readJsonResponse<
         | {
@@ -77,8 +83,8 @@ export default function PartnerInventoryPage() {
       const response = await fetch('/api/v1/partner/inventory', {
         body: JSON.stringify({
           availableRooms: Number(formData.get('availableRooms')),
-          checkInDate,
-          checkOutDate,
+          checkInDate: resolvedCheckInDate,
+          checkOutDate: resolvedCheckOutDate,
           note: String(formData.get('note') ?? ''),
           nightlyRate: formData.get('nightlyRate')
             ? Number(formData.get('nightlyRate'))
@@ -153,21 +159,21 @@ export default function PartnerInventoryPage() {
             <div className="booking-page__payment-fields">
               <Input
                 label="Check-in"
-                min={futureDate(0)}
+                min={today}
                 name="checkInDate"
                 onChange={(event) => setCheckInDate(event.target.value)}
                 required
                 type="date"
-                value={checkInDate}
+                value={resolvedCheckInDate}
               />
               <Input
                 label="Check-out"
-                min={checkInDate}
+                min={resolvedCheckInDate}
                 name="checkOutDate"
                 onChange={(event) => setCheckOutDate(event.target.value)}
                 required
                 type="date"
-                value={checkOutDate}
+                value={resolvedCheckOutDate}
               />
             </div>
             <Button fullWidth isLoading={isLoading} type="submit" variant="accent">
@@ -361,7 +367,7 @@ export default function PartnerInventoryPage() {
                   <span style={{ width: `${Math.min(100, utilization)}%` }} />
                 </div>
                 <small>
-                  {utilization}% allocated or held · {room.inventorySource} inventory
+                  {utilization}% allocated or held · {inventorySourceLabel(room.inventorySource)}
                   {room.overrideApplied ? ` · override applied (base ${room.baseInventory})` : ''}
                 </small>
               </Card>

@@ -11,7 +11,8 @@ function authorized(request: Request): boolean {
   const configured = process.env.NOTIFICATION_WORKER_SECRET?.trim() ?? '';
   const header = request.headers.get('authorization') ?? '';
   const supplied = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (configured.length < MINIMUM_SECRET_LENGTH || supplied.length !== configured.length) return false;
+  if (configured.length < MINIMUM_SECRET_LENGTH || supplied.length !== configured.length)
+    return false;
   return timingSafeEqual(Buffer.from(supplied), Buffer.from(configured));
 }
 
@@ -45,7 +46,10 @@ export async function POST(request: Request): Promise<Response> {
     const summary = await deliverPendingNotifications(await readBatchSize(request));
     return Response.json(summary);
   } catch (error) {
-    if (error instanceof SyntaxError || (error instanceof Error && error.message.startsWith('INVALID_'))) {
+    if (
+      error instanceof SyntaxError ||
+      (error instanceof Error && error.message.startsWith('INVALID_'))
+    ) {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
     }
     return Response.json({ error: 'Notification delivery failed' }, { status: 500 });
