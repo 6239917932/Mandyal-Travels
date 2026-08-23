@@ -6,6 +6,7 @@ import { AdminPartnerPropertyAssignment } from '@/components/admin/AdminPartnerP
 import { AdminPropertyReviewActions } from '@/components/admin/AdminPropertyReviewActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
+import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 import { prisma } from '@/lib/prisma';
 import { hotelService } from '@/services/hotelService';
 
@@ -38,6 +39,9 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
   ]);
   if (!partner) notFound();
   const assigned = new Set(partner.properties.map((property) => property.hotelSlug));
+  const hotelInventorySources = new Map(
+    hotels.map((hotel) => [hotel.slug, hotel.inventory.source] as const),
+  );
   return (
     <section className="account-page admin-workspace">
       <header className="admin-hero">
@@ -81,7 +85,11 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
           <AdminPartnerPropertyAssignment
             hotels={hotels
               .filter((hotel) => !assigned.has(hotel.slug))
-              .map(({ name, slug }) => ({ name, slug }))}
+              .map(({ inventory, name, slug }) => ({
+                inventorySource: inventory.source,
+                name,
+                slug,
+              }))}
             partnerId={partner.id}
           />
           <div className="partner-workspace__properties">
@@ -91,6 +99,11 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                 <span>{property.hotelSlug}</span>
                 <small>
                   {property.listingSource === 'MANAGED' ? 'Supplier managed' : 'Platform assigned'}
+                  {' · '}
+                  {inventorySourceLabel(
+                    hotelInventorySources.get(property.hotelSlug) ??
+                      (property.listingSource === 'MANAGED' ? 'direct' : 'supplier'),
+                  )}
                   {' · '}
                   {property.publicationStatus.toLowerCase()}
                   {' · '}
