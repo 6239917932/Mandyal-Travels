@@ -9,6 +9,7 @@ import { HotelLocationMap } from '@/components/hotel/HotelLocationMap';
 import { hotelService } from '@/services/hotelService';
 import { hotelReviewService } from '@/services/hotelReviewService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
+import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 
 interface HotelDetailsPageProps {
   params: Promise<{
@@ -106,9 +107,7 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                 </div>
                 <div>
                   <span>Inventory</span>
-                  <strong>
-                    {hotel.inventory.source === 'direct' ? 'Direct partner' : 'Supplier partner'}
-                  </strong>
+                  <strong>{inventorySourceLabel(hotel.inventory.source)}</strong>
                 </div>
               </div>
             </Card>

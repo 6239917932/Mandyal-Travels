@@ -22,7 +22,7 @@ export default async function AdminSettlementsPage() {
   ]);
   return (
     <section className="account-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Audited supplier finance</p>
           <h1>Partner settlements</h1>
@@ -33,7 +33,7 @@ export default async function AdminSettlementsPage() {
         <Link className="ui-button ui-button--secondary" href="/admin/finance">
           Finance operations
         </Link>
-      </div>
+      </header>
       <AdminSettlementManager partners={partners} settlements={settlements} />
     </section>
   );

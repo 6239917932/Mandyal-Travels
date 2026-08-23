@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { PartnerFleetManager } from '@/components/partner/PartnerFleetManager';
 import { getPartnerAccess } from '@/lib/partnerAuth';
+import { formatLocalCalendarDate } from '@/utils/localDate';
 
 export const metadata: Metadata = { title: 'Fleet operations' };
 export default async function PartnerFleetPage() {
@@ -25,7 +26,10 @@ export default async function PartnerFleetPage() {
           Supplier workspace
         </Link>
       </div>
-      <PartnerFleetManager canCreateVehicles={access.memberRole === 'ADMIN'} />
+      <PartnerFleetManager
+        canCreateVehicles={access.memberRole === 'ADMIN'}
+        today={formatLocalCalendarDate(new Date())}
+      />
     </section>
   );
 }

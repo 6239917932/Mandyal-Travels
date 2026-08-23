@@ -18,7 +18,7 @@ This is compatible with a payment-split aggregator, but Mandyal Travels remains 
 
 ## Settlement and supplier payouts
 
-Settlement generation includes only confirmed, checked-out hotel bookings backed by live, matched captures. It applies the supplier settlement delay and stores immutable per-booking settlement lines, preventing the same booking from being settled twice. Bus, car, and flight transactions stay outside this live settlement path until their provider capture records use the same verified payment model.
+Settlement generation includes only confirmed, checked-out hotel bookings backed by live, matched captures. It applies the supplier settlement delay and stores immutable per-booking settlement lines, preventing the same booking from being settled twice. Approved refunds reduce supplier payable, commission, and tax proportionally using integer-safe rounding; a fully refunded booking is excluded. Pending, processing, and provider-failed refunds reserve their amount so concurrent finance actions cannot over-refund a capture. Bus, car, and flight transactions stay outside this live settlement path until their provider capture records use the same verified payment model.
 
 Supplier payout destinations are provider-tokenized. Mandyal Travels stores the beneficiary token, masked routing information, bank name, and final four account digits only—never a full account number or bank credential. Administrators verify a single default destination before approved settlements can enter an idempotent payout batch. A production payout provider still requires contracted credentials, beneficiary onboarding/KYC, signed callbacks, failure handling, reconciliation files, and operational certification before money is released.
 
@@ -26,4 +26,6 @@ The finance console shows payment environment and reconciliation state, balanced
 
 ## Webhooks and refunds
 
-Providers sign `timestamp.raw-body` with HMAC-SHA256 and send the digest in `x-payment-signature` plus the Unix timestamp in `x-payment-timestamp`. Use a random webhook secret of at least 32 characters. Payloads are size-bounded, replay-window checked, field-bounded, and idempotently recorded before intent status changes. Approved refunds can be dispatched through the separately configured refund endpoint; provider credentials and final certification remain deployment responsibilities.
+Providers sign `timestamp.raw-body` with HMAC-SHA256 and send the digest in `x-payment-signature` plus the Unix timestamp in `x-payment-timestamp`. Use a random webhook secret of at least 32 characters. Payloads are size-bounded, replay-window checked, field-bounded, and idempotently recorded before intent status changes.
+
+Refund approval atomically claims a pending or provider-failed request for processing before contacting the configured provider-neutral refund endpoint. Only a provider-completed response records an approval and reversing journal; failures remain explicitly retryable with the same idempotency key. Provider credentials and final certification remain deployment responsibilities.

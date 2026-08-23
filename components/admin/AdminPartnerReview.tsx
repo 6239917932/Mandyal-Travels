@@ -36,13 +36,17 @@ export function AdminPartnerReview({ applicationId }: { applicationId: string })
 
   return (
     <div className="partner-review__controls">
-      <input
-        className="ui-input"
-        maxLength={250}
-        onChange={(event) => setNote(event.target.value)}
-        placeholder="Review note (required for rejection)"
-        value={note}
-      />
+      <label className="ui-field" htmlFor={`partner-review-note-${applicationId}`}>
+        <span className="ui-field__label">Review note</span>
+        <input
+          className="ui-input"
+          id={`partner-review-note-${applicationId}`}
+          maxLength={250}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Required for rejection"
+          value={note}
+        />
+      </label>
       <button
         className="ui-button ui-button--primary"
         disabled={busy}
@@ -59,7 +63,11 @@ export function AdminPartnerReview({ applicationId }: { applicationId: string })
       >
         Reject
       </button>
-      {error ? <small className="booking-page__payment-error">{error}</small> : null}
+      {error ? (
+        <small className="booking-page__payment-error" role="alert">
+          {error}
+        </small>
+      ) : null}
     </div>
   );
 }

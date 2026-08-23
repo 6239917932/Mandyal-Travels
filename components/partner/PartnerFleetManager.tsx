@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { vehicleComplianceState } from '@/lib/car/complianceRules';
 import type { ApiErrorResponse } from '@/types/commerce';
+import { offsetLocalCalendarDate } from '@/utils/localDate';
 
 type Vehicle = {
   id: string;
@@ -44,13 +45,14 @@ type Vehicle = {
     costAmount: number | null;
   }>;
 };
-const date = (days: number) => {
-  const value = new Date();
-  value.setDate(value.getDate() + days);
-  return value.toISOString().slice(0, 10);
-};
-
-export function PartnerFleetManager({ canCreateVehicles }: { canCreateVehicles: boolean }) {
+export function PartnerFleetManager({
+  canCreateVehicles,
+  today,
+}: {
+  canCreateVehicles: boolean;
+  today: string;
+}) {
+  const date = (days: number) => offsetLocalCalendarDate(today, days);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [error, setError] = useState<string>();
   const [message, setMessage] = useState<string>();

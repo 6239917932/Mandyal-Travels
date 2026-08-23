@@ -17,7 +17,7 @@ export default async function AdminNotificationsPage() {
   ]);
   return (
     <section className="account-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Provider-ready communications</p>
           <h1>Notification operations</h1>
@@ -28,7 +28,7 @@ export default async function AdminNotificationsPage() {
         <Link className="ui-button ui-button--secondary" href="/admin">
           Operations console
         </Link>
-      </div>
+      </header>
       <div className="partner-bookings__summary">
         {templates.map((template) => (
           <div className="ui-card" key={template.id}>

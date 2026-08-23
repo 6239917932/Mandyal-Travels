@@ -22,7 +22,7 @@ export default async function AdminHotelReviewsPage() {
       <Link className="hotel-details-page__back-link" href="/admin">
         Back to operations
       </Link>
-      <header className="account-trips__heading">
+      <header className="admin-hero">
         <p className="hotel-page__eyebrow">Trust and safety</p>
         <h1>Hotel review moderation</h1>
         <p>

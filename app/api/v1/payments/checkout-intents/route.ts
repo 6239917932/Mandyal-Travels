@@ -6,6 +6,7 @@ import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { createHostedPaymentIntent } from '@/services/paymentGatewayService';
 import { calculatePromotion } from '@/constants/promotionRules';
 import { resolvePromotionRule } from '@/services/promotionService';
+import { isCheckoutQuotePayable } from '@/lib/payments/gateway';
 
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
@@ -28,8 +29,17 @@ export async function POST(request: Request) {
   if (existing) return NextResponse.json({ data: existing });
   const quote = await prisma.hotelQuote.findFirst({
     where: { id: quoteId, expiresAt: { gt: new Date() } },
+    include: { availabilityLock: true, booking: { select: { id: true } } },
   });
-  if (!quote)
+  if (
+    !quote ||
+    !isCheckoutQuotePayable({
+      bookingId: quote.booking?.id,
+      lockExpiresAt: quote.availabilityLock.expiresAt,
+      lockStatus: quote.availabilityLock.status,
+      quoteExpiresAt: quote.expiresAt,
+    })
+  )
     return NextResponse.json(
       { error: { code: 'QUOTE_EXPIRED', message: 'Refresh the hotel price before payment.' } },
       { status: 409 },

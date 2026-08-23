@@ -40,7 +40,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
   const assigned = new Set(partner.properties.map((property) => property.hotelSlug));
   return (
     <section className="account-page admin-workspace">
-      <div className="partner-page__heading">
+      <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Authorized supplier servicing</p>
           <h1>{partner.name}</h1>
@@ -51,7 +51,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
         <Link className="ui-button ui-button--secondary" href="/admin/partners">
           Supplier directory
         </Link>
-      </div>
+      </header>
       <div className="partner-bookings__summary">
         <Card>
           <span>Named users</span>

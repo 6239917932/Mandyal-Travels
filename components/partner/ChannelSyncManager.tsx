@@ -37,36 +37,46 @@ export function ChannelSyncManager({
   const router = useRouter();
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>, endpoint: string, success: string) {
     event.preventDefault();
+    if (busy) return;
     setError(undefined);
     setMessage(undefined);
     const form = event.currentTarget;
     const body = Object.fromEntries(new FormData(form).entries());
-    const response = await fetch(endpoint, {
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
-    const result: unknown = await response.json().catch(() => undefined);
-    if (!response.ok) {
-      const detail =
-        result &&
-        typeof result === 'object' &&
-        'error' in result &&
-        result.error &&
-        typeof result.error === 'object' &&
-        'message' in result.error &&
-        typeof result.error.message === 'string'
-          ? result.error.message
-          : 'The request could not be completed.';
-      setError(detail);
-      return;
+    setBusy(true);
+    try {
+      const response = await fetch(endpoint, {
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const result: unknown = await response.json().catch(() => undefined);
+      if (!response.ok) {
+        const apiError =
+          result && typeof result === 'object' && 'error' in result ? result.error : undefined;
+        const detail =
+          typeof apiError === 'string'
+            ? apiError
+            : apiError &&
+                typeof apiError === 'object' &&
+                'message' in apiError &&
+                typeof apiError.message === 'string'
+              ? apiError.message
+              : 'The request could not be completed.';
+        setError(detail);
+        return;
+      }
+      form.reset();
+      setMessage(success);
+      router.refresh();
+    } catch {
+      setError('The channel service could not be reached. No operation was queued.');
+    } finally {
+      setBusy(false);
     }
-    form.reset();
-    setMessage(success);
-    router.refresh();
   }
 
   return (
@@ -117,8 +127,8 @@ export function ChannelSyncManager({
             />
           </label>
         </div>
-        <button className="ui-button ui-button--primary" type="submit">
-          Create connection
+        <button className="ui-button ui-button--primary" disabled={busy} type="submit">
+          {busy ? 'Working…' : 'Create connection'}
         </button>
       </form>
 
@@ -155,8 +165,8 @@ export function ChannelSyncManager({
                 <input name="externalPropertyRef" required minLength={2} maxLength={100} />
               </label>
             </div>
-            <button className="ui-button ui-button--secondary" type="submit">
-              Save mapping
+            <button className="ui-button ui-button--secondary" disabled={busy} type="submit">
+              {busy ? 'Working…' : 'Save mapping'}
             </button>
           </form>
           <div className="partner-channel-mappings">
@@ -188,8 +198,8 @@ export function ChannelSyncManager({
                 <option value="BIDIRECTIONAL">Bidirectional</option>
               </select>
             </label>
-            <button className="ui-button ui-button--primary" type="submit">
-              Queue sync
+            <button className="ui-button ui-button--primary" disabled={busy} type="submit">
+              {busy ? 'Working…' : 'Queue sync'}
             </button>
           </form>
           <div className="partner-channel-runs">

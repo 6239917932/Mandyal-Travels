@@ -119,6 +119,35 @@ export function createRefundPostings(amount: number): JournalPostingDraft[] {
   ];
 }
 
+export function prorateCaptureAllocations(input: {
+  capturedAmount: number;
+  commissionAmount: number;
+  refundedAmount: number;
+  taxAmount: number;
+}): { commissionAmount: number; grossAmount: number; supplierAmount: number; taxAmount: number } {
+  assertMoney(input.capturedAmount, 'Captured amount');
+  assertMoney(input.commissionAmount, 'Commission amount');
+  assertMoney(input.refundedAmount, 'Refunded amount');
+  assertMoney(input.taxAmount, 'Tax amount');
+  if (input.capturedAmount === 0 || input.refundedAmount > input.capturedAmount) {
+    throw new Error('Refunded amount cannot exceed a positive captured amount.');
+  }
+  const originalSupplier = input.capturedAmount - input.commissionAmount - input.taxAmount;
+  if (originalSupplier < 0)
+    throw new Error('Capture allocations cannot exceed the captured amount.');
+  const grossAmount = input.capturedAmount - input.refundedAmount;
+  const commissionAmount = Math.floor(
+    (input.commissionAmount * grossAmount) / input.capturedAmount,
+  );
+  const taxAmount = Math.floor((input.taxAmount * grossAmount) / input.capturedAmount);
+  return {
+    commissionAmount,
+    grossAmount,
+    supplierAmount: grossAmount - commissionAmount - taxAmount,
+    taxAmount,
+  };
+}
+
 export function assertBalancedJournal(postings: readonly JournalPostingDraft[]): void {
   const debit = postings
     .filter((posting) => posting.direction === 'DEBIT')

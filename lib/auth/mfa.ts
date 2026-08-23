@@ -74,6 +74,10 @@ export function verifyTotp(secret: string, code: string, now = Date.now()): bool
   return [-1, 0, 1].some((window) => totpAt(secret, now + window * 30_000) === code);
 }
 
+export function requiresMfaEnrollmentVerification(enabledAt: Date | null | undefined): boolean {
+  return enabledAt instanceof Date && Number.isFinite(enabledAt.valueOf());
+}
+
 export function totpUri(email: string, secret: string): string {
   const label = encodeURIComponent(`Mandyal Travels:${email}`);
   return `otpauth://totp/${label}?secret=${secret}&issuer=Mandyal%20Travels&algorithm=SHA1&digits=6&period=30`;

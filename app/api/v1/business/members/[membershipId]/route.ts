@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 type MemberRouteContext = { params: Promise<{ membershipId: string }> };
@@ -42,40 +43,43 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
 
   let updatedMember;
   try {
-    updatedMember = await prisma.$transaction(async (transaction) => {
-      const currentMember = await transaction.organizationMember.findFirst({
-        where: { id: member.id, organizationId: access.membership.organizationId },
-      });
-      if (!currentMember) throw new Error('MEMBERSHIP_CHANGED');
-
-      if (currentMember.role === 'ADMIN' && role === 'TRAVELLER') {
-        const administratorCount = await transaction.organizationMember.count({
-          where: { organizationId: access.membership.organizationId, role: 'ADMIN' },
+    updatedMember = await prisma.$transaction(
+      async (transaction) => {
+        const currentMember = await transaction.organizationMember.findFirst({
+          where: { id: member.id, organizationId: access.membership.organizationId },
         });
-        if (administratorCount <= 1) throw new Error('LAST_ADMINISTRATOR');
-      }
+        if (!currentMember) throw new Error('MEMBERSHIP_CHANGED');
 
-      const updated = await transaction.organizationMember.update({
-        data: { role },
-        where: { id: currentMember.id },
-      });
-      await transaction.user.update({
-        data: { role: role === 'ADMIN' ? 'BUSINESS_ADMIN' : 'CUSTOMER' },
-        where: { id: currentMember.userId },
-      });
-      await transaction.businessAuditLog.create({
-        data: createBusinessAuditData({
-          action: BUSINESS_AUDIT_ACTIONS.MEMBER_ROLE_UPDATED,
-          actorUserId: access.user.id,
-          entityId: currentMember.id,
-          entityType: 'MEMBERSHIP',
-          metadata: { memberEmail: member.user.email, previousRole: currentMember.role, role },
-          organizationId: access.membership.organizationId,
-          summary: `${member.user.firstName} ${member.user.lastName} changed from ${currentMember.role.toLowerCase()} to ${role.toLowerCase()}.`,
-        }),
-      });
-      return updated;
-    });
+        if (currentMember.role === 'ADMIN' && role === 'TRAVELLER') {
+          const administratorCount = await transaction.organizationMember.count({
+            where: { organizationId: access.membership.organizationId, role: 'ADMIN' },
+          });
+          if (administratorCount <= 1) throw new Error('LAST_ADMINISTRATOR');
+        }
+
+        const updated = await transaction.organizationMember.update({
+          data: { role },
+          where: { id: currentMember.id },
+        });
+        await transaction.user.update({
+          data: { role: role === 'ADMIN' ? 'BUSINESS_ADMIN' : 'CUSTOMER' },
+          where: { id: currentMember.userId },
+        });
+        await transaction.businessAuditLog.create({
+          data: createBusinessAuditData({
+            action: BUSINESS_AUDIT_ACTIONS.MEMBER_ROLE_UPDATED,
+            actorUserId: access.user.id,
+            entityId: currentMember.id,
+            entityType: 'MEMBERSHIP',
+            metadata: { memberEmail: member.user.email, previousRole: currentMember.role, role },
+            organizationId: access.membership.organizationId,
+            summary: `${member.user.firstName} ${member.user.lastName} changed from ${currentMember.role.toLowerCase()} to ${role.toLowerCase()}.`,
+          }),
+        });
+        return updated;
+      },
+      { isolationLevel: 'Serializable' },
+    );
   } catch (error) {
     if (error instanceof Error && error.message === 'LAST_ADMINISTRATOR') {
       return NextResponse.json(
@@ -86,6 +90,14 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
     if (error instanceof Error && error.message === 'MEMBERSHIP_CHANGED') {
       return NextResponse.json(
         { error: 'The member access changed while this request was being processed.' },
+        { status: 409 },
+      );
+    }
+    if (hasPrismaErrorCode(error, 'P2034')) {
+      return NextResponse.json(
+        {
+          error: 'Member access changed concurrently. Review the administrator list and try again.',
+        },
         { status: 409 },
       );
     }

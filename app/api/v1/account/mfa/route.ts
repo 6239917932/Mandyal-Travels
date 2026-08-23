@@ -6,6 +6,7 @@ import {
   createTotpSecret,
   decryptTotpSecret,
   encryptTotpSecret,
+  requiresMfaEnrollmentVerification,
   totpUri,
   verifyTotp,
 } from '@/lib/auth/mfa';
@@ -28,10 +29,24 @@ export async function GET() {
   });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
   try {
+    const current = await prisma.userMfaCredential.findUnique({
+      where: { userId: session.user.id },
+      select: { enabledAt: true },
+    });
+    if (requiresMfaEnrollmentVerification(current?.enabledAt)) {
+      const body = await readJsonObject(request);
+      const code = typeof body?.code === 'string' ? body.code : '';
+      if (!(await verifyUserSecondFactor(session.user.id, code))) {
+        return NextResponse.json(
+          { error: 'Verify the current authenticator or a recovery code before re-enrolling.' },
+          { status: 403 },
+        );
+      }
+    }
     const secret = createTotpSecret();
     await prisma.userMfaCredential.upsert({
       where: { userId: session.user.id },

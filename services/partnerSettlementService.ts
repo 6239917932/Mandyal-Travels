@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { prorateCaptureAllocations } from '@/lib/payments/accounting';
 
 export class PartnerSettlementError extends Error {
   readonly code: string;
@@ -36,7 +37,12 @@ export const partnerSettlementService = {
     void end;
     const bookings = await prisma.booking.findMany({
       include: {
-        payment: { include: { allocations: true } },
+        payment: {
+          include: {
+            allocations: true,
+            refunds: { select: { amount: true }, where: { status: 'APPROVED' } },
+          },
+        },
         quote: { select: { checkOutDate: true } },
       },
       where: {
@@ -65,36 +71,55 @@ export const partnerSettlementService = {
         'No checked-out, reconciled live payments are eligible for this settlement period.',
       );
     }
-    const settlementLines = eligibleBookings.map((booking) => {
+    const settlementLines = eligibleBookings.flatMap((booking) => {
       if (!booking.payment) throw new Error('Eligible booking is missing its payment.');
       const allocation = (type: string) =>
         booking.payment?.allocations.find((item) => item.allocationType === type)?.amount ?? 0;
-      const commissionAmount = allocation('PLATFORM_COMMISSION');
-      const taxWithheldAmount = allocation('TAX_PAYABLE');
-      const netAmount = allocation('SUPPLIER_PAYABLE');
-      if (commissionAmount + taxWithheldAmount + netAmount !== booking.payment.amount) {
+      const capturedCommission = allocation('PLATFORM_COMMISSION');
+      const capturedTax = allocation('TAX_PAYABLE');
+      const capturedSupplier = allocation('SUPPLIER_PAYABLE');
+      if (capturedCommission + capturedTax + capturedSupplier !== booking.payment.amount) {
         throw new PartnerSettlementError(
           'PAYMENT_ALLOCATION_INVALID',
           `Payment allocations are incomplete for ${booking.confirmationCode}.`,
         );
       }
-      return {
-        bookingId: booking.id,
-        commissionAmount,
-        currency: booking.payment.currency,
-        eligibleAt: new Date(
-          new Date(`${booking.quote.checkOutDate}T00:00:00.000Z`).getTime() +
-            partner.settlementDelayDays * 86_400_000,
-        ),
-        grossAmount: booking.payment.amount,
-        netAmount,
-        partnerId,
-        reference: booking.confirmationCode,
-        sourceId: booking.id,
-        sourceType: 'HOTEL_BOOKING',
-        taxWithheldAmount,
-      };
+      const refundedAmount = booking.payment.refunds.reduce(
+        (total, refund) => total + refund.amount,
+        0,
+      );
+      const adjusted = prorateCaptureAllocations({
+        capturedAmount: booking.payment.amount,
+        commissionAmount: capturedCommission,
+        refundedAmount,
+        taxAmount: capturedTax,
+      });
+      if (adjusted.grossAmount === 0) return [];
+      return [
+        {
+          bookingId: booking.id,
+          commissionAmount: adjusted.commissionAmount,
+          currency: booking.payment.currency,
+          eligibleAt: new Date(
+            new Date(`${booking.quote.checkOutDate}T00:00:00.000Z`).getTime() +
+              partner.settlementDelayDays * 86_400_000,
+          ),
+          grossAmount: adjusted.grossAmount,
+          netAmount: adjusted.supplierAmount,
+          partnerId,
+          reference: booking.confirmationCode,
+          sourceId: booking.id,
+          sourceType: 'HOTEL_BOOKING',
+          taxWithheldAmount: adjusted.taxAmount,
+        },
+      ];
     });
+    if (settlementLines.length === 0) {
+      throw new PartnerSettlementError(
+        'NO_ELIGIBLE_TRANSACTIONS',
+        'All otherwise eligible transactions have been fully refunded.',
+      );
+    }
     const currency = settlementLines[0]?.currency;
     if (!currency || settlementLines.some((line) => line.currency !== currency)) {
       throw new PartnerSettlementError(
@@ -108,6 +133,10 @@ export const partnerSettlementService = {
       0,
     );
     const netAmount = settlementLines.reduce((total, line) => total + line.netAmount, 0);
+    const taxWithheldAmount = settlementLines.reduce(
+      (total, line) => total + line.taxWithheldAmount,
+      0,
+    );
     return prisma.$transaction(async (transaction) =>
       transaction.partnerSettlement.create({
         data: {
@@ -124,6 +153,7 @@ export const partnerSettlementService = {
           partnerId,
           periodEnd,
           periodStart,
+          taxWithheldAmount,
         },
         include: { lines: true },
       }),
