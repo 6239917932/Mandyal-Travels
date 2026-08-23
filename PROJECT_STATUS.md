@@ -79,6 +79,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Protected read-only integration registry covering bounded hotel-channel and flight-supplier
   connections plus notification and outbox posture; credential and account references are reduced
   to configured/missing indicators and provider activation remains external
+- Protected read-only flight supplier operation ledger with bounded search, status/environment
+  filters, retry posture, correlation trace, and presence-only provider/error evidence; queued health
+  operations remain explicitly blocked on contracted provider activation
 - Protected read-only administrator inventory and rate directory with bounded search, 7/30/90-day
   windows, pagination, capacity/rate-plan issue detection, seasonal price posture, and explicit
   stop-sale and restriction visibility without changing partner-owned PMS controls
@@ -358,8 +361,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 161 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 213 generated route entries,
+The current travel-domain milestone passes 165 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 214 generated route entries,
 clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
 synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
