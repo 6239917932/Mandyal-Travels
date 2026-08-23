@@ -63,6 +63,9 @@ export default async function AgentWorkspacePage() {
         </div>
       </div>
       <div className="manage-booking__document-actions">
+        <Link className="ui-button ui-button--primary" href="/agent/reports">
+          Customer reports
+        </Link>
         <Link className="ui-button ui-button--secondary" href="/business/dashboard">
           Agency operations
         </Link>
