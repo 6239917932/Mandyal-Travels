@@ -44,6 +44,9 @@ and release checklist.
 - Human-governed administrator finance operations with exact payment/refund totals, independent
   bounded registers, private provider correlation, captured-payment mutation guards, and retry-safe
   refund review controls; no live payment provider is activated
+- Governed promotion operations with authoritative stored campaign states, bounded search and
+  pagination, version-safe reason-required activation, append-only history, and fail-closed
+  usage-capped campaigns until redemption tracking exists
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,

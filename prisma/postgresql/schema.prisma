@@ -55,6 +55,7 @@ model User {
   createdDestinationContent   DestinationContent[]        @relation("DestinationContentCreator")
   updatedDestinationContent   DestinationContent[]        @relation("DestinationContentUpdater")
   destinationContentEvents    DestinationContentEvent[]   @relation("DestinationContentEventActor")
+  promotionCampaignEvents     PromotionCampaignEvent[]    @relation("PromotionCampaignEventActor")
 }
 
 model PasswordResetToken {
@@ -1532,9 +1533,28 @@ model PromotionCampaign {
   updatedByUserId String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  events          PromotionCampaignEvent[]
 
   @@index([active, startsAt, endsAt])
   @@index([updatedAt])
+}
+
+model PromotionCampaignEvent {
+  id          String            @id @default(cuid())
+  campaignId  String
+  actorUserId String
+  action      String
+  fromActive  Boolean
+  toActive    Boolean
+  reason      String
+  version     Int
+  createdAt   DateTime          @default(now())
+  campaign    PromotionCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  actor       User              @relation("PromotionCampaignEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([campaignId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
 }
 
 model RoomInventoryOverride {
