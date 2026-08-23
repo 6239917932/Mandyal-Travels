@@ -76,6 +76,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   history without passwords, session tokens, or card data
 - Platform-admin user and organization directories with bounded search, pagination, and protected
   read-only servicing records for profile, access, travel, support, policy, and audit context
+- Protected read-only integration registry covering bounded hotel-channel and flight-supplier
+  connections plus notification and outbox posture; credential and account references are reduced
+  to configured/missing indicators and provider activation remains external
 - Account security activity history for sign-ins, profile/password/preference changes, and session revocation
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
@@ -352,8 +355,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 153 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 151 generated route entries,
+The current travel-domain milestone passes 157 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 212 generated route entries,
 clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
 synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add

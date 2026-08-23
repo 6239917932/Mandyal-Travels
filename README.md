@@ -29,6 +29,8 @@ and release checklist.
   supplier, organization, support, and account-security history with exact timeline pagination
 - Governed privacy-request operations with customer status visibility, administrator due-date
   queues, strict human review transitions, optimistic versions, and immutable history
+- Protected administrator integration registry for hotel channels, flight suppliers, notification
+  delivery, and outbox health that reports secret presence without exposing secret references
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
