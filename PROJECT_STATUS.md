@@ -69,6 +69,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Protected hotel-review moderation with rejection notes, supplier-scoped public responses, and
   partner audit history
 - Booking-linked customer support cases with personal status tracking and operations resolution
+- Flight, Bus, and Car trip cards open bounded, prefilled booking-owned servicing requests for
+  human operations review; submitting a request never changes or cancels a booking or guarantees a
+  refund
 - Bounded personal JSON archive for profile, preferences, bookings, company requests, and support
   history without passwords, session tokens, or card data
 - Platform-admin user and organization directories with bounded search, pagination, and protected
@@ -330,7 +333,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 130 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 133 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 139 generated route entries,
 clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
 synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider

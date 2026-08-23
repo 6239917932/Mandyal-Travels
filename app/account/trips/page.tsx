@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { customerTripServicingPath } from '@/services/customerTripServicingService';
 
 export const metadata: Metadata = { title: 'My travel history' };
 
@@ -173,13 +174,23 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
                       </div>
                     </dl>
                   </div>
-                  {document ? (
-                    <div className="account-trip__actions">
+                  <div className="account-trip__actions">
+                    {document ? (
                       <Link className="ui-button ui-button--secondary" href={document.href}>
                         {document.label}
                       </Link>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    <Link
+                      className="ui-button ui-button--secondary"
+                      href={customerTripServicingPath(trip)}
+                    >
+                      Request servicing
+                    </Link>
+                  </div>
+                  <p className="booking-confirmation__fine-print">
+                    Requests are reviewed by operations and do not automatically change or cancel a
+                    booking or guarantee a refund.
+                  </p>
                 </Card>
               );
             })}

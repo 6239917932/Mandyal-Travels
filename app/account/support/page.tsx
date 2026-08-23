@@ -6,6 +6,7 @@ import { CustomerSupportCenter } from '@/components/account/CustomerSupportCente
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { normalizeCustomerSupportPrefill } from '@/services/customerTripServicingService';
 
 export const metadata: Metadata = { title: 'Customer support' };
 
@@ -13,7 +14,14 @@ const PAGE_SIZE = 25;
 const SUPPORT_STATUSES = new Set(['ALL', 'OPEN', 'CLOSED']);
 
 type CustomerSupportPageProps = {
-  searchParams: Promise<{ page?: string | string[]; status?: string | string[] }>;
+  searchParams: Promise<{
+    bookingReference?: string | string[];
+    category?: string | string[];
+    message?: string | string[];
+    page?: string | string[];
+    status?: string | string[];
+    subject?: string | string[];
+  }>;
 };
 
 function readPage(value: string | string[] | undefined) {
@@ -38,6 +46,7 @@ export default async function CustomerSupportPage({ searchParams }: CustomerSupp
 
   const values = await searchParams;
   const status = readStatus(values.status);
+  const initialRequest = normalizeCustomerSupportPrefill(values);
   const where = { userId: user.id, ...(status === 'ALL' ? {} : { status }) };
   const [totalCases, openCases, closedCases] = await Promise.all([
     prisma.customerSupportCase.count({ where }),
@@ -109,6 +118,7 @@ export default async function CustomerSupportPage({ searchParams }: CustomerSupp
           subject: supportCase.subject,
           updatedAt: supportCase.updatedAt.toISOString(),
         }))}
+        initialRequest={initialRequest}
       />
 
       {totalPages > 1 ? (

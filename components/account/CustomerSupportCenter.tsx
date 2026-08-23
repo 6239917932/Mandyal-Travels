@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import type { CustomerSupportPrefill } from '@/services/customerTripServicingService';
 
 type CustomerSupportCase = {
   bookingReference: string | null;
@@ -21,11 +22,21 @@ type CustomerSupportCase = {
   updatedAt: string;
 };
 
-export function CustomerSupportCenter({ cases }: { cases: CustomerSupportCase[] }) {
+export function CustomerSupportCenter({
+  cases,
+  initialRequest,
+}: {
+  cases: CustomerSupportCase[];
+  initialRequest: CustomerSupportPrefill;
+}) {
   const router = useRouter();
+  const [bookingReference, setBookingReference] = useState(initialRequest.bookingReference);
+  const [category, setCategory] = useState(initialRequest.category);
+  const [details, setDetails] = useState(initialRequest.message);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState(initialRequest.subject);
 
   async function createCase(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +65,10 @@ export function CustomerSupportCenter({ cases }: { cases: CustomerSupportCase[] 
         return;
       }
 
-      form.reset();
+      setBookingReference('');
+      setCategory('BOOKING');
+      setDetails('');
+      setSubject('');
       setMessage(
         result.data?.caseNumber
           ? `Support case ${result.data.caseNumber} created successfully.`
@@ -79,9 +93,10 @@ export function CustomerSupportCenter({ cases }: { cases: CustomerSupportCase[] 
               </label>
               <select
                 className="ui-input"
-                defaultValue="BOOKING"
                 id="customer-support-category"
                 name="category"
+                onChange={(event) => setCategory(event.target.value)}
+                value={category}
               >
                 <option value="BOOKING">Booking</option>
                 <option value="PAYMENT">Payment</option>
@@ -94,10 +109,20 @@ export function CustomerSupportCenter({ cases }: { cases: CustomerSupportCase[] 
               label="Booking reference (optional)"
               maxLength={40}
               name="bookingReference"
+              onChange={(event) => setBookingReference(event.target.value)}
               placeholder="MT12345678"
+              value={bookingReference}
             />
           </div>
-          <Input label="Subject" maxLength={120} minLength={5} name="subject" required />
+          <Input
+            label="Subject"
+            maxLength={120}
+            minLength={5}
+            name="subject"
+            onChange={(event) => setSubject(event.target.value)}
+            required
+            value={subject}
+          />
           <div className="ui-field">
             <label className="ui-field__label" htmlFor="customer-support-message">
               Details
@@ -108,9 +133,17 @@ export function CustomerSupportCenter({ cases }: { cases: CustomerSupportCase[] 
               maxLength={2000}
               minLength={10}
               name="message"
+              onChange={(event) => setDetails(event.target.value)}
               required
+              value={details}
             />
           </div>
+          {initialRequest.bookingReference ? (
+            <p className="booking-confirmation__fine-print">
+              Submitting creates a human-reviewed request. It does not automatically change or
+              cancel the booking and does not guarantee a refund.
+            </p>
+          ) : null}
           <Button isLoading={isSubmitting} type="submit" variant="primary">
             Create support case
           </Button>
