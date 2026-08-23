@@ -107,6 +107,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   hotel amendment oversight
 - Accurate full-account servicing totals, direct user-to-organization navigation, queue shortcuts,
   a visible security-control posture, and a prefilled bounded reporting window
+- Platform-admin operational analytics with explicit 30-day conversion, hotel cancellation, and
+  checkout-capture denominators plus current supplier activation, approved hotel publication,
+  support-load, and unresolved high-severity risk indicators
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
 - Customer support servicing with required resolution notes and append-only case events
@@ -324,7 +327,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 125 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 127 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 138 generated route entries,
 clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
 synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
