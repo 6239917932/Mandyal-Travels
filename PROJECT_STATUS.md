@@ -119,6 +119,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Dedicated platform support workbench with separate customer and company queues, bounded
   multi-field search, status filters, oldest-open ordering, complete pagination, account links, and
   the existing audited human resolution actions; no AI provider or automated decision is implied
+- Closed-catalogue platform feature controls for guided trip planning and new partner applications;
+  administrator changes require bounded reasons, optimistic versions, and append-only history, and
+  both page and API entry points enforce the resulting state
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
@@ -333,9 +336,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 133 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 139 generated route entries,
-clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
-synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 136 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 141 generated route entries,
+clean-database verification of all 68 SQLite migrations with foreign-key integrity enabled, a
+synchronized 76-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.

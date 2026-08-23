@@ -1321,6 +1321,32 @@ CREATE TABLE "RoomInventoryOverride" (
     CONSTRAINT "RoomInventoryOverride_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PlatformFeatureFlag" (
+    "key" TEXT NOT NULL,
+    "enabled" BOOLEAN NOT NULL,
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "changeReason" TEXT NOT NULL,
+    "updatedByUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PlatformFeatureFlag_pkey" PRIMARY KEY ("key")
+);
+
+-- CreateTable
+CREATE TABLE "PlatformFeatureFlagEvent" (
+    "id" TEXT NOT NULL,
+    "flagKey" TEXT NOT NULL,
+    "enabled" BOOLEAN NOT NULL,
+    "version" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PlatformFeatureFlagEvent_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -1903,6 +1929,15 @@ CREATE INDEX "RoomInventoryOverride_roomTypeId_stayDate_idx" ON "RoomInventoryOv
 -- CreateIndex
 CREATE UNIQUE INDEX "RoomInventoryOverride_roomTypeId_stayDate_key" ON "RoomInventoryOverride"("roomTypeId", "stayDate");
 
+-- CreateIndex
+CREATE INDEX "PlatformFeatureFlag_enabled_updatedAt_idx" ON "PlatformFeatureFlag"("enabled", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "PlatformFeatureFlagEvent_flagKey_createdAt_idx" ON "PlatformFeatureFlagEvent"("flagKey", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PlatformFeatureFlagEvent_createdAt_idx" ON "PlatformFeatureFlagEvent"("createdAt");
+
 -- AddForeignKey
 ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -2205,3 +2240,12 @@ ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_
 
 -- AddForeignKey
 ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PlatformFeatureFlag" ADD CONSTRAINT "PlatformFeatureFlag_updatedByUserId_fkey" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PlatformFeatureFlagEvent" ADD CONSTRAINT "PlatformFeatureFlagEvent_flagKey_fkey" FOREIGN KEY ("flagKey") REFERENCES "PlatformFeatureFlag"("key") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PlatformFeatureFlagEvent" ADD CONSTRAINT "PlatformFeatureFlagEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
