@@ -262,6 +262,12 @@ Managed properties can register their physical rooms and operate a basic houseke
 When a room type has registered rooms, check-in accepts only registered rooms that are ready and in
 service; checkout marks the assigned rooms dirty for housekeeping follow-up.
 
+Hotel partners have bounded, date-filtered occupancy decision support based only on their declared
+room capacity, calendar limits, stop-sales, and confirmed non-no-show stays. It reports booked and
+calendar-open room nights, flags over-capacity data for reconciliation, and gives deterministic
+human-review guidance without automatically changing rates, restrictions, or inventory or claiming
+to be an activated AI model.
+
 Booking operations include a private supplier note for arrival preferences, accessibility support,
 and shift handovers. Every note change is scoped to the assigned supplier and recorded in activity
 history without copying the note text into audit metadata.
@@ -318,7 +324,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 122 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 125 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 138 generated route entries,
 clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
 synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
