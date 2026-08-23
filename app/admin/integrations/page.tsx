@@ -72,9 +72,14 @@ export default async function AdminIntegrationsPage() {
             or activating external providers.
           </p>
         </div>
-        <Link className="ui-button ui-button--secondary" href="/admin">
-          Operations console
-        </Link>
+        <div className="manage-booking__document-actions">
+          <Link className="ui-button ui-button--secondary" href="/admin/integrations/flights">
+            Flight operation ledger
+          </Link>
+          <Link className="ui-button ui-button--secondary" href="/admin">
+            Operations console
+          </Link>
+        </div>
       </header>
 
       <div className="partner-bookings__summary">
