@@ -128,6 +128,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Read-only administrator hotel supply catalog with bounded property/supplier/destination search,
   approval/publication/source/content filters, internal-only PMS versus external API provenance,
   deterministic content-readiness checks, and links to existing human review controls
+- Governed destination content workflow with private drafts, completeness-gated human publication,
+  optimistic versions, reason-required append-only history, bounded administration, and responsive
+  public destination guides that route customers into inventory-backed search and trip planning
 - Platform-admin operational travel CSV across hotel, flight, bus, and car records with date filters
   and bounded export size
 - Admin-approved supplier onboarding with named sign-in and a scoped operations workspace
@@ -342,9 +345,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 143 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 143 generated route entries,
-clean-database verification of all 68 SQLite migrations with foreign-key integrity enabled, a
-synchronized 76-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 147 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 148 generated route entries,
+clean-database verification of all 69 SQLite migrations with foreign-key integrity enabled, a
+synchronized 78-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.
