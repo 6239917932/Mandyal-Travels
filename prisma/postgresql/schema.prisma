@@ -534,19 +534,30 @@ model Organization {
 }
 
 model AgencyCustomer {
-  id             String       @id @default(cuid())
+  id             String                        @id @default(cuid())
   organizationId String
   displayName    String
   email          String
-  phone          String       @default("")
-  notes          String       @default("")
-  status         String       @default("ACTIVE")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  phone          String                        @default("")
+  notes          String                        @default("")
+  status         String                        @default("ACTIVE")
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+  organization   Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  travelRequests AgencyCustomerTravelRequest[]
 
   @@unique([organizationId, email])
   @@index([organizationId, status, createdAt])
+}
+
+model AgencyCustomerTravelRequest {
+  businessTravelRequestId String                @id
+  agencyCustomerId        String
+  createdAt               DateTime              @default(now())
+  businessTravelRequest   BusinessTravelRequest @relation(fields: [businessTravelRequestId], references: [id], onDelete: Cascade)
+  agencyCustomer          AgencyCustomer        @relation(fields: [agencyCustomerId], references: [id], onDelete: Cascade)
+
+  @@index([agencyCustomerId, createdAt])
 }
 
 model BusinessSupportCase {
@@ -678,8 +689,8 @@ model OrganizationMember {
 }
 
 model BusinessTravelRequest {
-  id                 String                     @id @default(cuid())
-  idempotencyKey     String?                    @unique
+  id                 String                       @id @default(cuid())
+  idempotencyKey     String?                      @unique
   organizationId     String
   requesterId        String
   policyVersionId    String?
@@ -689,7 +700,7 @@ model BusinessTravelRequest {
   startDate          String
   endDate            String?
   estimatedAmount    Int
-  currency           String                     @default("INR")
+  currency           String                       @default("INR")
   status             String
   policyReason       String
   policySnapshotJson String
@@ -697,14 +708,15 @@ model BusinessTravelRequest {
   reviewedAt         DateTime?
   bookingTotalAmount Int?
   bookedAt           DateTime?
-  createdAt          DateTime                   @default(now())
-  updatedAt          DateTime                   @updatedAt
-  organization       Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  requester          User                       @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  reviewedBy         User?                      @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  policyVersion      OrganizationPolicyVersion? @relation(fields: [policyVersionId], references: [id], onDelete: SetNull)
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  organization       Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester          User                         @relation("BusinessTravelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewedBy         User?                        @relation("BusinessTravelReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  policyVersion      OrganizationPolicyVersion?   @relation(fields: [policyVersionId], references: [id], onDelete: SetNull)
   customerTrip       CustomerTrip?
   hotelBooking       Booking?
+  agencyCustomerLink AgencyCustomerTravelRequest?
 
   @@index([organizationId, status, createdAt])
   @@index([requesterId, status, createdAt])

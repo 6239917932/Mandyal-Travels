@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AgencyCustomerManager } from '@/components/agent/AgencyCustomerManager';
+import { AgencyTravelRequestManager } from '@/components/agent/AgencyTravelRequestManager';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
@@ -12,15 +13,30 @@ export default async function AgentWorkspacePage() {
     include: { organization: true },
   });
   if (!membership) redirect('/business');
-  const [customers, requests, booked] = await Promise.all([
-    prisma.agencyCustomer.count({
-      where: { organizationId: membership.organizationId, status: 'ACTIVE' },
+  const [agencyCustomers, agencyRequests, requests, booked] = await Promise.all([
+    prisma.agencyCustomer.findMany({
+      include: { _count: { select: { travelRequests: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      where: { organizationId: membership.organizationId },
+    }),
+    prisma.agencyCustomerTravelRequest.findMany({
+      include: { agencyCustomer: true, businessTravelRequest: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      where: { agencyCustomer: { organizationId: membership.organizationId } },
     }),
     prisma.businessTravelRequest.count({ where: { organizationId: membership.organizationId } }),
     prisma.businessTravelRequest.count({
       where: { organizationId: membership.organizationId, status: 'BOOKED' },
     }),
   ]);
+  const agencyWorkspaceRevision = agencyCustomers
+    .map(
+      (customer) =>
+        `${customer.id}:${customer.status}:${customer.updatedAt.toISOString()}:${customer._count.travelRequests}`,
+    )
+    .join('|');
   return (
     <section className="account-page">
       <div className="auth-page__intro">
@@ -32,7 +48,9 @@ export default async function AgentWorkspacePage() {
       </div>
       <div className="booking-summary-grid">
         <div className="ui-card ui-card--padded">
-          <strong>{customers}</strong>
+          <strong>
+            {agencyCustomers.filter((customer) => customer.status === 'ACTIVE').length}
+          </strong>
           <span> Active customers</span>
         </div>
         <div className="ui-card ui-card--padded">
@@ -55,7 +73,39 @@ export default async function AgentWorkspacePage() {
           Support
         </Link>
       </div>
-      <AgencyCustomerManager />
+      <AgencyTravelRequestManager
+        customers={agencyCustomers.map((customer) => ({
+          displayName: customer.displayName,
+          email: customer.email,
+          id: customer.id,
+          notes: customer.notes,
+          phone: customer.phone,
+          requestCount: customer._count.travelRequests,
+          status: customer.status,
+        }))}
+        initialRequests={agencyRequests.map(({ agencyCustomer, businessTravelRequest }) => ({
+          customerName: agencyCustomer.displayName,
+          estimatedAmount: businessTravelRequest.estimatedAmount,
+          id: businessTravelRequest.id,
+          productType: businessTravelRequest.productType,
+          startDate: businessTravelRequest.startDate,
+          status: businessTravelRequest.status,
+          title: businessTravelRequest.title,
+        }))}
+        key={`${agencyWorkspaceRevision}:requests`}
+      />
+      <AgencyCustomerManager
+        initialCustomers={agencyCustomers.map((customer) => ({
+          displayName: customer.displayName,
+          email: customer.email,
+          id: customer.id,
+          notes: customer.notes,
+          phone: customer.phone,
+          requestCount: customer._count.travelRequests,
+          status: customer.status,
+        }))}
+        key={`${agencyWorkspaceRevision}:customers`}
+      />
     </section>
   );
 }
