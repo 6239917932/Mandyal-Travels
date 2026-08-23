@@ -9,7 +9,7 @@ import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/busi
 
 export async function PATCH(
   request: Request,
-  context: RouteContext<'/api/v1/agent/customers/[customerId]'>,
+  context: { params: Promise<{ customerId: string }> },
 ) {
   const access = await getAgencyAdminAccess();
   if (!access) {
