@@ -23,6 +23,8 @@ and release checklist.
   bounded search, product/status/date filters, customer links, and complete independent pagination
 - Protected read-only hotel supply catalog with internal PMS/API provenance, governance filters,
   deterministic content-readiness checks, and links to existing human review controls
+- Protected read-only administrator inventory and rate directory with bounded forward windows,
+  deterministic capacity/rate-plan checks, stop-sale and restriction visibility, and pagination
 - Governed destination content CMS with private drafts, human publication, optimistic versions,
   append-only editorial history, and responsive public destination guides
 - Protected read-only administrator audit workbench unifying bounded platform, editorial,
