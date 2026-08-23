@@ -13,6 +13,8 @@ and release checklist.
 - Car rental search and booking journey
 - Inventory and availability controls
 - Partner-scoped hotel occupancy and calendar-capacity decision support with human-only actions
+- Platform-admin operational analytics for consent-aware conversion, booking cancellations,
+  checkout capture completion, supplier and hotel readiness, support load, and high-severity risk
 - Customer accounts and unified trip history
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases

@@ -1,16 +1,35 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { PlatformOperationalMetrics } from '@/components/admin/PlatformOperationalMetrics';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { buildOperationalAnalyticsSnapshot } from '@/services/platformAnalyticsService';
 
 export const metadata: Metadata = { title: 'Platform analytics' };
 export default async function AdminAnalyticsPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/analytics');
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - 30);
-  const [events, trips, hotelBookings, value] = await Promise.all([
+  const [
+    events,
+    trips,
+    hotelBookings,
+    hotelCancellations,
+    value,
+    searchFunnelEvents,
+    confirmedFunnelEvents,
+    totalCheckoutIntents,
+    capturedCheckoutIntents,
+    totalSuppliers,
+    activeSuppliers,
+    totalHotelProperties,
+    publishedHotelProperties,
+    openCustomerSupportCases,
+    openBusinessSupportCases,
+    highRiskSignals,
+  ] = await Promise.all([
     prisma.analyticsEvent.groupBy({
       _count: { _all: true },
       by: ['productType', 'funnelStage'],
@@ -24,11 +43,52 @@ export default async function AdminAnalyticsPage() {
       where: { createdAt: { gte: since } },
     }),
     prisma.booking.count({ where: { createdAt: { gte: since } } }),
+    prisma.booking.count({ where: { createdAt: { gte: since }, status: 'cancelled' } }),
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
       where: { createdAt: { gte: since }, currency: 'INR', status: 'confirmed' },
     }),
+    prisma.analyticsEvent.count({
+      where: { eventName: 'SEARCH_PERFORMED', occurredAt: { gte: since } },
+    }),
+    prisma.analyticsEvent.count({
+      where: { eventName: 'BOOKING_CONFIRMED', occurredAt: { gte: since } },
+    }),
+    prisma.paymentCheckoutIntent.count({ where: { createdAt: { gte: since } } }),
+    prisma.paymentCheckoutIntent.count({
+      where: { createdAt: { gte: since }, status: 'CAPTURED' },
+    }),
+    prisma.supplyPartner.count(),
+    prisma.supplyPartner.count({ where: { status: 'ACTIVE' } }),
+    prisma.partnerProperty.count(),
+    prisma.partnerProperty.count({
+      where: {
+        approvalStatus: 'APPROVED',
+        publicationStatus: 'PUBLISHED',
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.customerSupportCase.count({ where: { status: 'OPEN' } }),
+    prisma.businessSupportCase.count({ where: { status: 'OPEN' } }),
+    prisma.riskSignal.count({
+      where: { severity: { in: ['HIGH', 'CRITICAL'] }, status: 'OPEN' },
+    }),
   ]);
+  const operationalSnapshot = buildOperationalAnalyticsSnapshot({
+    activeSuppliers,
+    capturedCheckoutIntents,
+    confirmedFunnelEvents,
+    highRiskSignals,
+    hotelBookings,
+    hotelCancellations,
+    openBusinessSupportCases,
+    openCustomerSupportCases,
+    publishedHotelProperties,
+    searchFunnelEvents,
+    totalCheckoutIntents,
+    totalHotelProperties,
+    totalSuppliers,
+  });
   return (
     <section className="account-page admin-workspace">
       <header className="admin-hero">
@@ -62,6 +122,7 @@ export default async function AdminAnalyticsPage() {
           <strong>{events.reduce((total, row) => total + row._count._all, 0)}</strong>
         </Card>
       </div>
+      <PlatformOperationalMetrics snapshot={operationalSnapshot} />
       <section>
         <h2>Product commerce</h2>
         <div className="supplier-admin__grid">
