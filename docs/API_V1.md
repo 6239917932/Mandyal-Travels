@@ -17,6 +17,11 @@ by the same agency, a supported product, governed travel dates, and integer INR 
 The created organization request retains its agency-customer attribution and policy snapshot.
 Reusing the key with different customer, organization, actor, or request details is rejected.
 
+`GET /api/v1/agent/reports/export` provides a filterable CSV of customer-attributed requests. It
+applies the authenticated travel agency's scope to both the request and customer relation, includes
+historical inactive customers, excludes private servicing notes, escapes spreadsheet formulas, and
+refuses exports above 5,000 rows instead of returning an incomplete financial report.
+
 Every API response includes `X-Request-ID`. Callers may supply an identifier matching `[A-Za-z0-9][A-Za-z0-9._:-]{7,127}`; invalid values are replaced. Operations that create money, bookings, tickets, settlements, deliveries, or supplier sync work must use a bounded `Idempotency-Key` or an equivalent persisted deduplication key.
 
 List endpoints default to 25 records and must cap requests at 100 unless a stricter product bound is documented. Cursor pagination is preferred for mutable operational data. Responses must expose an opaque next cursor rather than database offsets.
