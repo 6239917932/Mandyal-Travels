@@ -178,6 +178,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/operations">
               Exception queues
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/support">
+              Support operations
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out
@@ -302,12 +305,12 @@ export default async function AdminPage() {
           <Card>
             <span>Open company support</span>
             <strong>{openCompanySupportCount}</strong>
-            <a href="#company-support">Review queue</a>
+            <Link href="/admin/support?type=BUSINESS&status=OPEN">Review full queue</Link>
           </Card>
           <Card>
             <span>Open customer support</span>
             <strong>{openCustomerSupportCount}</strong>
-            <a href="#customer-support">Review queue</a>
+            <Link href="/admin/support?type=CUSTOMER&status=OPEN">Review full queue</Link>
           </Card>
           <Card>
             <span>Hotel amendments</span>

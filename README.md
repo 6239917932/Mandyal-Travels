@@ -15,6 +15,8 @@ and release checklist.
 - Partner-scoped hotel occupancy and calendar-capacity decision support with human-only actions
 - Platform-admin operational analytics for consent-aware conversion, booking cancellations,
   checkout capture completion, supplier and hotel readiness, support load, and high-severity risk
+- Protected support operations with complete customer and company queues, bounded search, status
+  filters, oldest-open ordering, pagination, and audited human resolution controls
 - Customer accounts and unified trip history
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases
