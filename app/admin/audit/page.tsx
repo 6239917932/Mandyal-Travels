@@ -124,6 +124,21 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const privacyWhere = enabled('PRIVACY')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { note: { contains: filters.query } },
+                { request: { is: { requestType: { contains: filters.query } } } },
+                { request: { is: { user: { is: { email: { contains: filters.query } } } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
   const platformWhere = enabled('PLATFORM')
     ? {
         ...(createdAt ? { createdAt } : {}),
@@ -163,6 +178,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     supportEvents,
     securityCount,
     securityEvents,
+    privacyCount,
+    privacyEvents,
     platformCount,
     platformEvents,
     contentCount,
@@ -198,6 +215,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: securityWhere,
+    }),
+    prisma.dataPrivacyRequestEvent.count({ where: privacyWhere }),
+    prisma.dataPrivacyRequestEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        request: { select: { requestType: true, user: { select: { email: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: privacyWhere,
     }),
     prisma.platformFeatureFlagEvent.count({ where: platformWhere }),
     prisma.platformFeatureFlagEvent.findMany({
@@ -259,6 +286,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `security-${event.id}`,
       subject: 'Account security event',
     })),
+    ...privacyEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: event.request.user.email,
+      createdAt: event.createdAt,
+      detail: event.note,
+      domain: 'PRIVACY' as const,
+      id: `privacy-${event.id}`,
+      subject: `${event.request.requestType} · ${event.fromStatus} to ${event.toStatus} · version ${event.version}`,
+    })),
     ...platformEvents.map((event) => ({
       action: event.enabled ? 'ENABLED' : 'DISABLED',
       actor: actorLabel(event.actor),
@@ -282,7 +319,13 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
   ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
 
   const totalCount =
-    partnerCount + organizationCount + supportCount + securityCount + platformCount + contentCount;
+    partnerCount +
+    organizationCount +
+    supportCount +
+    securityCount +
+    privacyCount +
+    platformCount +
+    contentCount;
   const availablePages = Math.max(1, Math.ceil(totalCount / ADMIN_AUDIT_PAGE_SIZE));
   const pageCount = Math.min(availablePages, ADMIN_AUDIT_MAX_PAGE);
   const page = Math.min(filters.page, pageCount);

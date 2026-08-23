@@ -113,6 +113,7 @@ export default async function AccountPage() {
     hotelTripValue,
     activeSessions,
     securityEvents,
+    privacyRequests,
   ] = await Promise.all([
     prisma.customerTrip.findMany({
       where: tripFilter,
@@ -151,6 +152,11 @@ export default async function AccountPage() {
     prisma.accountSecurityEvent.findMany({
       orderBy: { createdAt: 'desc' },
       take: RECENT_ITEM_LIMIT,
+      where: { userId: user.id },
+    }),
+    prisma.dataPrivacyRequest.findMany({
+      orderBy: { requestedAt: 'desc' },
+      take: 20,
       where: { userId: user.id },
     }),
   ]);
@@ -292,7 +298,16 @@ export default async function AccountPage() {
 
       <PasswordChangeForm />
       <MfaSecurityManager />
-      <PrivacyRequestManager />
+      <PrivacyRequestManager
+        initialRequests={privacyRequests.map((request) => ({
+          dueAt: request.dueAt.toISOString(),
+          id: request.id,
+          requestType: request.requestType,
+          requestedAt: request.requestedAt.toISOString(),
+          resolutionNote: request.resolutionNote,
+          status: request.status,
+        }))}
+      />
 
       <SessionManager
         sessions={activeSessions.map((session) => ({

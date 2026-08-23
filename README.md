@@ -27,6 +27,8 @@ and release checklist.
   append-only editorial history, and responsive public destination guides
 - Protected read-only administrator audit workbench unifying bounded platform, editorial,
   supplier, organization, support, and account-security history with exact timeline pagination
+- Governed privacy-request operations with customer status visibility, administrator due-date
+  queues, strict human review transitions, optimistic versions, and immutable history
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,

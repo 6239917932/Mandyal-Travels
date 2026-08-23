@@ -28,8 +28,22 @@ export async function POST(request: Request) {
     where: { userId: session.user.id, requestType, status: { in: ['OPEN', 'IN_REVIEW'] } },
   });
   if (existing) return NextResponse.json({ data: { request: existing, duplicate: true } });
-  const created = await prisma.dataPrivacyRequest.create({
-    data: { userId: session.user.id, requestType, dueAt: privacyRequestDueAt() },
+  const created = await prisma.$transaction(async (transaction) => {
+    const privacyRequest = await transaction.dataPrivacyRequest.create({
+      data: { userId: session.user.id, requestType, dueAt: privacyRequestDueAt() },
+    });
+    await transaction.dataPrivacyRequestEvent.create({
+      data: {
+        action: 'SUBMITTED',
+        actorUserId: session.user.id,
+        fromStatus: 'NONE',
+        note: 'Privacy request submitted by the account holder.',
+        requestId: privacyRequest.id,
+        toStatus: 'OPEN',
+        version: privacyRequest.version,
+      },
+    });
+    return privacyRequest;
   });
   return NextResponse.json({ data: { request: created, duplicate: false } }, { status: 201 });
 }

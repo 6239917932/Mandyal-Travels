@@ -8,6 +8,7 @@ export const ADMIN_AUDIT_DOMAINS = [
   'ORGANIZATION',
   'SUPPORT',
   'SECURITY',
+  'PRIVACY',
 ] as const;
 
 export type AdminAuditDomain = (typeof ADMIN_AUDIT_DOMAINS)[number];

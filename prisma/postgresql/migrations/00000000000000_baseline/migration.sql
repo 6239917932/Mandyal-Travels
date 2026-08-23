@@ -50,14 +50,31 @@ CREATE TABLE "UserConsentRecord" (
 CREATE TABLE "DataPrivacyRequest" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "reviewedByUserId" TEXT,
     "requestType" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "version" INTEGER NOT NULL DEFAULT 1,
     "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "dueAt" TIMESTAMP(3) NOT NULL,
     "completedAt" TIMESTAMP(3),
     "resolutionNote" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "DataPrivacyRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DataPrivacyRequestEvent" (
+    "id" TEXT NOT NULL,
+    "requestId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "note" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DataPrivacyRequestEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1411,6 +1428,15 @@ CREATE INDEX "DataPrivacyRequest_userId_requestType_requestedAt_idx" ON "DataPri
 CREATE INDEX "DataPrivacyRequest_status_dueAt_idx" ON "DataPrivacyRequest"("status", "dueAt");
 
 -- CreateIndex
+CREATE INDEX "DataPrivacyRequest_reviewedByUserId_idx" ON "DataPrivacyRequest"("reviewedByUserId");
+
+-- CreateIndex
+CREATE INDEX "DataPrivacyRequestEvent_requestId_createdAt_idx" ON "DataPrivacyRequestEvent"("requestId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "DataPrivacyRequestEvent_actorUserId_createdAt_idx" ON "DataPrivacyRequestEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "UserMfaCredential_userId_key" ON "UserMfaCredential"("userId");
 
 -- CreateIndex
@@ -2000,6 +2026,15 @@ ALTER TABLE "UserConsentRecord" ADD CONSTRAINT "UserConsentRecord_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "DataPrivacyRequest" ADD CONSTRAINT "DataPrivacyRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DataPrivacyRequest" ADD CONSTRAINT "DataPrivacyRequest_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DataPrivacyRequestEvent" ADD CONSTRAINT "DataPrivacyRequestEvent_requestId_fkey" FOREIGN KEY ("requestId") REFERENCES "DataPrivacyRequest"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DataPrivacyRequestEvent" ADD CONSTRAINT "DataPrivacyRequestEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserMfaCredential" ADD CONSTRAINT "UserMfaCredential_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

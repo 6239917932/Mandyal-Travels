@@ -2,7 +2,7 @@
 
 The protected `/admin/audit` workbench gives platform administrators one read-only timeline for
 material platform configuration, destination content, supplier, organization, customer-support,
-and account-security history. Public registration cannot grant access; the page repeats the
+privacy-review, and account-security history. Public registration cannot grant access; the page repeats the
 platform-administrator authorization check before reading any records.
 
 Filters use a closed domain catalogue, a 100-character search limit, validated date bounds, and
