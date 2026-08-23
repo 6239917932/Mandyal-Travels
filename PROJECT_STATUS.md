@@ -80,6 +80,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 ### Business travel
 
 - Separate organization workspace and personal customer account
+- B2B travel-agency workspace with scoped customer profiles, non-destructive activation controls,
+  auditable servicing changes, and customer-attributed Hotel, Flight, Bus, and Car requests that
+  retain organization policy snapshots and idempotency protection
 - Organization contact and billing profile, traveller invitations, membership removal, and
   administrator/traveller roles
 - Versioned travel policy with approval requirement, default flight cabin, and maximum trip amount
@@ -181,7 +184,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 73-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 74-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -308,9 +311,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 114 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 134 generated route entries,
-clean-database verification of all 66 SQLite migrations with foreign-key integrity enabled, a
-synchronized 73-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 118 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 136 generated route entries,
+clean-database verification of all 67 SQLite migrations with foreign-key integrity enabled, a
+synchronized 74-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.

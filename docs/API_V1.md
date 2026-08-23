@@ -4,6 +4,19 @@
 
 All supported endpoints are rooted at `/api/v1`. JSON successes use a `data` member where practical. Failures use an `error` object with a stable machine-readable `code` and a user-safe `message`. Validation details must never contain credentials, provider payloads, or stack traces.
 
+## B2B travel-agency customers
+
+`GET` and `POST /api/v1/agent/customers` are restricted to an authenticated administrator of a
+`TRAVEL_AGENCY` organization. `PATCH /api/v1/agent/customers/{customerId}` applies the same
+organization scope, allows only `ACTIVE` or `INACTIVE` lifecycle states, preserves historical
+records, and writes an organization audit entry. Duplicate customer email addresses are rejected
+within the agency.
+
+`POST /api/v1/agent/travel-requests` requires a UUID v4 `Idempotency-Key`, an active customer owned
+by the same agency, a supported product, governed travel dates, and integer INR estimated value.
+The created organization request retains its agency-customer attribution and policy snapshot.
+Reusing the key with different customer, organization, actor, or request details is rejected.
+
 Every API response includes `X-Request-ID`. Callers may supply an identifier matching `[A-Za-z0-9][A-Za-z0-9._:-]{7,127}`; invalid values are replaced. Operations that create money, bookings, tickets, settlements, deliveries, or supplier sync work must use a bounded `Idempotency-Key` or an equivalent persisted deduplication key.
 
 List endpoints default to 25 records and must cap requests at 100 unless a stricter product bound is documented. Cursor pagination is preferred for mutable operational data. Responses must expose an opaque next cursor rather than database offsets.

@@ -15,6 +15,8 @@ and release checklist.
 - Customer accounts and unified trip history
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases
+- B2B agency customer servicing with auditable profile lifecycle, customer-attributed travel
+  requests, policy evaluation, and idempotent request creation
 - Prisma-based data layer prepared for development
 
 ## Run the portal on Windows

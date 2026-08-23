@@ -461,6 +461,15 @@ CREATE TABLE "AgencyCustomer" (
 );
 
 -- CreateTable
+CREATE TABLE "AgencyCustomerTravelRequest" (
+    "businessTravelRequestId" TEXT NOT NULL,
+    "agencyCustomerId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AgencyCustomerTravelRequest_pkey" PRIMARY KEY ("businessTravelRequestId")
+);
+
+-- CreateTable
 CREATE TABLE "BusinessSupportCase" (
     "id" TEXT NOT NULL,
     "caseNumber" TEXT NOT NULL,
@@ -1475,6 +1484,9 @@ CREATE INDEX "AgencyCustomer_organizationId_status_createdAt_idx" ON "AgencyCust
 CREATE UNIQUE INDEX "AgencyCustomer_organizationId_email_key" ON "AgencyCustomer"("organizationId", "email");
 
 -- CreateIndex
+CREATE INDEX "AgencyCustomerTravelRequest_agencyCustomerId_createdAt_idx" ON "AgencyCustomerTravelRequest"("agencyCustomerId", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "BusinessSupportCase_caseNumber_key" ON "BusinessSupportCase"("caseNumber");
 
 -- CreateIndex
@@ -1980,6 +1992,12 @@ ALTER TABLE "AccountSecurityEvent" ADD CONSTRAINT "AccountSecurityEvent_userId_f
 
 -- AddForeignKey
 ALTER TABLE "AgencyCustomer" ADD CONSTRAINT "AgencyCustomer_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgencyCustomerTravelRequest" ADD CONSTRAINT "AgencyCustomerTravelRequest_businessTravelRequestId_fkey" FOREIGN KEY ("businessTravelRequestId") REFERENCES "BusinessTravelRequest"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgencyCustomerTravelRequest" ADD CONSTRAINT "AgencyCustomerTravelRequest_agencyCustomerId_fkey" FOREIGN KEY ("agencyCustomerId") REFERENCES "AgencyCustomer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "BusinessSupportCase" ADD CONSTRAINT "BusinessSupportCase_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
