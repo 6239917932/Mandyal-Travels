@@ -88,6 +88,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Account security activity history for sign-ins, profile/password/preference changes, and session revocation
 - Protected read-only administrator security posture with aggregate MFA/session health, 24-hour
   security-event volume, and identifier-free throttling evidence under bounded filters and pagination
+- Human-governed administrator risk workbench with bounded status, severity, time-window and search
+  filters, full pagination, escalation and aging posture, one-way subject correlation, redacted
+  narratives, reviewed history, and no automated adverse action
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 
@@ -363,8 +366,8 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 169 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 215 generated route entries,
+The current travel-domain milestone passes 173 regression tests, formatting verification, Prisma Client generation,
+strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
 clean-database verification of all 70 SQLite migrations with foreign-key integrity enabled, a
 synchronized 79-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
