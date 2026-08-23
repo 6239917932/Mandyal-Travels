@@ -6,10 +6,11 @@ import { Card } from '@/components/ui/Card';
 import { RoomSelectionButton } from '@/components/hotel/RoomSelectionButton';
 import { HotelReviewForm } from '@/components/hotel/HotelReviewForm';
 import { HotelLocationMap } from '@/components/hotel/HotelLocationMap';
+import { getPlatformAdmin } from '@/lib/adminAuth';
+import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 import { hotelService } from '@/services/hotelService';
 import { hotelReviewService } from '@/services/hotelReviewService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
-import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 
 interface HotelDetailsPageProps {
   params: Promise<{
@@ -35,7 +36,10 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
     notFound();
   }
 
-  const reviewData = await hotelReviewService.getHotelReviews(slug);
+  const [platformAdmin, reviewData] = await Promise.all([
+    getPlatformAdmin(),
+    hotelReviewService.getHotelReviews(slug),
+  ]);
   const reviewSummary =
     reviewData.summary.reviewCount > 0 ? reviewData.summary : hotel.reviewSummary;
 
@@ -105,10 +109,12 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                   <span>Check-out</span>
                   <strong>{hotel.checkOutTime}</strong>
                 </div>
-                <div>
-                  <span>Inventory</span>
-                  <strong>{inventorySourceLabel(hotel.inventory.source)}</strong>
-                </div>
+                {platformAdmin ? (
+                  <div>
+                    <span>Admin inventory source</span>
+                    <strong>{inventorySourceLabel(hotel.inventory.source)}</strong>
+                  </div>
+                ) : null}
               </div>
             </Card>
 

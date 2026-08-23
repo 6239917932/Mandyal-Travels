@@ -3,7 +3,6 @@ import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
 import type { HotelSearchCriteria, HotelSearchResult } from '@/types/hotel';
-import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 
 interface HotelResultCardProps {
   criteria: HotelSearchCriteria;
@@ -34,9 +33,6 @@ export function HotelResultCard({ criteria, eagerImage = false, result }: HotelR
           src={primaryImage.url}
           width={640}
         />
-        <span className="hotel-result-card__source">
-          {inventorySourceLabel(hotel.inventory.source)}
-        </span>
       </div>
 
       <div className="hotel-result-card__content">

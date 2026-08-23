@@ -5,13 +5,15 @@ import { type FormEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 import type { ApiErrorResponse } from '@/types/commerce';
+import type { HotelInventorySource } from '@/types/hotel';
 
 export function AdminPartnerPropertyAssignment({
   hotels,
   partnerId,
 }: {
-  hotels: Array<{ name: string; slug: string }>;
+  hotels: Array<{ inventorySource: HotelInventorySource; name: string; slug: string }>;
   partnerId: string;
 }) {
   const router = useRouter();
@@ -41,7 +43,7 @@ export function AdminPartnerPropertyAssignment({
           <option value="">Choose hotel</option>
           {hotels.map((hotel) => (
             <option key={hotel.slug} value={hotel.slug}>
-              {hotel.name}
+              {hotel.name} — {inventorySourceLabel(hotel.inventorySource)}
             </option>
           ))}
         </select>
