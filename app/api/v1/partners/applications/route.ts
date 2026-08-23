@@ -5,12 +5,16 @@ import {
   partnerOperationsService,
 } from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 function failure(code: string, message: string, status: number) {
   return Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 }
 
 export async function POST(request: Request) {
+  if (!(await isPlatformFeatureEnabled('PARTNER_APPLICATIONS'))) {
+    return failure('FEATURE_PAUSED', 'New partner applications are temporarily paused.', 503);
+  }
   const user = await getCurrentUser();
   if (!user) return failure('AUTH_REQUIRED', 'Sign in before requesting supplier access.', 401);
   const body = await readJsonObject(request);

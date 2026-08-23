@@ -48,6 +48,8 @@ model User {
   mfaRecoveryCodes            UserMfaRecoveryCode[]
   consentRecords              UserConsentRecord[]
   privacyRequests             DataPrivacyRequest[]
+  updatedPlatformFeatureFlags PlatformFeatureFlag[]       @relation("PlatformFeatureFlagUpdater")
+  platformFeatureFlagEvents   PlatformFeatureFlagEvent[]  @relation("PlatformFeatureFlagEventActor")
 }
 
 model PasswordResetToken {
@@ -1518,4 +1520,33 @@ model RoomInventoryOverride {
 
   @@unique([roomTypeId, stayDate])
   @@index([roomTypeId, stayDate])
+}
+
+model PlatformFeatureFlag {
+  key             String                     @id
+  enabled         Boolean
+  version         Int                        @default(1)
+  changeReason    String
+  updatedByUserId String
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  updatedBy       User                       @relation("PlatformFeatureFlagUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  events          PlatformFeatureFlagEvent[]
+
+  @@index([enabled, updatedAt])
+}
+
+model PlatformFeatureFlagEvent {
+  id          String              @id @default(cuid())
+  flagKey     String
+  enabled     Boolean
+  version     Int
+  reason      String
+  actorUserId String
+  createdAt   DateTime            @default(now())
+  flag        PlatformFeatureFlag @relation(fields: [flagKey], references: [key], onDelete: Cascade)
+  actor       User                @relation("PlatformFeatureFlagEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([flagKey, createdAt])
+  @@index([createdAt])
 }

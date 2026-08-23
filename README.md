@@ -17,6 +17,8 @@ and release checklist.
   checkout capture completion, supplier and hotel readiness, support load, and high-severity risk
 - Protected support operations with complete customer and company queues, bounded search, status
   filters, oldest-open ordering, pagination, and audited human resolution controls
+- Administrator-only platform configuration with reason-required, version-safe, audited release
+  controls for guided trip planning and new partner applications
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,

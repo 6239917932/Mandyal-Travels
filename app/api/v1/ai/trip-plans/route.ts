@@ -1,8 +1,15 @@
 import { readJsonObject } from '@/lib/api/request';
 import { aiTripPlannerService } from '@/services/aiTripPlannerService';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import type { TripPlannerInput } from '@/types/ai';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!(await isPlatformFeatureEnabled('AI_TRIP_PLANNER'))) {
+    return Response.json(
+      { error: { code: 'FEATURE_PAUSED', message: 'Guided trip planning is temporarily paused.' } },
+      { status: 503 },
+    );
+  }
   const body = await readJsonObject(request, 8 * 1024);
   if (!body)
     return Response.json(

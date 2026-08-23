@@ -3,13 +3,23 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { PartnerApplicationForm } from '@/components/partner/PartnerApplicationForm';
+import { FeatureUnavailable } from '@/components/common/FeatureUnavailable';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 export const metadata: Metadata = { title: 'Partner onboarding' };
 
 export default async function PartnerApplicationPage() {
+  if (!(await isPlatformFeatureEnabled('PARTNER_APPLICATIONS'))) {
+    return (
+      <FeatureUnavailable
+        description="New supplier applications are paused while the onboarding queue is reviewed."
+        title="Partner applications are paused"
+      />
+    );
+  }
   const user = await getCurrentUser();
   if (!user) redirect('/login?returnTo=/partners/apply');
   const application = await prisma.partnerApplication.findFirst({

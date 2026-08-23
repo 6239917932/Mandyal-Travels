@@ -35,6 +35,16 @@ Breaking changes require a new major API path. Additive fields may be introduced
 
 The live contract summary is available from `GET /api/v1/meta`. Provider-specific credentials, schemas, rate limits, certification evidence, and signed commercial obligations remain in the relevant integration runbook and are not committed to source control.
 
+## Platform release controls
+
+`PATCH /api/v1/admin/configuration/features/{key}` is restricted to platform administrators and a
+closed catalogue of supported public features. A change requires the version last reviewed by the
+administrator and a bounded reason. Successful updates increment the version and write an
+append-only event. Stale versions fail with `409` so one administrator cannot silently overwrite
+another administrator's decision. The guided trip-planner and new-partner-application controls are
+enforced at both their page and API entry points; they never modify existing bookings, partner
+memberships, payments, refunds, or provider configuration.
+
 ## Customer booking support
 
 `POST /api/v1/account/support` requires an authenticated customer, bounded case details, and a
