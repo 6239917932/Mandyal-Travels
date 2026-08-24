@@ -44,8 +44,8 @@ test('location markers omit invalid and placeholder coordinates', () => {
   ]);
 
   assert.deepEqual(
-    markers.map(({ hotelId }) => hotelId),
-    ['valid'],
+    markers.map(({ hotelKey }) => hotelKey),
+    ['hotel-valid'],
   );
   assert.equal(markers[0]?.xPercent, 50);
   assert.equal(markers[0]?.yPercent, 50);
@@ -59,8 +59,8 @@ test('location markers preserve result order and remain inside the padded plot',
   ]);
 
   assert.deepEqual(
-    markers.map(({ hotelId }) => hotelId),
-    ['south-west', 'middle', 'north-east'],
+    markers.map(({ hotelKey }) => hotelKey),
+    ['hotel-south-west', 'hotel-middle', 'hotel-north-east'],
   );
   assert.deepEqual(
     markers.map(({ xPercent, yPercent }) => [xPercent, yPercent]),
@@ -80,13 +80,18 @@ test('hotel results use the accessible local explorer without external map or so
     readFile(new URL('../components/hotel/HotelResultCard.tsx', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(page, /<HotelResultsExplorer criteria=\{criteria\} results=\{resultPage\.results\}/);
+  assert.match(
+    page,
+    /<HotelResultsExplorer markers=\{createHotelResultsLocationMarkers\(resultPage\.results\)\}>/,
+  );
+  assert.match(page, /<HotelResultCard/);
   assert.match(explorer, /aria-label="Available hotel results"/);
   assert.match(plot, /Relative positions from verified property coordinates/);
   assert.match(plot, /aria-pressed=/);
   assert.match(plot, /Hotels shown in location overview/);
   assert.match(card, /preload=\{eagerImage\}/);
   assert.match(card, /loading=\{eagerImage \? undefined : 'lazy'\}/);
+  assert.doesNotMatch(explorer, /HotelSearchResult|inventory|supplier|externalPropertyId/);
   assert.doesNotMatch(
     `${explorer}\n${plot}`,
     /openstreetmap|google|inventory\.source|supplierName/i,

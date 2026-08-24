@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 
+import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelResultsExplorer } from '@/components/hotel/HotelResultsExplorer';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
 import { hotelService } from '@/services/hotelService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
+import { createHotelResultsLocationMarkers } from '@/utils/hotelResultsLocation';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -76,7 +78,18 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
           </div>
 
           {resultPage.results.length > 0 ? (
-            <HotelResultsExplorer criteria={criteria} results={resultPage.results} />
+            <HotelResultsExplorer markers={createHotelResultsLocationMarkers(resultPage.results)}>
+              {resultPage.results.map((result, index) => (
+                <div
+                  className="hotel-results-explorer__card"
+                  data-hotel-key={result.hotel.slug}
+                  id={`hotel-result-${result.hotel.slug}`}
+                  key={result.hotel.id}
+                >
+                  <HotelResultCard criteria={criteria} eagerImage={index === 0} result={result} />
+                </div>
+              ))}
+            </HotelResultsExplorer>
           ) : (
             <p className="hotel-page__empty-state">
               No hotels match this search yet. Try Shimla or Jaipur with the current fixture

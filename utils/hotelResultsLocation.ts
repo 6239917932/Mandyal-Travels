@@ -1,7 +1,7 @@
 import type { HotelSearchResult } from '@/types/hotel';
 
 export interface HotelResultsLocationMarker {
-  hotelId: string;
+  hotelKey: string;
   label: string;
   latitude: number;
   longitude: number;
@@ -47,7 +47,7 @@ export function createHotelResultsLocationMarkers(
   const maximumLongitude = Math.max(...longitudes);
 
   return usableResults.map(({ hotel }) => ({
-    hotelId: hotel.id,
+    hotelKey: hotel.slug,
     label: hotel.name,
     latitude: hotel.location.latitude,
     longitude: hotel.location.longitude,

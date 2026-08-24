@@ -6,8 +6,8 @@ import type { HotelResultsLocationMarker } from '@/utils/hotelResultsLocation';
 
 interface HotelResultsLocationPlotProps {
   markers: HotelResultsLocationMarker[];
-  onSelect: (hotelId: string) => void;
-  selectedHotelId: string | null;
+  onSelect: (hotelKey: string) => void;
+  selectedHotelKey: string | null;
 }
 
 function markerStyle(marker: HotelResultsLocationMarker): CSSProperties {
@@ -20,7 +20,7 @@ function markerStyle(marker: HotelResultsLocationMarker): CSSProperties {
 export function HotelResultsLocationPlot({
   markers,
   onSelect,
-  selectedHotelId,
+  selectedHotelKey,
 }: HotelResultsLocationPlotProps) {
   return (
     <aside className="hotel-results-location" aria-labelledby="hotel-results-location-heading">
@@ -43,10 +43,10 @@ export function HotelResultsLocationPlot({
         {markers.map((marker, index) => (
           <button
             aria-label={`Show ${marker.label} in the results list`}
-            aria-pressed={selectedHotelId === marker.hotelId}
+            aria-pressed={selectedHotelKey === marker.hotelKey}
             className="hotel-results-location__marker"
-            key={marker.hotelId}
-            onClick={() => onSelect(marker.hotelId)}
+            key={marker.hotelKey}
+            onClick={() => onSelect(marker.hotelKey)}
             style={markerStyle(marker)}
             type="button"
           >
@@ -57,10 +57,10 @@ export function HotelResultsLocationPlot({
 
       <ol className="hotel-results-location__list" aria-label="Hotels shown in location overview">
         {markers.map((marker, index) => (
-          <li key={marker.hotelId}>
+          <li key={marker.hotelKey}>
             <button
-              aria-current={selectedHotelId === marker.hotelId ? 'true' : undefined}
-              onClick={() => onSelect(marker.hotelId)}
+              aria-current={selectedHotelKey === marker.hotelKey ? 'true' : undefined}
+              onClick={() => onSelect(marker.hotelKey)}
               type="button"
             >
               <span aria-hidden="true">{index + 1}.</span> {marker.label}

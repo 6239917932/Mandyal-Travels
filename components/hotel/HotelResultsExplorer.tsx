@@ -1,31 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FocusEvent, type MouseEvent, type ReactNode } from 'react';
 
-import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelResultsLocationPlot } from '@/components/hotel/HotelResultsLocationPlot';
-import type { HotelSearchCriteria, HotelSearchResult } from '@/types/hotel';
-import { createHotelResultsLocationMarkers } from '@/utils/hotelResultsLocation';
+import type { HotelResultsLocationMarker } from '@/utils/hotelResultsLocation';
 
 interface HotelResultsExplorerProps {
-  criteria: HotelSearchCriteria;
-  results: HotelSearchResult[];
+  children: ReactNode;
+  markers: HotelResultsLocationMarker[];
 }
 
-export function HotelResultsExplorer({ criteria, results }: HotelResultsExplorerProps) {
-  const markers = createHotelResultsLocationMarkers(results);
-  const [selectedHotelId, setSelectedHotelId] = useState<string | null>(
-    markers[0]?.hotelId ?? null,
+function readHotelKey(target: EventTarget | null): string | null {
+  return target instanceof Element
+    ? (target.closest<HTMLElement>('[data-hotel-key]')?.dataset.hotelKey ?? null)
+    : null;
+}
+
+export function HotelResultsExplorer({ children, markers }: HotelResultsExplorerProps) {
+  const [selectedHotelKey, setSelectedHotelKey] = useState<string | null>(
+    markers[0]?.hotelKey ?? null,
   );
 
-  function selectHotel(hotelId: string) {
-    setSelectedHotelId(hotelId);
+  function selectHotel(hotelKey: string) {
+    setSelectedHotelKey(hotelKey);
     window.requestAnimationFrame(() => {
-      document.getElementById(`hotel-result-${hotelId}`)?.scrollIntoView({
+      document.getElementById(`hotel-result-${hotelKey}`)?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
     });
+  }
+
+  function trackFocusedCard(event: FocusEvent<HTMLDivElement>) {
+    const hotelKey = readHotelKey(event.target);
+    if (hotelKey) setSelectedHotelKey(hotelKey);
+  }
+
+  function trackHoveredCard(event: MouseEvent<HTMLDivElement>) {
+    const hotelKey = readHotelKey(event.target);
+    if (hotelKey) setSelectedHotelKey(hotelKey);
   }
 
   return (
@@ -34,23 +47,17 @@ export function HotelResultsExplorer({ criteria, results }: HotelResultsExplorer
         <HotelResultsLocationPlot
           markers={markers}
           onSelect={selectHotel}
-          selectedHotelId={selectedHotelId}
+          selectedHotelKey={selectedHotelKey}
         />
       ) : null}
 
-      <div className="hotel-result-list" aria-label="Available hotel results">
-        {results.map((result, index) => (
-          <div
-            className="hotel-results-explorer__card"
-            data-selected={selectedHotelId === result.hotel.id ? 'true' : 'false'}
-            id={`hotel-result-${result.hotel.id}`}
-            key={result.hotel.id}
-            onFocus={() => setSelectedHotelId(result.hotel.id)}
-            onMouseEnter={() => setSelectedHotelId(result.hotel.id)}
-          >
-            <HotelResultCard criteria={criteria} eagerImage={index === 0} result={result} />
-          </div>
-        ))}
+      <div
+        className="hotel-result-list"
+        aria-label="Available hotel results"
+        onFocusCapture={trackFocusedCard}
+        onMouseOver={trackHoveredCard}
+      >
+        {children}
       </div>
     </div>
   );

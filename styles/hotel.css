@@ -121,7 +121,8 @@
     outline-color 160ms ease;
 }
 
-.hotel-results-explorer__card[data-selected='true'] {
+.hotel-results-explorer__card:hover,
+.hotel-results-explorer__card:focus-within {
   outline: 3px solid color-mix(in srgb, var(--color-brand-500) 42%, transparent);
   outline-offset: 3px;
   box-shadow: var(--shadow-md);
