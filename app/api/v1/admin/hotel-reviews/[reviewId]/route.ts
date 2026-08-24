@@ -1,6 +1,7 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
+import { normalizeReviewDecision } from '@/services/adminReviewModerationService';
 
 type Context = { params: Promise<{ reviewId: string }> };
 
@@ -11,18 +12,16 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
       { error: { code: 'ADMIN_REQUIRED', message: 'Platform administrator access is required.' } },
       { status: 403 },
     );
-  const body = await readJsonObject(request);
-  const action = body?.action;
-  const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 500) : '';
-  if (action !== 'PUBLISH' && action !== 'REJECT')
-    return Response.json(
-      { error: { code: 'INVALID_DECISION', message: 'Choose publish or reject.' } },
-      { status: 400 },
-    );
-  if (action === 'REJECT' && note.length < 3)
+  const body = await readJsonObject(request, 2_048);
+  const decision = normalizeReviewDecision({ action: body?.action, note: body?.note });
+  if (!decision)
     return Response.json(
       {
-        error: { code: 'NOTE_REQUIRED', message: 'Enter a short reason when rejecting a review.' },
+        error: {
+          code: 'INVALID_DECISION',
+          message:
+            'Choose publish or reject. Rejections require a reason of at least 10 characters.',
+        },
       },
       { status: 400 },
     );
@@ -31,8 +30,8 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
     data: {
       moderatedAt: new Date(),
       moderatedByUserId: administrator.id,
-      moderationNote: note || null,
-      status: action === 'PUBLISH' ? 'PUBLISHED' : 'REJECTED',
+      moderationNote: decision.note || null,
+      status: decision.action === 'PUBLISH' ? 'PUBLISHED' : 'REJECTED',
     },
     where: { id: reviewId, status: 'PENDING' },
   });
@@ -47,6 +46,6 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
       { status: 409 },
     );
   return Response.json({
-    data: { id: reviewId, status: action === 'PUBLISH' ? 'PUBLISHED' : 'REJECTED' },
+    data: { id: reviewId, status: decision.action === 'PUBLISH' ? 'PUBLISHED' : 'REJECTED' },
   });
 }

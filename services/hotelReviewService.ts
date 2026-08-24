@@ -71,14 +71,10 @@ export const hotelReviewService = {
   async getHotelReviews(
     hotelSlug: string,
   ): Promise<{ reviews: HotelReview[]; summary: HotelReviewSummary }> {
-    const reviews = await hotelReviewRepository.findPublishedByHotel(hotelSlug);
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return {
-      reviews,
-      summary: {
-        averageRating: reviews.length === 0 ? 0 : total / reviews.length,
-        reviewCount: reviews.length,
-      },
-    };
+    const [reviews, summary] = await Promise.all([
+      hotelReviewRepository.findPublishedByHotel(hotelSlug),
+      hotelReviewRepository.summarizePublishedByHotel(hotelSlug),
+    ]);
+    return { reviews, summary };
   },
 };

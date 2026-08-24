@@ -47,6 +47,9 @@ and release checklist.
 - Governed promotion operations with authoritative stored campaign states, bounded search and
   pagination, version-safe reason-required activation, append-only history, and fail-closed
   usage-capped campaigns until redemption tracking exists
+- Privacy-safe hotel review moderation with complete status history, bounded filters and
+  pagination, exact queue counts, reasoned rejection controls, and all-published-review customer
+  rating summaries
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,

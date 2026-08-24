@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export function AdminHotelReviewAction({ reviewId }: { reviewId: string }) {
+  const router = useRouter();
   const [note, setNote] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -21,7 +23,7 @@ export function AdminHotelReviewAction({ reviewId }: { reviewId: string }) {
         setMessage(result.error?.message ?? 'The review decision could not be saved.');
         return;
       }
-      window.location.reload();
+      router.refresh();
     } catch {
       setMessage('The moderation service is unavailable.');
     } finally {
@@ -35,7 +37,7 @@ export function AdminHotelReviewAction({ reviewId }: { reviewId: string }) {
         aria-label="Moderation note"
         maxLength={500}
         onChange={(event) => setNote(event.target.value)}
-        placeholder="Moderation note (required when rejecting)"
+        placeholder="Moderation note (10+ characters when rejecting)"
         value={note}
       />
       <div>
