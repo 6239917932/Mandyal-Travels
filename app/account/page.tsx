@@ -293,8 +293,9 @@ export default async function AccountPage() {
           <p className="hotel-page__eyebrow">Data and privacy</p>
           <h2 id="account-data-heading">Download my data</h2>
           <p>
-            Export your profile, preferences, bookings, company requests, and customer support
-            history as JSON.
+            Export your profile, preferences, bookings, company requests, customer support, security
+            activity, customer-friendly notification history, and benefits-readiness records as
+            JSON.
           </p>
         </div>
         <div className="account-trips__empty ui-card ui-card--padded">
