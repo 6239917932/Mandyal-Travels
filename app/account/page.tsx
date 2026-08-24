@@ -12,6 +12,7 @@ import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelR
 import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { customerTravelHistoryDocument } from '@/services/customerTravelHistoryRules';
 
 export const metadata: Metadata = { title: 'My account' };
 
@@ -63,46 +64,6 @@ function formatCurrency(amount: number, currency: string) {
 
 function isBusinessProduct(value: string): value is 'FLIGHT' | 'HOTEL' | 'BUS' | 'CAR' {
   return ['FLIGHT', 'HOTEL', 'BUS', 'CAR'].includes(value);
-}
-
-function getTripDocumentAction(trip: {
-  productType: string;
-  confirmationCode: string;
-  detailsJson: string | null;
-}) {
-  if (trip.productType === 'HOTEL') {
-    return {
-      href: `/manage-booking/${trip.confirmationCode}/voucher`,
-      label: 'View voucher',
-    };
-  }
-
-  if (!trip.detailsJson) return null;
-
-  try {
-    const details = JSON.parse(trip.detailsJson) as { documentQuery?: string };
-    if (!details.documentQuery) return null;
-
-    const routes: Record<string, { path: string; label: string }> = {
-      FLIGHT: {
-        path: `/flights/booking/${trip.confirmationCode}/itinerary`,
-        label: 'View itinerary',
-      },
-      BUS: {
-        path: `/buses/booking/${trip.confirmationCode}/ticket`,
-        label: 'View ticket',
-      },
-      CAR: {
-        path: `/cars/booking/${trip.confirmationCode}/voucher`,
-        label: 'View voucher',
-      },
-    };
-    const route = routes[trip.productType];
-
-    return route ? { href: `${route.path}?${details.documentQuery}`, label: route.label } : null;
-  } catch {
-    return null;
-  }
 }
 
 export default async function AccountPage() {
@@ -539,7 +500,11 @@ export default async function AccountPage() {
             ) : null}
             <div className="account-trips__list">
               {trips.map((trip) => {
-                const documentAction = getTripDocumentAction(trip);
+                const documentAction = customerTravelHistoryDocument(
+                  trip.productType,
+                  trip.confirmationCode,
+                  trip.detailsJson,
+                );
 
                 return (
                   <article
