@@ -7,6 +7,7 @@ import {
   CUSTOMER_TRAVEL_HISTORY_DETAILS_LIMIT,
   CUSTOMER_TRAVEL_HISTORY_PAGE_SIZE,
   customerTravelHistoryDate,
+  customerTravelHistoryDocument,
   customerTravelHistoryHotelReference,
   customerTravelHistoryMoney,
   customerTravelHistoryPage,
@@ -142,6 +143,36 @@ test('missing, ambiguous, malformed, or oversized document evidence exposes no l
     null,
   );
   assert.equal(customerTravelHistoryTransportDocument('FLIGHT', 'MF0123456789AB', '{broken'), null);
+});
+
+test('account quick-history actions consume the same bounded document projection', () => {
+  assert.deepEqual(customerTravelHistoryDocument('HOTEL', 'MTA1B2C3D4E5F6', null), {
+    href: '/manage-booking/MTA1B2C3D4E5F6/voucher',
+    label: 'View voucher',
+  });
+  assert.equal(customerTravelHistoryDocument('HOTEL', '../private', null), null);
+  assert.equal(
+    customerTravelHistoryDocument(
+      'FLIGHT',
+      'MF0123456789AB',
+      JSON.stringify({
+        documentQuery:
+          'origin=DEL&destination=BOM&departureDate=2026-09-15&adults=1&cabinClass=economy&tripType=one-way&offerId=offer-1&providerRef=private',
+      }),
+    )?.href.includes('providerRef'),
+    false,
+  );
+
+  const accountPage = readFileSync('app/account/page.tsx', 'utf8');
+  assert.match(accountPage, /customerTravelHistoryDocument\(/);
+  assert.doesNotMatch(accountPage, /getTripDocumentAction|JSON\.parse|details\.documentQuery/);
+  assert.doesNotMatch(accountPage, /\$\{details\.documentQuery\}/);
+  assert.match(accountPage, /AccountProfileForm/);
+  assert.match(accountPage, /PrivacyRequestManager/);
+  assert.match(accountPage, /SessionManager/);
+  assert.match(accountPage, /href: '\/account\/notifications'/);
+  assert.match(accountPage, /href: '\/account\/benefits'/);
+  assert.match(accountPage, /benefits-readiness records/);
 });
 
 test('directory ownership, projections, and page remain privacy scoped and read-only', () => {

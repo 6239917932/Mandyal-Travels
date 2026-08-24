@@ -287,3 +287,29 @@ export function customerTravelHistoryTransportDocument(
     label: policy.label,
   };
 }
+
+export function customerTravelHistoryDocument(
+  product: string,
+  bookingReference: string,
+  serializedDetails: string | null,
+): CustomerTravelHistoryDocument | null {
+  const normalizedProduct = product.trim().toUpperCase();
+  if (normalizedProduct === 'HOTEL') {
+    const reference = customerTravelHistoryHotelReference(bookingReference);
+    return reference
+      ? {
+          href: `/manage-booking/${encodeURIComponent(reference)}/voucher`,
+          label: 'View voucher',
+        }
+      : null;
+  }
+  if (!serializedDetails) return null;
+  const reference = customerTravelHistoryTransportReference(bookingReference, normalizedProduct);
+  return reference
+    ? customerTravelHistoryTransportDocument(
+        reference.product,
+        reference.bookingReference,
+        serializedDetails,
+      )
+    : null;
+}

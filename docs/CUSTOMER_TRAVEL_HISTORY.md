@@ -29,6 +29,9 @@ query is parsed and rebuilt from a product-specific allowlist. Required values, 
 enums, and duplicate keys fail closed. Unknown keys are discarded, so private contact, provider,
 payment, passenger, and driver fields cannot be copied into a URL.
 
+Both the full travel-history directory and the account dashboard's recent-trip cards consume this
+same document projection. Neither page parses or concatenates the stored query itself.
+
 Hotel voucher links are rebuilt from the validated booking reference. Document destinations always
 reauthorize the signed-in customer before displaying a document.
 

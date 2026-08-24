@@ -4,13 +4,13 @@ import {
   CUSTOMER_TRAVEL_HISTORY_ABSOLUTE_LIMIT,
   CUSTOMER_TRAVEL_HISTORY_PAGE_SIZE,
   customerTravelHistoryDate,
+  customerTravelHistoryDocument,
   customerTravelHistoryHotelName,
   customerTravelHistoryHotelReference,
   customerTravelHistoryMoney,
   customerTravelHistoryPagination,
   customerTravelHistoryStatus,
   customerTravelHistoryText,
-  customerTravelHistoryTransportDocument,
   customerTravelHistoryTransportReference,
 } from '@/services/customerTravelHistoryRules';
 import type {
@@ -127,7 +127,7 @@ export async function getCustomerTravelHistory(input: {
           bookingReference: reference.bookingReference,
           currency: money?.currency ?? null,
           detailHref: `/account/trips/${encodeURIComponent(reference.bookingReference)}`,
-          document: customerTravelHistoryTransportDocument(
+          document: customerTravelHistoryDocument(
             reference.product,
             reference.bookingReference,
             trip.detailsJson,
@@ -163,10 +163,7 @@ export async function getCustomerTravelHistory(input: {
           bookingReference,
           currency: money?.currency ?? null,
           detailHref: `/account/hotel-bookings/${encodeURIComponent(bookingReference)}`,
-          document: {
-            href: `/manage-booking/${encodeURIComponent(bookingReference)}/voucher`,
-            label: 'View voucher',
-          },
+          document: customerTravelHistoryDocument('HOTEL', bookingReference, null),
           endDate: customerTravelHistoryDate(booking.quote.checkOutDate),
           product: 'HOTEL',
           startDate: customerTravelHistoryDate(booking.quote.checkInDate),
