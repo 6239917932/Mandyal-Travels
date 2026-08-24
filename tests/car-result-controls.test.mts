@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import type { CarOffer, CarResultControlCatalogue } from '../types/car.ts';
@@ -177,4 +178,13 @@ test('car result sorting is deterministic for price and vehicle name ties', () =
     [beta, city, alpha].map(({ id }) => id),
     ['beta', 'city', 'alpha'],
   );
+});
+
+test('car results keep error, source-empty, and filter-empty states distinct', () => {
+  const page = readFileSync('app/cars/page.tsx', 'utf8');
+  assert.match(page, /\{!error \? \(/);
+  assert.match(page, /availableOffers\.length > 0/);
+  assert.match(page, /No cars match the active filters\./);
+  assert.match(page, /Clear filters/);
+  assert.match(page, /No cars are available for this search\./);
 });

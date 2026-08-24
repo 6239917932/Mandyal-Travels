@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CarOfferCard } from '@/components/car/CarOfferCard';
 import { CarResultControls } from '@/components/car/CarResultControls';
 import { CarSearchForm } from '@/components/car/CarSearchForm';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
-import { applyCarResultControls, createCarResultControls } from '@/utils/carResultControls';
+import {
+  applyCarResultControls,
+  carSearchCriteriaToQuery,
+  createCarResultControls,
+} from '@/utils/carResultControls';
 export const metadata: Metadata = { title: 'Car rentals' };
 
 export default async function CarsPage({
@@ -27,6 +32,7 @@ export default async function CarsPage({
   };
   const controls = createCarResultControls(params, catalogue);
   const offers = applyCarResultControls(availableOffers, controls);
+  const unfilteredSearchQuery = carSearchCriteriaToQuery(criteria);
   return (
     <div className="car-page">
       <section className="car-page__hero">
@@ -48,27 +54,42 @@ export default async function CarsPage({
               {error}
             </p>
           ) : null}
-          <div className="car-page__heading">
-            <div>
-              <p className="hotel-page__eyebrow">Available vehicles</p>
-              <h2>{offers.length} cars found</h2>
-            </div>
-            <p>
-              {criteria.pickupLocation} · {criteria.pickupDate} {criteria.pickupTime} to{' '}
-              {criteria.dropoffDate} {criteria.dropoffTime}
-            </p>
-          </div>
-          <div className="car-offer-list">
-            {offers.length ? (
-              offers.map((offer) => (
-                <CarOfferCard criteria={criteria} key={offer.id} offer={offer} />
-              ))
-            ) : (
-              <p className="hotel-page__empty-state">
-                No matching cars found. Try Delhi to Delhi or Chandigarh to Chandigarh.
-              </p>
-            )}
-          </div>
+          {!error ? (
+            <>
+              <div className="car-page__heading">
+                <div>
+                  <p className="hotel-page__eyebrow">Available vehicles</p>
+                  <h2>{offers.length} cars found</h2>
+                </div>
+                <p>
+                  {criteria.pickupLocation} · {criteria.pickupDate} {criteria.pickupTime} to{' '}
+                  {criteria.dropoffDate} {criteria.dropoffTime}
+                </p>
+              </div>
+              <div className="car-offer-list">
+                {offers.length ? (
+                  offers.map((offer) => (
+                    <CarOfferCard criteria={criteria} key={offer.id} offer={offer} />
+                  ))
+                ) : availableOffers.length > 0 ? (
+                  <div className="hotel-page__empty-state">
+                    <p>No cars match the active filters.</p>
+                    <Link
+                      className="ui-button ui-button--secondary"
+                      href={{ pathname: '/cars', query: unfilteredSearchQuery }}
+                    >
+                      Clear filters
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="hotel-page__empty-state">
+                    No cars are available for this search. Try Delhi to Delhi or Chandigarh to
+                    Chandigarh.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : null}
         </div>
       </section>
     </div>
