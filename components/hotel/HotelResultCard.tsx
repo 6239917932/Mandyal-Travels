@@ -29,7 +29,8 @@ export function HotelResultCard({ criteria, eagerImage = false, result }: HotelR
           alt={primaryImage.alt}
           className="hotel-result-card__image"
           height={420}
-          loading={eagerImage ? 'eager' : 'lazy'}
+          loading={eagerImage ? undefined : 'lazy'}
+          preload={eagerImage}
           src={primaryImage.url}
           width={640}
         />
