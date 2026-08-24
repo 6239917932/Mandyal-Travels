@@ -217,6 +217,19 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const searchProjectionWhere = enabled('OPERATIONS')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { entityType: { contains: filters.query } },
+                { reason: { contains: filters.query } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
 
   const [
     partnerCount,
@@ -239,6 +252,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     financeEvents,
     operationsCount,
     operationsEvents,
+    searchProjectionCount,
+    searchProjectionEvents,
   ] = await Promise.all([
     prisma.partnerAuditLog.count({ where: partnerWhere }),
     prisma.partnerAuditLog.findMany({
@@ -333,6 +348,13 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: operationsWhere,
+    }),
+    prisma.searchProjectionRebuildEvent.count({ where: searchProjectionWhere }),
+    prisma.searchProjectionRebuildEvent.findMany({
+      include: { actor: { select: actorSelect } },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: searchProjectionWhere,
     }),
   ]);
 
@@ -437,6 +459,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `operations-${event.id}`,
       subject: `${event.event.eventType} · ${event.fromStatus} to ${event.toStatus}`,
     })),
+    ...searchProjectionEvents.map((event) => ({
+      action: 'SEARCH_PROJECTIONS_REBUILT',
+      actor: actorLabel(event.actor),
+      context: `${event.entityType} search`,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'OPERATIONS' as const,
+      id: `search-projection-${event.id}`,
+      subject: `${event.projectedCount} projected · ${event.removedCount} stale removed · ${event.sourceCount} eligible sources`,
+    })),
   ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
 
   const totalCount =
@@ -449,7 +481,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     contentCount +
     commercialCount +
     financeCount +
-    operationsCount;
+    operationsCount +
+    searchProjectionCount;
   const availablePages = Math.max(1, Math.ceil(totalCount / ADMIN_AUDIT_PAGE_SIZE));
   const pageCount = Math.min(availablePages, ADMIN_AUDIT_MAX_PAGE);
   const page = Math.min(filters.page, pageCount);

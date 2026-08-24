@@ -1010,6 +1010,20 @@ CREATE TABLE "SearchProjectionDocument" (
 );
 
 -- CreateTable
+CREATE TABLE "SearchProjectionRebuildEvent" (
+    "id" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL DEFAULT 'HOTEL',
+    "sourceCount" INTEGER NOT NULL,
+    "projectedCount" INTEGER NOT NULL,
+    "removedCount" INTEGER NOT NULL,
+    "reason" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SearchProjectionRebuildEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "NotificationTemplate" (
     "id" TEXT NOT NULL,
     "templateKey" TEXT NOT NULL,
@@ -1875,6 +1889,12 @@ CREATE INDEX "SearchProjectionDocument_entityType_projectedAt_idx" ON "SearchPro
 CREATE UNIQUE INDEX "SearchProjectionDocument_entityType_entityId_key" ON "SearchProjectionDocument"("entityType", "entityId");
 
 -- CreateIndex
+CREATE INDEX "SearchProjectionRebuildEvent_entityType_createdAt_idx" ON "SearchProjectionRebuildEvent"("entityType", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "SearchProjectionRebuildEvent_actorUserId_createdAt_idx" ON "SearchProjectionRebuildEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "NotificationTemplate_templateKey_key" ON "NotificationTemplate"("templateKey");
 
 -- CreateIndex
@@ -2320,6 +2340,9 @@ ALTER TABLE "PartnerSettlementEvent" ADD CONSTRAINT "PartnerSettlementEvent_acto
 
 -- AddForeignKey
 ALTER TABLE "AnalyticsEvent" ADD CONSTRAINT "AnalyticsEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SearchProjectionRebuildEvent" ADD CONSTRAINT "SearchProjectionRebuildEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "NotificationDelivery" ADD CONSTRAINT "NotificationDelivery_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "NotificationTemplate"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

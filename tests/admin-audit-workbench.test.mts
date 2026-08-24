@@ -71,6 +71,8 @@ test('administrator audit page includes governed decision streams without sensit
   assert.match(page, /prisma\.promotionCampaignEvent\.findMany/);
   assert.match(page, /prisma\.partnerSettlementEvent\.findMany/);
   assert.match(page, /prisma\.integrationOutboxReviewEvent\.findMany/);
+  assert.match(page, /prisma\.searchProjectionRebuildEvent\.findMany/);
+  assert.match(page, /SEARCH_PROJECTIONS_REBUILT/);
   assert.match(page, /privateAggregateReference\(/);
   assert.doesNotMatch(page, /payloadJson/);
   assert.doesNotMatch(page, /lastError/);
