@@ -30,3 +30,19 @@ export interface CarOffer {
   dropoffLocation: string;
   rentalMode: CarSearchCriteria['rentalMode'];
 }
+
+export type CarResultSort = 'price-ascending' | 'vehicle-name-ascending';
+
+export interface CarResultControls {
+  category?: string;
+  maximumTotalPrice?: number;
+  minimumSeats?: number;
+  provider?: string;
+  sort: CarResultSort;
+  transmission?: CarOffer['transmission'];
+}
+
+export interface CarResultControlCatalogue {
+  categories: readonly string[];
+  providers: readonly string[];
+}
