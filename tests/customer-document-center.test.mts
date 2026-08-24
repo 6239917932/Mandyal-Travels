@@ -116,7 +116,7 @@ test('the document index uses exact account ownership and returns bounded safe D
     'utf8',
   );
   assert.match(service, /const tripWhere = \{ userId: input\.userId \} as const/);
-  assert.match(service, /const hotelWhere = \{ email: input\.email \} as const/);
+  assert.match(service, /const hotelWhere = \{ email: normalizeEmail\(input\.email\) \} as const/);
   assert.doesNotMatch(service, /OR:\s*\[/);
   assert.match(service, /take: CUSTOMER_DOCUMENT_PAGE_SIZE/g);
   assert.match(service, /safeTransportDocumentLink\(trip\)/);
@@ -124,6 +124,20 @@ test('the document index uses exact account ownership and returns bounded safe D
   assert.doesNotMatch(service, /providerRef|supplierPayload|paymentToken/);
   assert.match(service, /not a statutory tax invoice/);
   assert.match(service, /Provider fulfillment and final provider documents remain pending/);
+});
+
+test('hotel ownership is normalized and unresolved evidence remains hard bounded', async () => {
+  const [service, bookingService, schema] = await Promise.all([
+    readFile(new URL('../services/customerDocumentService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../services/hotelBookingService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../prisma/schema.prisma', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(service, /where: \{ status: 'PENDING' \}/);
+  assert.match(service, /where: \{ status: \{ in: \['PENDING', 'PROVIDER_FAILED'\] \} \}/);
+  assert.match(service, /take: 1/g);
+  assert.match(bookingService, /email: normalizeEmail\(request\.guest\.email\)/);
+  assert.match(schema, /model BookingGuest[\s\S]*@@index\(\[email\]\)/);
 });
 
 test('the page and API require a live authenticated account and expose recovery states', async () => {

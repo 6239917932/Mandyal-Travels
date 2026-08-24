@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   CUSTOMER_DOCUMENT_PAGE_SIZE,
@@ -61,7 +62,7 @@ export async function listCustomerDocuments(input: {
   userId: string;
 }): Promise<CustomerDocumentIndex> {
   const tripWhere = { userId: input.userId } as const;
-  const hotelWhere = { email: input.email } as const;
+  const hotelWhere = { email: normalizeEmail(input.email) } as const;
   const [rawTripCount, rawHotelCount] = await Promise.all([
     prisma.customerTrip.count({ where: tripWhere }),
     prisma.bookingGuest.count({ where: hotelWhere }),
@@ -93,14 +94,22 @@ export async function listCustomerDocuments(input: {
       select: {
         booking: {
           select: {
-            amendments: { select: { status: true } },
+            amendments: {
+              select: { status: true },
+              take: 1,
+              where: { status: 'PENDING' },
+            },
             confirmationCode: true,
             createdAt: true,
             currency: true,
             hotelSlug: true,
             id: true,
             payment: { select: { amount: true, currency: true, status: true } },
-            refunds: { select: { status: true } },
+            refunds: {
+              select: { status: true },
+              take: 1,
+              where: { status: { in: ['PENDING', 'PROVIDER_FAILED'] } },
+            },
             status: true,
             totalAmount: true,
           },
