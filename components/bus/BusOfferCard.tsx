@@ -48,9 +48,7 @@ export function BusOfferCard({
           ))}
         </div>
         <p>{offer.cancellationPolicy}</p>
-        <small>
-          {offer.seatsRemaining} seats left · Source: {offer.source}
-        </small>
+        <small>{offer.seatsRemaining} seats left</small>
       </div>
       <div className="bus-offer-card__price">
         <small>Total</small>
