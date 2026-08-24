@@ -81,16 +81,13 @@ export function readAdminTransportDetails(
 
 export function adminBookingDossierLinks(input: {
   confirmationCode: string;
-  email: string;
   product: AdminBookingProduct;
   userId: string | null;
 }): AdminBookingDossierLinks {
   const reference = encodeURIComponent(input.confirmationCode);
   const customer = input.userId
     ? `/admin/users/${encodeURIComponent(input.userId)}`
-    : input.email
-      ? `/admin/users?q=${encodeURIComponent(input.email)}`
-      : '/admin/users';
+    : '/admin/users';
   const product = encodeURIComponent(input.product);
 
   return {
@@ -205,7 +202,6 @@ async function loadHotelDossier(confirmationCode: string): Promise<AdminBookingD
     kind: 'HOTEL',
     links: adminBookingDossierLinks({
       confirmationCode: booking.confirmationCode,
-      email,
       product: 'HOTEL',
       userId: null,
     }),
@@ -271,7 +267,6 @@ async function loadTransportDossier(confirmationCode: string): Promise<AdminBook
     kind: 'TRANSPORT',
     links: adminBookingDossierLinks({
       confirmationCode: trip.confirmationCode,
-      email: trip.email,
       product: trip.productType,
       userId: trip.user?.id ?? null,
     }),

@@ -243,6 +243,9 @@ export default async function AdminBookingDossierPage({ params }: AdminBookingDo
           )}
           <p className={styles.countNote}>
             {dossier.refunds.total.toLocaleString('en-IN')} total refund record(s)
+            {dossier.refunds.total > dossier.refunds.items.length
+              ? ` · Showing the latest ${dossier.refunds.items.length}`
+              : ''}
           </p>
         </Card>
 
@@ -273,6 +276,9 @@ export default async function AdminBookingDossierPage({ params }: AdminBookingDo
           )}
           <p className={styles.countNote}>
             {dossier.support.total.toLocaleString('en-IN')} total linked support case(s)
+            {dossier.support.total > dossier.support.items.length
+              ? ` · Showing the latest ${dossier.support.items.length}`
+              : ''}
           </p>
         </Card>
       </div>

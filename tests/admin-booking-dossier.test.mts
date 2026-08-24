@@ -72,13 +72,12 @@ test('specialist links preserve reference and closed product context', () => {
   assert.deepEqual(
     adminBookingDossierLinks({
       confirmationCode: 'MT-ABC123',
-      email: 'guest@example.com',
       product: 'HOTEL',
       userId: null,
     }),
     {
       amendments: '/admin#hotel-amendments',
-      customer: '/admin/users?q=guest%40example.com',
+      customer: '/admin/users',
       directory: '/admin/bookings?q=MT-ABC123&product=HOTEL',
       documents: '/admin/documents?q=MT-ABC123&product=HOTEL',
       finance: '/admin/finance?q=MT-ABC123&refundStatus=ALL&window=ALL',
@@ -88,7 +87,6 @@ test('specialist links preserve reference and closed product context', () => {
   assert.equal(
     adminBookingDossierLinks({
       confirmationCode: 'MF12345678',
-      email: 'customer@example.com',
       product: 'FLIGHT',
       userId: 'user-1',
     }).finance,
@@ -99,7 +97,6 @@ test('specialist links preserve reference and closed product context', () => {
 test('missing hotel customer identity links to the unfiltered customer directory', () => {
   const links = adminBookingDossierLinks({
     confirmationCode: 'MT-HOTEL-01',
-    email: '',
     product: 'HOTEL',
     userId: null,
   });
@@ -127,7 +124,10 @@ test('admin dossier page is protected, read-only, bounded, and privacy safe', as
   assert.match(page, /loadAdminBookingDossier\(confirmationCode\)/);
   assert.match(page, /if \(!dossier\) notFound\(\)/);
   assert.match(page, /Evidence, not authority/);
+  assert.match(page, /dossier\.refunds\.total > dossier\.refunds\.items\.length/);
+  assert.match(page, /dossier\.support\.total > dossier\.support\.items\.length/);
   assert.match(service, /take: ADMIN_BOOKING_DOSSIER_ACTIVITY_LIMIT/g);
+  assert.doesNotMatch(service, /\/admin\/users\?q=/);
   assert.match(directory, /View dossier/g);
   assert.match(error, /retry: \(\) => void/);
   assert.match(loading, /aria-busy="true"/);
