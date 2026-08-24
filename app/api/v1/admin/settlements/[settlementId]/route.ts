@@ -4,6 +4,7 @@ import {
   PartnerSettlementError,
   partnerSettlementService,
 } from '@/services/partnerSettlementService';
+import { normalizeSettlementTransition } from '@/services/adminSettlementWorkbenchService';
 
 type Context = { params: Promise<{ settlementId: string }> };
 export async function PATCH(request: Request, context: Context): Promise<Response> {
@@ -13,12 +14,16 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
       { error: { code: 'ADMIN_UNAUTHORIZED', message: 'Administrator access is required.' } },
       { status: 401 },
     );
-  const body = await readJsonObject(request);
-  const action =
-    body?.action === 'APPROVE' || body?.action === 'MARK_PAID' ? body.action : undefined;
-  if (!action)
+  const body = await readJsonObject(request, 2048);
+  const transition = body ? normalizeSettlementTransition(body) : null;
+  if (!transition)
     return Response.json(
-      { error: { code: 'INVALID_ACTION', message: 'Choose approve or mark paid.' } },
+      {
+        error: {
+          code: 'INVALID_ACTION',
+          message: 'Choose an action and provide the current version plus a 10-500 character note.',
+        },
+      },
       { status: 400 },
     );
   const { settlementId } = await context.params;
@@ -26,10 +31,11 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
     return Response.json({
       data: await partnerSettlementService.transition(
         settlementId,
-        action,
+        transition.action,
         admin.id,
-        typeof body?.note === 'string' ? body.note : '',
-        typeof body?.paymentReference === 'string' ? body.paymentReference.trim() : undefined,
+        transition.note,
+        transition.expectedVersion,
+        transition.paymentReference,
       ),
     });
   } catch (error) {

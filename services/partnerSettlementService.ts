@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { prorateCaptureAllocations } from '@/lib/payments/accounting';
+import { hasUnresolvedRefund } from '@/services/adminSettlementWorkbenchService';
 
 export class PartnerSettlementError extends Error {
   readonly code: string;
@@ -19,7 +20,7 @@ function dateBoundary(value: string, end: boolean): Date {
 }
 
 export const partnerSettlementService = {
-  async create(partnerId: string, periodStart: string, periodEnd: string) {
+  async create(partnerId: string, periodStart: string, periodEnd: string, actorUserId: string) {
     const start = dateBoundary(periodStart, false);
     const end = dateBoundary(periodEnd, true);
     if (end < start || end.getTime() - start.getTime() > 1000 * 60 * 60 * 24 * 366)
@@ -31,7 +32,7 @@ export const partnerSettlementService = {
       include: { properties: { select: { hotelSlug: true } } },
       where: { id: partnerId },
     });
-    if (!partner)
+    if (!partner || partner.status !== 'ACTIVE')
       throw new PartnerSettlementError('PARTNER_NOT_FOUND', 'The supplier was not found.');
     void start;
     void end;
@@ -40,7 +41,7 @@ export const partnerSettlementService = {
         payment: {
           include: {
             allocations: true,
-            refunds: { select: { amount: true }, where: { status: 'APPROVED' } },
+            refunds: { select: { amount: true, status: true } },
           },
         },
         quote: { select: { checkOutDate: true } },
@@ -60,6 +61,9 @@ export const partnerSettlementService = {
     });
     const now = Date.now();
     const eligibleBookings = bookings.filter((booking) => {
+      if (hasUnresolvedRefund(booking.payment?.refunds.map((refund) => refund.status) ?? [])) {
+        return false;
+      }
       const eligibleAt =
         new Date(`${booking.quote.checkOutDate}T00:00:00.000Z`).getTime() +
         partner.settlementDelayDays * 86_400_000;
@@ -84,10 +88,9 @@ export const partnerSettlementService = {
           `Payment allocations are incomplete for ${booking.confirmationCode}.`,
         );
       }
-      const refundedAmount = booking.payment.refunds.reduce(
-        (total, refund) => total + refund.amount,
-        0,
-      );
+      const refundedAmount = booking.payment.refunds
+        .filter((refund) => refund.status === 'APPROVED')
+        .reduce((total, refund) => total + refund.amount, 0);
       const adjusted = prorateCaptureAllocations({
         capturedAmount: booking.payment.amount,
         commissionAmount: capturedCommission,
@@ -137,8 +140,8 @@ export const partnerSettlementService = {
       (total, line) => total + line.taxWithheldAmount,
       0,
     );
-    return prisma.$transaction(async (transaction) =>
-      transaction.partnerSettlement.create({
+    return prisma.$transaction(async (transaction) => {
+      const settlement = await transaction.partnerSettlement.create({
         data: {
           bookingCount: settlementLines.length,
           calculationJson: JSON.stringify({
@@ -156,8 +159,20 @@ export const partnerSettlementService = {
           taxWithheldAmount,
         },
         include: { lines: true },
-      }),
-    );
+      });
+      await transaction.partnerSettlementEvent.create({
+        data: {
+          action: 'CREATED',
+          actorUserId,
+          fromStatus: 'NONE',
+          note: 'Draft settlement calculated from eligible reconciled captures.',
+          settlementId: settlement.id,
+          toStatus: 'DRAFT',
+          version: settlement.version,
+        },
+      });
+      return settlement;
+    });
   },
 
   async transition(
@@ -165,26 +180,19 @@ export const partnerSettlementService = {
     action: 'APPROVE' | 'MARK_PAID',
     actorUserId: string,
     note: string,
+    expectedVersion: number,
     paymentReference?: string,
   ) {
-    const settlement = await prisma.partnerSettlement.findUnique({ where: { id } });
-    if (!settlement)
-      throw new PartnerSettlementError('SETTLEMENT_NOT_FOUND', 'The settlement was not found.');
-    if (action === 'APPROVE' && settlement.status !== 'DRAFT')
-      throw new PartnerSettlementError(
-        'INVALID_SETTLEMENT_STATE',
-        'Only draft settlements can be approved.',
-      );
-    if (action === 'MARK_PAID' && settlement.status !== 'APPROVED')
-      throw new PartnerSettlementError(
-        'INVALID_SETTLEMENT_STATE',
-        'Only approved settlements can be marked paid.',
-      );
     const normalizedNote = note.trim().replace(/\s+/g, ' ').slice(0, 500);
-    if (normalizedNote.length < 3)
+    if (normalizedNote.length < 10)
       throw new PartnerSettlementError(
         'SETTLEMENT_NOTE_REQUIRED',
-        'Add an audit note of at least 3 characters.',
+        'Add an audit note of at least 10 characters.',
+      );
+    if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+      throw new PartnerSettlementError(
+        'SETTLEMENT_VERSION_REQUIRED',
+        'Refresh and review the current settlement version.',
       );
     if (
       action === 'MARK_PAID' &&
@@ -194,17 +202,62 @@ export const partnerSettlementService = {
         'PAYMENT_REFERENCE_REQUIRED',
         'Enter a safe payment reference.',
       );
-    return prisma.partnerSettlement.update({
-      data:
-        action === 'APPROVE'
-          ? {
-              approvedAt: new Date(),
-              approvedByUserId: actorUserId,
-              reviewNote: normalizedNote,
-              status: 'APPROVED',
-            }
-          : { paidAt: new Date(), paymentReference, reviewNote: normalizedNote, status: 'PAID' },
-      where: { id },
+    return prisma.$transaction(async (transaction) => {
+      const settlement = await transaction.partnerSettlement.findUnique({ where: { id } });
+      if (!settlement)
+        throw new PartnerSettlementError('SETTLEMENT_NOT_FOUND', 'The settlement was not found.');
+      if (settlement.version !== expectedVersion)
+        throw new PartnerSettlementError(
+          'SETTLEMENT_VERSION_CONFLICT',
+          'This settlement changed in another session. Refresh and review it again.',
+        );
+      if (action === 'APPROVE' && settlement.status !== 'DRAFT')
+        throw new PartnerSettlementError(
+          'INVALID_SETTLEMENT_STATE',
+          'Only draft settlements can be approved.',
+        );
+      if (action === 'MARK_PAID' && settlement.status !== 'APPROVED')
+        throw new PartnerSettlementError(
+          'INVALID_SETTLEMENT_STATE',
+          'Only approved settlements can be marked paid.',
+        );
+      const toStatus = action === 'APPROVE' ? 'APPROVED' : 'PAID';
+      const changed = await transaction.partnerSettlement.updateMany({
+        data:
+          action === 'APPROVE'
+            ? {
+                approvedAt: new Date(),
+                approvedByUserId: actorUserId,
+                reviewNote: normalizedNote,
+                status: toStatus,
+                version: { increment: 1 },
+              }
+            : {
+                paidAt: new Date(),
+                paymentReference,
+                reviewNote: normalizedNote,
+                status: toStatus,
+                version: { increment: 1 },
+              },
+        where: { id, status: settlement.status, version: expectedVersion },
+      });
+      if (changed.count !== 1)
+        throw new PartnerSettlementError(
+          'SETTLEMENT_VERSION_CONFLICT',
+          'This settlement changed in another session. Refresh and review it again.',
+        );
+      await transaction.partnerSettlementEvent.create({
+        data: {
+          action,
+          actorUserId,
+          fromStatus: settlement.status,
+          note: normalizedNote,
+          settlementId: id,
+          toStatus,
+          version: expectedVersion + 1,
+        },
+      });
+      return transaction.partnerSettlement.findUniqueOrThrow({ where: { id } });
     });
   },
 };

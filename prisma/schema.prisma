@@ -56,6 +56,7 @@ model User {
   updatedDestinationContent   DestinationContent[]        @relation("DestinationContentUpdater")
   destinationContentEvents    DestinationContentEvent[]   @relation("DestinationContentEventActor")
   promotionCampaignEvents     PromotionCampaignEvent[]    @relation("PromotionCampaignEventActor")
+  partnerSettlementEvents     PartnerSettlementEvent[]     @relation("PartnerSettlementEventActor")
 }
 
 model PasswordResetToken {
@@ -1101,6 +1102,7 @@ model PartnerSettlement {
   netAmount         Int
   bookingCount      Int
   status            String                    @default("DRAFT")
+  version           Int                       @default(1)
   calculationJson   String                    @default("{}")
   reviewNote        String                    @default("")
   approvedByUserId  String?
@@ -1111,11 +1113,30 @@ model PartnerSettlement {
   updatedAt         DateTime                  @updatedAt
   partner           SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   lines             PartnerSettlementLine[]
+  events            PartnerSettlementEvent[]
   payoutInstruction PartnerPayoutInstruction?
 
   @@unique([partnerId, periodStart, periodEnd])
   @@index([status, periodEnd, createdAt])
   @@index([partnerId, status, periodEnd])
+}
+
+model PartnerSettlementEvent {
+  id           String            @id @default(cuid())
+  settlementId String
+  actorUserId  String
+  action       String
+  fromStatus   String
+  toStatus     String
+  note         String
+  version      Int
+  createdAt    DateTime          @default(now())
+  settlement   PartnerSettlement @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+  actor        User              @relation("PartnerSettlementEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([settlementId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
 }
 
 model AnalyticsEvent {

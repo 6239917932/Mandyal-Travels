@@ -11,7 +11,7 @@ export function SiteFooter() {
       <div className="site-footer__inner">
         <div>
           <Link aria-label="Mandyal Travels home" className="site-footer__logo" href="/">
-            <MandyalLogo appearance="inverse" showTagline />
+            <MandyalLogo appearance="inverse" eager showTagline />
           </Link>
           <p className="site-footer__description">{siteConfig.description}</p>
           <p className="site-footer__origin">Proudly rooted in Mandi, Himachal Pradesh, India.</p>

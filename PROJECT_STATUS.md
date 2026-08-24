@@ -305,6 +305,12 @@ rehearsal, reconciliation, restore testing, and reversible cutover in
 
 ## Current quality gate
 
+Partner settlement governance now holds bookings with unresolved refund reservations out of payout
+calculation, rejects inactive suppliers, and records draft, approval, and paid transitions in an
+append-only history. Version-checked updates prevent stale or duplicate finance actions, payment
+references are masked in portal views, and administrator and supplier statement screens are bounded
+and paginated. The workflow remains provider-neutral and does not release money automatically.
+
 Seasonal pricing is rate-plan-specific: room-only, breakfast, and other plans retain independent
 daily prices across search and booking quotes, while availability and stay restrictions remain
 room-scoped. The additive `PartnerRatePlanInventoryDay` model keeps those overrides normalized and
@@ -379,9 +385,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 193 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 198 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
-clean-database verification of all 71 SQLite migrations with foreign-key integrity enabled, a
-synchronized 80-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+clean-database verification of all 72 SQLite migrations with foreign-key integrity enabled, a
+synchronized 81-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.
