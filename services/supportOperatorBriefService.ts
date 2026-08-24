@@ -58,8 +58,9 @@ function ageContext(createdAt: Date, now: Date): string {
   const createdAtMs = createdAt.getTime();
   const nowMs = now.getTime();
   if (!Number.isFinite(createdAtMs) || !Number.isFinite(nowMs)) return 'Opened date unavailable';
+  if (createdAtMs > nowMs) return 'Opened date requires manual verification';
 
-  const elapsedMs = Math.max(0, nowMs - createdAtMs);
+  const elapsedMs = nowMs - createdAtMs;
   const elapsedDays = Math.floor(elapsedMs / 86_400_000);
 
   if (elapsedDays === 0) return 'Opened today';

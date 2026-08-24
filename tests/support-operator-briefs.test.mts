@@ -61,7 +61,7 @@ test('unknown categories and statuses fall back without echoing untrusted values
 
   assert.ok(brief.context.includes('General support'));
   assert.ok(brief.context.includes('Status requires manual verification'));
-  assert.ok(brief.context.includes('Opened today'));
+  assert.ok(brief.context.includes('Opened date requires manual verification'));
   assert.doesNotMatch(JSON.stringify(brief), new RegExp(`${category}|${status}`));
 });
 
@@ -79,6 +79,22 @@ test('prototype names and invalid dates fail closed', () => {
 
   assert.ok(brief.context.includes('General support'));
   assert.ok(brief.context.includes('Opened date unavailable'));
+});
+
+test('future-dated records require manual verification instead of appearing newly opened', () => {
+  const brief = buildSupportOperatorBrief(
+    {
+      bookingReferencePresent: false,
+      category: 'OTHER',
+      createdAt: new Date('2026-08-30T00:00:00.000Z'),
+      kind: 'CUSTOMER',
+      status: 'OPEN',
+    },
+    now,
+  );
+
+  assert.ok(brief.context.includes('Opened date requires manual verification'));
+  assert.ok(!brief.context.includes('Opened today'));
 });
 
 test('brief API cannot receive or reproduce free-text case content or personal data', () => {
