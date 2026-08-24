@@ -82,6 +82,8 @@ test('submission rechecks eligibility transactionally and maps concurrent writes
   assert.match(service, /hasPrismaErrorCode\(error, 'P2002'\)/);
   assert.match(service, /hasPrismaErrorCode\(error, 'P2034'\)/);
   assert.match(route, /readJsonObject\(request, 2_048\)/);
+  assert.match(route, /isSameOriginMutation\(request\)/);
+  assert.match(route, /FORBIDDEN_ORIGIN/);
   assert.match(route, /error\.code === 'NO_ELIGIBLE_STAY' \? 409 : 400/);
   assert.match(route, /data: \{ status: 'PENDING' \}/);
   assert.doesNotMatch(route, /data: review/);
@@ -95,5 +97,24 @@ test('customer UI is private, bounded, customer-reference based, and hotel-only'
   assert.match(page, /take: CUSTOMER_REVIEW_PAGE_SIZE/);
   assert.match(page, /bookingReference=\{booking\.confirmationCode\}/);
   assert.match(page, /Flight, bus, and car feedback programmes are not launched/);
-  assert.doesNotMatch(page, /moderatedBy|booking\.id|review\.id|email:\s*true/);
+  assert.doesNotMatch(page, /moderationNote|moderatedBy|booking\.id|review\.id|email:\s*true/);
+});
+
+test('hotel review eligibility uses normalized indexed booking emails', async () => {
+  const [bookingService, schema, migration] = await Promise.all([
+    readFile(new URL('../services/hotelBookingService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../prisma/schema.prisma', import.meta.url), 'utf8'),
+    readFile(
+      new URL(
+        '../prisma/migrations/20260824120000_normalize_booking_guest_email/migration.sql',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ]);
+
+  assert.match(bookingService, /email: normalizeEmail\(request\.guest\.email\)/);
+  assert.match(schema, /model BookingGuest[\s\S]*@@index\(\[email\]\)/);
+  assert.match(migration, /LOWER\(TRIM\("email"\)\)/);
+  assert.match(migration, /BookingGuest_email_idx/);
 });

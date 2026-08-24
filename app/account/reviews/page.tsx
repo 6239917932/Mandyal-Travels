@@ -90,7 +90,6 @@ export default async function CustomerReviewCenter({ searchParams }: Props) {
         body: true,
         createdAt: true,
         hotelSlug: true,
-        moderationNote: true,
         partnerReply: true,
         partnerRepliedAt: true,
         rating: true,
@@ -267,10 +266,8 @@ export default async function CustomerReviewCenter({ searchParams }: Props) {
                   {date(review.createdAt)}
                 </p>
                 <p>{review.body}</p>
-                {review.status === 'REJECTED' && review.moderationNote ? (
-                  <p>
-                    <strong>Moderation guidance:</strong> {review.moderationNote}
-                  </p>
+                {review.status === 'REJECTED' ? (
+                  <p>This review was not published. Contact support if you need help.</p>
                 ) : null}
                 {review.status === 'PUBLISHED' && review.partnerReply ? (
                   <blockquote>

@@ -400,7 +400,7 @@ export class HotelBookingService {
       confirmationCode: createBookingReference('MT'),
       createdAt: new Date().toISOString(),
       currency: quote.currency,
-      guest: request.guest,
+      guest: { ...request.guest, email: normalizeEmail(request.guest.email) },
       hotelSlug: request.hotelSlug,
       id: bookingId,
       operationalStatus: 'RESERVED',

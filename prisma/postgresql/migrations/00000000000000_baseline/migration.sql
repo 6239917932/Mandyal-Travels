@@ -1952,6 +1952,9 @@ CREATE INDEX "BookingAmendment_bookingId_status_createdAt_idx" ON "BookingAmendm
 CREATE UNIQUE INDEX "BookingGuest_bookingId_key" ON "BookingGuest"("bookingId");
 
 -- CreateIndex
+CREATE INDEX "BookingGuest_email_idx" ON "BookingGuest"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PaymentTransaction_bookingId_key" ON "PaymentTransaction"("bookingId");
 
 -- CreateIndex

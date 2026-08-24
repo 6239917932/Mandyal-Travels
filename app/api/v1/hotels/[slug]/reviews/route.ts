@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hotelService } from '@/services/hotelService';
 import { HotelReviewRuleError, hotelReviewService } from '@/services/hotelReviewService';
 
@@ -17,6 +17,18 @@ export async function GET(_request: Request, context: ReviewRouteContext): Promi
 }
 
 export async function POST(request: Request, context: ReviewRouteContext): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      {
+        error: {
+          code: 'FORBIDDEN_ORIGIN',
+          message: 'This request must originate from the Mandyal Travels portal.',
+        },
+      },
+      { status: 403 },
+    );
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return Response.json(

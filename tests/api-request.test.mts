@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { readJsonObject, readTextBody } from '../lib/api/request.ts';
+import { isSameOriginMutation, readJsonObject, readTextBody } from '../lib/api/request.ts';
 
 test('bounded request helpers accept valid bodies', async () => {
   const json = await readJsonObject(
@@ -42,4 +42,31 @@ test('JSON request parsing rejects explicitly incorrect media types', async () =
     headers: { 'content-type': 'text/plain' },
   });
   assert.equal(await readJsonObject(request), null);
+});
+
+test('same-origin mutation guard rejects cross-site and mismatched origins', () => {
+  assert.equal(
+    isSameOriginMutation(
+      new Request('https://portal.example.com/api', {
+        headers: { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' },
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginMutation(
+      new Request('https://portal.example.com/api', {
+        headers: { origin: 'https://other.example' },
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginMutation(
+      new Request('https://portal.example.com/api', {
+        headers: { origin: 'https://portal.example.com' },
+      }),
+    ),
+    true,
+  );
 });
