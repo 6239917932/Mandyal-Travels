@@ -313,6 +313,12 @@ rehearsal, reconciliation, restore testing, and reversible cutover in
 
 ## Current quality gate
 
+Hotel search-projection rebuilds are transactional and source-complete. They retain tehsil and alias
+vocabulary on both initial and repeated projection, isolate malformed optional metadata, restrict facets
+to normalized strings, and remove stale hotel documents after a property is unpublished or deactivated
+without touching other projection types. Live availability and pricing remain relational source-of-truth
+checks.
+
 Partner settlement governance now holds bookings with unresolved refund reservations out of payout
 calculation, rejects inactive suppliers, and records draft, approval, and paid transitions in an
 append-only history. Version-checked updates prevent stale or duplicate finance actions, payment
