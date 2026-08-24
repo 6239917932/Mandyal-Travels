@@ -175,6 +175,12 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
                     </dl>
                   </div>
                   <div className="account-trip__actions">
+                    <Link
+                      className="ui-button ui-button--secondary"
+                      href={`/account/trips/${encodeURIComponent(trip.confirmationCode)}`}
+                    >
+                      View booking details
+                    </Link>
                     {document ? (
                       <Link className="ui-button ui-button--secondary" href={document.href}>
                         {document.label}
