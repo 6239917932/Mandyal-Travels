@@ -1,13 +1,24 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  ADMIN_AUDIT_DOMAINS,
   ADMIN_AUDIT_MAX_PAGE,
   adminAuditCreatedAtRange,
   adminAuditPath,
   auditSourceTake,
   normalizeAdminAuditFilters,
 } from '../services/adminAuditWorkbenchService.ts';
+
+test('administrator audit catalogue includes every governed operational event stream', () => {
+  assert.deepEqual(
+    ADMIN_AUDIT_DOMAINS.filter((domain) =>
+      ['COMMERCIAL', 'FINANCE', 'OPERATIONS'].includes(domain),
+    ),
+    ['COMMERCIAL', 'FINANCE', 'OPERATIONS'],
+  );
+});
 
 test('administrator audit filters normalize supported bounded values', () => {
   assert.deepEqual(
@@ -52,4 +63,16 @@ test('administrator audit date ranges use an exclusive upper bound', () => {
     gte: new Date('2026-08-01T00:00:00.000Z'),
     lt: new Date('2026-09-01T00:00:00.000Z'),
   });
+});
+
+test('administrator audit page includes governed decision streams without sensitive evidence', async () => {
+  const page = await readFile(new URL('../app/admin/audit/page.tsx', import.meta.url), 'utf8');
+
+  assert.match(page, /prisma\.promotionCampaignEvent\.findMany/);
+  assert.match(page, /prisma\.partnerSettlementEvent\.findMany/);
+  assert.match(page, /prisma\.integrationOutboxReviewEvent\.findMany/);
+  assert.match(page, /privateAggregateReference\(/);
+  assert.doesNotMatch(page, /payloadJson/);
+  assert.doesNotMatch(page, /lastError/);
+  assert.doesNotMatch(page, /paymentReference/);
 });

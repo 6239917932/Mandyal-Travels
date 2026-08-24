@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { privateAggregateReference } from '@/services/adminExceptionWorkbenchService';
 import {
   ADMIN_AUDIT_DOMAINS,
   ADMIN_AUDIT_MAX_PAGE,
@@ -168,6 +169,54 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const commercialWhere = enabled('COMMERCIAL')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { reason: { contains: filters.query } },
+                { campaign: { is: { code: { contains: filters.query } } } },
+                { campaign: { is: { name: { contains: filters.query } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
+  const financeWhere = enabled('FINANCE')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { fromStatus: { contains: filters.query } },
+                { note: { contains: filters.query } },
+                { toStatus: { contains: filters.query } },
+                { settlement: { is: { partner: { is: { name: { contains: filters.query } } } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
+  const operationsWhere = enabled('OPERATIONS')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { fromStatus: { contains: filters.query } },
+                { note: { contains: filters.query } },
+                { toStatus: { contains: filters.query } },
+                { event: { is: { aggregateType: { contains: filters.query } } } },
+                { event: { is: { eventType: { contains: filters.query } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
 
   const [
     partnerCount,
@@ -184,6 +233,12 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     platformEvents,
     contentCount,
     contentEvents,
+    commercialCount,
+    commercialEvents,
+    financeCount,
+    financeEvents,
+    operationsCount,
+    operationsEvents,
   ] = await Promise.all([
     prisma.partnerAuditLog.count({ where: partnerWhere }),
     prisma.partnerAuditLog.findMany({
@@ -242,6 +297,42 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: contentWhere,
+    }),
+    prisma.promotionCampaignEvent.count({ where: commercialWhere }),
+    prisma.promotionCampaignEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        campaign: { select: { code: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: commercialWhere,
+    }),
+    prisma.partnerSettlementEvent.count({ where: financeWhere }),
+    prisma.partnerSettlementEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        settlement: {
+          select: {
+            partner: { select: { name: true } },
+            periodEnd: true,
+            periodStart: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: financeWhere,
+    }),
+    prisma.integrationOutboxReviewEvent.count({ where: operationsWhere }),
+    prisma.integrationOutboxReviewEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        event: { select: { aggregateId: true, aggregateType: true, eventType: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: operationsWhere,
     }),
   ]);
 
@@ -316,6 +407,36 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `content-${event.id}`,
       subject: `${event.status} · version ${event.version} · ${event.destination.slug}`,
     })),
+    ...commercialEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: `${event.campaign.name} · ${event.campaign.code}`,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'COMMERCIAL' as const,
+      id: `commercial-${event.id}`,
+      subject: `${event.fromActive ? 'Active' : 'Inactive'} to ${event.toActive ? 'active' : 'inactive'} · version ${event.version}`,
+    })),
+    ...financeEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: event.settlement.partner.name,
+      createdAt: event.createdAt,
+      detail: event.note,
+      domain: 'FINANCE' as const,
+      id: `finance-${event.id}`,
+      subject: `${event.fromStatus} to ${event.toStatus} · ${event.settlement.periodStart}–${event.settlement.periodEnd} · version ${event.version}`,
+    })),
+    ...operationsEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: `${event.event.aggregateType} · ${privateAggregateReference(event.event.aggregateType, event.event.aggregateId)}`,
+      createdAt: event.createdAt,
+      detail: event.note,
+      domain: 'OPERATIONS' as const,
+      id: `operations-${event.id}`,
+      subject: `${event.event.eventType} · ${event.fromStatus} to ${event.toStatus}`,
+    })),
   ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
 
   const totalCount =
@@ -325,7 +446,10 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     securityCount +
     privacyCount +
     platformCount +
-    contentCount;
+    contentCount +
+    commercialCount +
+    financeCount +
+    operationsCount;
   const availablePages = Math.max(1, Math.ceil(totalCount / ADMIN_AUDIT_PAGE_SIZE));
   const pageCount = Math.min(availablePages, ADMIN_AUDIT_MAX_PAGE);
   const page = Math.min(filters.page, pageCount);
@@ -340,9 +464,9 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           <p className="admin-hero__eyebrow">Protected, read-only governance timeline</p>
           <h1>Administrator audit workbench</h1>
           <p>
-            Review material platform, destination content, supplier, organization, support, and
-            account-security activity without changing operational, inventory, payment, or refund
-            records.
+            Review material platform, destination content, commercial, finance, integration,
+            supplier, organization, support, privacy, and account-security activity without changing
+            operational, inventory, payment, or refund records.
           </p>
         </div>
         <Link className="ui-button ui-button--secondary" href="/admin">
