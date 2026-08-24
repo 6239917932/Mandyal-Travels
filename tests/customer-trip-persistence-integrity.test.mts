@@ -4,6 +4,8 @@ import test from 'node:test';
 
 import {
   customerOwnsTrip,
+  canonicalCustomerTripJson,
+  createCustomerTripDetailsJson,
   customerTripContextsMatch,
   customerTripImmutableFingerprint,
   customerTripResponse,
@@ -71,6 +73,75 @@ test('immutable retries require every booking field and private payload digest t
   assert.doesNotMatch(customerTripImmutableFingerprint(original), /Private/);
 });
 
+test('nested private details are canonical and selection context is immutable', () => {
+  assert.equal(
+    canonicalCustomerTripJson({ outer: { zebra: 1, alpha: 2 }, beta: true }),
+    canonicalCustomerTripJson({ beta: true, outer: { alpha: 2, zebra: 1 } }),
+  );
+  const first = createCustomerTripDetailsJson(
+    { contact: { phone: '9999999999', email: 'customer@example.com' } },
+    {
+      offerId: 'offer-1',
+      promotionCode: 'ROADTRIP',
+      search: { passengers: '2', travelDate: '2026-09-20' },
+      seats: ['1A', '1B'],
+    },
+  );
+  const reordered = createCustomerTripDetailsJson(
+    { contact: { email: 'customer@example.com', phone: '9999999999' } },
+    {
+      offerId: 'offer-1',
+      promotionCode: 'ROADTRIP',
+      search: { travelDate: '2026-09-20', passengers: '2' },
+      seats: ['1A', '1B'],
+    },
+  );
+  assert.equal(first, reordered);
+  assert.notEqual(
+    first,
+    createCustomerTripDetailsJson(
+      { contact: { email: 'customer@example.com', phone: '9999999999' } },
+      {
+        offerId: 'offer-2',
+        promotionCode: 'ROADTRIP',
+        search: { passengers: '2', travelDate: '2026-09-20' },
+        seats: ['1A', '1B'],
+      },
+    ),
+  );
+  assert.notEqual(
+    first,
+    createCustomerTripDetailsJson(
+      { contact: { email: 'customer@example.com', phone: '9999999999' } },
+      {
+        offerId: 'offer-1',
+        promotionCode: 'DIFFERENT',
+        search: { passengers: '2', travelDate: '2026-09-20' },
+        seats: ['1A', '1B'],
+      },
+    ),
+  );
+  assert.notEqual(
+    first,
+    createCustomerTripDetailsJson(
+      { contact: { email: 'customer@example.com', phone: '9999999999' } },
+      {
+        offerId: 'offer-1',
+        promotionCode: 'ROADTRIP',
+        search: { passengers: '2', travelDate: '2026-09-20' },
+        seats: ['1A', '2A'],
+      },
+    ),
+  );
+  assert.equal(
+    customerTripContextsMatch(
+      context({ detailsJson: first! }),
+      context({ detailsJson: reordered! }),
+    ),
+    true,
+  );
+});
+
 test('public response is minimal, normalized, and fails closed on contradictory records', () => {
   assert.deepEqual(customerTripResponse(context()), {
     confirmationCode: 'MF0123456789AB',
@@ -103,6 +174,10 @@ test('write and lookup routes keep private fields internal and resolve inside tr
   assert.match(createRoute, /prisma\.\$transaction\(async \(transaction\)/);
   assert.match(createRoute, /select: CUSTOMER_TRIP_INTEGRITY_SELECT/);
   assert.match(createRoute, /status: result\.created \? 201 : 200/);
+  assert.match(createRoute, /action: 'CUSTOMER_TRIP_CREATE'/);
+  assert.match(createRoute, /'Retry-After'/);
+  const postRoute = createRoute.slice(createRoute.indexOf('export async function POST'));
+  assert.ok(postRoute.indexOf('lookupExistingTrip') < postRoute.indexOf('const rateLimit'));
   assert.doesNotMatch(createRoute, /NextResponse\.json\(\{ data: (?:createdTrip|completedTrip) \}/);
 
   assert.match(lookupRoute, /trip\.productType === reference\.productType/);

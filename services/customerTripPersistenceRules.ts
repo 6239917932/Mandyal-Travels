@@ -31,6 +31,13 @@ export type CustomerTripImmutableContext = Readonly<{
   totalAmount: number;
 }>;
 
+export type CustomerTripSelectionContext = Readonly<{
+  offerId: string | null;
+  promotionCode: string | null;
+  search: Readonly<Record<string, string>>;
+  seats?: readonly string[];
+}>;
+
 export type CustomerTripResponseRecord = Readonly<{
   confirmationCode: string;
   currency: string;
@@ -64,6 +71,45 @@ const PRODUCT_BY_PREFIX = {
 const CUSTOMER_TRIP_REFERENCE_PATTERN = /^(MB|MC|MF)[A-Z0-9]{8,20}$/;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_TRIP_AMOUNT = 100_000_000;
+
+type CanonicalJson =
+  boolean | null | number | string | CanonicalJson[] | { [key: string]: CanonicalJson };
+
+function canonicalJsonValue(value: unknown): CanonicalJson | undefined {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (Array.isArray(value)) {
+    const values = value.map(canonicalJsonValue);
+    return values.some((item) => item === undefined) ? undefined : (values as CanonicalJson[]);
+  }
+  if (!value || typeof value !== 'object') return undefined;
+
+  const entries = Object.entries(value).toSorted(([first], [second]) =>
+    first.localeCompare(second),
+  );
+  const canonicalEntries: [string, CanonicalJson][] = [];
+  for (const [key, nestedValue] of entries) {
+    const canonical = canonicalJsonValue(nestedValue);
+    if (canonical === undefined) return undefined;
+    canonicalEntries.push([key, canonical]);
+  }
+  return Object.fromEntries(canonicalEntries);
+}
+
+export function canonicalCustomerTripJson(value: unknown): string | undefined {
+  const canonical = canonicalJsonValue(value);
+  return canonical === undefined ? undefined : JSON.stringify(canonical);
+}
+
+export function createCustomerTripDetailsJson(
+  details: Readonly<Record<string, unknown>>,
+  selection: CustomerTripSelectionContext,
+): string | undefined {
+  return canonicalCustomerTripJson({
+    ...details,
+    __mandyalTripPersistence: selection,
+  });
+}
 
 export function normalizeCustomerTripReference(
   value: string,

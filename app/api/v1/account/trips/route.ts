@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { readJsonObject } from '@/lib/api/request';
 import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
@@ -12,6 +13,9 @@ import {
   validateBusinessCheckout,
 } from '@/services/businessCheckoutService';
 import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import { flightSearchCriteriaToQuery } from '@/utils/flightSearchCriteria';
+import { createBusSearchCriteria, busSearchCriteriaToQuery } from '@/utils/busSearchCriteria';
+import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import {
   PartnerOperationsError,
@@ -19,6 +23,7 @@ import {
 } from '@/services/partnerOperationsService';
 import {
   customerOwnsTrip,
+  createCustomerTripDetailsJson,
   customerTripContextsMatch,
   customerTripResponse,
   isCustomerTripProduct,
@@ -31,6 +36,9 @@ import {
 
 const MAX_DETAILS_LENGTH = 32_000;
 const MAX_TRIP_AMOUNT = 100_000_000;
+const CUSTOMER_TRIP_CREATE_LIMIT = 10;
+const CUSTOMER_TRIP_CREATE_WINDOW_MS = 15 * 60 * 1000;
+const MAX_PROMOTION_CODE_LENGTH = 64;
 
 const CUSTOMER_TRIP_INTEGRITY_SELECT = {
   businessTravelRequestId: true,
@@ -93,6 +101,19 @@ function readCustomerName(details: Record<string, unknown>, fallback: string): s
   const firstName = isText(record.firstName) ? record.firstName.trim() : '';
   const lastName = isText(record.lastName) ? record.lastName.trim() : '';
   return `${firstName} ${lastName}`.trim() || fallback;
+}
+
+function carCriteriaQuery(criteria: ReturnType<typeof createCarSearchCriteria>) {
+  return {
+    drivers: String(criteria.drivers),
+    dropoffDate: criteria.dropoffDate,
+    dropoffLocation: criteria.dropoffLocation,
+    dropoffTime: criteria.dropoffTime,
+    pickupDate: criteria.pickupDate,
+    pickupLocation: criteria.pickupLocation,
+    pickupTime: criteria.pickupTime,
+    rentalMode: criteria.rentalMode,
+  };
 }
 
 function resolveExistingTrip(
@@ -182,7 +203,9 @@ export async function POST(request: Request) {
     body.details && typeof body.details === 'object' && !Array.isArray(body.details)
       ? body.details
       : {};
-  const detailsJson = JSON.stringify(details);
+  const promotionCode = isText(body.promotionCode)
+    ? body.promotionCode.trim().toUpperCase()
+    : undefined;
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
   const busOfferId = productType === 'BUS' ? readOfferId(body.businessSelection) : undefined;
   const carRentalMode =
@@ -207,6 +230,20 @@ export async function POST(request: Request) {
             : {},
         ).adults
       : undefined;
+  const selectionValues =
+    body.businessSelection &&
+    typeof body.businessSelection === 'object' &&
+    !Array.isArray(body.businessSelection)
+      ? Object.fromEntries(
+          Object.entries(body.businessSelection).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string',
+          ),
+        )
+      : {};
+  const flightCriteria =
+    productType === 'FLIGHT' ? createFlightSearchCriteria(selectionValues) : null;
+  const busCriteria = productType === 'BUS' ? createBusSearchCriteria(selectionValues) : null;
+  const carCriteria = productType === 'CAR' ? createCarSearchCriteria(selectionValues) : null;
   const busPassengers =
     productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
       ? Number((body.businessSelection as Record<string, unknown>).passengers)
@@ -219,6 +256,30 @@ export async function POST(request: Request) {
     productType === 'BUS' && busPassengers !== undefined
       ? parseBusSeats(busSeats, busPassengers)
       : undefined;
+  const canonicalSelection =
+    productType === 'FLIGHT' && flightCriteria
+      ? {
+          offerId: readOfferId(body.businessSelection) ?? null,
+          promotionCode: promotionCode ?? null,
+          search: flightSearchCriteriaToQuery(flightCriteria),
+        }
+      : productType === 'BUS' && busCriteria
+        ? {
+            offerId: busOfferId ?? null,
+            promotionCode: promotionCode ?? null,
+            search: busSearchCriteriaToQuery(busCriteria),
+            seats: parsedBusSeats ?? [],
+          }
+        : productType === 'CAR' && carCriteria
+          ? {
+              offerId: carOfferId ?? null,
+              promotionCode: promotionCode ?? null,
+              search: carCriteriaQuery(carCriteria),
+            }
+          : null;
+  const detailsJson = canonicalSelection
+    ? createCustomerTripDetailsJson(details as Record<string, unknown>, canonicalSelection)
+    : undefined;
 
   if (
     !isCustomerTripProduct(productType) ||
@@ -233,7 +294,9 @@ export async function POST(request: Request) {
     !Number.isInteger(totalAmount) ||
     (totalAmount as number) < 0 ||
     (totalAmount as number) > MAX_TRIP_AMOUNT ||
+    !detailsJson ||
     detailsJson.length > MAX_DETAILS_LENGTH ||
+    (promotionCode !== undefined && promotionCode.length > MAX_PROMOTION_CODE_LENGTH) ||
     (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
@@ -307,12 +370,39 @@ export async function POST(request: Request) {
     return errorResponse('TRIP_LOOKUP_FAILED', 'The booking could not be checked.', 500);
   }
 
+  try {
+    const rateLimit = await consumeRateLimit({
+      action: 'CUSTOMER_TRIP_CREATE',
+      identifier: getRequestRateLimitIdentifier(request, user.id),
+      limit: CUSTOMER_TRIP_CREATE_LIMIT,
+      windowMs: CUSTOMER_TRIP_CREATE_WINDOW_MS,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'TRIP_CREATE_RATE_LIMITED',
+            message: 'Too many booking creation attempts. Please wait before trying again.',
+          },
+        },
+        { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+      );
+    }
+  } catch (error) {
+    console.error('Trip creation rate-limit check failed.', error);
+    return errorResponse(
+      'TRIP_CREATE_CHECK_FAILED',
+      'The booking could not be checked safely. Please try again.',
+      500,
+    );
+  }
+
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
   if (businessTravelRequestId) {
     try {
       businessCheckout = await validateBusinessCheckout({
         productType,
-        promotionCode: isText(body.promotionCode) ? body.promotionCode : undefined,
+        promotionCode,
         requestId: businessTravelRequestId,
         selection: body.businessSelection,
         userId: user.id,
@@ -353,7 +443,7 @@ export async function POST(request: Request) {
       const validatedSelection = await revalidateTravelSelection(
         productType,
         body.businessSelection,
-        isText(body.promotionCode) ? body.promotionCode : undefined,
+        promotionCode,
       );
       if (
         validatedSelection.startDate !== startDate ||

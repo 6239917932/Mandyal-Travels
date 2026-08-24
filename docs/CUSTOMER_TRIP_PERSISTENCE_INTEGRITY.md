@@ -15,13 +15,21 @@ non-null ownership.
 
 Before accepting an existing confirmation reference, the service compares an immutable fingerprint
 covering the product, reference, dates, title, subtitle, total, currency, status, company-request
-context, and a SHA-256 digest of the private details JSON. An exact retry returns the existing safe
+context, canonical server-derived offer/search/seat/rental inputs, normalized promotion code, and a
+SHA-256 digest of the private details JSON. Nested object keys are sorted recursively before the
+size check, persistence, and hashing, so semantically identical reordered JSON remains an exact
+retry while a changed offer, seat selection, rental context, or promotion returns HTTP 409. An
+exact retry returns the existing safe
 receipt with HTTP 200. Any changed context returns HTTP 409 and never overwrites the stored booking.
 
 The final existing-reference check and create operation share the same database transaction. Direct
 Bus seat and Car vehicle reservations remain in that transaction, so a failed or concurrent create
 cannot leave a duplicate reservation. A concurrent winner is re-resolved against the same ownership
 and immutable fingerprint rules.
+
+New creation attempts are capped per authenticated user and request address at ten per fifteen
+minutes. A blocked request receives HTTP 429 and `Retry-After`. Exact owned retries are resolved
+before consuming that creation quota, so customers can safely recover a completed response.
 
 ## Disclosure and authority
 
