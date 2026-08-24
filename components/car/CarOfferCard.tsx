@@ -39,9 +39,7 @@ export function CarOfferCard({
           ))}
         </div>
         <p>{offer.cancellationPolicy}</p>
-        <small>
-          {offer.carsRemaining} cars left · Source: {offer.source}
-        </small>
+        <small>{offer.carsRemaining} cars left</small>
       </div>
       <div className="car-offer-card__price">
         <small>Total rental</small>

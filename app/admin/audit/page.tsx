@@ -125,6 +125,21 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const userAccessWhere = enabled('SECURITY')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { reason: { contains: filters.query } },
+                { user: { is: { email: { contains: filters.query } } } },
+                { actor: { is: { email: { contains: filters.query } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
   const privacyWhere = enabled('PRIVACY')
     ? {
         ...(createdAt ? { createdAt } : {}),
@@ -240,6 +255,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     supportEvents,
     securityCount,
     securityEvents,
+    userAccessCount,
+    userAccessEvents,
     privacyCount,
     privacyEvents,
     platformCount,
@@ -285,6 +302,13 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: securityWhere,
+    }),
+    prisma.userAccessEvent.count({ where: userAccessWhere }),
+    prisma.userAccessEvent.findMany({
+      include: { actor: { select: actorSelect }, user: { select: actorSelect } },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: userAccessWhere,
     }),
     prisma.dataPrivacyRequestEvent.count({ where: privacyWhere }),
     prisma.dataPrivacyRequestEvent.findMany({
@@ -399,6 +423,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `security-${event.id}`,
       subject: 'Account security event',
     })),
+    ...userAccessEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: event.user.email,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'SECURITY' as const,
+      id: `user-access-${event.id}`,
+      subject: `${event.fromStatus} to ${event.toStatus} · version ${event.version}`,
+    })),
     ...privacyEvents.map((event) => ({
       action: event.action,
       actor: actorLabel(event.actor),
@@ -476,6 +510,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     organizationCount +
     supportCount +
     securityCount +
+    userAccessCount +
     privacyCount +
     platformCount +
     contentCount +

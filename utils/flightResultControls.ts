@@ -9,12 +9,16 @@ export const defaultFlightResultControls: FlightResultControls = {
 
 export function createFlightResultControls(
   params: Record<string, string | string[] | undefined>,
+  airlineCatalogue: readonly string[],
 ): FlightResultControls {
   const maximumTotalPrice = Number(first(params.maximumTotalPrice));
   const sort = first(params.sort);
   const airline = first(params.airline)?.trim().toUpperCase();
   return {
-    airline: airline && /^[A-Z0-9]{2,3}$/.test(airline) ? airline : undefined,
+    airline:
+      airline && /^[A-Z0-9]{2,3}$/.test(airline) && airlineCatalogue.includes(airline)
+        ? airline
+        : undefined,
     maximumTotalPrice:
       Number.isFinite(maximumTotalPrice) && maximumTotalPrice > 0 && maximumTotalPrice <= 10_000_000
         ? maximumTotalPrice

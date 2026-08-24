@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type {
@@ -15,9 +17,15 @@ export function FlightResultControls({
   controls: FlightResultControlsValue;
   criteria: FlightSearchCriteria;
 }) {
+  const searchCriteria = flightSearchCriteriaToQuery(criteria);
+
   return (
-    <form action="/flights" className="flight-result-controls">
-      {Object.entries(flightSearchCriteriaToQuery(criteria)).map(([name, value]) => (
+    <form
+      action="/flights"
+      aria-label="Filter and sort flight results"
+      className="flight-result-controls"
+    >
+      {Object.entries(searchCriteria).map(([name, value]) => (
         <input key={name} name={name} type="hidden" value={value} />
       ))}
       <div className="ui-field">
@@ -41,6 +49,7 @@ export function FlightResultControls({
       <Input
         defaultValue={controls.maximumTotalPrice}
         label="Maximum total fare (INR)"
+        max="10000000"
         min="1"
         name="maximumTotalPrice"
         type="number"
@@ -65,6 +74,12 @@ export function FlightResultControls({
         Refundable fares only
       </label>
       <Button type="submit">Apply filters</Button>
+      <Link
+        className="ui-button ui-button--secondary"
+        href={{ pathname: '/flights', query: searchCriteria }}
+      >
+        Clear filters
+      </Link>
     </form>
   );
 }

@@ -216,6 +216,11 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       <td>
                         <strong>{booking.confirmationCode}</strong>
                         <span>HOTEL</span>
+                        <Link
+                          href={`/admin/bookings/${encodeURIComponent(booking.confirmationCode)}`}
+                        >
+                          View dossier
+                        </Link>
                       </td>
                       <td>
                         <strong>{booking.hotelSlug.replaceAll('-', ' ')}</strong>
@@ -305,6 +310,9 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                       <td>
                         <strong>{trip.confirmationCode}</strong>
                         <span>{trip.productType}</span>
+                        <Link href={`/admin/bookings/${encodeURIComponent(trip.confirmationCode)}`}>
+                          View dossier
+                        </Link>
                       </td>
                       <td>
                         <strong>{trip.title}</strong>

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma/client';
 import type { HotelReview, HotelReviewSummary } from '@/types/hotel';
 
 function mapReview(review: {
@@ -26,15 +27,18 @@ function mapReview(review: {
 }
 
 export const hotelReviewRepository = {
-  async create(input: {
-    body: string;
-    bookingId: string;
-    hotelSlug: string;
-    rating: number;
-    title: string;
-    userId: string;
-  }): Promise<HotelReview> {
-    const review = await prisma.hotelReview.create({
+  async create(
+    input: {
+      body: string;
+      bookingId: string;
+      hotelSlug: string;
+      rating: number;
+      title: string;
+      userId: string;
+    },
+    client: Pick<Prisma.TransactionClient, 'hotelReview'> = prisma,
+  ): Promise<HotelReview> {
+    const review = await client.hotelReview.create({
       data: { ...input, status: 'PENDING' },
       include: { user: { select: { firstName: true, lastName: true } } },
     });

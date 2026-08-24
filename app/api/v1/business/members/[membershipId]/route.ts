@@ -49,6 +49,12 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
           where: { id: member.id, organizationId: access.membership.organizationId },
         });
         if (!currentMember) throw new Error('MEMBERSHIP_CHANGED');
+        const targetUser = await transaction.user.findUnique({
+          select: { role: true },
+          where: { id: currentMember.userId },
+        });
+        if (!targetUser) throw new Error('MEMBERSHIP_CHANGED');
+        if (targetUser.role === 'PLATFORM_ADMIN') throw new Error('PROTECTED_PLATFORM_ADMIN');
 
         if (currentMember.role === 'ADMIN' && role === 'TRAVELLER') {
           const administratorCount = await transaction.organizationMember.count({
@@ -90,6 +96,12 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
     if (error instanceof Error && error.message === 'MEMBERSHIP_CHANGED') {
       return NextResponse.json(
         { error: 'The member access changed while this request was being processed.' },
+        { status: 409 },
+      );
+    }
+    if (error instanceof Error && error.message === 'PROTECTED_PLATFORM_ADMIN') {
+      return NextResponse.json(
+        { error: 'Platform administrator roles cannot be changed through business membership.' },
         { status: 409 },
       );
     }

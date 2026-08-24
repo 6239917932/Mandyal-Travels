@@ -1,5 +1,10 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import {
+  customerOwnsTrip,
+  customerTripResponse,
+  normalizeCustomerTripReference,
+} from '@/services/customerTripPersistenceRules';
 
 type Context = { params: Promise<{ confirmationCode: string }> };
 
@@ -11,16 +16,17 @@ export async function GET(_request: Request, context: Context): Promise<Response
       { status: 401 },
     );
   const { confirmationCode } = await context.params;
-  const normalizedCode = confirmationCode.trim().toUpperCase();
-  if (!/^M[BCF][A-Z0-9]{8,20}$/.test(normalizedCode))
+  const reference = normalizeCustomerTripReference(confirmationCode);
+  if (!reference)
     return Response.json(
       { error: { code: 'INVALID_REFERENCE', message: 'The booking reference is invalid.' } },
       { status: 400 },
     );
-  const trip = await prisma.customerTrip.findFirst({
+  const trip = await prisma.customerTrip.findUnique({
     select: {
       confirmationCode: true,
       currency: true,
+      email: true,
       endDate: true,
       productType: true,
       startDate: true,
@@ -28,11 +34,18 @@ export async function GET(_request: Request, context: Context): Promise<Response
       subtitle: true,
       title: true,
       totalAmount: true,
+      userId: true,
     },
-    where: { confirmationCode: normalizedCode, userId: user.id },
+    where: { confirmationCode: reference.confirmationCode },
   });
-  return trip
-    ? Response.json({ data: trip })
+  const response =
+    trip &&
+    trip.productType === reference.productType &&
+    customerOwnsTrip(trip, { email: user.email, userId: user.id })
+      ? customerTripResponse(trip)
+      : undefined;
+  return response
+    ? Response.json({ data: response })
     : Response.json(
         { error: { code: 'TRIP_NOT_FOUND', message: 'The trip was not found in this account.' } },
         { status: 404 },

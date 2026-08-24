@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
+import { EditableTripPlan } from '@/components/ai/EditableTripPlan';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { TripPlannerResult } from '@/types/ai';
@@ -136,32 +136,7 @@ export function TripPlanner() {
         ) : null}
       </form>
 
-      {result ? (
-        <section aria-live="polite" className="trip-planner__result">
-          <h2>Your suggested trip</h2>
-          <p>{result.summary}</p>
-          <p className="trip-planner__disclosure">{result.disclosure}</p>
-          <div className="trip-planner__days">
-            {result.days.map((day) => (
-              <article key={`${day.day}-${day.date}`}>
-                <span>
-                  Day {day.day} · {day.date}
-                </span>
-                <h3>{day.title}</h3>
-                <p>{day.guidance}</p>
-              </article>
-            ))}
-          </div>
-          <h2>Verify live travel options</h2>
-          <div className="trip-planner__links">
-            {result.links.map((link) => (
-              <Link href={link.href} key={link.product}>
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {result ? <EditableTripPlan result={result} /> : null}
     </div>
   );
 }

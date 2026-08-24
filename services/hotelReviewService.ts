@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { hotelReviewRepository } from '@/repositories/hotelReviewRepository';
+import {
+  customerReviewCutoff,
+  customerReviewEligibleBookingWhere,
+} from '@/services/customerReviewCenterService';
 import type { HotelReview, HotelReviewSummary } from '@/types/hotel';
 
 export class HotelReviewRuleError extends Error {
@@ -17,6 +22,7 @@ function normalizeText(value: string, maximumLength: number): string {
 
 export const hotelReviewService = {
   async createVerifiedReview(input: {
+    bookingReference: string;
     body: string;
     hotelSlug: string;
     rating: number;
@@ -24,9 +30,12 @@ export const hotelReviewService = {
     userEmail: string;
     userId: string;
   }): Promise<HotelReview> {
+    const bookingReference = input.bookingReference.trim();
     const title = normalizeText(input.title, 100);
     const body = normalizeText(input.body, 2_000);
     if (
+      !bookingReference ||
+      bookingReference.length > 100 ||
       !Number.isInteger(input.rating) ||
       input.rating < 1 ||
       input.rating > 5 ||
@@ -39,33 +48,49 @@ export const hotelReviewService = {
       );
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const eligibleBooking = await prisma.booking.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { id: true },
-      where: {
-        guest: { is: { email: input.userEmail } },
-        hotelSlug: input.hotelSlug,
-        quote: { is: { checkOutDate: { lt: today } } },
-        review: { is: null },
-        status: 'confirmed',
-      },
-    });
-    if (!eligibleBooking) {
-      throw new HotelReviewRuleError(
-        'NO_ELIGIBLE_STAY',
-        'A completed, confirmed stay at this property is required before reviewing it.',
-      );
-    }
+    try {
+      return await prisma.$transaction(
+        async (transaction) => {
+          const eligibleBooking = await transaction.booking.findFirst({
+            select: { id: true },
+            where: customerReviewEligibleBookingWhere({
+              bookingReference,
+              hotelSlug: input.hotelSlug,
+              today: customerReviewCutoff(),
+              userEmail: input.userEmail,
+            }),
+          });
+          if (!eligibleBooking) {
+            throw new HotelReviewRuleError(
+              'NO_ELIGIBLE_STAY',
+              'This exact booking is not an eligible completed stay for your account.',
+            );
+          }
 
-    return hotelReviewRepository.create({
-      body,
-      bookingId: eligibleBooking.id,
-      hotelSlug: input.hotelSlug,
-      rating: input.rating,
-      title,
-      userId: input.userId,
-    });
+          return hotelReviewRepository.create(
+            {
+              body,
+              bookingId: eligibleBooking.id,
+              hotelSlug: input.hotelSlug,
+              rating: input.rating,
+              title,
+              userId: input.userId,
+            },
+            transaction,
+          );
+        },
+        { isolationLevel: 'Serializable' },
+      );
+    } catch (error) {
+      if (error instanceof HotelReviewRuleError) throw error;
+      if (hasPrismaErrorCode(error, 'P2002') || hasPrismaErrorCode(error, 'P2034')) {
+        throw new HotelReviewRuleError(
+          'NO_ELIGIBLE_STAY',
+          'This stay was reviewed concurrently. Refresh your review center.',
+        );
+      }
+      throw error;
+    }
   },
 
   async getHotelReviews(

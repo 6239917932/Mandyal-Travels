@@ -8,7 +8,7 @@ import {
   consumeRateLimit,
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
-import { createSession } from '@/lib/auth/session';
+import { AccountAccessDeniedError, createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { verifyUserSecondFactor } from '@/services/mfaService';
@@ -44,6 +44,9 @@ export async function POST(request: Request) {
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json({ error: 'The email or password is incorrect.' }, { status: 401 });
     }
+    if (user.accessStatus !== 'ACTIVE') {
+      return NextResponse.json({ error: 'The email or password is incorrect.' }, { status: 401 });
+    }
 
     const mfa = await prisma.userMfaCredential.findUnique({ where: { userId: user.id } });
     if (mfa?.enabledAt) {
@@ -75,6 +78,9 @@ export async function POST(request: Request) {
       user: { email: user.email, firstName: user.firstName },
     });
   } catch (error) {
+    if (error instanceof AccountAccessDeniedError) {
+      return NextResponse.json({ error: 'The email or password is incorrect.' }, { status: 401 });
+    }
     console.error('Sign-in failed.', error);
     return NextResponse.json(
       { error: 'Sign-in is temporarily unavailable. Please try again.' },

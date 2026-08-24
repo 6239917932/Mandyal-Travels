@@ -30,6 +30,8 @@ and release checklist.
   and transport confirmations, with unresolved amendment/refund exceptions and explicit GST limits
 - Protected read-only hotel supply catalog with internal PMS/API provenance, governance filters,
   deterministic content-readiness checks, and links to existing human review controls
+- Governed administrator account suspension and restoration with exact confirmation, optimistic
+  versions, immediate session revocation, last-administrator protection, and immutable audit history
 - Protected read-only administrator inventory and rate directory with bounded forward windows,
   deterministic capacity/rate-plan checks, stop-sale and restriction visibility, and pagination
 - Governed destination content CMS with private drafts, human publication, optimistic versions,
@@ -60,6 +62,9 @@ and release checklist.
   rating summaries
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
+- Private customer travel-document center with exact account ownership, bounded hotel and
+  transport indexes, provisional hotel-receipt limits, allowlisted prototype document links, and
+  destination-route reauthorization
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases
 - B2B agency customer servicing with auditable profile lifecycle, customer-attributed travel
@@ -101,7 +106,7 @@ Platform operations access is intentionally separate from customer and company a
 Create a dedicated customer account, then run this once from the `frontend` folder:
 
 ```powershell
-npm run admin:grant -- administrator@example.com --confirm
+npm run admin:grant -- administrator@example.com --confirm=GRANT_PLATFORM_ADMIN:administrator@example.com
 ```
 
 Sign in with that account to open the read-only operations console at `/admin`. The command refuses

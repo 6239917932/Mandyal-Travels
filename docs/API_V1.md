@@ -2,7 +2,21 @@
 
 ## Contract
 
-All supported endpoints are rooted at `/api/v1`. JSON successes use a `data` member where practical. Failures use an `error` object with a stable machine-readable `code` and a user-safe `message`. Validation details must never contain credentials, provider payloads, or stack traces.
+Versioned endpoints are rooted at `/api/v1`. JSON successes use a `data` member where practical.
+New operations should use an `error` object with a stable machine-readable `code` and a user-safe
+`message`; the catalogue explicitly labels legacy or health-specific envelopes. Validation details
+must never contain credentials, provider payloads, or stack traces.
+
+The machine-readable catalogue at `GET /api/v1/meta` and `docs/openapi-v1.json` is deliberately a
+**curated supported-local subset**, not a claim that every implemented route is production-ready.
+Every listed operation declares its authentication, pagination, error-envelope, idempotency, and
+local-fulfillment boundary. Provider-activated fulfillment, payment webhooks, internal workers,
+credentials, and unlisted administrator or partner mutations remain outside this supported
+catalogue. Run `npm run api:verify-contract` to fail when a listed handler or generated contract
+drifts; use `npm run api:write-contract` only when intentionally updating and reviewing the typed
+catalogue.
+
+`PATCH /api/v1/admin/users/[userId]/access` requires a live platform-administrator session, a closed `SUSPEND` or `RESTORE` action, the current access version, a 10–500 character reason, and the exact account-bound confirmation phrase. A successful change transactionally updates the state, revokes every target session, and appends an immutable access event. Self-suspension, last-active-administrator suspension, stale versions, repeated transitions, and public role promotion fail closed.
 
 ## B2B travel-agency customers
 
@@ -53,6 +67,19 @@ corresponding hotel booking or Flight, Bus, or Car trip belongs to the signed-in
 cases are rate limited and linked to the owned booking with an append-only creation event. A support
 case is a request for human review: it does not itself change or cancel inventory, issue a refund,
 or alter a payment.
+
+## Customer travel documents
+
+`GET /api/v1/account/documents` requires an authenticated account and returns independently
+paginated hotel and transport document records. Transport ownership uses the signed-in user's exact
+user ID; legacy hotel ownership uses the signed-in user's exact session email. Each collection is
+limited to 20 records per page and the latest 500 records overall.
+
+Hotel billing links are labelled as provisional payment receipts, not statutory GST tax invoices.
+Flight, Bus, and Car links are labelled as prototypes until live provider fulfillment exists. The
+endpoint rebuilds transport links from a closed allowlist and never returns raw `detailsJson`,
+provider or supplier payloads, payment evidence, secrets, or tokens. Existing destination routes
+repeat their own ownership authorization.
 
 ## Account recovery
 
