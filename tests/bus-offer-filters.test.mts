@@ -26,6 +26,7 @@ const offer = (id: string, price: number, refundable: boolean, rating: number): 
 
 test('bus controls filter governed offers and sort stably', () => {
   const offers = [offer('a', 1000, true, 4.2), offer('b', 800, false, 4.8)];
+  const originalOrder = [...offers];
   assert.deepEqual(
     applyBusResultControls(offers, { refundableOnly: true, sort: 'price-ascending' }).map(
       ({ id }) => id,
@@ -48,4 +49,5 @@ test('bus controls filter governed offers and sort stably', () => {
     }).map(({ id }) => id),
     ['a'],
   );
+  assert.deepEqual(offers, originalOrder);
 });
