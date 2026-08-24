@@ -14,16 +14,37 @@ export async function GET() {
   const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
 
   try {
-    const [tripCount, hotelCount, requestCount, supportCount, securityEventCount] =
-      await Promise.all([
-        prisma.customerTrip.count({ where: tripFilter }),
-        prisma.bookingGuest.count({ where: { email: user.email } }),
-        prisma.businessTravelRequest.count({ where: { requesterId: user.id } }),
-        prisma.customerSupportCase.count({ where: { userId: user.id } }),
-        prisma.accountSecurityEvent.count({ where: { userId: user.id } }),
-      ]);
+    const [
+      tripCount,
+      hotelCount,
+      requestCount,
+      supportCount,
+      securityEventCount,
+      notificationCount,
+      loyaltyAccountCount,
+      loyaltyLedgerCount,
+      referralCount,
+    ] = await Promise.all([
+      prisma.customerTrip.count({ where: tripFilter }),
+      prisma.bookingGuest.count({ where: { email: user.email } }),
+      prisma.businessTravelRequest.count({ where: { requesterId: user.id } }),
+      prisma.customerSupportCase.count({ where: { userId: user.id } }),
+      prisma.accountSecurityEvent.count({ where: { userId: user.id } }),
+      prisma.notificationDelivery.count({ where: { userId: user.id } }),
+      prisma.loyaltyAccount.count({ where: { userId: user.id } }),
+      prisma.loyaltyLedger.count({ where: { account: { is: { userId: user.id } } } }),
+      prisma.referralCode.count({ where: { ownerUserId: user.id } }),
+    ]);
     const exportRecordCount =
-      tripCount + hotelCount + requestCount + supportCount + securityEventCount;
+      tripCount +
+      hotelCount +
+      requestCount +
+      supportCount +
+      securityEventCount +
+      notificationCount +
+      loyaltyAccountCount +
+      loyaltyLedgerCount +
+      referralCount;
     if (exportRecordCount > MAX_EXPORT_RECORDS) {
       return NextResponse.json(
         {
@@ -41,6 +62,9 @@ export async function GET() {
       supportCases,
       membership,
       securityEvents,
+      notificationHistory,
+      loyaltyAccount,
+      referralCodes,
     ] = await Promise.all([
       prisma.user.findUnique({ select: { createdAt: true }, where: { id: user.id } }),
       prisma.customerTrip.findMany({
@@ -141,6 +165,53 @@ export async function GET() {
         select: { action: true, createdAt: true, summary: true },
         where: { userId: user.id },
       }),
+      prisma.notificationDelivery.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          channel: true,
+          createdAt: true,
+          deliveredAt: true,
+          status: true,
+          template: { select: { templateKey: true } },
+          updatedAt: true,
+        },
+        where: { userId: user.id },
+      }),
+      prisma.loyaltyAccount.findUnique({
+        select: {
+          createdAt: true,
+          entries: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              createdAt: true,
+              description: true,
+              entryType: true,
+              pointsDelta: true,
+              walletCurrency: true,
+              walletDelta: true,
+            },
+          },
+          pointsBalance: true,
+          status: true,
+          updatedAt: true,
+          walletBalance: true,
+          walletCurrency: true,
+        },
+        where: { userId: user.id },
+      }),
+      prisma.referralCode.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          code: true,
+          createdAt: true,
+          expiresAt: true,
+          maxUses: true,
+          status: true,
+          updatedAt: true,
+          usedCount: true,
+        },
+        where: { ownerUserId: user.id },
+      }),
     ]);
 
     const exportedAt = new Date();
@@ -164,8 +235,10 @@ export async function GET() {
           }
         : null,
       companyTravelRequests: companyRequests,
+      benefitsReadiness: { loyaltyAccount, referralCodes },
       exportedAt,
       hotelBookings,
+      notificationHistory,
       securityActivity: securityEvents,
       supportCases,
       travelBookings: trips,

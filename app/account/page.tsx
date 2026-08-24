@@ -29,6 +29,16 @@ const customerQuickActions = [
   },
   { description: 'View current travel discounts.', href: '/offers', label: 'Offers' },
   {
+    description: 'Review account-linked delivery history and communication preferences.',
+    href: '/account/notifications',
+    label: 'Notifications',
+  },
+  {
+    description: 'Review recorded benefits data and program readiness.',
+    href: '/account/benefits',
+    label: 'Benefits readiness',
+  },
+  {
     description: 'Create and track a booking or account support case.',
     href: '/account/support',
     label: 'Customer support',
