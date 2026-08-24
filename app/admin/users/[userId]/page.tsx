@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { AdminUserAccessManager } from '@/components/admin/AdminUserAccessManager';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { isUserAccessStatus } from '@/services/adminUserAccessRules';
 
 export const metadata: Metadata = { title: 'User servicing record' };
 
@@ -32,6 +34,14 @@ export default async function AdminUserDetailPage({ params }: Props) {
   const { userId } = await params;
   const user = await prisma.user.findUnique({
     select: {
+      accessChangedAt: true,
+      accessEvents: {
+        include: { actor: { select: { email: true, firstName: true, lastName: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
+      accessStatus: true,
+      accessVersion: true,
       bookingEmailEnabled: true,
       createdAt: true,
       customerSupportCases: {
@@ -80,29 +90,37 @@ export default async function AdminUserDetailPage({ params }: Props) {
     where: { id: userId },
   });
   if (!user) notFound();
+  if (!isUserAccessStatus(user.accessStatus)) notFound();
 
   const now = new Date();
-  const [hotelBookings, hotelBookingCount, tripCount, supportCaseCount, activeSessions] =
-    await Promise.all([
-      prisma.booking.findMany({
-        orderBy: { createdAt: 'desc' },
-        select: {
-          confirmationCode: true,
-          createdAt: true,
-          currency: true,
-          hotelSlug: true,
-          quote: { select: { checkInDate: true, checkOutDate: true } },
-          status: true,
-          totalAmount: true,
-        },
-        take: 20,
-        where: { guest: { is: { email: user.email } } },
-      }),
-      prisma.booking.count({ where: { guest: { is: { email: user.email } } } }),
-      prisma.customerTrip.count({ where: { userId: user.id } }),
-      prisma.customerSupportCase.count({ where: { userId: user.id } }),
-      prisma.userSession.count({ where: { expiresAt: { gt: now }, userId: user.id } }),
-    ]);
+  const [
+    hotelBookings,
+    hotelBookingCount,
+    tripCount,
+    supportCaseCount,
+    activeSessions,
+    activePlatformAdminCount,
+  ] = await Promise.all([
+    prisma.booking.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        confirmationCode: true,
+        createdAt: true,
+        currency: true,
+        hotelSlug: true,
+        quote: { select: { checkInDate: true, checkOutDate: true } },
+        status: true,
+        totalAmount: true,
+      },
+      take: 20,
+      where: { guest: { is: { email: user.email } } },
+    }),
+    prisma.booking.count({ where: { guest: { is: { email: user.email } } } }),
+    prisma.customerTrip.count({ where: { userId: user.id } }),
+    prisma.customerSupportCase.count({ where: { userId: user.id } }),
+    prisma.userSession.count({ where: { expiresAt: { gt: now }, userId: user.id } }),
+    prisma.user.count({ where: { accessStatus: 'ACTIVE', role: 'PLATFORM_ADMIN' } }),
+  ]);
 
   return (
     <section className="account-page business-report admin-record-page admin-workspace">
@@ -125,6 +143,10 @@ export default async function AdminUserDetailPage({ params }: Props) {
           <strong>{user.role.replaceAll('_', ' ')}</strong>
         </Card>
         <Card>
+          <span>Access state</span>
+          <strong>{user.accessStatus.toLowerCase()}</strong>
+        </Card>
+        <Card>
           <span>Active sessions</span>
           <strong>{activeSessions}</strong>
         </Card>
@@ -141,6 +163,25 @@ export default async function AdminUserDetailPage({ params }: Props) {
           <strong>{supportCaseCount}</strong>
         </Card>
       </div>
+
+      <Card className="admin-record-card">
+        <p className="hotel-page__eyebrow">Governed account access</p>
+        <h2>{user.accessStatus === 'ACTIVE' ? 'Active account' : 'Suspended account'}</h2>
+        <p>
+          Access version {user.accessVersion}
+          {user.accessChangedAt ? ` · Last changed ${formatDate(user.accessChangedAt)}` : ''}
+        </p>
+        <AdminUserAccessManager
+          accessStatus={user.accessStatus}
+          accessVersion={user.accessVersion}
+          isCurrentAdministrator={administrator.id === user.id}
+          isLastActiveAdministrator={
+            user.role === 'PLATFORM_ADMIN' && activePlatformAdminCount <= 1
+          }
+          userEmail={user.email}
+          userId={user.id}
+        />
+      </Card>
 
       <div className="admin-record-grid">
         <Card className="admin-record-card">
@@ -205,6 +246,30 @@ export default async function AdminUserDetailPage({ params }: Props) {
             <p className="admin-empty-state">
               This is a personal account with no organization membership.
             </p>
+          )}
+        </Card>
+      </div>
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Access governance</p>
+          <h2>Recent access decisions</h2>
+        </div>
+        <Card className="admin-record-card">
+          {user.accessEvents.length ? (
+            user.accessEvents.map((event) => (
+              <div className="admin-record-item" key={event.id}>
+                <strong>
+                  {event.action} · {event.fromStatus} to {event.toStatus}
+                </strong>
+                <span>{event.reason}</span>
+                <small>
+                  Version {event.version} · {event.actor.firstName} {event.actor.lastName} ·{' '}
+                  {formatDate(event.createdAt)}
+                </small>
+              </div>
+            ))
+          ) : (
+            <p className="admin-empty-state">No administrator access changes are recorded.</p>
           )}
         </Card>
       </div>
