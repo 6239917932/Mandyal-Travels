@@ -12,7 +12,7 @@ export async function POST(request: Request): Promise<Response> {
       { error: { code: 'ADMIN_UNAUTHORIZED', message: 'Administrator access is required.' } },
       { status: 401 },
     );
-  const body = await readJsonObject(request);
+  const body = await readJsonObject(request, 2048);
   if (
     !body ||
     typeof body.partnerId !== 'string' ||
@@ -35,6 +35,7 @@ export async function POST(request: Request): Promise<Response> {
           body.partnerId,
           body.periodStart,
           body.periodEnd,
+          admin.id,
         ),
       },
       { status: 201 },

@@ -939,6 +939,7 @@ CREATE TABLE "PartnerSettlement" (
     "netAmount" INTEGER NOT NULL,
     "bookingCount" INTEGER NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "version" INTEGER NOT NULL DEFAULT 1,
     "calculationJson" TEXT NOT NULL DEFAULT '{}',
     "reviewNote" TEXT NOT NULL DEFAULT '',
     "approvedByUserId" TEXT,
@@ -949,6 +950,21 @@ CREATE TABLE "PartnerSettlement" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PartnerSettlement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerSettlementEvent" (
+    "id" TEXT NOT NULL,
+    "settlementId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "note" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerSettlementEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1815,6 +1831,15 @@ CREATE INDEX "PartnerSettlement_partnerId_status_periodEnd_idx" ON "PartnerSettl
 CREATE UNIQUE INDEX "PartnerSettlement_partnerId_periodStart_periodEnd_key" ON "PartnerSettlement"("partnerId", "periodStart", "periodEnd");
 
 -- CreateIndex
+CREATE INDEX "PartnerSettlementEvent_settlementId_createdAt_idx" ON "PartnerSettlementEvent"("settlementId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerSettlementEvent_actorUserId_createdAt_idx" ON "PartnerSettlementEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerSettlementEvent_createdAt_idx" ON "PartnerSettlementEvent"("createdAt");
+
+-- CreateIndex
 CREATE INDEX "AnalyticsEvent_eventName_occurredAt_idx" ON "AnalyticsEvent"("eventName", "occurredAt");
 
 -- CreateIndex
@@ -2260,6 +2285,12 @@ ALTER TABLE "HotelChannelSyncRun" ADD CONSTRAINT "HotelChannelSyncRun_connection
 
 -- AddForeignKey
 ALTER TABLE "PartnerSettlement" ADD CONSTRAINT "PartnerSettlement_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerSettlementEvent" ADD CONSTRAINT "PartnerSettlementEvent_settlementId_fkey" FOREIGN KEY ("settlementId") REFERENCES "PartnerSettlement"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerSettlementEvent" ADD CONSTRAINT "PartnerSettlementEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AnalyticsEvent" ADD CONSTRAINT "AnalyticsEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

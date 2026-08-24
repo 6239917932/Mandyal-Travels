@@ -2,30 +2,56 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+type SettlementEvent = {
+  action: string;
+  actorName: string;
+  createdAt: string;
+  fromStatus: string;
+  note: string;
+  toStatus: string;
+  version: number;
+};
+
+type Settlement = {
+  bookingCount: number;
+  currency: string;
+  events: SettlementEvent[];
+  grossAmount: number;
+  id: string;
+  netAmount: number;
+  partner: { name: string };
+  paymentReference: string;
+  periodEnd: string;
+  periodStart: string;
+  status: string;
+  version: number;
+};
+
+function date(value: string) {
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(
+    new Date(value),
+  );
+}
+
 export function AdminSettlementManager({
   partners,
   settlements,
 }: {
   partners: { id: string; name: string }[];
-  settlements: {
-    bookingCount: number;
-    currency: string;
-    grossAmount: number;
-    id: string;
-    netAmount: number;
-    partner: { name: string };
-    periodEnd: string;
-    periodStart: string;
-    status: string;
-  }[];
+  settlements: Settlement[];
 }) {
   const router = useRouter();
   const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  async function send(endpoint: string, body: Record<string, string>, method: 'POST' | 'PATCH') {
-    if (busy) return;
+  const [busyId, setBusyId] = useState<string>();
+  async function send(
+    operationId: string,
+    endpoint: string,
+    body: Record<string, string>,
+    method: 'POST' | 'PATCH',
+  ) {
+    if (busyId) return;
     setError(undefined);
-    setBusy(true);
+    setBusyId(operationId);
     try {
       const response = await fetch(endpoint, {
         body: JSON.stringify(body),
@@ -52,12 +78,13 @@ export function AdminSettlementManager({
     } catch {
       setError('The settlement service could not be reached. No action was recorded.');
     } finally {
-      setBusy(false);
+      setBusyId(undefined);
     }
   }
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void send(
+      'create',
       '/api/v1/admin/settlements',
       Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>,
       'POST',
@@ -72,12 +99,15 @@ export function AdminSettlementManager({
       ) : null}
       <form className="supplier-form ui-card" onSubmit={create}>
         <h2>Calculate settlement</h2>
+        <p>
+          Bookings with unresolved refunds are held back automatically until finance review ends.
+        </p>
         <div className="supplier-form__grid">
           <label>
             Supplier
             <select name="partnerId" required defaultValue="">
               <option value="" disabled>
-                Select supplier
+                Select active supplier
               </option>
               {partners.map((partner) => (
                 <option key={partner.id} value={partner.id}>
@@ -95,10 +125,11 @@ export function AdminSettlementManager({
             <input name="periodEnd" required type="date" />
           </label>
         </div>
-        <button className="ui-button ui-button--primary" disabled={busy} type="submit">
-          {busy ? 'Working…' : 'Create draft'}
+        <button className="ui-button ui-button--primary" disabled={Boolean(busyId)} type="submit">
+          {busyId === 'create' ? 'Working…' : 'Create draft'}
         </button>
       </form>
+
       {settlements.map((settlement) => (
         <section className="ui-card partner-channel-card" key={settlement.id}>
           <h3>
@@ -109,6 +140,10 @@ export function AdminSettlementManager({
             {settlement.grossAmount.toLocaleString('en-IN')} · Net {settlement.currency}{' '}
             {settlement.netAmount.toLocaleString('en-IN')} · <strong>{settlement.status}</strong>
           </p>
+          <small>
+            Record version {settlement.version}
+            {settlement.paymentReference ? ` · Payment ${settlement.paymentReference}` : ''}
+          </small>
           {settlement.status !== 'PAID' ? (
             <form
               className="supplier-form"
@@ -117,23 +152,74 @@ export function AdminSettlementManager({
                 const values = Object.fromEntries(
                   new FormData(event.currentTarget).entries(),
                 ) as Record<string, string>;
-                void send(`/api/v1/admin/settlements/${settlement.id}`, values, 'PATCH');
+                void send(
+                  settlement.id,
+                  `/api/v1/admin/settlements/${settlement.id}`,
+                  values,
+                  'PATCH',
+                );
               }}
             >
-              <input name="note" required minLength={3} maxLength={500} placeholder="Audit note" />
-              <input name="paymentReference" placeholder="Payment reference (when marking paid)" />
+              <input name="expectedVersion" type="hidden" value={settlement.version} />
+              <label>
+                Audit note
+                <input
+                  name="note"
+                  required
+                  minLength={10}
+                  maxLength={500}
+                  placeholder="Explain the reviewed evidence"
+                />
+              </label>
+              {settlement.status === 'APPROVED' ? (
+                <label>
+                  Payment reference
+                  <input
+                    name="paymentReference"
+                    required
+                    minLength={3}
+                    maxLength={100}
+                    pattern="[A-Za-z0-9][A-Za-z0-9._:/-]{2,99}"
+                  />
+                </label>
+              ) : null}
               <button
                 className="ui-button ui-button--secondary"
-                disabled={busy}
+                disabled={Boolean(busyId)}
                 name="action"
                 value={settlement.status === 'DRAFT' ? 'APPROVE' : 'MARK_PAID'}
               >
-                {busy ? 'Working…' : settlement.status === 'DRAFT' ? 'Approve' : 'Mark paid'}
+                {busyId === settlement.id
+                  ? 'Working…'
+                  : settlement.status === 'DRAFT'
+                    ? 'Approve'
+                    : 'Mark paid'}
               </button>
             </form>
           ) : null}
+          <details>
+            <summary>Recent audit history ({settlement.events.length})</summary>
+            {settlement.events.map((event) => (
+              <p key={`${event.version}-${event.action}`}>
+                <strong>{event.action}</strong> · {event.fromStatus} → {event.toStatus} ·{' '}
+                {event.actorName} · {date(event.createdAt)}
+                <br />
+                <small>
+                  {event.note} · version {event.version}
+                </small>
+              </p>
+            ))}
+            {settlement.events.length === 0 ? (
+              <p>Legacy record: no transition history is available.</p>
+            ) : null}
+          </details>
         </section>
       ))}
+      {settlements.length === 0 ? (
+        <div className="ui-card admin-empty-state">
+          <strong>No matching settlements.</strong>
+        </div>
+      ) : null}
     </div>
   );
 }

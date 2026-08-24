@@ -135,6 +135,10 @@ need the integration key.
 
 ## Release checks
 
+Partner settlement calculations fail closed while customer refunds are unresolved. Administrator
+approval and paid confirmation are version-checked and append-only; see
+`docs/PARTNER_SETTLEMENT_GOVERNANCE.md` for the operational contract.
+
 - Run `npm run check` before publishing a release.
 - The deployment readiness endpoint is `/api/v1/health`. It returns HTTP 200 only when the portal
   can reach its database.
