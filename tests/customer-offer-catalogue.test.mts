@@ -44,7 +44,12 @@ test('promotion values fail closed before public presentation', () => {
   assert.equal(isPublicPromotionRule(rule({ active: false })), false);
   assert.equal(isPublicPromotionRule(rule({ percentOff: 101 })), false);
   assert.equal(isPublicPromotionRule(rule({ maxDiscount: 0 })), false);
+  assert.equal(isPublicPromotionRule(rule({ maxDiscount: 10_000_001 })), false);
   assert.equal(isPublicPromotionRule(rule({ minimumSubtotal: -1 })), false);
+  assert.equal(isPublicPromotionRule(rule({ minimumSubtotal: 100_000_001 })), false);
+  assert.equal(isPublicPromotionRule(rule({ code: 'bad code' })), false);
+  assert.equal(isPublicPromotionRule(rule({ code: 'A'.repeat(31) })), false);
+  assert.equal(isPublicPromotionRule(rule({ version: 0 })), false);
   assert.equal(isPublicPromotionRule(rule({ products: [] })), false);
 });
 
@@ -61,6 +66,12 @@ test('stored campaigns authoritatively override baseline codes within bounded qu
   assert.match(serviceSource, /where: \{ code: \{ in: baselineCodes \} \}/);
   assert.match(serviceSource, /where: \{ code: \{ notIn: baselineCodes \} \}/);
   assert.match(serviceSource, /take: CUSTOMER_OFFER_RESULT_LIMIT \+ 1/);
+  assert.match(
+    serviceSource,
+    /remainingCapacity = Math\.max\(0, CUSTOMER_OFFER_RESULT_LIMIT - offers\.length\)/,
+  );
+  assert.match(serviceSource, /additionalStoredCampaigns\.slice\(0, remainingCapacity\)/);
+  assert.match(serviceSource, /additionalStoredCampaigns\.length > remainingCapacity/);
   assert.match(serviceSource, /if \(override\)/);
   assert.match(serviceSource, /resolveStoredPromotionRule/);
   assert.match(serviceSource, /findPromotionRule/);

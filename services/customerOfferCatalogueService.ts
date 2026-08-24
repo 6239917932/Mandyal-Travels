@@ -127,7 +127,8 @@ export async function getCustomerOfferCatalogue(now = new Date()): Promise<Custo
     }
   }
 
-  for (const campaign of additionalStoredCampaigns.slice(0, CUSTOMER_OFFER_RESULT_LIMIT)) {
+  const remainingCapacity = Math.max(0, CUSTOMER_OFFER_RESULT_LIMIT - offers.length);
+  for (const campaign of additionalStoredCampaigns.slice(0, remainingCapacity)) {
     const resolved = resolveStoredProducts(campaign, now);
     if (!resolved) continue;
     offers.push(
@@ -140,7 +141,7 @@ export async function getCustomerOfferCatalogue(now = new Date()): Promise<Custo
   }
 
   return {
-    catalogueTruncated: additionalStoredCampaigns.length > CUSTOMER_OFFER_RESULT_LIMIT,
+    catalogueTruncated: additionalStoredCampaigns.length > remainingCapacity,
     offers: offers.sort((left, right) => left.code.localeCompare(right.code)),
   };
 }
