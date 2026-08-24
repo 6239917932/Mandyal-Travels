@@ -16,3 +16,46 @@ export function projectionVersion(value: unknown): string {
 export function boundedCacheKey(namespace: string, value: unknown): string {
   return `mandyal:v1:${namespace}:${projectionVersion(value).slice(0, 32)}`;
 }
+
+type HotelProjectionTermsInput = {
+  aliases: readonly string[];
+  city: string;
+  displayName: string;
+  district: string;
+  locality: string;
+  state: string;
+  tehsil: string;
+};
+
+export function parseProjectionStringList(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? parsed
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function hotelProjectionSearchTerms(property: HotelProjectionTermsInput): string {
+  return normalizeSearchTerms([
+    property.displayName,
+    property.locality,
+    property.tehsil,
+    property.city,
+    property.district,
+    property.state,
+    ...property.aliases,
+  ]);
+}
+
+export function staleHotelProjectionWhere(activePropertyIds: readonly string[]) {
+  return {
+    entityType: 'HOTEL',
+    ...(activePropertyIds.length ? { entityId: { notIn: [...activePropertyIds] } } : {}),
+  };
+}

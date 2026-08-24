@@ -12,6 +12,8 @@ and release checklist.
 - Bus search, seat selection, and booking journey
 - Car rental search and booking journey
 - Inventory and availability controls
+- Transactional, source-versioned hotel search projections with complete destination vocabulary,
+  isolated metadata parsing, and stale unpublished-property cleanup
 - Partner-scoped hotel occupancy and calendar-capacity decision support with human-only actions
 - Platform-admin operational analytics for consent-aware conversion, booking cancellations,
   checkout capture completion, supplier and hotel readiness, support load, and high-severity risk
