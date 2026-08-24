@@ -1,0 +1,233 @@
+{
+  "components": {
+    "securitySchemes": {
+      "SessionCookie": {
+        "in": "cookie",
+        "name": "mandyal_session",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Only the listed local portal contracts are covered. Unlisted routes are not declared supported by this catalogue. Provider-activated fulfillment, payment webhooks, internal workers, credentials, and unlisted administrative or partner mutations are excluded.",
+    "title": "Mandyal Travels API",
+    "version": "2026-08-24",
+    "x-mandyal-api-version": "v1",
+    "x-mandyal-coverage": "CURATED_SUPPORTED_LOCAL_SUBSET"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "operationId": "getApiV1Meta",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": {
+            "description": "No operation-specific error envelope is declared."
+          }
+        },
+        "security": [],
+        "summary": "Read the curated API v1 contract catalogue",
+        "tags": ["Meta"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "NONE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getPortalReadiness",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: HEALTH_STATUS." }
+        },
+        "security": [],
+        "summary": "Read database and local integration readiness",
+        "tags": ["Health"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "HEALTH_STATUS",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/health/live": {
+      "get": {
+        "operationId": "getPortalLiveness",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": {
+            "description": "No operation-specific error envelope is declared."
+          }
+        },
+        "security": [],
+        "summary": "Read process liveness without a database dependency",
+        "tags": ["Health"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "NONE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/account/export": {
+      "get": {
+        "operationId": "exportCustomerAccountData",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: MESSAGE_ONLY." }
+        },
+        "security": [{ "SessionCookie": [] }],
+        "summary": "Download the signed-in customer account archive",
+        "tags": ["Account"],
+        "x-mandyal-auth": "CUSTOMER_SESSION",
+        "x-mandyal-error-envelope": "MESSAGE_ONLY",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/account/support": {
+      "post": {
+        "operationId": "createCustomerSupportCase",
+        "responses": {
+          "201": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: MESSAGE_ONLY." }
+        },
+        "security": [{ "SessionCookie": [] }],
+        "summary": "Create a human-reviewed customer support case",
+        "tags": ["Account"],
+        "x-mandyal-auth": "CUSTOMER_SESSION",
+        "x-mandyal-error-envelope": "MESSAGE_ONLY",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/agent/customers": {
+      "get": {
+        "operationId": "listAgencyCustomers",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: MESSAGE_ONLY." }
+        },
+        "security": [{ "SessionCookie": [] }],
+        "summary": "List up to 100 customers owned by the travel agency",
+        "tags": ["Agency"],
+        "x-mandyal-auth": "TRAVEL_AGENCY_ADMIN",
+        "x-mandyal-error-envelope": "MESSAGE_ONLY",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
+        "x-mandyal-pagination": { "maximumLimit": 100, "mode": "FIXED_LIMIT" }
+      },
+      "post": {
+        "operationId": "createAgencyCustomer",
+        "responses": {
+          "201": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: MESSAGE_ONLY." }
+        },
+        "security": [{ "SessionCookie": [] }],
+        "summary": "Create an agency-scoped customer profile",
+        "tags": ["Agency"],
+        "x-mandyal-auth": "TRAVEL_AGENCY_ADMIN",
+        "x-mandyal-error-envelope": "MESSAGE_ONLY",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/agent/travel-requests": {
+      "post": {
+        "operationId": "createAgencyTravelRequest",
+        "responses": {
+          "201": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: MESSAGE_ONLY." }
+        },
+        "security": [{ "SessionCookie": [] }],
+        "summary": "Create an idempotent agency customer travel request",
+        "tags": ["Agency"],
+        "x-mandyal-auth": "TRAVEL_AGENCY_ADMIN",
+        "x-mandyal-error-envelope": "MESSAGE_ONLY",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": {
+          "header": "Idempotency-Key",
+          "mode": "REQUIRED"
+        },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/hotels/discovery": {
+      "post": {
+        "operationId": "interpretHotelDiscoveryIntent",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: CODE_MESSAGE." }
+        },
+        "security": [],
+        "summary": "Interpret bounded hotel discovery criteria locally",
+        "tags": ["Hotels"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "CODE_MESSAGE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/hotels/quotes": {
+      "post": {
+        "operationId": "createHotelQuote",
+        "responses": {
+          "201": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: CODE_MESSAGE." }
+        },
+        "security": [],
+        "summary": "Create a bounded local hotel quote and room hold",
+        "tags": ["Hotels"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "CODE_MESSAGE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/hotels/bookings": {
+      "post": {
+        "operationId": "createHotelBooking",
+        "responses": {
+          "201": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: CODE_MESSAGE." }
+        },
+        "security": [{}, { "SessionCookie": [] }],
+        "summary": "Confirm a locally validated hotel booking retry-safely",
+        "tags": ["Hotels"],
+        "x-mandyal-auth": "OPTIONAL_SESSION",
+        "x-mandyal-error-envelope": "CODE_MESSAGE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": {
+          "header": "Idempotency-Key",
+          "mode": "REQUIRED"
+        },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    },
+    "/api/v1/promotions/validate": {
+      "post": {
+        "operationId": "validatePromotion",
+        "responses": {
+          "200": { "description": "Successful local portal response." },
+          "default": { "description": "Error envelope: CODE_MESSAGE." }
+        },
+        "security": [],
+        "summary": "Validate a governed local promotion rule",
+        "tags": ["Promotions"],
+        "x-mandyal-auth": "PUBLIC",
+        "x-mandyal-error-envelope": "CODE_MESSAGE",
+        "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
+        "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
+        "x-mandyal-pagination": { "mode": "NONE" }
+      }
+    }
+  }
+}
