@@ -854,6 +854,20 @@ CREATE TABLE "IntegrationOutboxEvent" (
 );
 
 -- CreateTable
+CREATE TABLE "IntegrationOutboxReviewEvent" (
+    "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "note" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "IntegrationOutboxReviewEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "HotelChannelConnection" (
     "id" TEXT NOT NULL,
     "partnerId" TEXT NOT NULL,
@@ -1792,6 +1806,12 @@ CREATE INDEX "IntegrationOutboxEvent_aggregateType_aggregateId_createdAt_idx" ON
 CREATE INDEX "IntegrationOutboxEvent_bookingId_createdAt_idx" ON "IntegrationOutboxEvent"("bookingId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "IntegrationOutboxReviewEvent_eventId_createdAt_idx" ON "IntegrationOutboxReviewEvent"("eventId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "IntegrationOutboxReviewEvent_actorUserId_createdAt_idx" ON "IntegrationOutboxReviewEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "HotelChannelConnection_partnerId_status_createdAt_idx" ON "HotelChannelConnection"("partnerId", "status", "createdAt");
 
 -- CreateIndex
@@ -2270,6 +2290,12 @@ ALTER TABLE "PartnerVehicleMaintenance" ADD CONSTRAINT "PartnerVehicleMaintenanc
 
 -- AddForeignKey
 ALTER TABLE "IntegrationOutboxEvent" ADD CONSTRAINT "IntegrationOutboxEvent_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "IntegrationOutboxReviewEvent" ADD CONSTRAINT "IntegrationOutboxReviewEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "IntegrationOutboxEvent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "IntegrationOutboxReviewEvent" ADD CONSTRAINT "IntegrationOutboxReviewEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HotelChannelConnection" ADD CONSTRAINT "HotelChannelConnection_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;

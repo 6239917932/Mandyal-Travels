@@ -17,6 +17,9 @@ and release checklist.
   checkout capture completion, supplier and hotel readiness, support load, and high-severity risk
 - Protected support operations with complete customer and company queues, bounded search, status
   filters, oldest-open ordering, pagination, and audited human resolution controls
+- Human-governed exception operations with bounded integration history, private evidence,
+  version-safe retry/ignore decisions, append-only review events, and exact booking/finance/risk
+  handoffs
 - Administrator-only platform configuration with reason-required, version-safe, audited release
   controls for guided trip planning and new partner applications
 - Read-only administrator booking operations across Hotel, Flight, Bus, and Car records with

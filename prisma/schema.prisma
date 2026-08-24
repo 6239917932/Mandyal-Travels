@@ -8,39 +8,39 @@ datasource db {
 }
 
 model User {
-  id                          String                      @id @default(cuid())
-  email                       String                      @unique
+  id                          String                         @id @default(cuid())
+  email                       String                         @unique
   passwordHash                String
   firstName                   String
   lastName                    String
-  role                        String                      @default("CUSTOMER")
+  role                        String                         @default("CUSTOMER")
   emailVerifiedAt             DateTime?
   marketingConsentAt          DateTime?
-  bookingEmailEnabled         Boolean                     @default(true)
-  smsAlertsEnabled            Boolean                     @default(false)
-  whatsappAlertsEnabled       Boolean                     @default(false)
-  createdAt                   DateTime                    @default(now())
-  updatedAt                   DateTime                    @updatedAt
+  bookingEmailEnabled         Boolean                        @default(true)
+  smsAlertsEnabled            Boolean                        @default(false)
+  whatsappAlertsEnabled       Boolean                        @default(false)
+  createdAt                   DateTime                       @default(now())
+  updatedAt                   DateTime                       @updatedAt
   sessions                    UserSession[]
   securityEvents              AccountSecurityEvent[]
   trips                       CustomerTrip[]
   organizationMemberships     OrganizationMember[]
-  businessTravelRequests      BusinessTravelRequest[]     @relation("BusinessTravelRequester")
-  reviewedTravelRequests      BusinessTravelRequest[]     @relation("BusinessTravelReviewer")
-  businessAuditEntries        BusinessAuditLog[]          @relation("BusinessAuditActor")
-  businessSupportCases        BusinessSupportCase[]       @relation("BusinessSupportCaseCreator")
-  customerSupportCases        CustomerSupportCase[]       @relation("CustomerSupportCaseCreator")
-  reviewedCustomerCases       CustomerSupportCase[]       @relation("CustomerSupportCaseReviewer")
-  customerSupportEvents       CustomerSupportCaseEvent[]  @relation("CustomerSupportCaseEventActor")
-  sentBusinessInvitations     OrganizationInvitation[]    @relation("BusinessInvitationSender")
-  acceptedInvitations         OrganizationInvitation[]    @relation("BusinessInvitationAcceptor")
-  createdPolicyVersions       OrganizationPolicyVersion[] @relation("OrganizationPolicyVersionCreator")
+  businessTravelRequests      BusinessTravelRequest[]        @relation("BusinessTravelRequester")
+  reviewedTravelRequests      BusinessTravelRequest[]        @relation("BusinessTravelReviewer")
+  businessAuditEntries        BusinessAuditLog[]             @relation("BusinessAuditActor")
+  businessSupportCases        BusinessSupportCase[]          @relation("BusinessSupportCaseCreator")
+  customerSupportCases        CustomerSupportCase[]          @relation("CustomerSupportCaseCreator")
+  reviewedCustomerCases       CustomerSupportCase[]          @relation("CustomerSupportCaseReviewer")
+  customerSupportEvents       CustomerSupportCaseEvent[]     @relation("CustomerSupportCaseEventActor")
+  sentBusinessInvitations     OrganizationInvitation[]       @relation("BusinessInvitationSender")
+  acceptedInvitations         OrganizationInvitation[]       @relation("BusinessInvitationAcceptor")
+  createdPolicyVersions       OrganizationPolicyVersion[]    @relation("OrganizationPolicyVersionCreator")
   supplyPartnerMemberships    SupplyPartnerMember[]
-  partnerAuditEntries         PartnerAuditLog[]           @relation("PartnerAuditActor")
-  partnerApplications         PartnerApplication[]        @relation("PartnerApplicationApplicant")
-  reviewedPartnerApplications PartnerApplication[]        @relation("PartnerApplicationReviewer")
-  hotelReviews                HotelReview[]               @relation("HotelReviewAuthor")
-  moderatedHotelReviews       HotelReview[]               @relation("HotelReviewModerator")
+  partnerAuditEntries         PartnerAuditLog[]              @relation("PartnerAuditActor")
+  partnerApplications         PartnerApplication[]           @relation("PartnerApplicationApplicant")
+  reviewedPartnerApplications PartnerApplication[]           @relation("PartnerApplicationReviewer")
+  hotelReviews                HotelReview[]                  @relation("HotelReviewAuthor")
+  moderatedHotelReviews       HotelReview[]                  @relation("HotelReviewModerator")
   analyticsEvents             AnalyticsEvent[]
   notificationDeliveries      NotificationDelivery[]
   passwordResetTokens         PasswordResetToken[]
@@ -48,15 +48,16 @@ model User {
   mfaRecoveryCodes            UserMfaRecoveryCode[]
   consentRecords              UserConsentRecord[]
   privacyRequests             DataPrivacyRequest[]
-  reviewedPrivacyRequests     DataPrivacyRequest[]        @relation("PrivacyRequestReviewer")
-  privacyRequestEvents        DataPrivacyRequestEvent[]   @relation("PrivacyRequestEventActor")
-  updatedPlatformFeatureFlags PlatformFeatureFlag[]       @relation("PlatformFeatureFlagUpdater")
-  platformFeatureFlagEvents   PlatformFeatureFlagEvent[]  @relation("PlatformFeatureFlagEventActor")
-  createdDestinationContent   DestinationContent[]        @relation("DestinationContentCreator")
-  updatedDestinationContent   DestinationContent[]        @relation("DestinationContentUpdater")
-  destinationContentEvents    DestinationContentEvent[]   @relation("DestinationContentEventActor")
-  promotionCampaignEvents     PromotionCampaignEvent[]    @relation("PromotionCampaignEventActor")
-  partnerSettlementEvents     PartnerSettlementEvent[]     @relation("PartnerSettlementEventActor")
+  reviewedPrivacyRequests     DataPrivacyRequest[]           @relation("PrivacyRequestReviewer")
+  privacyRequestEvents        DataPrivacyRequestEvent[]      @relation("PrivacyRequestEventActor")
+  updatedPlatformFeatureFlags PlatformFeatureFlag[]          @relation("PlatformFeatureFlagUpdater")
+  platformFeatureFlagEvents   PlatformFeatureFlagEvent[]     @relation("PlatformFeatureFlagEventActor")
+  createdDestinationContent   DestinationContent[]           @relation("DestinationContentCreator")
+  updatedDestinationContent   DestinationContent[]           @relation("DestinationContentUpdater")
+  destinationContentEvents    DestinationContentEvent[]      @relation("DestinationContentEventActor")
+  promotionCampaignEvents     PromotionCampaignEvent[]       @relation("PromotionCampaignEventActor")
+  partnerSettlementEvents     PartnerSettlementEvent[]       @relation("PartnerSettlementEventActor")
+  integrationOutboxReviews    IntegrationOutboxReviewEvent[] @relation("IntegrationOutboxReviewActor")
 }
 
 model PasswordResetToken {
@@ -986,27 +987,44 @@ model PartnerVehicleMaintenance {
 }
 
 model IntegrationOutboxEvent {
-  id            String    @id @default(cuid())
+  id            String                         @id @default(cuid())
   bookingId     String?
   aggregateType String
   aggregateId   String
   eventType     String
-  dedupeKey     String    @unique
+  dedupeKey     String                         @unique
   payloadJson   String
-  status        String    @default("PENDING")
-  attempts      Int       @default(0)
-  maxAttempts   Int       @default(8)
-  nextAttemptAt DateTime  @default(now())
+  status        String                         @default("PENDING")
+  attempts      Int                            @default(0)
+  maxAttempts   Int                            @default(8)
+  nextAttemptAt DateTime                       @default(now())
   lockedAt      DateTime?
   processedAt   DateTime?
-  lastError     String    @default("")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  lastError     String                         @default("")
+  createdAt     DateTime                       @default(now())
+  updatedAt     DateTime                       @updatedAt
+  booking       Booking?                       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  reviewEvents  IntegrationOutboxReviewEvent[]
 
   @@index([status, nextAttemptAt, createdAt])
   @@index([aggregateType, aggregateId, createdAt])
   @@index([bookingId, createdAt])
+}
+
+model IntegrationOutboxReviewEvent {
+  id          String                 @id @default(cuid())
+  eventId     String
+  actorUserId String
+  action      String
+  fromStatus  String
+  toStatus    String
+  note        String
+  createdAt   DateTime               @default(now())
+  event       IntegrationOutboxEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actor       User                   @relation("IntegrationOutboxReviewActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([eventId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model HotelChannelConnection {
@@ -1537,10 +1555,10 @@ model PartnerPayoutInstruction {
 }
 
 model PromotionCampaign {
-  id              String   @id @default(cuid())
-  code            String   @unique
+  id              String                   @id @default(cuid())
+  code            String                   @unique
   name            String
-  description     String   @default("")
+  description     String                   @default("")
   productsJson    String
   percentOff      Int
   maximumDiscount Int
@@ -1548,12 +1566,12 @@ model PromotionCampaign {
   usageLimit      Int?
   startsAt        DateTime
   endsAt          DateTime
-  active          Boolean  @default(false)
-  version         Int      @default(1)
+  active          Boolean                  @default(false)
+  version         Int                      @default(1)
   createdByUserId String
   updatedByUserId String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   events          PromotionCampaignEvent[]
 
   @@index([active, startsAt, endsAt])
