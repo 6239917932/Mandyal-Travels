@@ -4,12 +4,15 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+import { customerTravelHistoryPage } from '@/services/customerTravelHistoryRules';
+import { getCustomerTravelHistory } from '@/services/customerTravelHistoryService';
 import { customerTripServicingPath } from '@/services/customerTripServicingService';
+import type {
+  CustomerTravelHistoryEntry,
+  CustomerTravelHistoryPage,
+} from '@/types/customerTravelHistory';
 
 export const metadata: Metadata = { title: 'My travel history' };
-
-const PAGE_SIZE = 25;
 
 type TravelHistoryPageProps = {
   searchParams: Promise<{
@@ -18,12 +21,8 @@ type TravelHistoryPageProps = {
   }>;
 };
 
-function readPage(value: string | string[] | undefined) {
-  const parsed = Number(Array.isArray(value) ? value[0] : value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-}
-
-function formatCurrency(amount: number, currency: string) {
+function formatCurrency(amount: number | null, currency: 'INR' | null): string {
+  if (amount === null || currency === null) return 'Under review';
   return new Intl.NumberFormat('en-IN', {
     currency,
     maximumFractionDigits: 0,
@@ -31,47 +30,135 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
-function humanizeSlug(value: string) {
+function formatStatus(value: CustomerTravelHistoryEntry['status']): string {
   return value
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .toLowerCase()
+    .split('_')
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
     .join(' ');
 }
 
-function tripDocumentAction(trip: {
-  confirmationCode: string;
-  detailsJson: string;
-  productType: string;
-}) {
-  try {
-    const details = JSON.parse(trip.detailsJson) as { documentQuery?: string };
-    if (!details.documentQuery) return null;
-    const documents: Record<string, { label: string; path: string }> = {
-      BUS: {
-        label: 'View ticket',
-        path: `/buses/booking/${trip.confirmationCode}/ticket`,
-      },
-      CAR: {
-        label: 'View voucher',
-        path: `/cars/booking/${trip.confirmationCode}/voucher`,
-      },
-      FLIGHT: {
-        label: 'View itinerary',
-        path: `/flights/booking/${trip.confirmationCode}/itinerary`,
-      },
-    };
-    const document = documents[trip.productType];
-    return document
-      ? { href: `${document.path}?${details.documentQuery}`, label: document.label }
-      : null;
-  } catch {
-    return null;
-  }
+function pageHref(tripPage: number, hotelPage: number): string {
+  const query = new URLSearchParams({
+    hotelPage: String(hotelPage),
+    tripPage: String(tripPage),
+  });
+  return `/account/trips?${query.toString()}`;
 }
 
-function pageHref(tripPage: number, hotelPage: number) {
-  return `/account/trips?tripPage=${tripPage}&hotelPage=${hotelPage}`;
+function countLabel(page: CustomerTravelHistoryPage): string {
+  return `${page.count}${page.isCapped ? '+' : ''}`;
+}
+
+function datesLabel(entry: CustomerTravelHistoryEntry): string {
+  if (!entry.startDate) return 'Under review';
+  return entry.endDate ? `${entry.startDate} to ${entry.endDate}` : entry.startDate;
+}
+
+function HistoryEntry({ entry }: { entry: CustomerTravelHistoryEntry }) {
+  return (
+    <Card className="account-trip">
+      <div className="account-trip__topline">
+        <span className="account-trip__type">{entry.product}</span>
+        <strong>{formatStatus(entry.status)}</strong>
+      </div>
+      <div className="account-trip__body">
+        <div>
+          <h3>{entry.title}</h3>
+          <p>{entry.subtitle}</p>
+        </div>
+        <dl>
+          <div>
+            <dt>{entry.product === 'HOTEL' ? 'Stay dates' : 'Travel dates'}</dt>
+            <dd>{datesLabel(entry)}</dd>
+          </div>
+          <div>
+            <dt>Booking reference</dt>
+            <dd>{entry.bookingReference}</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd>{formatCurrency(entry.totalAmount, entry.currency)}</dd>
+          </div>
+        </dl>
+      </div>
+      <div className="account-trip__actions">
+        <Link className="ui-button ui-button--secondary" href={entry.detailHref}>
+          View booking details
+        </Link>
+        {entry.document ? (
+          <Link className="ui-button ui-button--secondary" href={entry.document.href}>
+            {entry.document.label}
+          </Link>
+        ) : null}
+        {entry.product !== 'HOTEL' ? (
+          <Link
+            className="ui-button ui-button--secondary"
+            href={customerTripServicingPath({
+              confirmationCode: entry.bookingReference,
+              productType: entry.product,
+            })}
+          >
+            Request servicing
+          </Link>
+        ) : null}
+      </div>
+      {entry.product !== 'HOTEL' ? (
+        <p className="booking-confirmation__fine-print">
+          Requests are reviewed by operations and do not automatically change or cancel a booking or
+          guarantee a refund.
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
+function HistoryPagination({
+  history,
+  hotelPage,
+  label,
+  tripPage,
+  type,
+}: {
+  history: CustomerTravelHistoryPage;
+  hotelPage: number;
+  label: string;
+  tripPage: number;
+  type: 'hotel' | 'transport';
+}) {
+  if (history.pages <= 1) return null;
+  const previousTripPage = type === 'transport' ? history.page - 1 : tripPage;
+  const previousHotelPage = type === 'hotel' ? history.page - 1 : hotelPage;
+  const nextTripPage = type === 'transport' ? history.page + 1 : tripPage;
+  const nextHotelPage = type === 'hotel' ? history.page + 1 : hotelPage;
+
+  return (
+    <nav aria-label={label} className="business-audit-pagination">
+      {history.page > 1 ? (
+        <Link
+          className="ui-button ui-button--secondary"
+          href={pageHref(previousTripPage, previousHotelPage)}
+        >
+          Previous page
+        </Link>
+      ) : (
+        <span />
+      )}
+      <span>
+        Page {history.page} of {history.pages}
+      </span>
+      {history.page < history.pages ? (
+        <Link
+          className="ui-button ui-button--secondary"
+          href={pageHref(nextTripPage, nextHotelPage)}
+        >
+          Next page
+        </Link>
+      ) : (
+        <span />
+      )}
+    </nav>
+  );
 }
 
 export default async function TravelHistoryPage({ searchParams }: TravelHistoryPageProps) {
@@ -79,30 +166,14 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
   if (!user) redirect('/login?returnTo=%2Faccount%2Ftrips');
 
   const values = await searchParams;
-  const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
-  const [tripCount, hotelCount] = await Promise.all([
-    prisma.customerTrip.count({ where: tripFilter }),
-    prisma.bookingGuest.count({ where: { email: user.email } }),
-  ]);
-  const tripPages = Math.max(1, Math.ceil(tripCount / PAGE_SIZE));
-  const hotelPages = Math.max(1, Math.ceil(hotelCount / PAGE_SIZE));
-  const tripPage = Math.min(readPage(values.tripPage), tripPages);
-  const hotelPage = Math.min(readPage(values.hotelPage), hotelPages);
-  const [trips, hotelGuests] = await Promise.all([
-    prisma.customerTrip.findMany({
-      orderBy: { createdAt: 'desc' },
-      skip: (tripPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      where: tripFilter,
-    }),
-    prisma.bookingGuest.findMany({
-      include: { booking: { include: { quote: true } } },
-      orderBy: { booking: { createdAt: 'desc' } },
-      skip: (hotelPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      where: { email: user.email },
-    }),
-  ]);
+  const history = await getCustomerTravelHistory({
+    hotelPage: customerTravelHistoryPage(values.hotelPage),
+    sessionEmail: user.email,
+    transportPage: customerTravelHistoryPage(values.tripPage),
+    userId: user.id,
+  });
+  const total = history.transport.count + history.hotels.count;
+  const totalIsCapped = history.transport.isCapped || history.hotels.isCapped;
 
   return (
     <section className="account-page">
@@ -110,7 +181,7 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
         <div>
           <p className="hotel-page__eyebrow">Your journeys</p>
           <h1>Complete travel history</h1>
-          <p>All bookings connected to {user.email}.</p>
+          <p>Bookings securely matched to your signed-in account.</p>
         </div>
         <Link className="ui-button ui-button--secondary" href="/account#my-trips">
           Back to my account
@@ -120,115 +191,51 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
       <div className="partner-bookings__summary">
         <Card>
           <span>Flight, bus, and car bookings</span>
-          <strong>{tripCount}</strong>
+          <strong>{countLabel(history.transport)}</strong>
         </Card>
         <Card>
           <span>Hotel bookings</span>
-          <strong>{hotelCount}</strong>
+          <strong>{countLabel(history.hotels)}</strong>
         </Card>
         <Card>
           <span>Total journeys</span>
-          <strong>{tripCount + hotelCount}</strong>
+          <strong>
+            {total}
+            {totalIsCapped ? '+' : ''}
+          </strong>
         </Card>
       </div>
+
+      {totalIsCapped ? (
+        <Card className="account-trips__empty">
+          <strong>This directory shows no more than the latest 500 bookings in a category.</strong>
+          <p>Contact support if you need an older booking.</p>
+        </Card>
+      ) : null}
 
       <div className="account-trips">
         <div className="account-trips__heading">
           <p className="hotel-page__eyebrow">Transport and rentals</p>
           <h2>Flights, buses, and cars</h2>
         </div>
-        {trips.length === 0 ? (
+        {history.transport.entries.length === 0 ? (
           <Card className="account-trips__empty">
-            <strong>No flight, bus, or car bookings yet.</strong>
+            <strong>No flight, bus, or car bookings on this page.</strong>
           </Card>
         ) : (
           <div className="account-trips__list">
-            {trips.map((trip) => {
-              const document = tripDocumentAction(trip);
-              return (
-                <Card className="account-trip" key={trip.id}>
-                  <div className="account-trip__topline">
-                    <span className="account-trip__type">{trip.productType}</span>
-                    <strong>{trip.status}</strong>
-                  </div>
-                  <div className="account-trip__body">
-                    <div>
-                      <h3>{trip.title}</h3>
-                      <p>{trip.subtitle}</p>
-                    </div>
-                    <dl>
-                      <div>
-                        <dt>Travel dates</dt>
-                        <dd>
-                          {trip.startDate}
-                          {trip.endDate ? ` to ${trip.endDate}` : ''}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Booking reference</dt>
-                        <dd>{trip.confirmationCode}</dd>
-                      </div>
-                      <div>
-                        <dt>Total</dt>
-                        <dd>{formatCurrency(trip.totalAmount, trip.currency)}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <div className="account-trip__actions">
-                    <Link
-                      className="ui-button ui-button--secondary"
-                      href={`/account/trips/${encodeURIComponent(trip.confirmationCode)}`}
-                    >
-                      View booking details
-                    </Link>
-                    {document ? (
-                      <Link className="ui-button ui-button--secondary" href={document.href}>
-                        {document.label}
-                      </Link>
-                    ) : null}
-                    <Link
-                      className="ui-button ui-button--secondary"
-                      href={customerTripServicingPath(trip)}
-                    >
-                      Request servicing
-                    </Link>
-                  </div>
-                  <p className="booking-confirmation__fine-print">
-                    Requests are reviewed by operations and do not automatically change or cancel a
-                    booking or guarantee a refund.
-                  </p>
-                </Card>
-              );
-            })}
+            {history.transport.entries.map((entry) => (
+              <HistoryEntry entry={entry} key={`${entry.product}-${entry.bookingReference}`} />
+            ))}
           </div>
         )}
-        {tripPages > 1 ? (
-          <nav aria-label="Transport booking pages" className="business-audit-pagination">
-            {tripPage > 1 ? (
-              <Link
-                className="ui-button ui-button--secondary"
-                href={pageHref(tripPage - 1, hotelPage)}
-              >
-                Previous page
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span>
-              Page {tripPage} of {tripPages}
-            </span>
-            {tripPage < tripPages ? (
-              <Link
-                className="ui-button ui-button--secondary"
-                href={pageHref(tripPage + 1, hotelPage)}
-              >
-                Next page
-              </Link>
-            ) : (
-              <span />
-            )}
-          </nav>
-        ) : null}
+        <HistoryPagination
+          history={history.transport}
+          hotelPage={history.hotels.page}
+          label="Transport booking pages"
+          tripPage={history.transport.page}
+          type="transport"
+        />
       </div>
 
       <div className="account-trips">
@@ -236,85 +243,24 @@ export default async function TravelHistoryPage({ searchParams }: TravelHistoryP
           <p className="hotel-page__eyebrow">Stays</p>
           <h2>Hotel bookings</h2>
         </div>
-        {hotelGuests.length === 0 ? (
+        {history.hotels.entries.length === 0 ? (
           <Card className="account-trips__empty">
-            <strong>No hotel bookings yet.</strong>
+            <strong>No hotel bookings on this page.</strong>
           </Card>
         ) : (
           <div className="account-trips__list">
-            {hotelGuests.map(({ booking }) => (
-              <Card className="account-trip" key={booking.id}>
-                <div className="account-trip__topline">
-                  <span className="account-trip__type">HOTEL</span>
-                  <strong>{booking.status}</strong>
-                </div>
-                <div className="account-trip__body">
-                  <div>
-                    <h3>{humanizeSlug(booking.hotelSlug)}</h3>
-                    <p>Hotel stay</p>
-                  </div>
-                  <dl>
-                    <div>
-                      <dt>Stay dates</dt>
-                      <dd>
-                        {booking.quote.checkInDate} to {booking.quote.checkOutDate}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Booking reference</dt>
-                      <dd>{booking.confirmationCode}</dd>
-                    </div>
-                    <div>
-                      <dt>Total</dt>
-                      <dd>{formatCurrency(booking.totalAmount, booking.currency)}</dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="account-trip__actions">
-                  <Link
-                    className="ui-button ui-button--secondary"
-                    href={`/account/hotel-bookings/${encodeURIComponent(booking.confirmationCode)}`}
-                  >
-                    View booking details
-                  </Link>
-                  <Link
-                    className="ui-button ui-button--secondary"
-                    href={`/manage-booking/${booking.confirmationCode}/voucher`}
-                  >
-                    View voucher
-                  </Link>
-                </div>
-              </Card>
+            {history.hotels.entries.map((entry) => (
+              <HistoryEntry entry={entry} key={`${entry.product}-${entry.bookingReference}`} />
             ))}
           </div>
         )}
-        {hotelPages > 1 ? (
-          <nav aria-label="Hotel booking pages" className="business-audit-pagination">
-            {hotelPage > 1 ? (
-              <Link
-                className="ui-button ui-button--secondary"
-                href={pageHref(tripPage, hotelPage - 1)}
-              >
-                Previous page
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span>
-              Page {hotelPage} of {hotelPages}
-            </span>
-            {hotelPage < hotelPages ? (
-              <Link
-                className="ui-button ui-button--secondary"
-                href={pageHref(tripPage, hotelPage + 1)}
-              >
-                Next page
-              </Link>
-            ) : (
-              <span />
-            )}
-          </nav>
-        ) : null}
+        <HistoryPagination
+          history={history.hotels}
+          hotelPage={history.hotels.page}
+          label="Hotel booking pages"
+          tripPage={history.transport.page}
+          type="hotel"
+        />
       </div>
     </section>
   );
