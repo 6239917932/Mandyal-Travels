@@ -1,0 +1,331 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.hero {
+  margin-bottom: 0;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.readOnlyBadge {
+  border: 1px solid color-mix(in srgb, var(--color-accent-600) 60%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent-100) 55%, var(--color-white));
+  color: var(--color-brand-900);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.identity > div {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+}
+
+.identity > div + div {
+  border-left: 1px solid var(--color-border);
+}
+
+.identity span,
+.summaryCard > span,
+.readinessGrid span {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.identity strong {
+  overflow-wrap: anywhere;
+  color: var(--color-brand-900);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.summaryCard {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.summaryCard strong {
+  color: var(--color-brand-900);
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.summaryCard small,
+.sectionCard small,
+.countNote {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.sectionCard {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.sectionHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sectionHeading h2 {
+  margin: var(--space-1) 0 0;
+  color: var(--color-brand-900);
+  font-size: 1.35rem;
+}
+
+.sectionHeading a {
+  font-weight: 800;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.facts > div,
+.readinessGrid > div {
+  display: grid;
+  gap: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  padding: var(--space-3);
+}
+
+.facts dt {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-brand-900);
+  font-weight: 750;
+}
+
+.readinessGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.readinessGrid strong[data-readiness='READY'] {
+  color: var(--color-success);
+}
+
+.readinessGrid strong[data-readiness='REVIEW'],
+.readinessGrid strong[data-readiness='BLOCKED'] {
+  color: var(--color-warning);
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.activityList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activityList li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-3);
+}
+
+.activityList li > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.activityList span,
+.activityList time {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.boundary,
+.errorCard {
+  border: 1px solid color-mix(in srgb, var(--color-brand-500) 28%, var(--color-border));
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-50);
+  padding: var(--space-5);
+}
+
+.boundary p,
+.errorCard p {
+  margin-bottom: 0;
+  line-height: 1.65;
+}
+
+.errorCard {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 46rem;
+}
+
+.errorCard h1 {
+  margin: 0;
+  color: var(--color-brand-900);
+}
+
+.errorCard .heroActions {
+  justify-content: flex-start;
+}
+
+.loadingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.loadingGrid span {
+  min-height: 8rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    100deg,
+    var(--color-surface-muted) 20%,
+    var(--color-white) 45%,
+    var(--color-surface-muted) 70%
+  );
+  background-size: 220% 100%;
+  animation: dossier-loading 1.4s ease-in-out infinite;
+}
+
+@keyframes dossier-loading {
+  to {
+    background-position-x: -220%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingGrid span {
+    animation: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .identity,
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .identity > div + div {
+    border-left: 0;
+  }
+
+  .identity > div:nth-child(even) {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .identity > div:nth-child(n + 3) {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 699px) {
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 479px) {
+  .identity,
+  .summaryGrid,
+  .facts,
+  .readinessGrid,
+  .loadingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .identity > div:nth-child(even) {
+    border-left: 0;
+  }
+
+  .identity > div + div {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .heroActions,
+  .heroActions > a,
+  .heroActions > button {
+    width: 100%;
+  }
+
+  .activityList li {
+    display: grid;
+  }
+}
