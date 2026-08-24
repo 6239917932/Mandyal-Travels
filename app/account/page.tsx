@@ -29,6 +29,16 @@ const customerQuickActions = [
   },
   { description: 'View current travel discounts.', href: '/offers', label: 'Offers' },
   {
+    description: 'Review account-linked delivery history and communication preferences.',
+    href: '/account/notifications',
+    label: 'Notifications',
+  },
+  {
+    description: 'Review recorded benefits data and program readiness.',
+    href: '/account/benefits',
+    label: 'Benefits readiness',
+  },
+  {
     description: 'Create and track a booking or account support case.',
     href: '/account/support',
     label: 'Customer support',
@@ -283,8 +293,9 @@ export default async function AccountPage() {
           <p className="hotel-page__eyebrow">Data and privacy</p>
           <h2 id="account-data-heading">Download my data</h2>
           <p>
-            Export your profile, preferences, bookings, company requests, and customer support
-            history as JSON.
+            Export your profile, preferences, bookings, company requests, customer support, security
+            activity, customer-friendly notification history, and benefits-readiness records as
+            JSON.
           </p>
         </div>
         <div className="account-trips__empty ui-card ui-card--padded">
