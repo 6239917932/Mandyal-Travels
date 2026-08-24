@@ -1,0 +1,51 @@
+.explanation {
+  align-items: flex-start;
+  background: var(--color-brand-50);
+  border: 1px solid var(--color-brand-100);
+  border-left: 0.3rem solid var(--color-brand-600);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+}
+
+.explanation > div {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.explanation h2,
+.explanation p {
+  margin: 0;
+}
+
+.explanation h2 {
+  font-size: clamp(1.2rem, 3vw, 1.55rem);
+}
+
+.explanation small {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.eyebrow {
+  color: var(--color-brand-700);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .explanation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .explanation > button {
+    width: 100%;
+  }
+}

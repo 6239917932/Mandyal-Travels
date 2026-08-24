@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { HotelDiscoveryExplanation } from '@/components/hotel/HotelDiscoveryExplanation';
 import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
@@ -14,6 +15,10 @@ export const metadata: Metadata = {
 
 interface HotelsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
 }
 
 export default async function HotelsPage({ searchParams }: HotelsPageProps) {
@@ -61,6 +66,10 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
         <div className="hotel-page__container">
           <HotelSearchForm criteria={criteria} filters={filters} />
           <HotelDiscoveryAssistant criteria={criteria} />
+          <HotelDiscoveryExplanation
+            destination={criteria.destination}
+            requestToken={first(rawSearchParams.guidedAt)}
+          />
 
           <div className="hotel-page__results-heading">
             <div>
