@@ -13,12 +13,12 @@ import type { CustomerSupportPrefill } from '@/services/customerTripServicingSer
 type CustomerSupportCase = {
   bookingReference: string | null;
   caseNumber: string;
-  category: string;
+  categoryLabel: string;
   createdAt: string;
   id: string;
   message: string;
   resolutionNote: string | null;
-  status: string;
+  statusLabel: string;
   subject: string;
   updatedAt: string;
 };
@@ -37,6 +37,7 @@ export function CustomerSupportCenter({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [intent, setIntent] = useState('GENERAL_HELP');
   const [subject, setSubject] = useState(initialRequest.subject);
 
   async function createCase(event: FormEvent<HTMLFormElement>) {
@@ -52,6 +53,7 @@ export function CustomerSupportCenter({
         body: JSON.stringify({
           bookingReference: data.get('bookingReference'),
           category: data.get('category'),
+          intent: data.get('intent'),
           message: data.get('message'),
           subject: data.get('subject'),
         }),
@@ -59,16 +61,19 @@ export function CustomerSupportCenter({
         method: 'POST',
       });
       const result =
-        (await readJsonResponse<{ data?: { caseNumber?: string }; error?: string }>(response)) ??
-        {};
+        (await readJsonResponse<{
+          data?: { caseNumber?: string };
+          error?: { code?: string; message?: string };
+        }>(response)) ?? {};
       if (!response.ok) {
-        setError(result.error ?? 'The support case could not be created.');
+        setError(result.error?.message ?? 'The support case could not be created.');
         return;
       }
 
       setBookingReference('');
       setCategory('BOOKING');
       setDetails('');
+      setIntent('GENERAL_HELP');
       setSubject('');
       setMessage(
         result.data?.caseNumber
@@ -115,6 +120,26 @@ export function CustomerSupportCenter({
               value={bookingReference}
             />
           </div>
+          <div className="ui-field">
+            <label className="ui-field__label" htmlFor="customer-support-intent">
+              Request type
+            </label>
+            <select
+              className="ui-input"
+              id="customer-support-intent"
+              name="intent"
+              onChange={(event) => setIntent(event.target.value)}
+              value={intent}
+            >
+              <option value="GENERAL_HELP">General help</option>
+              <option value="CHANGE_REQUEST">Flight, Bus, or Car change request</option>
+              <option value="CANCELLATION_REQUEST">Flight, Bus, or Car cancellation request</option>
+            </select>
+            <small>
+              Change and cancellation requests require an owned transport booking reference and are
+              reviewed by a person.
+            </small>
+          </div>
           <Input
             label="Subject"
             maxLength={120}
@@ -139,12 +164,10 @@ export function CustomerSupportCenter({
               value={details}
             />
           </div>
-          {initialRequest.bookingReference ? (
-            <p className="booking-confirmation__fine-print">
-              Submitting creates a human-reviewed request. It does not automatically change or
-              cancel the booking and does not guarantee a refund.
-            </p>
-          ) : null}
+          <p className="booking-confirmation__fine-print">
+            Submitting creates a human-reviewed request. It does not automatically change or cancel
+            a booking, change a payment or refund, or guarantee an outcome.
+          </p>
           <Button isLoading={isSubmitting} type="submit" variant="primary">
             Create support case
           </Button>
@@ -166,15 +189,15 @@ export function CustomerSupportCenter({
           <Card key={supportCase.id}>
             <div className="business-support__heading">
               <div>
-                <span>{supportCase.category.toLowerCase().replaceAll('_', ' ')}</span>
+                <span>{supportCase.categoryLabel}</span>
                 <strong>{supportCase.subject}</strong>
               </div>
               <div>
                 <strong>{supportCase.caseNumber}</strong>
                 <span
-                  className={`business-request__status business-request__status--${supportCase.status.toLowerCase()}`}
+                  className={`business-request__status business-request__status--${supportCase.statusLabel.toLowerCase().replaceAll(' ', '-')}`}
                 >
-                  {supportCase.status.toLowerCase()}
+                  {supportCase.statusLabel}
                 </span>
               </div>
             </div>
