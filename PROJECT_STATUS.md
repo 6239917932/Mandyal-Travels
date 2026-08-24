@@ -138,6 +138,10 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   support-load, and unresolved high-severity risk indicators
 - Platform support-case close/reopen servicing with organization audit entries for every state
   change
+- Platform hotel review moderation with exact pending/published/rejected counts, closed filters,
+  bounded pagination, privacy-safe reviewer references, reasoned rejection controls, and immutable
+  decided-history visibility. Public hotel rating totals aggregate every published review while the
+  narrative list remains capped for responsive delivery.
 - Customer support servicing with required resolution notes and append-only case events
 - Dedicated platform support workbench with separate customer and company queues, bounded
   multi-field search, status filters, oldest-open ordering, complete pagination, account links, and
@@ -375,7 +379,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 187 regression tests, formatting verification, Prisma Client generation,
+The current travel-domain milestone passes 193 regression tests, formatting verification, Prisma Client generation,
 strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
 clean-database verification of all 71 SQLite migrations with foreign-key integrity enabled, a
 synchronized 80-table PostgreSQL-native baseline, and the portable deployment contract. Provider

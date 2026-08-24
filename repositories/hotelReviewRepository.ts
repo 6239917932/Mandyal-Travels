@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { HotelReview } from '@/types/hotel';
+import type { HotelReview, HotelReviewSummary } from '@/types/hotel';
 
 function mapReview(review: {
   body: string;
@@ -49,5 +49,16 @@ export const hotelReviewRepository = {
       where: { hotelSlug, status: 'PUBLISHED' },
     });
     return reviews.map(mapReview);
+  },
+
+  async summarizePublishedByHotel(hotelSlug: string): Promise<HotelReviewSummary> {
+    const [reviewCount, rating] = await Promise.all([
+      prisma.hotelReview.count({ where: { hotelSlug, status: 'PUBLISHED' } }),
+      prisma.hotelReview.aggregate({
+        _avg: { rating: true },
+        where: { hotelSlug, status: 'PUBLISHED' },
+      }),
+    ]);
+    return { averageRating: rating._avg.rating ?? 0, reviewCount };
   },
 };

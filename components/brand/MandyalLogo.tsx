@@ -3,6 +3,7 @@ import Image from 'next/image';
 type MandyalLogoProps = {
   appearance?: 'default' | 'inverse';
   className?: string;
+  eager?: boolean;
   showTagline?: boolean;
   size?: 'compact' | 'standard' | 'hero';
 };
@@ -10,6 +11,7 @@ type MandyalLogoProps = {
 export function MandyalLogo({
   appearance = 'default',
   className = '',
+  eager = false,
   showTagline = false,
   size = 'standard',
 }: MandyalLogoProps) {
@@ -32,7 +34,7 @@ export function MandyalLogo({
         }
         className="mandyal-logo__artwork"
         height={420}
-        priority={size === 'hero'}
+        loading={eager || size === 'hero' ? 'eager' : 'lazy'}
         sizes={
           size === 'hero' ? '(max-width: 700px) 88vw, 610px' : '(max-width: 700px) 184px, 275px'
         }
