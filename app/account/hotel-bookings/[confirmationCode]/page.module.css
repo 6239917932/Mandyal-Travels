@@ -1,0 +1,175 @@
+.page {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+  color: #102f4b;
+}
+
+.header,
+.eventHeading,
+.actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header h1,
+.header p,
+.state h1,
+.state p,
+.details h2,
+.history h2,
+.history p,
+.history ol,
+.history li p,
+.notice {
+  margin: 0;
+}
+
+.eyebrow {
+  color: #17689c;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.summary > div,
+.details,
+.history,
+.state {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.summary span,
+.details dt,
+.history time {
+  color: #5d6e7e;
+  font-size: 0.8rem;
+}
+
+.summary strong {
+  font-size: 1.15rem;
+}
+
+.details dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.details dl div {
+  border-radius: 0.75rem;
+  background: #f4f8fc;
+  padding: 0.8rem;
+}
+
+.details dd {
+  margin: 0.25rem 0 0;
+  font-weight: 750;
+}
+
+.history {
+  margin-top: 1rem;
+}
+
+.history ol {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  border-left: 3px solid #1e6697;
+  border-radius: 0.55rem;
+  background: #f4f8fc;
+  padding: 0.85rem 1rem;
+}
+
+.eventHeading span {
+  flex: none;
+  border-radius: 999px;
+  background: #e6eef6;
+  color: #173b5d;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.3rem 0.55rem;
+}
+
+.history li p {
+  padding: 0.35rem 0;
+}
+
+.actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 1.25rem;
+}
+
+.notice {
+  margin-top: 1rem;
+  border: 1px solid #c8d9eb;
+  border-radius: 0.75rem;
+  background: #f4f8fc;
+  padding: 0.8rem 1rem;
+}
+
+.state {
+  justify-items: start;
+  max-width: 720px;
+}
+
+.loading {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  background: #f4f8fc;
+  padding: 1.25rem;
+}
+
+.loading span {
+  height: 1rem;
+  border-radius: 999px;
+  background: #dfe9f2;
+}
+
+.loading span:nth-child(1) {
+  width: 38%;
+}
+
+.loading span:nth-child(2) {
+  width: 72%;
+}
+
+.loading span:nth-child(3) {
+  width: 54%;
+}
+
+@media (max-width: 720px) {
+  .header,
+  .eventHeading {
+    flex-direction: column;
+  }
+
+  .summary,
+  .details dl {
+    grid-template-columns: 1fr;
+  }
+
+  .actions :global(.ui-button) {
+    justify-content: center;
+    width: 100%;
+  }
+}
