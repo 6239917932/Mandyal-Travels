@@ -88,6 +88,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Human-governed administrator finance workbench with exact payment, discrepancy, and refund totals;
   independent bounded payment/refund pagination; closed-catalogue filters; private provider
   correlation; captured-payment reconciliation enforcement; and state-correct refund retry actions
+- Protected administrator document-readiness workbench with bounded Hotel, Flight, Bus, and Car
+  records; deterministic confirmation and provisional-receipt posture; unresolved amendment/refund
+  exceptions; private references; and an explicit block on unsupported statutory GST documents
 - Governed administrator promotion workbench with exact campaign posture, bounded search and
   pagination, authoritative stored-code states, version-safe reason-required activation,
   append-only change history, and fail-closed usage caps until redemption attribution exists

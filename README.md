@@ -21,6 +21,8 @@ and release checklist.
   controls for guided trip planning and new partner applications
 - Read-only administrator booking operations across Hotel, Flight, Bus, and Car records with
   bounded search, product/status/date filters, customer links, and complete independent pagination
+- Protected administrator document readiness across hotel vouchers, provisional payment receipts,
+  and transport confirmations, with unresolved amendment/refund exceptions and explicit GST limits
 - Protected read-only hotel supply catalog with internal PMS/API provenance, governance filters,
   deterministic content-readiness checks, and links to existing human review controls
 - Protected read-only administrator inventory and rate directory with bounded forward windows,
