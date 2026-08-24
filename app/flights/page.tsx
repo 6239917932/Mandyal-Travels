@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { FlightOfferCard } from '@/components/flight/FlightOfferCard';
 import { FlightResultControls } from '@/components/flight/FlightResultControls';
 import { FlightSearchForm } from '@/components/flight/FlightSearchForm';
 import { applyFlightResultControls } from '@/lib/flight/offerFilters';
 import { flightService } from '@/services/flightService';
-import { createFlightSearchCriteria } from '@/utils/flightSearchCriteria';
+import {
+  createFlightSearchCriteria,
+  flightSearchCriteriaToQuery,
+} from '@/utils/flightSearchCriteria';
 import { createFlightResultControls } from '@/utils/flightResultControls';
 
 export const metadata: Metadata = { title: 'Flights' };
@@ -27,9 +31,7 @@ export default async function FlightsPage({
 }) {
   const params = await searchParams;
   const criteria = createFlightSearchCriteria(params);
-  const controls = createFlightResultControls(params);
   const { error, offers: availableOffers } = await getFlightSearchResult(criteria);
-  const offers = applyFlightResultControls(availableOffers, controls);
   const airlines = Array.from(
     new Map(
       availableOffers.flatMap((offer) =>
@@ -38,6 +40,12 @@ export default async function FlightsPage({
     ),
     ([code, name]) => ({ code, name }),
   ).sort((first, second) => first.name.localeCompare(second.name));
+  const controls = createFlightResultControls(
+    params,
+    airlines.map(({ code }) => code),
+  );
+  const offers = applyFlightResultControls(availableOffers, controls);
+  const unfilteredSearchQuery = flightSearchCriteriaToQuery(criteria);
   const route =
     criteria.tripType === 'multi-city'
       ? criteria.multiCitySegments
@@ -66,27 +74,42 @@ export default async function FlightsPage({
               {error}
             </p>
           ) : null}
-          <div className="flight-page__heading">
-            <div>
-              <p className="hotel-page__eyebrow">Available offers</p>
-              <h2>{offers.length} flights found</h2>
-            </div>
-            <p>
-              {route} · {criteria.adults} adult
-              {criteria.adults === 1 ? '' : 's'}
-            </p>
-          </div>
-          <div className="flight-offer-list">
-            {offers.length ? (
-              offers.map((offer) => (
-                <FlightOfferCard criteria={criteria} key={offer.id} offer={offer} />
-              ))
-            ) : (
-              <p className="hotel-page__empty-state">
-                No matching flights found. Try DEL to BOM or DEL to BLR in economy.
-              </p>
-            )}
-          </div>
+          {!error ? (
+            <>
+              <div className="flight-page__heading">
+                <div>
+                  <p className="hotel-page__eyebrow">Available offers</p>
+                  <h2>{offers.length} flights found</h2>
+                </div>
+                <p>
+                  {route} · {criteria.adults} adult
+                  {criteria.adults === 1 ? '' : 's'}
+                </p>
+              </div>
+              <div className="flight-offer-list">
+                {offers.length ? (
+                  offers.map((offer) => (
+                    <FlightOfferCard criteria={criteria} key={offer.id} offer={offer} />
+                  ))
+                ) : availableOffers.length > 0 ? (
+                  <div className="hotel-page__empty-state">
+                    <p>No flights match the active filters.</p>
+                    <Link
+                      className="ui-button ui-button--secondary"
+                      href={{ pathname: '/flights', query: unfilteredSearchQuery }}
+                    >
+                      Clear filters
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="hotel-page__empty-state">
+                    No flights are available for this search. Try DEL to BOM or DEL to BLR in
+                    economy.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : null}
         </div>
       </section>
     </div>
