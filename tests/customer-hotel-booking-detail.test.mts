@@ -2,13 +2,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import {
+  customerHotelBookingStatus,
+  customerHotelCreatedEventStatus,
+  customerHotelStayStatus,
+  normalizeHotelBookingReference,
+} from '../services/customerHotelBookingDetailRules.ts';
+
 test('hotel booking references and customer statuses are closed', () => {
-  const service = readFileSync('services/customerHotelBookingDetailService.ts', 'utf8');
-  assert.match(service, /HOTEL_REFERENCE_PATTERN = \/\^MT\[A-F0-9\]\{12\}\$\//);
-  assert.match(service, /value\.trim\(\)\.toUpperCase\(\)/);
-  assert.match(service, /case 'confirmed':[\s\S]*return 'CONFIRMED'/);
-  assert.match(service, /case 'NO_SHOW':[\s\S]*return 'DID_NOT_CHECK_IN'/);
-  assert.match(service, /default:[\s\S]*return 'UNDER_REVIEW'/);
+  assert.equal(normalizeHotelBookingReference(' mta1b2c3d4e5f6 '), 'MTA1B2C3D4E5F6');
+  assert.equal(normalizeHotelBookingReference('MTA1B2C3D4E5F6-extra'), undefined);
+  assert.equal(customerHotelBookingStatus('confirmed'), 'CONFIRMED');
+  assert.equal(customerHotelBookingStatus('unexpected'), 'UNDER_REVIEW');
+  assert.equal(customerHotelStayStatus('CONFIRMED', 'NO_SHOW'), 'DID_NOT_CHECK_IN');
+});
+
+test('uncertain or contradictory booking state fails closed', () => {
+  assert.equal(customerHotelStayStatus('UNDER_REVIEW', 'CHECKED_OUT'), 'UNDER_REVIEW');
+  assert.equal(customerHotelStayStatus('PROCESSING', 'CHECKED_IN'), 'UNDER_REVIEW');
+  assert.equal(customerHotelStayStatus('CANCELLED', 'CHECKED_OUT'), 'CANCELLED');
+  assert.equal(customerHotelCreatedEventStatus('CONFIRMED'), 'CONFIRMED');
+  assert.equal(customerHotelCreatedEventStatus('PROCESSING'), 'UNDER_REVIEW');
+  assert.equal(customerHotelCreatedEventStatus('UNDER_REVIEW'), 'UNDER_REVIEW');
 });
 
 test('servicing relations and their combined event history are absolutely bounded', () => {

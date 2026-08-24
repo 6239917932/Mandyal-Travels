@@ -1,17 +1,19 @@
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import {
+  customerHotelBookingStatus,
+  customerHotelCreatedEventStatus,
+  customerHotelStayStatus,
+  normalizeHotelBookingReference,
+} from '@/services/customerHotelBookingDetailRules';
 import type {
   CustomerHotelBookingDetail,
-  CustomerHotelBookingStatus,
   CustomerHotelServicingEvent,
-  CustomerHotelStayStatus,
 } from '@/types/customerHotelBookingDetail';
 
 export const CUSTOMER_HOTEL_AMENDMENT_LIMIT = 25;
 export const CUSTOMER_HOTEL_SUPPORT_CASE_LIMIT = 25;
 export const CUSTOMER_HOTEL_SERVICING_EVENT_LIMIT = 101;
-
-const HOTEL_REFERENCE_PATTERN = /^MT[A-F0-9]{12}$/;
 
 type OwnedBookingId = { id: string };
 
@@ -19,45 +21,6 @@ export class CustomerHotelServicingHistoryLimitError extends Error {
   constructor() {
     super('This booking has more servicing history than the online detail can safely display.');
     this.name = 'CustomerHotelServicingHistoryLimitError';
-  }
-}
-
-export function normalizeHotelBookingReference(value: string): string | undefined {
-  const normalized = value.trim().toUpperCase();
-  return HOTEL_REFERENCE_PATTERN.test(normalized) ? normalized : undefined;
-}
-
-export function customerHotelBookingStatus(value: string): CustomerHotelBookingStatus {
-  switch (value.trim().toLowerCase()) {
-    case 'confirmed':
-      return 'CONFIRMED';
-    case 'cancelled':
-    case 'canceled':
-      return 'CANCELLED';
-    case 'pending':
-    case 'processing':
-      return 'PROCESSING';
-    default:
-      return 'UNDER_REVIEW';
-  }
-}
-
-export function customerHotelStayStatus(
-  bookingStatus: CustomerHotelBookingStatus,
-  value: string,
-): CustomerHotelStayStatus {
-  if (bookingStatus === 'CANCELLED') return 'CANCELLED';
-  switch (value.trim().toUpperCase()) {
-    case 'RESERVED':
-      return 'UPCOMING';
-    case 'CHECKED_IN':
-      return 'CHECKED_IN';
-    case 'CHECKED_OUT':
-      return 'COMPLETED';
-    case 'NO_SHOW':
-      return 'DID_NOT_CHECK_IN';
-    default:
-      return 'UNDER_REVIEW';
   }
 }
 
@@ -169,13 +132,15 @@ export async function getCustomerHotelBookingDetail(input: {
     throw new CustomerHotelServicingHistoryLimitError();
   }
 
+  const bookingStatus = customerHotelBookingStatus(booking.status);
+
   const servicingHistory: CustomerHotelServicingEvent[] = [
     {
       at: booking.createdAt.toISOString(),
       description: `Stay booked for ${booking.quote.checkInDate} to ${booking.quote.checkOutDate}.`,
       key: 'booking-created',
       kind: 'BOOKING',
-      status: 'CONFIRMED',
+      status: customerHotelCreatedEventStatus(bookingStatus),
       title: 'Hotel booking recorded',
     },
   ];
@@ -233,7 +198,6 @@ export async function getCustomerHotelBookingDetail(input: {
     left.at === right.at ? left.key.localeCompare(right.key) : left.at.localeCompare(right.at),
   );
 
-  const bookingStatus = customerHotelBookingStatus(booking.status);
   return {
     bookedAt: booking.createdAt.toISOString(),
     bookingReference: booking.confirmationCode,
