@@ -66,6 +66,20 @@ export async function readJsonObject(
   }
 }
 
+export function isSameOriginMutation(request: Request): boolean {
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite === 'cross-site') return false;
+
+  const origin = request.headers.get('origin');
+  if (!origin) return fetchSite === 'same-origin';
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function readTextBody(
   request: Request,
   maximumBytes = DEFAULT_TEXT_BODY_LIMIT_BYTES,
