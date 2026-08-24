@@ -17,6 +17,162 @@
     transform 160ms ease;
 }
 
+/* Customer-owned hotel payment activity */
+.customer-payments__notice {
+  margin: 1rem 0 1.4rem;
+  border: 1px solid #c8d9eb;
+  border-radius: 0.85rem;
+  background: #f4f8fc;
+  color: #173b5d;
+  padding: 0.85rem 1rem;
+}
+
+.customer-payments__list,
+.customer-payment,
+.customer-payment__refunds,
+.customer-payment__refund-list,
+.customer-payments__loading {
+  display: grid;
+  gap: 1rem;
+}
+
+.customer-payments__empty,
+.customer-payments__error {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.customer-payments__empty h2,
+.customer-payments__empty p,
+.customer-payments__error h1,
+.customer-payments__error p,
+.customer-payment__heading h2,
+.customer-payment__heading p,
+.customer-payment__refunds h3,
+.customer-payment__more-refunds,
+.customer-payment__no-refund {
+  margin: 0;
+}
+
+.customer-payment__heading,
+.customer-payment__refund {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.customer-payment__status {
+  flex: none;
+  border-radius: 999px;
+  background: #e8eff6;
+  color: #173b5d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.45rem 0.7rem;
+}
+
+.customer-payment__status--paid,
+.customer-payment__status--refunded {
+  background: #e2f5ea;
+  color: #17603a;
+}
+
+.customer-payment__status--processing,
+.customer-payment__status--under-review {
+  background: #fff1cf;
+  color: #795500;
+}
+
+.customer-payment__status--unsuccessful {
+  background: #fde8e8;
+  color: #8a2626;
+}
+
+.customer-payment__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.customer-payment__facts div {
+  border-radius: 0.75rem;
+  background: #f7f9fb;
+  padding: 0.75rem;
+}
+
+.customer-payment__facts dt {
+  color: #5d6e7e;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.customer-payment__facts dd {
+  margin: 0.25rem 0 0;
+  color: #102f4b;
+  font-weight: 750;
+}
+
+.customer-payment__refund {
+  border-left: 3px solid #1e6697;
+  background: #f4f8fc;
+  padding: 0.7rem 0.85rem;
+}
+
+.customer-payment__refund div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.customer-payment__refund span,
+.customer-payment__more-refunds,
+.customer-payment__no-refund {
+  color: #5d6e7e;
+  font-size: 0.82rem;
+}
+
+.customer-payment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.customer-payments__loading span {
+  height: 1rem;
+  border-radius: 999px;
+  background: #e7edf3;
+}
+
+.customer-payments__loading span:nth-child(1) {
+  width: 42%;
+}
+
+.customer-payments__loading span:nth-child(2) {
+  width: 76%;
+}
+
+.customer-payments__loading span:nth-child(3) {
+  width: 58%;
+}
+
+@media (max-width: 700px) {
+  .customer-payment__heading,
+  .customer-payment__refund {
+    flex-direction: column;
+  }
+
+  .customer-payment__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-payment__actions .ui-button {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 .ui-button:hover:not(:disabled):not([aria-disabled='true']) {
   transform: translateY(-1px);
 }
