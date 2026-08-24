@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
@@ -195,6 +196,12 @@ export function CustomerSupportCenter({
                 <span>Booking reference: {supportCase.bookingReference}</span>
               ) : null}
             </div>
+            <Link
+              className="ui-button ui-button--secondary"
+              href={`/account/support/${encodeURIComponent(supportCase.caseNumber)}`}
+            >
+              View case timeline
+            </Link>
           </Card>
         ))}
         {cases.length === 0 ? (
