@@ -1,56 +1,61 @@
 import { NextResponse } from 'next/server';
 
 import { readJsonObject } from '@/lib/api/request';
-import { getCurrentUser } from '@/lib/auth/session';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
-import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth/session';
+import {
+  createCustomerSupportCase,
+  CustomerSupportRequestError,
+} from '@/services/customerSupportCenterService';
+import {
+  CUSTOMER_SUPPORT_BODY_LIMIT_BYTES,
+  isDirectSameOriginSupportMutation,
+  normalizeCustomerBookingReference,
+  readCustomerServicingIntent,
+  readCustomerSupportCategory,
+} from '@/services/customerServicingIntentRules';
 
-const SUPPORT_CATEGORIES = new Set(['ACCOUNT', 'BOOKING', 'PAYMENT', 'TECHNICAL', 'OTHER']);
-const BOOKING_REFERENCE_PATTERN = /^[A-Z0-9-]{4,40}$/i;
 const SUPPORT_CASE_LIMIT = 5;
 const SUPPORT_CASE_WINDOW_MS = 60 * 60 * 1000;
 
-function createCaseNumber() {
-  const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
-  return `MTCC-${date}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+function errorResponse(code: string, message: string, status: number) {
+  return NextResponse.json({ error: { code, message } }, { status });
 }
 
 export async function POST(request: Request) {
+  if (!isDirectSameOriginSupportMutation(request)) {
+    return errorResponse(
+      'FORBIDDEN_ORIGIN',
+      'This request must originate from the Mandyal Travels portal.',
+      403,
+    );
+  }
+
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Sign in to create a support case.' }, { status: 401 });
-  }
+  if (!user) return errorResponse('AUTH_REQUIRED', 'Sign in to create a support case.', 401);
 
-  const body = await readJsonObject(request);
-  if (!body) {
-    return NextResponse.json({ error: 'Enter valid support case details.' }, { status: 400 });
-  }
+  const body = await readJsonObject(request, CUSTOMER_SUPPORT_BODY_LIMIT_BYTES);
+  if (!body) return errorResponse('INVALID_REQUEST', 'Enter valid support case details.', 400);
 
-  const category = typeof body.category === 'string' ? body.category.trim().toUpperCase() : '';
+  const category = readCustomerSupportCategory(body.category);
+  const intent = readCustomerServicingIntent(body.intent);
   const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
   const message = typeof body.message === 'string' ? body.message.trim() : '';
-  const bookingReference =
-    typeof body.bookingReference === 'string' ? body.bookingReference.trim().toUpperCase() : '';
+  const bookingReference = normalizeCustomerBookingReference(body.bookingReference);
 
-  if (!SUPPORT_CATEGORIES.has(category)) {
-    return NextResponse.json({ error: 'Choose a valid support category.' }, { status: 400 });
-  }
+  if (!category) return errorResponse('INVALID_CATEGORY', 'Choose a valid support category.', 400);
+  if (!intent) return errorResponse('INVALID_INTENT', 'Choose a valid support request type.', 400);
   if (subject.length < 5 || subject.length > 120) {
-    return NextResponse.json(
-      { error: 'Enter a subject between 5 and 120 characters.' },
-      { status: 400 },
-    );
+    return errorResponse('INVALID_SUBJECT', 'Enter a subject between 5 and 120 characters.', 400);
   }
   if (message.length < 10 || message.length > 2000) {
-    return NextResponse.json(
-      { error: 'Enter details between 10 and 2,000 characters.' },
-      { status: 400 },
-    );
+    return errorResponse('INVALID_MESSAGE', 'Enter details between 10 and 2,000 characters.', 400);
   }
-  if (bookingReference && !BOOKING_REFERENCE_PATTERN.test(bookingReference)) {
-    return NextResponse.json(
-      { error: 'Enter a valid booking reference or leave it blank.' },
-      { status: 400 },
+  if (bookingReference === null) {
+    return errorResponse(
+      'INVALID_BOOKING_REFERENCE',
+      'Enter a valid booking reference or leave it blank.',
+      400,
     );
   }
 
@@ -62,64 +67,36 @@ export async function POST(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: 'Too many support requests. Please wait before creating another case.' },
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many support requests. Please wait before creating another case.',
+        },
+      },
       { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
     );
   }
 
   try {
-    const [customerTrip, hotelBooking] = bookingReference
-      ? await Promise.all([
-          prisma.customerTrip.findFirst({
-            select: { id: true },
-            where: {
-              confirmationCode: bookingReference,
-              OR: [{ userId: user.id }, { email: user.email }],
-            },
-          }),
-          prisma.booking.findFirst({
-            select: { id: true },
-            where: { confirmationCode: bookingReference, guest: { is: { email: user.email } } },
-          }),
-        ])
-      : [null, null];
-
-    if (bookingReference && !customerTrip && !hotelBooking) {
-      return NextResponse.json(
-        { error: 'That booking reference is not connected to this account.' },
-        { status: 400 },
-      );
-    }
-
-    const supportCase = await prisma.$transaction(async (transaction) => {
-      const created = await transaction.customerSupportCase.create({
-        data: {
-          bookingReference: bookingReference || null,
-          caseNumber: createCaseNumber(),
-          category,
-          customerTripId: customerTrip?.id,
-          hotelBookingId: hotelBooking?.id,
-          message,
-          status: 'OPEN',
-          subject,
-          userId: user.id,
-        },
-        select: { caseNumber: true, createdAt: true, id: true, status: true },
-      });
-      await transaction.customerSupportCaseEvent.create({
-        data: {
-          action: 'CREATED',
-          actorUserId: user.id,
-          caseId: created.id,
-          summary: `Customer support case ${created.caseNumber} created.`,
-        },
-      });
-      return created;
+    const supportCase = await createCustomerSupportCase({
+      bookingReference,
+      category,
+      email: user.email,
+      intent,
+      message,
+      subject,
+      userId: user.id,
     });
-
     return NextResponse.json({ data: supportCase }, { status: 201 });
   } catch (error) {
+    if (error instanceof CustomerSupportRequestError) {
+      return errorResponse(error.code, error.message, 400);
+    }
     console.error('Customer support case creation failed.', error);
-    return NextResponse.json({ error: 'The support case could not be created.' }, { status: 500 });
+    return errorResponse(
+      'SUPPORT_CASE_CREATE_FAILED',
+      'The support case could not be created.',
+      500,
+    );
   }
 }
