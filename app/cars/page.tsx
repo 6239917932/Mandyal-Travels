@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { CarOfferCard } from '@/components/car/CarOfferCard';
+import { CarResultControls } from '@/components/car/CarResultControls';
 import { CarSearchForm } from '@/components/car/CarSearchForm';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
+import { applyCarResultControls, createCarResultControls } from '@/utils/carResultControls';
 export const metadata: Metadata = { title: 'Car rentals' };
 
 export default async function CarsPage({
@@ -10,14 +12,21 @@ export default async function CarsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const criteria = createCarSearchCriteria(await searchParams);
+  const params = await searchParams;
+  const criteria = createCarSearchCriteria(params);
   let error: string | undefined;
-  let offers = [] as Awaited<ReturnType<typeof carService.search>>;
+  let availableOffers = [] as Awaited<ReturnType<typeof carService.search>>;
   try {
-    offers = await carService.search(criteria);
+    availableOffers = await carService.search(criteria);
   } catch (cause) {
     error = cause instanceof Error ? cause.message : 'Car search is unavailable.';
   }
+  const catalogue = {
+    categories: [...new Set(availableOffers.map((offer) => offer.category))].toSorted(),
+    providers: [...new Set(availableOffers.map((offer) => offer.providerName))].toSorted(),
+  };
+  const controls = createCarResultControls(params, catalogue);
+  const offers = applyCarResultControls(availableOffers, controls);
   return (
     <div className="car-page">
       <section className="car-page__hero">
@@ -33,6 +42,7 @@ export default async function CarsPage({
       <section className="car-page__content">
         <div className="car-page__container">
           <CarSearchForm criteria={criteria} />
+          <CarResultControls catalogue={catalogue} controls={controls} criteria={criteria} />
           {error ? (
             <p className="flight-page__error" role="alert">
               {error}
