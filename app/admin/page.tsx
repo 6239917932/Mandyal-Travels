@@ -172,6 +172,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/bookings">
               Booking operations
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/documents">
+              Document readiness
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/admin/catalog">
               Supply catalog
             </Link>
