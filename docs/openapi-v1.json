@@ -82,7 +82,7 @@
         "security": [{ "SessionCookie": [] }],
         "summary": "Download the signed-in customer account archive",
         "tags": ["Account"],
-        "x-mandyal-auth": "CUSTOMER_SESSION",
+        "x-mandyal-auth": "AUTHENTICATED_SESSION",
         "x-mandyal-error-envelope": "MESSAGE_ONLY",
         "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
         "x-mandyal-idempotency": { "mode": "NOT_APPLICABLE" },
@@ -99,7 +99,7 @@
         "security": [{ "SessionCookie": [] }],
         "summary": "Create a human-reviewed customer support case",
         "tags": ["Account"],
-        "x-mandyal-auth": "CUSTOMER_SESSION",
+        "x-mandyal-auth": "AUTHENTICATED_SESSION",
         "x-mandyal-error-envelope": "MESSAGE_ONLY",
         "x-mandyal-fulfillment": "LOCAL_PORTAL_ONLY",
         "x-mandyal-idempotency": { "mode": "NOT_SUPPORTED" },
@@ -142,6 +142,7 @@
       "post": {
         "operationId": "createAgencyTravelRequest",
         "responses": {
+          "200": { "description": "Successful local portal response." },
           "201": { "description": "Successful local portal response." },
           "default": { "description": "Error envelope: MESSAGE_ONLY." }
         },

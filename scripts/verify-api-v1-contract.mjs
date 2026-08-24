@@ -11,13 +11,13 @@ const write = process.argv.includes('--write');
 const documentPath = path.join(root, 'docs', 'openapi-v1.json');
 const methods = new Set(['GET', 'POST']);
 const authModes = new Set([
-  'CUSTOMER_SESSION',
+  'AUTHENTICATED_SESSION',
   'OPTIONAL_SESSION',
   'PUBLIC',
   'TRAVEL_AGENCY_ADMIN',
 ]);
 const errorEnvelopes = new Set(['CODE_MESSAGE', 'HEALTH_STATUS', 'MESSAGE_ONLY', 'NONE']);
-const forbiddenPaths = ['/internal/', '/payments/', '/webhooks/'];
+const forbiddenRoots = ['/api/v1/internal', '/api/v1/payments', '/api/v1/webhooks'];
 
 function fail(message) {
   console.error(`API v1 contract verification failed: ${message}`);
@@ -49,7 +49,12 @@ function createOpenApiDocument() {
     paths[operation.path][method] = {
       operationId: operation.operationId,
       responses: {
-        [String(operation.successStatus)]: { description: 'Successful local portal response.' },
+        ...Object.fromEntries(
+          operation.successStatuses.map((status) => [
+            String(status),
+            { description: 'Successful local portal response.' },
+          ]),
+        ),
         default: {
           description:
             operation.errorEnvelope === 'NONE'
@@ -107,7 +112,11 @@ function validate() {
 
     if (!methods.has(operation.method)) fail(`${key} uses an unsupported method.`);
     if (!operation.path.startsWith('/api/v1/')) fail(`${key} is outside /api/v1.`);
-    if (forbiddenPaths.some((fragment) => operation.path.includes(fragment))) {
+    if (
+      forbiddenRoots.some(
+        (rootPath) => operation.path === rootPath || operation.path.startsWith(`${rootPath}/`),
+      )
+    ) {
       fail(`${key} is a provider/internal surface and cannot be declared here.`);
     }
     if (!authModes.has(operation.auth)) fail(`${key} has invalid auth metadata.`);
@@ -118,8 +127,14 @@ function validate() {
     if (operation.summary.length < 12 || operation.summary.length > 100) {
       fail(`${key} has an invalid summary.`);
     }
-    if (!Number.isInteger(operation.successStatus) || operation.successStatus < 200) {
-      fail(`${key} has an invalid success status.`);
+    if (
+      operation.successStatuses.length === 0 ||
+      new Set(operation.successStatuses).size !== operation.successStatuses.length ||
+      operation.successStatuses.some(
+        (status) => !Number.isInteger(status) || status < 200 || status > 299,
+      )
+    ) {
+      fail(`${key} has invalid or duplicate success statuses.`);
     }
 
     if (operation.pagination.mode === 'FIXED_LIMIT') {

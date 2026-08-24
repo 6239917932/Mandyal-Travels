@@ -17,13 +17,20 @@ test('catalogue is explicitly partial, local, closed, and duplicate safe', () =>
   assert.ok(
     API_V1_SUPPORTED_OPERATIONS.every(({ fulfillment }) => fulfillment === 'LOCAL_PORTAL_ONLY'),
   );
-  assert.doesNotMatch(keys.join('\n'), /\/internal\/|\/payments\/|\/webhooks\//);
+  assert.ok(
+    API_V1_SUPPORTED_OPERATIONS.every(({ path }) =>
+      ['/api/v1/internal', '/api/v1/payments', '/api/v1/webhooks'].every(
+        (rootPath) => path !== rootPath && !path.startsWith(`${rootPath}/`),
+      ),
+    ),
+  );
 });
 
 test('every operation declares auth, pagination, errors, and idempotency honestly', () => {
   for (const operation of API_V1_SUPPORTED_OPERATIONS) {
     assert.ok(operation.auth.length > 0);
     assert.ok(operation.errorEnvelope.length > 0);
+    assert.ok(operation.successStatuses.every((status) => status >= 200 && status <= 299));
     assert.ok(operation.pagination.mode === 'NONE' || operation.method === 'GET');
     if (operation.idempotency.mode === 'REQUIRED') {
       assert.equal(operation.method, 'POST');
@@ -31,6 +38,11 @@ test('every operation declares auth, pagination, errors, and idempotency honestl
     }
     if (operation.method === 'GET') assert.equal(operation.idempotency.mode, 'NOT_APPLICABLE');
   }
+
+  const travelRequest = API_V1_SUPPORTED_OPERATIONS.find(
+    ({ operationId }) => operationId === 'createAgencyTravelRequest',
+  );
+  assert.deepEqual(travelRequest?.successStatuses, [200, 201]);
 });
 
 test('catalogue and generated description contain no provider evidence fields', () => {

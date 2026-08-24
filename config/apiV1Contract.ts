@@ -1,7 +1,7 @@
 export const API_V1_CONTRACT_REVISION = '2026-08-24';
 
 export type ApiV1AuthMode =
-  'CUSTOMER_SESSION' | 'OPTIONAL_SESSION' | 'PUBLIC' | 'TRAVEL_AGENCY_ADMIN';
+  'AUTHENTICATED_SESSION' | 'OPTIONAL_SESSION' | 'PUBLIC' | 'TRAVEL_AGENCY_ADMIN';
 export type ApiV1ErrorEnvelope = 'CODE_MESSAGE' | 'HEALTH_STATUS' | 'MESSAGE_ONLY' | 'NONE';
 export type ApiV1HttpMethod = 'GET' | 'POST';
 export type ApiV1Idempotency =
@@ -19,7 +19,7 @@ export type ApiV1SupportedOperation = Readonly<{
   operationId: string;
   pagination: ApiV1Pagination;
   path: `/api/v1/${string}`;
-  successStatus: number;
+  successStatuses: readonly [number, ...number[]];
   summary: string;
   tag: 'Account' | 'Agency' | 'Health' | 'Hotels' | 'Meta' | 'Promotions';
 }>;
@@ -34,7 +34,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'getApiV1Meta',
     pagination: { mode: 'NONE' },
     path: '/api/v1/meta',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Read the curated API v1 contract catalogue',
     tag: 'Meta',
   },
@@ -47,7 +47,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'getPortalReadiness',
     pagination: { mode: 'NONE' },
     path: '/api/v1/health',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Read database and local integration readiness',
     tag: 'Health',
   },
@@ -60,12 +60,12 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'getPortalLiveness',
     pagination: { mode: 'NONE' },
     path: '/api/v1/health/live',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Read process liveness without a database dependency',
     tag: 'Health',
   },
   {
-    auth: 'CUSTOMER_SESSION',
+    auth: 'AUTHENTICATED_SESSION',
     errorEnvelope: 'MESSAGE_ONLY',
     fulfillment: 'LOCAL_PORTAL_ONLY',
     idempotency: { mode: 'NOT_APPLICABLE' },
@@ -73,12 +73,12 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'exportCustomerAccountData',
     pagination: { mode: 'NONE' },
     path: '/api/v1/account/export',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Download the signed-in customer account archive',
     tag: 'Account',
   },
   {
-    auth: 'CUSTOMER_SESSION',
+    auth: 'AUTHENTICATED_SESSION',
     errorEnvelope: 'MESSAGE_ONLY',
     fulfillment: 'LOCAL_PORTAL_ONLY',
     idempotency: { mode: 'NOT_SUPPORTED' },
@@ -86,7 +86,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'createCustomerSupportCase',
     pagination: { mode: 'NONE' },
     path: '/api/v1/account/support',
-    successStatus: 201,
+    successStatuses: [201],
     summary: 'Create a human-reviewed customer support case',
     tag: 'Account',
   },
@@ -99,7 +99,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'listAgencyCustomers',
     pagination: { maximumLimit: 100, mode: 'FIXED_LIMIT' },
     path: '/api/v1/agent/customers',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'List up to 100 customers owned by the travel agency',
     tag: 'Agency',
   },
@@ -112,7 +112,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'createAgencyCustomer',
     pagination: { mode: 'NONE' },
     path: '/api/v1/agent/customers',
-    successStatus: 201,
+    successStatuses: [201],
     summary: 'Create an agency-scoped customer profile',
     tag: 'Agency',
   },
@@ -125,7 +125,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'createAgencyTravelRequest',
     pagination: { mode: 'NONE' },
     path: '/api/v1/agent/travel-requests',
-    successStatus: 201,
+    successStatuses: [200, 201],
     summary: 'Create an idempotent agency customer travel request',
     tag: 'Agency',
   },
@@ -138,7 +138,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'interpretHotelDiscoveryIntent',
     pagination: { mode: 'NONE' },
     path: '/api/v1/hotels/discovery',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Interpret bounded hotel discovery criteria locally',
     tag: 'Hotels',
   },
@@ -151,7 +151,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'createHotelQuote',
     pagination: { mode: 'NONE' },
     path: '/api/v1/hotels/quotes',
-    successStatus: 201,
+    successStatuses: [201],
     summary: 'Create a bounded local hotel quote and room hold',
     tag: 'Hotels',
   },
@@ -164,7 +164,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'createHotelBooking',
     pagination: { mode: 'NONE' },
     path: '/api/v1/hotels/bookings',
-    successStatus: 201,
+    successStatuses: [201],
     summary: 'Confirm a locally validated hotel booking retry-safely',
     tag: 'Hotels',
   },
@@ -177,7 +177,7 @@ export const API_V1_SUPPORTED_OPERATIONS = [
     operationId: 'validatePromotion',
     pagination: { mode: 'NONE' },
     path: '/api/v1/promotions/validate',
-    successStatus: 200,
+    successStatuses: [200],
     summary: 'Validate a governed local promotion rule',
     tag: 'Promotions',
   },
