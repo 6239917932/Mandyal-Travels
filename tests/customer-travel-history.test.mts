@@ -165,6 +165,8 @@ test('account quick-history actions consume the same bounded document projection
 
   const accountPage = readFileSync('app/account/page.tsx', 'utf8');
   assert.match(accountPage, /customerTravelHistoryDocument\(/);
+  assert.match(accountPage, /getCustomerTravelHistoryDashboardTransport\(/);
+  assert.doesNotMatch(accountPage, /tripFilter|\{ userId: user\.id \}, \{ email: user\.email \}/);
   assert.doesNotMatch(accountPage, /getTripDocumentAction|JSON\.parse|details\.documentQuery/);
   assert.doesNotMatch(accountPage, /\$\{details\.documentQuery\}/);
   assert.match(accountPage, /AccountProfileForm/);
@@ -173,6 +175,19 @@ test('account quick-history actions consume the same bounded document projection
   assert.match(accountPage, /href: '\/account\/notifications'/);
   assert.match(accountPage, /href: '\/account\/benefits'/);
   assert.match(accountPage, /benefits-readiness records/);
+});
+
+test('account dashboard transport ownership permits email fallback only for unclaimed rows', () => {
+  const service = readFileSync('services/customerTravelHistoryService.ts', 'utf8');
+  const dashboardService = service.slice(
+    service.indexOf('export async function getCustomerTravelHistoryDashboardTransport'),
+    service.indexOf('export async function getCustomerTravelHistory(', 1),
+  );
+
+  assert.match(dashboardService, /trip\."userId" = \$\{userId\}/);
+  assert.match(dashboardService, /trip\."userId" IS NULL/);
+  assert.match(dashboardService, /LOWER\(TRIM\(trip\."email"\)\) = \$\{sessionEmail\}/);
+  assert.doesNotMatch(dashboardService, /OR \(trip\."email" =/);
 });
 
 test('directory ownership, projections, and page remain privacy scoped and read-only', () => {

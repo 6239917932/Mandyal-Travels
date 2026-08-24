@@ -13,6 +13,7 @@ import { BusinessRequestCheckoutLink } from '@/components/business/BusinessReque
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { customerTravelHistoryDocument } from '@/services/customerTravelHistoryRules';
+import { getCustomerTravelHistoryDashboardTransport } from '@/services/customerTravelHistoryService';
 
 export const metadata: Metadata = { title: 'My account' };
 
@@ -71,14 +72,10 @@ export default async function AccountPage() {
   if (!currentSession) redirect('/login');
   const { user } = currentSession;
 
-  const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
   const [
-    storedTrips,
+    dashboardTransport,
     hotelGuests,
     organizationMembership,
-    storedTripCount,
-    confirmedStoredTripCount,
-    storedTripValue,
     hotelTripCount,
     confirmedHotelTripCount,
     hotelTripValue,
@@ -86,10 +83,9 @@ export default async function AccountPage() {
     securityEvents,
     privacyRequests,
   ] = await Promise.all([
-    prisma.customerTrip.findMany({
-      where: tripFilter,
-      orderBy: { createdAt: 'desc' },
-      take: RECENT_ITEM_LIMIT,
+    getCustomerTravelHistoryDashboardTransport({
+      sessionEmail: user.email,
+      userId: user.id,
     }),
     prisma.bookingGuest.findMany({
       where: { email: user.email },
@@ -100,12 +96,6 @@ export default async function AccountPage() {
     prisma.organizationMember.findFirst({
       where: { userId: user.id },
       include: { organization: true },
-    }),
-    prisma.customerTrip.count({ where: tripFilter }),
-    prisma.customerTrip.count({ where: { ...tripFilter, status: 'CONFIRMED' } }),
-    prisma.customerTrip.aggregate({
-      _sum: { totalAmount: true },
-      where: { ...tripFilter, currency: 'INR' },
     }),
     prisma.bookingGuest.count({ where: { email: user.email } }),
     prisma.bookingGuest.count({
@@ -133,7 +123,7 @@ export default async function AccountPage() {
   ]);
 
   const trips = [
-    ...storedTrips.map((trip) => ({
+    ...dashboardTransport.entries.map((trip) => ({
       id: trip.id,
       productType: trip.productType,
       confirmationCode: trip.confirmationCode,
@@ -165,10 +155,9 @@ export default async function AccountPage() {
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, RECENT_ITEM_LIMIT);
 
-  const totalTrips = storedTripCount + hotelTripCount;
-  const confirmedTrips = confirmedStoredTripCount + confirmedHotelTripCount;
-  const bookedValue =
-    (storedTripValue._sum.totalAmount ?? 0) + (hotelTripValue._sum.totalAmount ?? 0);
+  const totalTrips = dashboardTransport.count + hotelTripCount;
+  const confirmedTrips = dashboardTransport.confirmedCount + confirmedHotelTripCount;
+  const bookedValue = dashboardTransport.bookedValue + (hotelTripValue._sum.totalAmount ?? 0);
   const [businessTravelRequests, businessTravelRequestCount] = organizationMembership
     ? await Promise.all([
         prisma.businessTravelRequest.findMany({

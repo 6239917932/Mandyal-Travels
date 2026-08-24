@@ -21,8 +21,108 @@ import type {
 
 type OwnedId = Readonly<{ id: string }>;
 
+type DashboardTransportSummaryRow = Readonly<{
+  bookedValue: bigint | number | null;
+  confirmedCount: bigint | number;
+  count: bigint | number;
+}>;
+
+export type CustomerTravelHistoryDashboardTransport = Readonly<{
+  bookedValue: number;
+  confirmedCount: number;
+  count: number;
+  entries: readonly Readonly<{
+    confirmationCode: string;
+    createdAt: Date;
+    currency: string;
+    detailsJson: string | null;
+    endDate: string | null;
+    id: string;
+    productType: string;
+    startDate: string;
+    status: string;
+    subtitle: string;
+    title: string;
+    totalAmount: number;
+  }>[];
+}>;
+
+function safeDashboardAggregate(value: bigint | number | null): number {
+  const converted = typeof value === 'bigint' ? Number(value) : (value ?? 0);
+  return Number.isSafeInteger(converted) && converted >= 0 ? converted : 0;
+}
+
 function emptyPage(): CustomerTravelHistoryPage {
   return { count: 0, entries: [], isCapped: false, page: 1, pages: 1 };
+}
+
+export async function getCustomerTravelHistoryDashboardTransport(input: {
+  sessionEmail: string;
+  userId: string;
+}): Promise<CustomerTravelHistoryDashboardTransport> {
+  const userId = input.userId.trim();
+  const sessionEmail = normalizeEmail(input.sessionEmail);
+  if (!userId || !sessionEmail) {
+    return { bookedValue: 0, confirmedCount: 0, count: 0, entries: [] };
+  }
+
+  return prisma.$transaction(async (transaction) => {
+    const [ownedTransport, summaryRows] = await Promise.all([
+      transaction.$queryRaw<OwnedId[]>`
+        SELECT trip."id" AS "id"
+        FROM "CustomerTrip" AS trip
+        WHERE trip."userId" = ${userId}
+          OR (
+            trip."userId" IS NULL
+            AND LOWER(TRIM(trip."email")) = ${sessionEmail}
+          )
+        ORDER BY trip."createdAt" DESC, trip."id" DESC
+        LIMIT 20
+      `,
+      transaction.$queryRaw<DashboardTransportSummaryRow[]>`
+        SELECT
+          COUNT(*) AS "count",
+          SUM(CASE WHEN trip."status" = 'CONFIRMED' THEN 1 ELSE 0 END) AS "confirmedCount",
+          SUM(CASE WHEN trip."currency" = 'INR' THEN trip."totalAmount" ELSE 0 END) AS "bookedValue"
+        FROM "CustomerTrip" AS trip
+        WHERE trip."userId" = ${userId}
+          OR (
+            trip."userId" IS NULL
+            AND LOWER(TRIM(trip."email")) = ${sessionEmail}
+          )
+      `,
+    ]);
+    const ids = ownedTransport.map(({ id }) => id);
+    const rows = await transaction.customerTrip.findMany({
+      select: {
+        confirmationCode: true,
+        createdAt: true,
+        currency: true,
+        detailsJson: true,
+        endDate: true,
+        id: true,
+        productType: true,
+        startDate: true,
+        status: true,
+        subtitle: true,
+        title: true,
+        totalAmount: true,
+      },
+      where: { id: { in: ids } },
+    });
+    const rowsById = new Map(rows.map((row) => [row.id, row]));
+    const summary = summaryRows[0];
+
+    return {
+      bookedValue: safeDashboardAggregate(summary?.bookedValue ?? null),
+      confirmedCount: safeDashboardAggregate(summary?.confirmedCount ?? 0),
+      count: safeDashboardAggregate(summary?.count ?? 0),
+      entries: ids.flatMap((id) => {
+        const row = rowsById.get(id);
+        return row ? [row] : [];
+      }),
+    };
+  });
 }
 
 export async function getCustomerTravelHistory(input: {
