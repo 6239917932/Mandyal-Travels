@@ -33,16 +33,18 @@ export async function POST(request: Request, context: ReviewRouteContext): Promi
   }
 
   try {
-    const body = await readJsonObject(request);
+    const body = await readJsonObject(request, 2_048);
     if (!body) throw new HotelReviewRuleError('INVALID_REVIEW', 'Enter a valid review.');
     if (
       typeof body.title !== 'string' ||
       typeof body.body !== 'string' ||
-      typeof body.rating !== 'number'
+      typeof body.rating !== 'number' ||
+      typeof body.bookingReference !== 'string'
     ) {
       throw new HotelReviewRuleError('INVALID_REVIEW', 'Enter a valid rating, title, and review.');
     }
-    const review = await hotelReviewService.createVerifiedReview({
+    await hotelReviewService.createVerifiedReview({
+      bookingReference: body.bookingReference,
       body: body.body,
       hotelSlug: slug,
       rating: body.rating,
@@ -50,12 +52,12 @@ export async function POST(request: Request, context: ReviewRouteContext): Promi
       userEmail: user.email,
       userId: user.id,
     });
-    return Response.json({ data: review }, { status: 201 });
+    return Response.json({ data: { status: 'PENDING' } }, { status: 201 });
   } catch (error) {
     if (error instanceof HotelReviewRuleError) {
       return Response.json(
         { error: { code: error.code, message: error.message } },
-        { status: 400 },
+        { status: error.code === 'NO_ELIGIBLE_STAY' ? 409 : 400 },
       );
     }
     return Response.json(
