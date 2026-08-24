@@ -62,6 +62,9 @@ and release checklist.
   rating summaries
 - Customer accounts and unified trip history with booking-owned, human-reviewed Flight, Bus, and
   Car servicing requests that never imply an automatic change, cancellation, or refund
+- Private customer travel-document center with exact account ownership, bounded hotel and
+  transport indexes, provisional hotel-receipt limits, allowlisted prototype document links, and
+  destination-route reauthorization
 - Business workspaces with travellers, roles, policy approvals, reports, statements, audit history,
   and organization support cases
 - B2B agency customer servicing with auditable profile lifecycle, customer-attributed travel

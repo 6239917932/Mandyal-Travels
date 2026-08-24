@@ -68,6 +68,19 @@ cases are rate limited and linked to the owned booking with an append-only creat
 case is a request for human review: it does not itself change or cancel inventory, issue a refund,
 or alter a payment.
 
+## Customer travel documents
+
+`GET /api/v1/account/documents` requires an authenticated account and returns independently
+paginated hotel and transport document records. Transport ownership uses the signed-in user's exact
+user ID; legacy hotel ownership uses the signed-in user's exact session email. Each collection is
+limited to 20 records per page and the latest 500 records overall.
+
+Hotel billing links are labelled as provisional payment receipts, not statutory GST tax invoices.
+Flight, Bus, and Car links are labelled as prototypes until live provider fulfillment exists. The
+endpoint rebuilds transport links from a closed allowlist and never returns raw `detailsJson`,
+provider or supplier payloads, payment evidence, secrets, or tokens. Existing destination routes
+repeat their own ownership authorization.
+
 ## Account recovery
 
 `POST /api/v1/auth/password-reset/request` accepts an email address and always returns the same

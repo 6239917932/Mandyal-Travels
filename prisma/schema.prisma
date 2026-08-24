@@ -1376,6 +1376,8 @@ model BookingGuest {
   phone           String
   specialRequests String  @default("")
   booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([email])
 }
 
 model PaymentTransaction {
