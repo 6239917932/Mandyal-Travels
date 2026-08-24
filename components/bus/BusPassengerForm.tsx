@@ -1,20 +1,51 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Input } from '@/components/ui/Input';
+import { SavedTravelerPicker } from '@/components/account/SavedTravelerPicker';
+import {
+  ageFromBirthDate,
+  bookingGenderValue,
+  type SavedTravelerProfile,
+} from '@/services/savedTravelerService';
 
 interface BusPassengerFormProps {
   nextQuery: Record<string, string>;
   passengers: number;
+  travelDate: string;
 }
 
 type FormErrors = Record<string, string>;
 
-export function BusPassengerForm({ nextQuery, passengers }: BusPassengerFormProps) {
+export function BusPassengerForm({ nextQuery, passengers, travelDate }: BusPassengerFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  function applyTraveler(index: number, traveler: SavedTravelerProfile) {
+    const form = formRef.current;
+    if (!form) return 0;
+    let changed = 0;
+    const fill = (name: string, value: string) => {
+      const field = form.elements.namedItem(name);
+      if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) return;
+      if (field.value.trim() || !value) return;
+      field.value = value;
+      changed += 1;
+    };
+    fill(`firstName-${index}`, traveler.firstName);
+    fill(`lastName-${index}`, traveler.lastName);
+    fill(`gender-${index}`, bookingGenderValue(traveler.gender));
+    const age = ageFromBirthDate(traveler.dateOfBirth, new Date(`${travelDate}T00:00:00.000Z`));
+    fill(`age-${index}`, age === null ? '' : String(age));
+    if (index === 0) {
+      fill('email', traveler.email);
+      fill('phone', traveler.phone);
+    }
+    return changed;
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,10 +86,14 @@ export function BusPassengerForm({ nextQuery, passengers }: BusPassengerFormProp
   }
 
   return (
-    <form className="flight-passenger-form" noValidate onSubmit={submit}>
+    <form className="flight-passenger-form" noValidate onSubmit={submit} ref={formRef}>
       {Array.from({ length: passengers }, (_, index) => (
         <fieldset className="flight-passenger-form__traveler" key={index}>
           <legend>Passenger {index + 1}</legend>
+          <SavedTravelerPicker
+            onApply={(traveler) => applyTraveler(index, traveler)}
+            targetLabel={`passenger ${index + 1}`}
+          />
           <Input
             error={errors[`firstName-${index}`]}
             label="First name"

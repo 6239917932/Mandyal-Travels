@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent } from 'react';
+import { useRef, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { useBookingContext } from '@/context/BookingContext';
 import type { BookingGuest } from '@/types/booking';
+import { SavedTravelerPicker } from '@/components/account/SavedTravelerPicker';
+import type { SavedTravelerProfile } from '@/services/savedTravelerService';
 
 const emptyGuest: BookingGuest = {
   email: '',
@@ -20,7 +22,26 @@ const emptyGuest: BookingGuest = {
 
 export default function GuestDetailsPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const { booking, updateGuest } = useBookingContext();
+
+  function applyTraveler(traveler: SavedTravelerProfile) {
+    const form = formRef.current;
+    if (!form) return 0;
+    let changed = 0;
+    const fill = (name: string, value: string) => {
+      const field = form.elements.namedItem(name);
+      if (!(field instanceof HTMLInputElement)) return;
+      if (field.value.trim() || !value) return;
+      field.value = value;
+      changed += 1;
+    };
+    fill('firstName', traveler.firstName);
+    fill('lastName', traveler.lastName);
+    fill('email', traveler.email);
+    fill('phone', traveler.phone);
+    return changed;
+  }
 
   if (!booking) {
     return (
@@ -76,7 +97,8 @@ export default function GuestDetailsPage() {
           </Card>
 
           <Card className="booking-page__guest-form-card">
-            <form className="booking-page__guest-form" onSubmit={saveGuestDetails}>
+            <form className="booking-page__guest-form" onSubmit={saveGuestDetails} ref={formRef}>
+              <SavedTravelerPicker onApply={applyTraveler} targetLabel="the lead guest" />
               <Input defaultValue={guest.firstName} label="First name" name="firstName" required />
               <Input defaultValue={guest.lastName} label="Last name" name="lastName" required />
               <Input

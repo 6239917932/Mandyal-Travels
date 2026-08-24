@@ -41,6 +41,11 @@ const customerQuickActions = [
     label: 'Benefits readiness',
   },
   {
+    description: 'Manage reusable traveler details for faster checkout.',
+    href: '/account/travelers',
+    label: 'Saved travelers',
+  },
+  {
     description: 'Create and track a booking or account support case.',
     href: '/account/support',
     label: 'Customer support',

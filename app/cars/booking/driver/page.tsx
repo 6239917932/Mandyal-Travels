@@ -44,7 +44,11 @@ export default async function CarDriverPage({
         </p>
         <div className="car-booking-page__grid">
           <Card>
-            <CarDriverForm nextQuery={query} rentalMode={criteria.rentalMode} />
+            <CarDriverForm
+              nextQuery={query}
+              pickupDate={criteria.pickupDate}
+              rentalMode={criteria.rentalMode}
+            />
           </Card>
           <Card className="car-booking-page__summary">
             <p className="hotel-page__eyebrow">Rental summary</p>
