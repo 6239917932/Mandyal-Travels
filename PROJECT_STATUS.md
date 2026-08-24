@@ -103,6 +103,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Human-governed administrator risk workbench with bounded status, severity, time-window and search
   filters, full pagination, escalation and aging posture, one-way subject correlation, redacted
   narratives, reviewed history, and no automated adverse action
+- Human-governed administrator exception operations with bounded integration history, private
+  aggregate/error evidence, version-safe reason-required retry/ignore decisions, append-only review
+  events, and exact handoffs for booking amendments, payment discrepancies, refunds, and risk
 - Keyboard skip navigation, visible focus indicators, active-page semantics, and responsive primary
   navigation
 

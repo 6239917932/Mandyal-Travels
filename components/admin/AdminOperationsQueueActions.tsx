@@ -17,16 +17,24 @@ async function update(path: string, body: object) {
   if (!response.ok) throw new Error(result.error ?? 'The queue action failed.');
 }
 
-export function AdminIntegrationEventActions({ eventId }: { eventId: string }) {
+export function AdminIntegrationEventActions({
+  eventId,
+  expectedUpdatedAt,
+}: {
+  eventId: string;
+  expectedUpdatedAt: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  async function act(action: 'IGNORE' | 'RETRY') {
+  async function act(formData: FormData) {
     setPending(true);
     setError('');
     try {
       await update(`/api/v1/admin/operations/integrations/${encodeURIComponent(eventId)}`, {
-        action,
+        action: formData.get('action'),
+        expectedUpdatedAt,
+        note: formData.get('note'),
       });
       router.refresh();
     } catch (reason) {
@@ -36,11 +44,19 @@ export function AdminIntegrationEventActions({ eventId }: { eventId: string }) {
     }
   }
   return (
-    <div className="admin-support-action">
-      <button disabled={pending} onClick={() => act('RETRY')}>
+    <form action={act} className="admin-finance-actions__form">
+      <input
+        aria-label="Integration review note"
+        maxLength={500}
+        minLength={5}
+        name="note"
+        placeholder="Record reviewed evidence and reason"
+        required
+      />
+      <button disabled={pending} name="action" value="RETRY">
         Retry now
       </button>
-      <button disabled={pending} onClick={() => act('IGNORE')}>
+      <button disabled={pending} name="action" value="IGNORE">
         Ignore
       </button>
       {error ? (
@@ -48,7 +64,7 @@ export function AdminIntegrationEventActions({ eventId }: { eventId: string }) {
           {error}
         </span>
       ) : null}
-    </div>
+    </form>
   );
 }
 
