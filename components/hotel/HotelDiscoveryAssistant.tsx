@@ -3,6 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import {
+  createHotelDiscoveryExplanationPayload,
+  HOTEL_DISCOVERY_EXPLANATION_STORAGE_KEY,
+} from '@/services/hotelDiscoveryExplanationRules';
 import type { HotelDiscoverySuggestion, HotelSearchCriteria } from '@/types/hotel';
 
 interface DiscoveryResponse {
@@ -46,7 +50,23 @@ export function HotelDiscoveryAssistant({ criteria }: { criteria: HotelSearchCri
         sort: result.data.filters.sort,
       });
       if (result.data.filters.refundableOnly) query.set('refundableOnly', 'true');
-      window.sessionStorage.setItem('mandyal-hotel-discovery-explanation', result.data.explanation);
+      const createdAt = Date.now();
+      query.set('guidedAt', String(createdAt));
+      const explanationPayload = createHotelDiscoveryExplanationPayload({
+        createdAt,
+        destination: result.data.normalizedDestination,
+        explanation: result.data.explanation,
+      });
+      if (explanationPayload) {
+        try {
+          window.sessionStorage.setItem(
+            HOTEL_DISCOVERY_EXPLANATION_STORAGE_KEY,
+            explanationPayload,
+          );
+        } catch {
+          // Search remains available when browser storage is disabled or full.
+        }
+      }
       router.push(`/hotels?${query.toString()}`);
     } catch {
       setMessage('The discovery assistant is unavailable. Use the standard filters below.');
