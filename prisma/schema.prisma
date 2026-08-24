@@ -58,6 +58,7 @@ model User {
   promotionCampaignEvents     PromotionCampaignEvent[]       @relation("PromotionCampaignEventActor")
   partnerSettlementEvents     PartnerSettlementEvent[]       @relation("PartnerSettlementEventActor")
   integrationOutboxReviews    IntegrationOutboxReviewEvent[] @relation("IntegrationOutboxReviewActor")
+  searchProjectionRebuilds    SearchProjectionRebuildEvent[] @relation("SearchProjectionRebuildActor")
 }
 
 model PasswordResetToken {
@@ -1185,6 +1186,21 @@ model SearchProjectionDocument {
 
   @@unique([entityType, entityId])
   @@index([entityType, projectedAt])
+}
+
+model SearchProjectionRebuildEvent {
+  id             String   @id @default(cuid())
+  actorUserId    String
+  entityType     String   @default("HOTEL")
+  sourceCount    Int
+  projectedCount Int
+  removedCount   Int
+  reason         String
+  createdAt      DateTime @default(now())
+  actor          User     @relation("SearchProjectionRebuildActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model NotificationTemplate {
