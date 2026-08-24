@@ -67,10 +67,11 @@ export async function readJsonObject(
 }
 
 export function isSameOriginMutation(request: Request): boolean {
-  if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite === 'cross-site') return false;
 
   const origin = request.headers.get('origin');
-  if (!origin) return true;
+  if (!origin) return fetchSite === 'same-origin';
 
   try {
     return new URL(origin).origin === new URL(request.url).origin;

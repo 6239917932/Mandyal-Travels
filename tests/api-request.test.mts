@@ -69,4 +69,21 @@ test('same-origin mutation guard rejects cross-site and mismatched origins', () 
     ),
     true,
   );
+  assert.equal(isSameOriginMutation(new Request('https://portal.example.com/api')), false);
+  assert.equal(
+    isSameOriginMutation(
+      new Request('https://portal.example.com/api', {
+        headers: { 'sec-fetch-site': 'same-site' },
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginMutation(
+      new Request('https://portal.example.com/api', {
+        headers: { 'sec-fetch-site': 'same-origin' },
+      }),
+    ),
+    true,
+  );
 });
