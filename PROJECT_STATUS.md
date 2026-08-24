@@ -165,9 +165,11 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   optimistic versions, reason-required append-only history, bounded administration, and responsive
   public destination guides that route customers into inventory-backed search and trip planning
 - Protected read-only administrator audit workbench combining platform configuration, destination
-  content, supplier, organization, customer-support, privacy-review, and account-security records with closed-domain
-  filters, bounded search and date ranges, exact merged timeline pagination, and explicit deep-history
-  limits; it exposes no operational, inventory, payment, refund, or reconciliation mutation
+  content, promotion governance, partner-settlement decisions, integration-exception reviews,
+  supplier, organization, customer-support, privacy-review, and account-security records with
+  closed-domain filters, bounded search and date ranges, exact merged timeline pagination, private
+  operational references, and explicit deep-history limits; it exposes no operational, inventory,
+  payment, refund, or reconciliation mutation
 - Privacy operations queue for customer access, correction, deletion, and restriction requests with
   30-day targets, overdue visibility, bounded filters and pagination, required human review notes,
   optimistic versions, immutable events, customer status visibility, and no automatic data deletion

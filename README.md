@@ -33,7 +33,8 @@ and release checklist.
 - Governed destination content CMS with private drafts, human publication, optimistic versions,
   append-only editorial history, and responsive public destination guides
 - Protected read-only administrator audit workbench unifying bounded platform, editorial,
-  supplier, organization, support, and account-security history with exact timeline pagination
+  commercial, settlement, integration-review, supplier, organization, support, privacy, and
+  account-security history with exact timeline pagination and private operational references
 - Protected administrator security posture for MFA adoption, session hygiene, security-event volume,
   and identifier-free request-throttle monitoring with bounded filters and pagination
 - Human-governed administrator risk workbench with bounded history, aging posture, private subject
