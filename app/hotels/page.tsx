@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { HotelResultCard } from '@/components/hotel/HotelResultCard';
+import { HotelResultsExplorer } from '@/components/hotel/HotelResultsExplorer';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
 import { hotelService } from '@/services/hotelService';
@@ -75,23 +75,14 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
             </p>
           </div>
 
-          <div className="hotel-result-list">
-            {resultPage.results.length > 0 ? (
-              resultPage.results.map((result, index) => (
-                <HotelResultCard
-                  criteria={criteria}
-                  eagerImage={index === 0}
-                  key={result.hotel.id}
-                  result={result}
-                />
-              ))
-            ) : (
-              <p className="hotel-page__empty-state">
-                No hotels match this search yet. Try Shimla or Jaipur with the current fixture
-                inventory.
-              </p>
-            )}
-          </div>
+          {resultPage.results.length > 0 ? (
+            <HotelResultsExplorer criteria={criteria} results={resultPage.results} />
+          ) : (
+            <p className="hotel-page__empty-state">
+              No hotels match this search yet. Try Shimla or Jaipur with the current fixture
+              inventory.
+            </p>
+          )}
 
           {resultPage.pageCount > 1 ? (
             <nav aria-label="Hotel results pages" className="hotel-results-pagination">
