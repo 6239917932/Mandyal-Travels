@@ -4,6 +4,8 @@
 
 All supported endpoints are rooted at `/api/v1`. JSON successes use a `data` member where practical. Failures use an `error` object with a stable machine-readable `code` and a user-safe `message`. Validation details must never contain credentials, provider payloads, or stack traces.
 
+`PATCH /api/v1/admin/users/[userId]/access` requires a live platform-administrator session, a closed `SUSPEND` or `RESTORE` action, the current access version, a 10–500 character reason, and the exact account-bound confirmation phrase. A successful change transactionally updates the state, revokes every target session, and appends an immutable access event. Self-suspension, last-active-administrator suspension, stale versions, repeated transitions, and public role promotion fail closed.
+
 ## B2B travel-agency customers
 
 `GET` and `POST /api/v1/agent/customers` are restricted to an authenticated administrator of a

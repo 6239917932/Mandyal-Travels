@@ -12,6 +12,13 @@ const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 const MAX_ACTIVE_SESSIONS_PER_USER = 10;
 
+export class AccountAccessDeniedError extends Error {
+  constructor() {
+    super('ACCOUNT_ACCESS_DENIED');
+    this.name = 'AccountAccessDeniedError';
+  }
+}
+
 function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
@@ -21,32 +28,40 @@ export async function createSession(userId: string) {
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   const tokenHash = hashToken(token);
 
-  await prisma.$transaction(async (transaction) => {
-    await transaction.userSession.deleteMany({
-      where: { expiresAt: { lte: new Date() }, userId },
-    });
-    await transaction.userSession.create({
-      data: { expiresAt, tokenHash, userId },
-    });
-    await transaction.accountSecurityEvent.create({
-      data: createAccountSecurityEventData({
-        action: ACCOUNT_SECURITY_ACTIONS.SIGNED_IN,
-        summary: 'A new browser session signed in to your account.',
-        userId,
-      }),
-    });
-    const excessSessions = await transaction.userSession.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: { id: true },
-      skip: MAX_ACTIVE_SESSIONS_PER_USER,
-      where: { userId },
-    });
-    if (excessSessions.length > 0) {
-      await transaction.userSession.deleteMany({
-        where: { id: { in: excessSessions.map((session) => session.id) } },
+  await prisma.$transaction(
+    async (transaction) => {
+      const user = await transaction.user.findUnique({
+        select: { accessStatus: true },
+        where: { id: userId },
       });
-    }
-  });
+      if (!user || user.accessStatus !== 'ACTIVE') throw new AccountAccessDeniedError();
+      await transaction.userSession.deleteMany({
+        where: { expiresAt: { lte: new Date() }, userId },
+      });
+      await transaction.userSession.create({
+        data: { expiresAt, tokenHash, userId },
+      });
+      await transaction.accountSecurityEvent.create({
+        data: createAccountSecurityEventData({
+          action: ACCOUNT_SECURITY_ACTIONS.SIGNED_IN,
+          summary: 'A new browser session signed in to your account.',
+          userId,
+        }),
+      });
+      const excessSessions = await transaction.userSession.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+        skip: MAX_ACTIVE_SESSIONS_PER_USER,
+        where: { userId },
+      });
+      if (excessSessions.length > 0) {
+        await transaction.userSession.deleteMany({
+          where: { id: { in: excessSessions.map((session) => session.id) } },
+        });
+      }
+    },
+    { isolationLevel: 'Serializable' },
+  );
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
@@ -79,6 +94,7 @@ export async function getCurrentSession() {
     include: {
       user: {
         select: {
+          accessStatus: true,
           bookingEmailEnabled: true,
           email: true,
           firstName: true,
@@ -95,6 +111,10 @@ export async function getCurrentSession() {
   });
 
   if (!session) return null;
+  if (session.user.accessStatus !== 'ACTIVE') {
+    await prisma.userSession.deleteMany({ where: { id: session.id } });
+    return null;
+  }
 
   const now = new Date();
   if (session.expiresAt <= now) {

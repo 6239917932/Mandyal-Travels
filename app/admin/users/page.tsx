@@ -146,7 +146,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                     </td>
                     <td>
                       <strong>{user.role.replaceAll('_', ' ')}</strong>
-                      <span>{user.emailVerifiedAt ? 'Email verified' : 'Email not verified'}</span>
+                      <span>
+                        {user.accessStatus === 'ACTIVE' ? 'Active access' : 'Suspended access'} ·{' '}
+                        {user.emailVerifiedAt ? 'Email verified' : 'Email not verified'}
+                      </span>
                     </td>
                     <td>
                       {membership ? (

@@ -9,6 +9,9 @@ CREATE TABLE "User" (
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'CUSTOMER',
+    "accessStatus" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "accessVersion" INTEGER NOT NULL DEFAULT 0,
+    "accessChangedAt" TIMESTAMP(3),
     "emailVerifiedAt" TIMESTAMP(3),
     "marketingConsentAt" TIMESTAMP(3),
     "bookingEmailEnabled" BOOLEAN NOT NULL DEFAULT true,
@@ -18,6 +21,21 @@ CREATE TABLE "User" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserAccessEvent" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserAccessEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1466,6 +1484,21 @@ CREATE TABLE "DestinationContentEvent" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE INDEX "User_role_accessStatus_idx" ON "User"("role", "accessStatus");
+
+-- CreateIndex
+CREATE INDEX "UserAccessEvent_userId_createdAt_idx" ON "UserAccessEvent"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "UserAccessEvent_actorUserId_createdAt_idx" ON "UserAccessEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "UserAccessEvent_action_createdAt_idx" ON "UserAccessEvent"("action", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserAccessEvent_userId_version_key" ON "UserAccessEvent"("userId", "version");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
 
 -- CreateIndex
@@ -2106,6 +2139,12 @@ CREATE INDEX "DestinationContentEvent_destinationId_createdAt_idx" ON "Destinati
 
 -- CreateIndex
 CREATE INDEX "DestinationContentEvent_createdAt_idx" ON "DestinationContentEvent"("createdAt");
+
+-- AddForeignKey
+ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
