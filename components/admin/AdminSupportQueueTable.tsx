@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
 import { AdminCustomerSupportAction } from '@/components/admin/AdminCustomerSupportAction';
+import { AdminSupportCaseBrief } from '@/components/admin/AdminSupportCaseBrief';
 import { AdminSupportAction } from '@/components/admin/AdminSupportAction';
+import { buildSupportOperatorBrief } from '@/services/supportOperatorBriefService';
 
 type SupportCreator = {
   email: string;
@@ -14,6 +16,7 @@ type CustomerSupportQueueCase = {
   bookingReference: string | null;
   caseNumber: string;
   category: string;
+  createdAt: Date;
   createdBy: SupportCreator;
   id: string;
   message: string;
@@ -72,6 +75,15 @@ export function AdminCustomerSupportQueueTable({ cases }: { cases: CustomerSuppo
               {supportCase.resolutionNote ? (
                 <span>Resolution: {supportCase.resolutionNote}</span>
               ) : null}
+              <AdminSupportCaseBrief
+                brief={buildSupportOperatorBrief({
+                  bookingReferencePresent: Boolean(supportCase.bookingReference),
+                  category: supportCase.category,
+                  createdAt: supportCase.createdAt,
+                  kind: 'CUSTOMER',
+                  status: supportCase.status,
+                })}
+              />
             </td>
             <td>{supportCase.bookingReference ?? 'Not provided'}</td>
             <td>
@@ -132,6 +144,15 @@ export function AdminBusinessSupportQueueTable({ cases }: { cases: BusinessSuppo
               <strong>{supportCase.subject}</strong>
               <span>{supportCase.message}</span>
               <span>{supportCase.bookingReference ?? 'No booking reference'}</span>
+              <AdminSupportCaseBrief
+                brief={buildSupportOperatorBrief({
+                  bookingReferencePresent: Boolean(supportCase.bookingReference),
+                  category: supportCase.category,
+                  createdAt: supportCase.createdAt,
+                  kind: 'BUSINESS',
+                  status: supportCase.status,
+                })}
+              />
             </td>
             <td>
               <strong className={statusClass(supportCase.status)}>{supportCase.status}</strong>

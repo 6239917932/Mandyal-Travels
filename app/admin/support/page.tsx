@@ -123,7 +123,8 @@ export default async function AdminSupportPage({ searchParams }: AdminSupportPag
           <h1>Support operations</h1>
           <p>
             Search the complete customer or company queue, review oldest open cases first, and use
-            the existing audited resolution controls.
+            the existing audited resolution controls. Each case includes a deterministic,
+            record-derived checklist for the human operator.
           </p>
         </div>
         <Link className="ui-button ui-button--secondary" href="/admin">
@@ -235,8 +236,9 @@ export default async function AdminSupportPage({ searchParams }: AdminSupportPag
       </nav>
 
       <p className="booking-confirmation__note">
-        This workbench uses governed portal records only. No AI provider is active, and no support,
-        booking, payment, refund, or eligibility decision is automated.
+        This workbench uses governed portal records only. Operator briefs never copy case messages
+        or personal details, and no AI provider is active. No support, booking, payment, refund, or
+        eligibility decision is automated.
       </p>
     </section>
   );
