@@ -1,16 +1,42 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
+import { SavedTravelerPicker } from '@/components/account/SavedTravelerPicker';
+import { ageFromBirthDate, type SavedTravelerProfile } from '@/services/savedTravelerService';
 export function CarDriverForm({
   nextQuery,
+  pickupDate,
   rentalMode,
 }: {
   nextQuery: Record<string, string>;
+  pickupDate: string;
   rentalMode: 'self-drive' | 'chauffeur';
 }) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  function applyTraveler(traveler: SavedTravelerProfile) {
+    const form = formRef.current;
+    if (!form) return 0;
+    let changed = 0;
+    const fill = (name: string, value: string) => {
+      const field = form.elements.namedItem(name);
+      if (!(field instanceof HTMLInputElement)) return;
+      if (field.value.trim() || !value) return;
+      field.value = value;
+      changed += 1;
+    };
+    fill('firstName', traveler.firstName);
+    fill('lastName', traveler.lastName);
+    fill('email', traveler.email);
+    fill('phone', traveler.phone);
+    if (rentalMode === 'self-drive') {
+      const age = ageFromBirthDate(traveler.dateOfBirth, new Date(`${pickupDate}T00:00:00.000Z`));
+      fill('age', age === null ? '' : String(age));
+    }
+    return changed;
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -44,9 +70,13 @@ export function CarDriverForm({
     router.push(`/cars/booking/payment?${new URLSearchParams(nextQuery)}`);
   }
   return (
-    <form className="flight-passenger-form" noValidate onSubmit={submit}>
+    <form className="flight-passenger-form" noValidate onSubmit={submit} ref={formRef}>
       <fieldset>
         <legend>{rentalMode === 'self-drive' ? 'Primary driver' : 'Lead traveller'}</legend>
+        <SavedTravelerPicker
+          onApply={applyTraveler}
+          targetLabel={rentalMode === 'self-drive' ? 'the primary driver' : 'the lead traveler'}
+        />
         <Input error={errors.firstName} label="First name" name="firstName" />
         <Input error={errors.lastName} label="Last name" name="lastName" />
         {rentalMode === 'self-drive' ? (

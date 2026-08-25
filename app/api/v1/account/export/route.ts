@@ -12,7 +12,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Sign in to download your account data.' }, { status: 401 });
   }
 
-  const tripFilter = { OR: [{ userId: user.id }, { email: user.email }] };
+  const tripFilter = {
+    OR: [{ userId: user.id }, { email: user.email, userId: null }],
+  };
 
   try {
     const exportData = await prisma.$transaction(async (tx) => {
@@ -29,6 +31,7 @@ export async function GET() {
         tx.loyaltyAccount.count({ where: { userId: user.id } }),
         tx.loyaltyLedger.count({ where: { account: { is: { userId: user.id } } } }),
         tx.referralCode.count({ where: { ownerUserId: user.id } }),
+        tx.savedTraveler.count({ where: { userId: user.id } }),
       ]);
       const exportRecordCount = recordCounts.reduce((total, count) => total + count, 0);
       if (exportRecordCount > MAX_EXPORT_RECORDS) {
@@ -190,6 +193,23 @@ export async function GET() {
           take: MAX_EXPORT_RECORDS + 1,
           where: { ownerUserId: user.id },
         }),
+        tx.savedTraveler.findMany({
+          orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+          select: {
+            createdAt: true,
+            dateOfBirth: true,
+            email: true,
+            firstName: true,
+            gender: true,
+            label: true,
+            lastName: true,
+            phone: true,
+            relationship: true,
+            updatedAt: true,
+          },
+          take: MAX_EXPORT_RECORDS + 1,
+          where: { userId: user.id },
+        }),
       ] as const);
     });
 
@@ -213,6 +233,7 @@ export async function GET() {
       notificationHistory,
       loyaltyAccount,
       referralCodes,
+      savedTravelers,
     ] = exportData;
 
     const safeNotificationHistory = notificationHistory.map(({ template: _, ...delivery }) => ({
@@ -245,6 +266,7 @@ export async function GET() {
       exportedAt,
       hotelBookings,
       notificationHistory: safeNotificationHistory,
+      savedTravelers,
       securityActivity: securityEvents,
       supportCases,
       travelBookings: trips,

@@ -39,6 +39,24 @@ CREATE TABLE "UserAccessEvent" (
 );
 
 -- CreateTable
+CREATE TABLE "SavedTraveler" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "dateOfBirth" TEXT NOT NULL DEFAULT '',
+    "gender" TEXT NOT NULL DEFAULT '',
+    "relationship" TEXT NOT NULL DEFAULT 'OTHER',
+    "email" TEXT NOT NULL DEFAULT '',
+    "phone" TEXT NOT NULL DEFAULT '',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SavedTraveler_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PasswordResetToken" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -1499,6 +1517,9 @@ CREATE INDEX "UserAccessEvent_action_createdAt_idx" ON "UserAccessEvent"("action
 CREATE UNIQUE INDEX "UserAccessEvent_userId_version_key" ON "UserAccessEvent"("userId", "version");
 
 -- CreateIndex
+CREATE INDEX "SavedTraveler_userId_updatedAt_idx" ON "SavedTraveler"("userId", "updatedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
 
 -- CreateIndex
@@ -2148,6 +2169,9 @@ ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_userId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SavedTraveler" ADD CONSTRAINT "SavedTraveler_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

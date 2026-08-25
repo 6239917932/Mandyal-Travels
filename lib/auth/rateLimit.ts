@@ -12,6 +12,7 @@ type RateLimitAction =
   | 'PASSWORD_CHANGE'
   | 'PASSWORD_RESET_CONFIRM'
   | 'PASSWORD_RESET_REQUEST'
+  | 'SAVED_TRAVELER_MUTATION'
   | 'REGISTER';
 
 type RateLimitOptions = {

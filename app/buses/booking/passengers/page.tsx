@@ -56,7 +56,11 @@ export default async function BusPassengersPage({
         </p>
         <div className="bus-booking-page__grid">
           <Card>
-            <BusPassengerForm nextQuery={nextQuery} passengers={criteria.passengers} />
+            <BusPassengerForm
+              nextQuery={nextQuery}
+              passengers={criteria.passengers}
+              travelDate={criteria.travelDate}
+            />
           </Card>
           <Card className="bus-booking-page__summary">
             <p className="hotel-page__eyebrow">Trip summary</p>

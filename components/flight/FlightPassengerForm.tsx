@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Input } from '@/components/ui/Input';
+import { SavedTravelerPicker } from '@/components/account/SavedTravelerPicker';
+import { bookingGenderValue, type SavedTravelerProfile } from '@/services/savedTravelerService';
 
 interface FlightPassengerFormProps {
   adults: number;
@@ -14,7 +16,29 @@ type FormErrors = Record<string, string>;
 
 export function FlightPassengerForm({ adults, nextQuery }: FlightPassengerFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  function applyTraveler(index: number, traveler: SavedTravelerProfile) {
+    const form = formRef.current;
+    if (!form) return 0;
+    let changed = 0;
+    const fill = (name: string, value: string) => {
+      const field = form.elements.namedItem(name);
+      if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) return;
+      if (field.value.trim() || !value) return;
+      field.value = value;
+      changed += 1;
+    };
+    fill(`firstName-${index}`, traveler.firstName);
+    fill(`lastName-${index}`, traveler.lastName);
+    fill(`gender-${index}`, bookingGenderValue(traveler.gender));
+    if (index === 0) {
+      fill('email', traveler.email);
+      fill('phone', traveler.phone);
+    }
+    return changed;
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,10 +75,14 @@ export function FlightPassengerForm({ adults, nextQuery }: FlightPassengerFormPr
   }
 
   return (
-    <form className="flight-passenger-form" noValidate onSubmit={submit}>
+    <form className="flight-passenger-form" noValidate onSubmit={submit} ref={formRef}>
       {Array.from({ length: adults }, (_, index) => (
         <fieldset className="flight-passenger-form__traveler" key={index}>
           <legend>Adult {index + 1}</legend>
+          <SavedTravelerPicker
+            onApply={(traveler) => applyTraveler(index, traveler)}
+            targetLabel={`adult ${index + 1}`}
+          />
           <Input
             autoComplete="given-name"
             error={errors[`firstName-${index}`]}
