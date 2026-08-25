@@ -1,0 +1,95 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import nextConfig, { noIndexHeaderSources } from '../next.config.ts';
+import {
+  absolutePublicUrl,
+  buildPublicSitemapRecords,
+  ROBOTS_DISALLOWED_PATHS,
+} from '../lib/seo/publicIndexing.ts';
+
+const protectedPrefixes = [
+  '/account',
+  '/admin',
+  '/agent',
+  '/api',
+  '/partner$',
+  '/partner/',
+  '/manage-booking',
+  '/flights/booking',
+  '/buses/booking',
+  '/cars/booking',
+] as const;
+
+test('crawler rules fail closed for private and transactional surfaces', () => {
+  const disallowedPaths: readonly string[] = ROBOTS_DISALLOWED_PATHS;
+  for (const prefix of protectedPrefixes) {
+    assert.ok(
+      ROBOTS_DISALLOWED_PATHS.some((path) => path.startsWith(prefix) || prefix.startsWith(path)),
+      `${prefix} must be disallowed`,
+    );
+  }
+
+  assert.ok(!disallowedPaths.includes('/hotels'));
+  assert.ok(!disallowedPaths.includes('/partners'));
+  assert.ok(!disallowedPaths.includes('/business'));
+});
+
+test('sensitive responses receive a no-index header without suppressing public landing pages', async () => {
+  const noIndexSources: readonly string[] = noIndexHeaderSources;
+  const joined = noIndexSources.join('\n');
+  for (const fragment of ['/account/', '/admin/', '/api/', '/partner/', '/manage-booking/']) {
+    assert.match(joined, new RegExp(fragment.replaceAll('/', '\\/')));
+  }
+
+  assert.ok(!noIndexSources.includes('/hotels/:path*'));
+  assert.ok(!noIndexSources.includes('/partners/:path*'));
+  assert.ok(!noIndexSources.includes('/business/:path*'));
+
+  const headers = (await nextConfig.headers?.()) as
+    Array<{ headers: Array<{ key: string; value: string }>; source: string }> | undefined;
+  assert.ok(headers);
+  for (const source of noIndexHeaderSources) {
+    const rule: { headers: Array<{ key: string; value: string }>; source: string } | undefined =
+      headers.find((candidate) => candidate.source === source);
+    assert.deepEqual(rule?.headers, [
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+    ]);
+  }
+});
+
+test('public sitemap includes normalized public records only', () => {
+  const updatedAt = new Date('2026-08-25T00:00:00.000Z');
+  const records = buildPublicSitemapRecords({
+    destinations: [
+      { slug: 'shimla', updatedAt },
+      { slug: '../private', updatedAt },
+    ],
+    hotelSlugs: ['z-hotel', 'a-hotel', 'a-hotel', '../admin'],
+    legalPolicySlugs: ['terms', 'privacy'],
+  });
+  const paths = records.map((record) => record.path);
+
+  assert.equal(paths.filter((path) => path === '/hotels/a-hotel').length, 1);
+  assert.ok(paths.includes('/hotels/z-hotel'));
+  assert.ok(paths.includes('/destinations/shimla'));
+  assert.ok(paths.includes('/legal/privacy'));
+  assert.ok(paths.includes('/legal/terms'));
+  assert.ok(paths.every((path) => !path.includes('..')));
+  assert.ok(paths.every((path) => !protectedPrefixes.some((prefix) => path.startsWith(prefix))));
+  assert.equal(
+    records.find((record) => record.path === '/destinations/shimla')?.lastModified,
+    updatedAt,
+  );
+});
+
+test('absolute sitemap URLs remain on the canonical portal origin', () => {
+  assert.equal(
+    absolutePublicUrl('https://www.mandyaltravels.com', '/hotels/example'),
+    'https://www.mandyaltravels.com/hotels/example',
+  );
+  assert.throws(
+    () => absolutePublicUrl('https://www.mandyaltravels.com', '//attacker.example/path'),
+    /PUBLIC_SITEMAP_PATH_INVALID/,
+  );
+});
