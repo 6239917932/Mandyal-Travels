@@ -16,10 +16,39 @@ const contentSecurityPolicy = [
   ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
 ].join('; ');
 
+export const noIndexHeaderSources = [
+  '/account/:path*',
+  '/admin/:path*',
+  '/agent/:path*',
+  '/api/:path*',
+  '/buses/booking/:path*',
+  '/business/audit/:path*',
+  '/business/dashboard/:path*',
+  '/business/invitations/:path*',
+  '/business/members/:path*',
+  '/business/reports/:path*',
+  '/business/requests/:path*',
+  '/business/statements/:path*',
+  '/business/support/:path*',
+  '/cars/booking/:path*',
+  '/flights/booking/:path*',
+  '/forgot-password',
+  '/hotels/:slug/booking/:path*',
+  '/login',
+  '/manage-booking/:path*',
+  '/partner/:path*',
+  '/register',
+  '/reset-password',
+] as const;
+
 const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT_MODE === 'standalone' ? 'standalone' : undefined,
   async headers() {
     return [
+      ...noIndexHeaderSources.map((source) => ({
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+        source,
+      })),
       {
         headers: [
           { key: 'Content-Security-Policy', value: contentSecurityPolicy },
