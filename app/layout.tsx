@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
@@ -10,11 +10,35 @@ import './globals.css';
 
 export const metadata: Metadata = {
   applicationName: 'Mandyal Travels',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Mandyal Travels',
+  },
   creator: 'Mandyal Travels',
   description:
     'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
   icons: {
-    icon: '/brand/mandyal-symbol.svg',
+    apple: [
+      {
+        sizes: '180x180',
+        type: 'image/png',
+        url: '/brand/mandyal-apple-touch-icon.png',
+      },
+    ],
+    icon: [
+      { type: 'image/svg+xml', url: '/brand/mandyal-symbol.svg' },
+      {
+        sizes: '192x192',
+        type: 'image/png',
+        url: '/brand/mandyal-app-icon-192.png',
+      },
+      {
+        sizes: '512x512',
+        type: 'image/png',
+        url: '/brand/mandyal-app-icon-512.png',
+      },
+    ],
     shortcut: '/brand/mandyal-symbol.svg',
   },
   openGraph: {
@@ -34,6 +58,11 @@ export const metadata: Metadata = {
     default: 'Mandyal Travels',
     template: '%s | Mandyal Travels',
   },
+};
+
+export const viewport: Viewport = {
+  colorScheme: 'light',
+  themeColor: '#0c3157',
 };
 
 export default async function RootLayout({
