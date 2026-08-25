@@ -3,7 +3,10 @@ import { isIP } from 'node:net';
 
 import 'dotenv/config';
 
+import { validateProductionDatabaseContract } from './lib/production-database-contract.mjs';
+
 const failures = [];
+failures.push(...validateProductionDatabaseContract(process.env));
 const HOST_PATTERN = /^(?=.{1,253}$)(?!-)(?:[a-z0-9-]{1,63}\.)*[a-z0-9][a-z0-9-]{0,62}$/;
 
 function isPublicDomainName(host) {
@@ -50,10 +53,6 @@ function endpointUsesAllowedHost(endpointName, hostsName) {
   }
 }
 
-if (!process.env.DATABASE_URL) failures.push('DATABASE_URL is required.');
-if ((process.env.DATABASE_URL ?? '').startsWith('file:')) {
-  failures.push('Production DATABASE_URL must use a managed relational database, not SQLite.');
-}
 for (const name of [
   'BOOKING_TOKEN_SECRET',
   'PARTNER_ADMIN_KEY',
@@ -129,13 +128,6 @@ for (const [endpointName, hostsName] of [
   ['PUSH_PROVIDER_ENDPOINT', 'PUSH_PROVIDER_ALLOWED_HOSTS'],
 ]) {
   endpointUsesAllowedHost(endpointName, hostsName);
-}
-if (
-  !['postgresql:', 'postgres:'].some((prefix) =>
-    (process.env.DATABASE_URL ?? '').startsWith(prefix),
-  )
-) {
-  failures.push('Production DATABASE_URL must use PostgreSQL.');
 }
 if (process.env.NODE_ENV !== 'production')
   failures.push('NODE_ENV must be production for a release deployment.');

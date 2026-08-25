@@ -23,3 +23,17 @@ To verify a specific backup, set `BACKUP_VERIFY_PATH` to its project-relative or
 - Exercise the process on a schedule and after material schema/provider changes.
 
 An unverified backup is not considered recoverable.
+
+## PostgreSQL cutover and restore evidence
+
+Provider-native encrypted backups and point-in-time recovery remain the production system of
+record. After restoring into a separate database, set `SOURCE_DATABASE_URL` to the reviewed SQLite
+snapshot and `RESTORE_DATABASE_URL` to the isolated PostgreSQL restore, then run:
+
+```text
+npm run db:rehearse:postgresql -- --mode=restore
+```
+
+The command is read-only and fails on missing canonical tables, unvalidated foreign keys, row-count
+drift, or critical finance-aggregate drift. Set `CUTOVER_EVIDENCE_PATH` to a new controlled path to
+record the schema checksum, counts, and result without database credentials or record contents.

@@ -23,6 +23,9 @@ const dockerignore = read('.dockerignore');
 const compose = read('compose.portable-preview.yaml');
 const deploymentGuide = read('docs/PORTABLE_DEPLOYMENT.md');
 const schema = read('prisma/schema.prisma');
+const packageJson = read('package.json');
+const databaseRuntime = read('lib/database/runtime.ts');
+const cutoverVerifier = read('scripts/rehearse-postgresql-cutover.mjs');
 const releaseVerifier = read('scripts/verify-release-env.mjs');
 
 requireText(
@@ -72,9 +75,24 @@ requireText(
   'The verifier must be updated when the Prisma provider changes.',
 );
 requireText(
+  packageJson,
+  '"@prisma/adapter-pg"',
+  'Production dependencies must include the PostgreSQL driver adapter.',
+);
+requireText(
+  databaseRuntime,
+  'validatePostgreSqlRuntimeUrl',
+  'The database runtime must validate PostgreSQL before constructing its client.',
+);
+requireText(
+  cutoverVerifier,
+  'compareDatabaseSnapshots',
+  'The deployment contract must include deterministic cutover reconciliation.',
+);
+requireText(
   releaseVerifier,
-  "failures.push('Production DATABASE_URL must use PostgreSQL.')",
-  'Production preflight must continue to require PostgreSQL.',
+  'validateProductionDatabaseContract',
+  'Production preflight must verify the managed PostgreSQL contract.',
 );
 
 if (/COPY\s+.*\.env/im.test(dockerfile)) {
@@ -91,6 +109,6 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Deployment contract verified. Production remains gated until the reviewed PostgreSQL cutover.',
+    'Deployment contract verified. Runtime PostgreSQL support is ready; live infrastructure and cutover approval remain gated.',
   );
 }

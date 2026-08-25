@@ -23,10 +23,11 @@
     "api:write-contract": "node --experimental-strip-types scripts/verify-api-v1-contract.mjs --write",
     "admin:grant": "node scripts/grant-platform-admin.mjs",
     "partner:grant": "node scripts/grant-hotel-partner.mjs",
-    "db:generate": "prisma generate",
+    "db:generate": "node scripts/generate-prisma-clients.mjs",
     "db:sync:postgresql": "node scripts/sync-postgresql-contract.mjs",
     "db:verify:postgresql": "node scripts/sync-postgresql-contract.mjs --check",
     "db:deploy:postgresql": "prisma migrate deploy --config prisma.postgresql.config.ts",
+    "db:rehearse:postgresql": "node scripts/rehearse-postgresql-cutover.mjs",
     "db:repair-finance-migration": "node scripts/repair-failed-finance-migration.mjs",
     "db:verify-migrations": "node scripts/verify-migrations.mjs",
     "db:deploy": "prisma migrate deploy",
@@ -35,13 +36,15 @@
     "db:verify-backup": "node scripts/verify-backup-restore.mjs",
     "deployment:verify": "node scripts/verify-deployment-contract.mjs",
     "release:verify-env": "node scripts/verify-release-env.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/generate-prisma-clients.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "dotenv": "^17.4.2",
     "next": "16.3.0",
+    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -49,6 +52,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
