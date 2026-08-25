@@ -28,8 +28,13 @@ RUN npm run db:generate \
 USER node
 CMD ["npm", "run", "db:deploy"]
 
+# Scheduled jobs reuse the same generated clients and source revision as the
+# migration task. The default command performs one bounded delivery pass; a
+# production scheduler owns cadence, retry, concurrency, and dead-letter policy.
+FROM operations AS worker
+CMD ["npm", "run", "worker:notifications"]
+
 FROM base AS runner
-ENV DATABASE_URL=file:/data/portal.db
 ENV HOSTNAME=0.0.0.0
 ENV NODE_ENV=production
 ENV PORT=3000

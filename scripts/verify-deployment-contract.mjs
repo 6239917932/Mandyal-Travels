@@ -21,7 +21,9 @@ const nextConfig = read('next.config.ts');
 const dockerfile = read('Dockerfile');
 const dockerignore = read('.dockerignore');
 const compose = read('compose.portable-preview.yaml');
+const productionCompose = read('compose.production-contract.yaml');
 const deploymentGuide = read('docs/PORTABLE_DEPLOYMENT.md');
+const productionRunbook = read('docs/PRODUCTION_RUNTIME_RUNBOOK.md');
 const schema = read('prisma/schema.prisma');
 const packageJson = read('package.json');
 const databaseRuntime = read('lib/database/runtime.ts');
@@ -50,6 +52,14 @@ requireText(
   'CMD ["node", "server.js"]',
   'The web container must start the standalone server.',
 );
+requireText(
+  dockerfile,
+  'FROM operations AS worker',
+  'The container must expose a release-matched scheduled worker target.',
+);
+if (/ENV\s+DATABASE_URL\s*=\s*file:/i.test(dockerfile)) {
+  failures.push('The production-capable web image must not default to a SQLite database URL.');
+}
 requireText(dockerignore, '.env.*', 'Container context must exclude environment files.');
 requireText(dockerignore, '*.db', 'Container context must exclude local database files.');
 requireText(dockerignore, 'backups', 'Container context must exclude database backups.');
@@ -57,6 +67,56 @@ requireText(
   compose,
   'condition: service_completed_successfully',
   'Portable preview must complete migrations before starting the portal.',
+);
+requireText(
+  productionCompose,
+  "command: ['npm', 'run', 'db:deploy:postgresql']",
+  'Production migrations must use the native PostgreSQL migration history.',
+);
+requireText(
+  productionCompose,
+  'condition: service_completed_successfully',
+  'Production web startup must be gated on successful migrations.',
+);
+requireText(
+  productionCompose,
+  'target: worker',
+  'Production runtime contract must include the release-matched worker image.',
+);
+requireText(
+  productionCompose,
+  "profiles: ['scheduled-jobs']",
+  'The one-shot notification worker must remain scheduler-owned.',
+);
+requireText(
+  productionCompose,
+  "restart: 'no'",
+  'One-shot production workloads must not restart without scheduler policy.',
+);
+requireText(
+  productionCompose,
+  'read_only: true',
+  'Production workloads must use a read-only root filesystem.',
+);
+requireText(
+  productionCompose,
+  'no-new-privileges:true',
+  'Production workloads must prevent privilege escalation.',
+);
+requireText(
+  productionCompose,
+  'RELEASE_SHA:',
+  'Production workloads must identify their immutable release.',
+);
+requireText(
+  productionRunbook,
+  'does not choose or enable either provider',
+  'Runtime documentation must preserve the external payment-provider approval gate.',
+);
+requireText(
+  productionRunbook,
+  'Live deployment remains blocked',
+  'Runtime documentation must state the external live-release blockers.',
 );
 requireText(compose, 'cap_drop:', 'Portable preview must drop Linux capabilities.');
 requireText(
@@ -99,7 +159,7 @@ if (/COPY\s+.*\.env/im.test(dockerfile)) {
   failures.push('Dockerfile must never copy an environment file explicitly.');
 }
 
-if (/gho_[a-z0-9]+|sk_live_[a-z0-9]+/i.test(`${dockerfile}\n${compose}`)) {
+if (/gho_[a-z0-9]+|sk_live_[a-z0-9]+/i.test(`${dockerfile}\n${compose}\n${productionCompose}`)) {
   failures.push('Deployment files appear to contain a live credential.');
 }
 
