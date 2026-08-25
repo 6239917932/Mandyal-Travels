@@ -54,11 +54,14 @@ reviewed, synchronized PostgreSQL schema, PostgreSQL runtime adapter, and 85-tab
 now exist, but a
 real production release remains blocked even though the web artifact is portable. Complete the
 reviewed steps in `docs/PRODUCTION_DATA_PLATFORM.md`: provision managed PostgreSQL, configure the
-implemented driver adapter, rehearse and reconcile the data transfer, verify restore/failover, and approve a
-reversible cutover window. Never replay the SQLite migration files against PostgreSQL and never
+implemented runtime with the provisioned TLS connection details, rehearse and reconcile the data
+transfer, verify restore/failover, and approve a reversible cutover window. Never replay the SQLite
+migration files against PostgreSQL and never
 silently change the working local database provider.
 
 After that cutover is implemented, the release owner must also activate the approved secret store,
 off-site backups, scheduler/worker, observability, TLS edge, and any finalized payment or supplier
 providers. Run `npm run check` and `npm run release:verify-env` against the approved release
-configuration before routing public traffic.
+configuration before routing public traffic. Use `docs/PRODUCTION_RUNTIME_RUNBOOK.md` and
+`compose.production-contract.yaml` as the workload and promotion contract; neither file provisions
+the external services or authorizes a live release.
