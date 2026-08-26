@@ -75,7 +75,11 @@ export function safeAutomationSummary(summaryJson: string): {
   expiredAvailabilityLocks: number;
   expiredBusSeatHolds: number;
   failed: number;
+  projected: number;
+  rebuilt: boolean;
+  removed: number;
   releasedPromotionClaims: number;
+  sourceCount: number;
 } {
   try {
     const parsed: unknown = JSON.parse(summaryJson);
@@ -87,13 +91,18 @@ export function safeAutomationSummary(summaryJson: string): {
         ? candidate
         : 0;
     };
+    const booleanValue = (key: string) => record[key] === true;
     return {
       deadLettered: value('deadLettered'),
       delivered: value('delivered'),
       expiredAvailabilityLocks: value('expiredAvailabilityLocks'),
       expiredBusSeatHolds: value('expiredBusSeatHolds'),
       failed: value('failed'),
+      projected: value('projected'),
+      rebuilt: booleanValue('rebuilt'),
+      removed: value('removed'),
       releasedPromotionClaims: value('releasedPromotionClaims'),
+      sourceCount: value('sourceCount'),
     };
   } catch {
     return {
@@ -102,7 +111,11 @@ export function safeAutomationSummary(summaryJson: string): {
       expiredAvailabilityLocks: 0,
       expiredBusSeatHolds: 0,
       failed: 0,
+      projected: 0,
+      rebuilt: false,
+      removed: 0,
       releasedPromotionClaims: 0,
+      sourceCount: 0,
     };
   }
 }

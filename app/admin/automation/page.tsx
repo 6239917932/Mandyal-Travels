@@ -225,6 +225,15 @@ export default async function AdminAutomationPage({ searchParams }: Props) {
                             {summary.failed} failed · {summary.deadLettered} dead-lettered
                           </span>
                         </>
+                      ) : run.jobKey === 'SEARCH_PROJECTION_MAINTENANCE_V1' ? (
+                        <>
+                          <strong>
+                            {summary.rebuilt ? `${summary.projected} projected` : 'Healthy no-op'}
+                          </strong>
+                          <span>
+                            {summary.removed} stale removed · {summary.sourceCount} sources
+                          </span>
+                        </>
                       ) : (
                         <>
                           <strong>{summary.expiredBusSeatHolds} bus holds</strong>

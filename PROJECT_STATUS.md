@@ -319,6 +319,11 @@ to normalized strings, and remove stale hotel documents after a property is unpu
 without touching other projection types. Live availability and pricing remain relational source-of-truth
 checks.
 
+Search-projection maintenance is prepared as an authenticated one-shot autopilot job with a database
+lease, replay-safe correlation evidence, healthy-state no-ops, and a hard source-count safety boundary.
+It can repair only disposable public search documents and cannot mutate inventory, rates, bookings,
+payments, refunds, settlements, or payouts. Production scheduling and alerts remain infrastructure-owned.
+
 Partner settlement governance now holds bookings with unresolved refund reservations out of payout
 calculation, rejects inactive suppliers, and records draft, approval, and paid transitions in an
 append-only history. Version-checked updates prevent stale or duplicate finance actions, payment
