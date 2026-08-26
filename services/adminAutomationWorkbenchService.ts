@@ -72,11 +72,14 @@ export function automationLeasePosture(input: {
 export function safeAutomationSummary(summaryJson: string): {
   deadLettered: number;
   delivered: number;
+  canonicalTableCount: number;
   expiredAvailabilityLocks: number;
   expiredBusSeatHolds: number;
   failed: number;
+  financialMetricCount: number;
   projected: number;
   rebuilt: boolean;
+  recoveryVerified: boolean;
   removed: number;
   releasedPromotionClaims: number;
   sourceCount: number;
@@ -93,26 +96,32 @@ export function safeAutomationSummary(summaryJson: string): {
     };
     const booleanValue = (key: string) => record[key] === true;
     return {
+      canonicalTableCount: value('canonicalTableCount'),
       deadLettered: value('deadLettered'),
       delivered: value('delivered'),
       expiredAvailabilityLocks: value('expiredAvailabilityLocks'),
       expiredBusSeatHolds: value('expiredBusSeatHolds'),
       failed: value('failed'),
+      financialMetricCount: value('financialMetricCount'),
       projected: value('projected'),
       rebuilt: booleanValue('rebuilt'),
+      recoveryVerified: booleanValue('recoveryVerified'),
       removed: value('removed'),
       releasedPromotionClaims: value('releasedPromotionClaims'),
       sourceCount: value('sourceCount'),
     };
   } catch {
     return {
+      canonicalTableCount: 0,
       deadLettered: 0,
       delivered: 0,
       expiredAvailabilityLocks: 0,
       expiredBusSeatHolds: 0,
       failed: 0,
+      financialMetricCount: 0,
       projected: 0,
       rebuilt: false,
+      recoveryVerified: false,
       removed: 0,
       releasedPromotionClaims: 0,
       sourceCount: 0,

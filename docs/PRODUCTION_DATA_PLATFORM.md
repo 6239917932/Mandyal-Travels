@@ -45,6 +45,10 @@ The database URL and credentials belong in the deployment secret manager. They m
 - Set `SOURCE_DATABASE_URL` to the reviewed SQLite snapshot and optionally set
   `CUTOVER_EVIDENCE_PATH` to create a new non-sensitive JSON evidence record. Existing evidence is
   never overwritten.
+- A successful isolated `--mode=restore` rehearsal may additionally report a safe summary to the
+  deployed portal when `RECOVERY_EVIDENCE_REPORT_ORIGIN` and the secret-managed
+  `AUTOPILOT_WORKER_SECRET` are configured. The portal rejects stale, mismatched, replay-conflicting,
+  or non-restore evidence and retains no credentials, record contents, or finance values.
 
 The verifier intentionally does not copy records, freeze writes, deploy infrastructure, or promote
 traffic. Those actions require the approved provider tooling, a reviewed transfer method, named

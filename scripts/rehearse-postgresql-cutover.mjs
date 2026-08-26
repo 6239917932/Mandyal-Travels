@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -171,11 +172,70 @@ const evidence = {
   verifiedAt: new Date().toISOString(),
 };
 
+async function reportRecoveryEvidence() {
+  const origin = (process.env.RECOVERY_EVIDENCE_REPORT_ORIGIN ?? '').trim();
+  if (mode !== 'restore' || !origin) return;
+  const configuredOrigin = new URL(origin);
+  if (
+    configuredOrigin.username ||
+    configuredOrigin.password ||
+    configuredOrigin.pathname !== '/' ||
+    configuredOrigin.search ||
+    configuredOrigin.hash
+  ) {
+    throw new Error('RECOVERY_EVIDENCE_REPORT_ORIGIN_MUST_BE_AN_ORIGIN');
+  }
+  const url = new URL('/api/v1/internal/workers/recovery-evidence', configuredOrigin);
+  const localHostnames = new Set(['localhost', '127.0.0.1', '::1']);
+  if (
+    url.protocol !== 'https:' &&
+    !(url.protocol === 'http:' && localHostnames.has(url.hostname))
+  ) {
+    throw new Error('RECOVERY_EVIDENCE_REPORT_ORIGIN_MUST_USE_HTTPS');
+  }
+  const secret = (process.env.AUTOPILOT_WORKER_SECRET ?? '').trim();
+  if (secret.length < 32) throw new Error('AUTOPILOT_WORKER_SECRET_REQUIRED_FOR_EVIDENCE_REPORT');
+  const safeEvidence = {
+    baselineSha256: evidence.baselineSha256,
+    canonicalTableCount: evidence.canonicalTableCount,
+    financialMetricCount: evidence.financialMetricCount,
+    foreignKeyFailures: evidence.target.foreignKeyFailures,
+    integrity: evidence.target.integrity,
+    mismatchCount: evidence.mismatchCount,
+    mode: evidence.mode,
+    verifiedAt: evidence.verifiedAt,
+  };
+  const evidenceId = createHash('sha256').update(JSON.stringify(safeEvidence)).digest('hex');
+  const timeout = Number.parseInt(process.env.RECOVERY_EVIDENCE_REPORT_TIMEOUT_MS ?? '30000', 10);
+  if (!Number.isInteger(timeout) || timeout < 1_000 || timeout > 120_000) {
+    throw new Error('RECOVERY_EVIDENCE_REPORT_TIMEOUT_INVALID');
+  }
+  const response = await fetch(url, {
+    body: JSON.stringify({ ...safeEvidence, evidenceId }),
+    headers: { authorization: `Bearer ${secret}`, 'content-type': 'application/json' },
+    method: 'POST',
+    signal: AbortSignal.timeout(timeout),
+  });
+  if (!response.ok) throw new Error(`RECOVERY_EVIDENCE_REPORT_FAILED:${response.status}`);
+  const acknowledgement = await response.json();
+  if (
+    !acknowledgement ||
+    typeof acknowledgement !== 'object' ||
+    acknowledgement.evidenceId !== evidenceId ||
+    acknowledgement.recoveryVerified !== true
+  ) {
+    throw new Error('RECOVERY_EVIDENCE_REPORT_ACKNOWLEDGEMENT_INVALID');
+  }
+  console.log(`Recovery evidence recorded with private reference ${evidenceId.slice(0, 12)}.`);
+}
+
 if (process.env.CUTOVER_EVIDENCE_PATH) {
   const evidencePath = path.resolve(root, process.env.CUTOVER_EVIDENCE_PATH);
   await mkdir(path.dirname(evidencePath), { recursive: true });
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, { flag: 'wx' });
 }
+
+await reportRecoveryEvidence();
 
 console.log(JSON.stringify(evidence, null, 2));
 console.log(`PostgreSQL ${mode} verification passed without changing either database.`);

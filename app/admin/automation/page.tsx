@@ -225,6 +225,16 @@ export default async function AdminAutomationPage({ searchParams }: Props) {
                             {summary.failed} failed · {summary.deadLettered} dead-lettered
                           </span>
                         </>
+                      ) : run.jobKey === 'DATABASE_RESTORE_VERIFICATION_V1' ? (
+                        <>
+                          <strong>
+                            {summary.recoveryVerified ? 'Restore verified' : 'Evidence unavailable'}
+                          </strong>
+                          <span>
+                            {summary.canonicalTableCount} tables · {summary.financialMetricCount}{' '}
+                            finance metrics
+                          </span>
+                        </>
                       ) : run.jobKey === 'SEARCH_PROJECTION_MAINTENANCE_V1' ? (
                         <>
                           <strong>

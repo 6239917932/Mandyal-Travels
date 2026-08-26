@@ -37,3 +37,15 @@ npm run db:rehearse:postgresql -- --mode=restore
 The command is read-only and fails on missing canonical tables, unvalidated foreign keys, row-count
 drift, or critical finance-aggregate drift. Set `CUTOVER_EVIDENCE_PATH` to a new controlled path to
 record the schema checksum, counts, and result without database credentials or record contents.
+
+After the portal is deployed, an accountable recovery runner may set
+`RECOVERY_EVIDENCE_REPORT_ORIGIN` to the portal's exact HTTPS origin and use the independently
+secret-managed `AUTOPILOT_WORKER_SECRET`. A successful `--mode=restore` rehearsal then records a
+fresh, replay-safe summary in `/admin/automation`. The report contains only checksums, validation
+posture, and bounded table/metric counts; it excludes credentials, provider details, row values,
+table-by-table counts, and finance aggregates. Failed, stale, mismatched, or malformed evidence is
+rejected.
+
+This reporting control does not provision backups, invoke provider restore APIs, restore the active
+database, approve cutover, or prove provider activation. Those remain infrastructure-owned,
+human-authorized recovery operations.
