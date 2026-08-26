@@ -86,7 +86,12 @@ requireText(
 requireText(
   productionCompose,
   "profiles: ['scheduled-jobs']",
-  'The one-shot notification worker must remain scheduler-owned.',
+  'The one-shot workers must remain scheduler-owned.',
+);
+requireText(
+  productionCompose,
+  "command: ['npm', 'run', 'worker:integration-outbox']",
+  'Production must expose the authenticated integration-outbox worker.',
 );
 requireText(
   productionCompose,
@@ -153,6 +158,16 @@ requireText(
   releaseVerifier,
   'validateProductionDatabaseContract',
   'Production preflight must verify the managed PostgreSQL contract.',
+);
+requireText(
+  releaseVerifier,
+  'INTEGRATION_OUTBOX_WORKER_SECRET',
+  'Production preflight must require the integration worker identity.',
+);
+requireText(
+  releaseVerifier,
+  'INTEGRATION_OUTBOX_ALLOWED_HOSTS',
+  'Production preflight must verify the approved integration provider boundary.',
 );
 
 if (/COPY\s+.*\.env/im.test(dockerfile)) {
