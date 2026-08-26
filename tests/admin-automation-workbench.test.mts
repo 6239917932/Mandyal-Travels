@@ -64,11 +64,21 @@ test('autopilot presentation accepts only safe numeric summary fields', () => {
         secret: 'never render this',
       }),
     ),
-    { expiredAvailabilityLocks: 2, expiredBusSeatHolds: 3, releasedPromotionClaims: 4 },
+    {
+      deadLettered: 0,
+      delivered: 0,
+      expiredAvailabilityLocks: 2,
+      expiredBusSeatHolds: 3,
+      failed: 0,
+      releasedPromotionClaims: 4,
+    },
   );
   assert.deepEqual(safeAutomationSummary('{invalid'), {
+    deadLettered: 0,
+    delivered: 0,
     expiredAvailabilityLocks: 0,
     expiredBusSeatHolds: 0,
+    failed: 0,
     releasedPromotionClaims: 0,
   });
   const reference = privateAutomationReference('private-correlation');

@@ -1,11 +1,13 @@
 import { timingSafeEqual } from 'node:crypto';
 
-import { deliverPendingNotifications } from '@/services/notificationDeliveryService';
+import {
+  NotificationAutomationError,
+  runNotificationAutomation,
+} from '@/services/notificationAutomationService';
 
 export const runtime = 'nodejs';
 
 const MINIMUM_SECRET_LENGTH = 32;
-const DEFAULT_BATCH_SIZE = 25;
 
 function authorized(request: Request): boolean {
   const configured = process.env.NOTIFICATION_WORKER_SECRET?.trim() ?? '';
@@ -16,25 +18,21 @@ function authorized(request: Request): boolean {
   return timingSafeEqual(Buffer.from(supplied), Buffer.from(configured));
 }
 
-function configuredBatchSize(): number {
-  const parsed = Number.parseInt(process.env.NOTIFICATION_WORKER_BATCH_SIZE ?? '', 10);
-  return Number.isInteger(parsed) ? parsed : DEFAULT_BATCH_SIZE;
-}
-
-async function readBatchSize(request: Request): Promise<number> {
+async function readRequest(
+  request: Request,
+): Promise<{ batchSize?: unknown; correlationId?: string }> {
   const body = await request.text();
-  if (!body.trim()) return configuredBatchSize();
+  if (!body.trim()) return {};
 
   const parsed: unknown = JSON.parse(body);
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('INVALID_REQUEST_BODY');
+    throw new NotificationAutomationError('INVALID_REQUEST_BODY');
   }
-  const batchSize = (parsed as Record<string, unknown>).batchSize;
-  if (batchSize === undefined) return configuredBatchSize();
-  if (typeof batchSize !== 'number' || !Number.isInteger(batchSize)) {
-    throw new Error('INVALID_BATCH_SIZE');
+  const record = parsed as Record<string, unknown>;
+  if (record.correlationId !== undefined && typeof record.correlationId !== 'string') {
+    throw new NotificationAutomationError('INVALID_CORRELATION_ID');
   }
-  return batchSize;
+  return { batchSize: record.batchSize, correlationId: record.correlationId as string | undefined };
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -43,14 +41,28 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const summary = await deliverPendingNotifications(await readBatchSize(request));
-    return Response.json(summary);
+    const body = await readRequest(request);
+    return Response.json(
+      await runNotificationAutomation({
+        batchSize: body.batchSize ?? process.env.NOTIFICATION_WORKER_BATCH_SIZE,
+        correlationId: body.correlationId ?? request.headers.get('x-correlation-id') ?? undefined,
+        leaseSeconds: process.env.NOTIFICATION_WORKER_LEASE_SECONDS,
+      }),
+    );
   } catch (error) {
-    if (
-      error instanceof SyntaxError ||
-      (error instanceof Error && error.message.startsWith('INVALID_'))
-    ) {
+    if (error instanceof SyntaxError) {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
+    }
+    if (error instanceof NotificationAutomationError) {
+      if (
+        error.code === 'AUTOMATION_ALREADY_RUNNING' ||
+        error.code === 'DUPLICATE_CORRELATION_ID'
+      ) {
+        return Response.json({ error: 'Notification pass already running' }, { status: 409 });
+      }
+      if (error.code.startsWith('INVALID_')) {
+        return Response.json({ error: 'Invalid request' }, { status: 400 });
+      }
     }
     return Response.json({ error: 'Notification delivery failed' }, { status: 500 });
   }

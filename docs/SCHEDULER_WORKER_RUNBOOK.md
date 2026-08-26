@@ -21,4 +21,10 @@ with scheduler logs as release evidence.
 
 Recurring work must be idempotent, lease-protected, bounded, observable, retryable with backoff, and safe under duplicate delivery. Jobs include notification delivery, provider synchronization, payment reconciliation, settlement generation, privacy retention, search projection rebuilds, backup verification, and stale-hold cleanup.
 
+Notification delivery uses the independent `NOTIFICATION_WORKER_SECRET`, a bounded batch, provider
+deduplication keys, stale-item recovery, and the `NOTIFICATION_DELIVERY_V1` database lease. Every
+invocation records private correlation evidence in `AutomationJobRun`; a duplicate active pass is
+rejected with HTTP 409. The admin console displays only numeric delivery totals and a derived private
+reference, never recipients, message content, provider references, or provider errors.
+
 Use a managed scheduler and queue in production. Each job requires a service identity, timeout, batch limit, dead-letter path, correlation ID, health metric, manual replay procedure, and documented owner. Never run critical recurring work only from a web request or a developer laptop.

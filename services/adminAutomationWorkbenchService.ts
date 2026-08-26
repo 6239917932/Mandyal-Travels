@@ -70,8 +70,11 @@ export function automationLeasePosture(input: {
 }
 
 export function safeAutomationSummary(summaryJson: string): {
+  deadLettered: number;
+  delivered: number;
   expiredAvailabilityLocks: number;
   expiredBusSeatHolds: number;
+  failed: number;
   releasedPromotionClaims: number;
 } {
   try {
@@ -85,14 +88,20 @@ export function safeAutomationSummary(summaryJson: string): {
         : 0;
     };
     return {
+      deadLettered: value('deadLettered'),
+      delivered: value('delivered'),
       expiredAvailabilityLocks: value('expiredAvailabilityLocks'),
       expiredBusSeatHolds: value('expiredBusSeatHolds'),
+      failed: value('failed'),
       releasedPromotionClaims: value('releasedPromotionClaims'),
     };
   } catch {
     return {
+      deadLettered: 0,
+      delivered: 0,
       expiredAvailabilityLocks: 0,
       expiredBusSeatHolds: 0,
+      failed: 0,
       releasedPromotionClaims: 0,
     };
   }
