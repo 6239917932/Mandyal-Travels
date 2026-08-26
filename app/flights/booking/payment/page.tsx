@@ -8,6 +8,7 @@ import {
   createFlightSearchCriteria,
   flightSearchCriteriaToQuery,
 } from '@/utils/flightSearchCriteria';
+import { isDemoTransportCheckoutEnabled } from '@/lib/payments/transportEvidence';
 
 export const metadata: Metadata = { title: 'Flight payment' };
 
@@ -51,6 +52,7 @@ export default async function FlightPaymentPage({
       ? criteria.multiCitySegments?.at(-1)?.departureDate
       : criteria.returnDate;
   const backQuery = { ...flightSearchCriteriaToQuery(criteria), offerId: offer.id };
+  const demoCheckoutEnabled = isDemoTransportCheckoutEnabled();
 
   return (
     <div className="flight-booking-page flight-payment-page">
@@ -58,7 +60,9 @@ export default async function FlightPaymentPage({
         <p className="hotel-page__eyebrow">Secure payment</p>
         <h1>Complete your flight booking</h1>
         <p className="flight-booking-page__intro">
-          Review the total and use the demonstration payment form below.
+          {demoCheckoutEnabled
+            ? 'Review the total and use the explicitly enabled demonstration checkout below.'
+            : 'Review the total. A booking is created only after secure payment confirmation.'}
         </p>
         <div className="flight-payment-page__grid">
           <Card>
@@ -72,6 +76,7 @@ export default async function FlightPaymentPage({
                 flightNumber: segment.flightNumber,
                 total: offer.totalPrice,
               }}
+              demoCheckoutEnabled={demoCheckoutEnabled}
               nextQuery={backQuery}
             />
           </Card>

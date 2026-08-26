@@ -9,6 +9,7 @@ import {
 } from '@/lib/businessTravelClient';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { createBookingReference } from '@/lib/confirmationCode';
+import { DEMO_TRANSPORT_PAYMENT_EVIDENCE } from '@/constants/transportPayment';
 
 interface AppliedPromotion {
   code: string;
@@ -24,9 +25,11 @@ interface PromotionResponse {
 
 export function CarPaymentForm({
   bookingSummary,
+  demoCheckoutEnabled,
   nextQuery,
 }: {
   bookingSummary: Record<string, string | number>;
+  demoCheckoutEnabled: boolean;
   nextQuery: Record<string, string>;
 }) {
   const router = useRouter();
@@ -129,7 +132,7 @@ export function CarPaymentForm({
       total: finalTotal,
       confirmationCode,
       ...(bookingParty as Record<string, unknown>),
-      paymentStatus: 'captured',
+      paymentStatus: 'demonstration',
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
     try {
@@ -142,6 +145,7 @@ export function CarPaymentForm({
           productType: 'CAR',
           promotionCode: promotion?.code,
           confirmationCode,
+          paymentEvidence: DEMO_TRANSPORT_PAYMENT_EVIDENCE,
           status: 'CONFIRMED',
           title: bookingSummary.vehicleName,
           subtitle: bookingSummary.providerName,
@@ -178,6 +182,15 @@ export function CarPaymentForm({
       `/cars/booking/confirmation?${new URLSearchParams({ ...nextQuery, confirmationCode })}`,
     );
   }
+  if (!demoCheckoutEnabled) {
+    return (
+      <div className="flight-payment-form__protected" role="status">
+        <strong>Secure checkout is not available yet</strong>
+        <span>No booking, payment, or vehicle reservation has been created.</span>
+      </div>
+    );
+  }
+
   return (
     <form className="flight-payment-form" noValidate onSubmit={submit}>
       <BusinessCheckoutNotice productType="CAR" />
@@ -233,7 +246,11 @@ export function CarPaymentForm({
         disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : processing ? 'Checking approval...' : 'Pay securely'}
+        {paid
+          ? 'Demo booking confirmed'
+          : processing
+            ? 'Checking approval...'
+            : 'Run demo checkout'}
       </button>
       {errors.payment ? <p className="ui-field__error">{errors.payment}</p> : null}
     </form>

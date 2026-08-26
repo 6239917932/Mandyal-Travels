@@ -33,6 +33,10 @@ import {
   type CustomerTripOwnershipRecord,
   type CustomerTripResponse,
 } from '@/services/customerTripPersistenceRules';
+import {
+  confirmTransportPayment,
+  TransportPaymentEvidenceError,
+} from '@/services/transportPaymentEvidenceService';
 
 const MAX_DETAILS_LENGTH = 32_000;
 const MAX_TRIP_AMOUNT = 100_000_000;
@@ -479,6 +483,30 @@ export async function POST(request: Request) {
         500,
       );
     }
+  }
+
+  try {
+    confirmTransportPayment({
+      amount: totalAmount as number,
+      confirmationCode,
+      evidence: body.paymentEvidence,
+      productType,
+      userId: user.id,
+    });
+  } catch (error) {
+    if (error instanceof TransportPaymentEvidenceError) {
+      return errorResponse(
+        error.code,
+        error.message,
+        error.code === 'PAYMENT_EVIDENCE_NOT_CONFIGURED' ? 503 : 402,
+      );
+    }
+    console.error('Transport payment confirmation failed.', error);
+    return errorResponse(
+      'PAYMENT_CONFIRMATION_FAILED',
+      'The payment confirmation could not be checked safely.',
+      500,
+    );
   }
 
   try {

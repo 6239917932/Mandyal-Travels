@@ -11,6 +11,7 @@ import {
 } from '@/lib/businessTravelClient';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { createBookingReference } from '@/lib/confirmationCode';
+import { DEMO_TRANSPORT_PAYMENT_EVIDENCE } from '@/constants/transportPayment';
 
 type FormErrors = Record<string, string>;
 
@@ -37,10 +38,15 @@ interface FlightPaymentFormProps {
     flightNumber: string;
     total: number;
   };
+  demoCheckoutEnabled: boolean;
   nextQuery: Record<string, string>;
 }
 
-export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFormProps) {
+export function FlightPaymentForm({
+  bookingSummary,
+  demoCheckoutEnabled,
+  nextQuery,
+}: FlightPaymentFormProps) {
   const router = useRouter();
   const [errors, setErrors] = useState<FormErrors>({});
   const [paid, setPaid] = useState(false);
@@ -149,7 +155,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
       total: finalTotal,
       confirmationCode,
       passengerDraft: parsedPassengerDraft,
-      paymentStatus: 'captured',
+      paymentStatus: 'demonstration',
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
     try {
@@ -162,6 +168,7 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
           productType: 'FLIGHT',
           promotionCode: promotion?.code,
           confirmationCode,
+          paymentEvidence: DEMO_TRANSPORT_PAYMENT_EVIDENCE,
           status: 'CONFIRMED',
           title: `${bookingSummary.departureAirport} → ${bookingSummary.destinationAirport}`,
           subtitle: `${bookingSummary.airlineName} ${bookingSummary.flightNumber}`,
@@ -197,6 +204,15 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
     formElement.reset();
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/flights/booking/confirmation?${query.toString()}`);
+  }
+
+  if (!demoCheckoutEnabled) {
+    return (
+      <div className="flight-payment-form__protected" role="status">
+        <strong>Secure checkout is not available yet</strong>
+        <span>No booking, payment, or inventory reservation has been created.</span>
+      </div>
+    );
   }
 
   return (
@@ -273,7 +289,11 @@ export function FlightPaymentForm({ bookingSummary, nextQuery }: FlightPaymentFo
         disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : processing ? 'Checking approval...' : 'Pay securely'}
+        {paid
+          ? 'Demo booking confirmed'
+          : processing
+            ? 'Checking approval...'
+            : 'Run demo checkout'}
       </button>
       {errors.payment ? (
         <p className="ui-field__error" role="alert">
