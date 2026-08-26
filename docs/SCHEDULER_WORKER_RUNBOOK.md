@@ -36,6 +36,15 @@ availability, inventory, bookings, suppliers, payments, refunds, settlements, or
 runs appear in `/admin/automation`; the separately governed manual rebuild history remains in
 `/admin/search`.
 
+## Database recovery evidence
+
+Backup verification is infrastructure-owned rather than an application scheduler mutation. Run
+`npm run db:rehearse:postgresql -- --mode=restore` only against an independently restored,
+isolated PostgreSQL target. With the portal origin and `AUTOPILOT_WORKER_SECRET` configured, a
+successful pass records a fresh replay-safe summary in `/admin/automation`. Never point
+`RESTORE_DATABASE_URL` at the active database, automate cutover approval, or treat a reported summary
+as proof that provider backups, retention, PITR, alerts, and restore access are configured.
+
 Notification delivery uses the independent `NOTIFICATION_WORKER_SECRET`, a bounded batch, provider
 deduplication keys, stale-item recovery, and the `NOTIFICATION_DELIVERY_V1` database lease. Every
 invocation records private correlation evidence in `AutomationJobRun`; a duplicate active pass is

@@ -1,6 +1,6 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 23 August 2026
+Last reviewed: 26 August 2026
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -254,7 +254,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 79-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 93-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -323,6 +323,12 @@ Search-projection maintenance is prepared as an authenticated one-shot autopilot
 lease, replay-safe correlation evidence, healthy-state no-ops, and a hard source-count safety boundary.
 It can repair only disposable public search documents and cannot mutate inventory, rates, bookings,
 payments, refunds, settlements, or payouts. Production scheduling and alerts remain infrastructure-owned.
+
+Successful isolated PostgreSQL restore rehearsals can now report fresh, fingerprint-verified,
+replay-safe recovery evidence to the administrator autopilot console. Only safe aggregate validation
+counts are retained. Provider backups, restore access, credentials, PITR, retention, alerting, and
+cutover approval remain external production prerequisites; the portal never creates or restores a
+backup and never targets the active database.
 
 Partner settlement governance now holds bookings with unresolved refund reservations out of payout
 calculation, rejects inactive suppliers, and records draft, approval, and paid transitions in an
