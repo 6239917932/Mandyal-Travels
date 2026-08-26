@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import { randomUUID } from 'node:crypto';
+
 const DEFAULT_BATCH_SIZE = 25;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MINIMUM_SECRET_LENGTH = 32;
@@ -50,6 +52,11 @@ async function main() {
     120_000,
     'NOTIFICATION_WORKER_TIMEOUT_MS',
   );
+  const configuredCorrelationId = (process.env.NOTIFICATION_WORKER_CORRELATION_ID ?? '').trim();
+  if (configuredCorrelationId.length > 120) {
+    throw new Error('NOTIFICATION_WORKER_CORRELATION_ID must not exceed 120 characters.');
+  }
+  const correlationId = configuredCorrelationId || randomUUID();
 
   const response = await fetch(workerUrl(), {
     method: 'POST',
@@ -57,7 +64,7 @@ async function main() {
       authorization: `Bearer ${secret}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ batchSize }),
+    body: JSON.stringify({ batchSize, correlationId }),
     signal: AbortSignal.timeout(timeoutMs),
   });
 
