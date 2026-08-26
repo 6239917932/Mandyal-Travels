@@ -3,7 +3,7 @@
 ## Scope and external activation boundary
 
 `compose.production-contract.yaml` is the provider-neutral process contract for the portal release.
-It defines the migration, web, and notification-delivery workloads without pretending to provision a
+It defines the migration, web, notification, and integration-delivery workloads without pretending to provision a
 cloud account, managed PostgreSQL, TLS edge, secret manager, scheduler, log platform, or backup
 service. A release owner must select and configure those external services before launch.
 
@@ -18,6 +18,7 @@ traffic only to healthy web instances, and keep the migration and scheduled-job 
 | `migrate`                       | one shot, before web      | Applies the reviewed native PostgreSQL migration history over a direct TLS connection. |
 | `app`                           | long running, replaceable | Runs the immutable standalone Next.js web artifact as a non-root user.                 |
 | `notification-delivery`         | one shot, scheduler-owned | Performs one bounded, authenticated notification delivery pass.                        |
+| `integration-outbox-delivery`   | one shot, scheduler-owned | Delivers a bounded batch to an approved supplier-integration gateway.                  |
 | `safe-maintenance`              | one shot, scheduler-owned | Expires stale holds and reservations under a database lease with run evidence.         |
 | `search-projection-maintenance` | one shot, scheduler-owned | Repairs the disposable public hotel search index within a hard source limit.           |
 
@@ -33,7 +34,8 @@ missing production database configuration fails closed instead of silently creat
    direct TLS migration URL from the approved secret manager. Follow
    `docs/PRODUCTION_DATA_PLATFORM.md` for cutover and reconciliation.
 2. Inject `BOOKING_TOKEN_SECRET`, `MFA_ENCRYPTION_KEY`, `PARTNER_ADMIN_KEY`, and
-   `NOTIFICATION_WORKER_SECRET`, and `AUTOPILOT_WORKER_SECRET` as independently generated production
+   `NOTIFICATION_WORKER_SECRET`, `AUTOPILOT_WORKER_SECRET`, and
+   `INTEGRATION_OUTBOX_WORKER_SECRET` as independently generated production
    values. Do not store them in a
    Compose file, image, CI log, or operator note.
 3. Set `PUBLIC_APP_ORIGIN` to the canonical HTTPS origin, `DEPLOYMENT_ENVIRONMENT=production`, and
@@ -53,7 +55,7 @@ missing production database configuration fails closed instead of silently creat
 4. Run the `migrate` workload once. Preserve its exit status and migration evidence.
 5. Roll out the `app` workload gradually. Require readiness success before traffic and keep the prior
    image available for rollback.
-6. Run non-production `notification-delivery`, `safe-maintenance`, and
+6. Run non-production `notification-delivery`, `integration-outbox-delivery`, `safe-maintenance`, and
    `search-projection-maintenance` passes, verify structured events, lease/run evidence, and delivery
    state, then enable the production schedules.
 7. Complete the synthetic monitoring and alert checks in `docs/OBSERVABILITY_RUNBOOK.md` before
@@ -62,7 +64,8 @@ missing production database configuration fails closed instead of silently creat
 ## Scheduler contract
 
 Invoke the one-shot job with the platform's authenticated scheduler, for example by running the
-`notification-delivery` service under the `scheduled-jobs` profile. Do not run it continuously inside
+`notification-delivery` or `integration-outbox-delivery` service under the `scheduled-jobs` profile.
+Do not run either continuously inside
 the web process. Configure a single active invocation, a timeout longer than
 `NOTIFICATION_WORKER_TIMEOUT_MS`, bounded retries with backoff, alerting on every terminal failure,
 and a documented manual replay owner. The worker endpoint and script enforce their own secret,

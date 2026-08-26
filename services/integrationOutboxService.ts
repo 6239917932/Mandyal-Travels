@@ -1,3 +1,11 @@
+import 'server-only';
+
+import {
+  INTEGRATION_OUTBOX_BATCH_DEFAULT,
+  INTEGRATION_OUTBOX_BATCH_MAXIMUM,
+  INTEGRATION_OUTBOX_BATCH_MINIMUM,
+  boundedIntegrationOutboxInteger,
+} from '@/lib/automation/integrationOutboxRules';
 import { prisma } from '@/lib/prisma';
 import { outboxRetryDecision, safeOutboxError } from '@/lib/integrations/outbox';
 
@@ -14,15 +22,27 @@ export interface IntegrationEventAdapter {
   deliver(event: IntegrationEventEnvelope): Promise<void>;
 }
 
+export interface IntegrationOutboxDeliverySummary {
+  deadLettered: number;
+  delivered: number;
+  failed: number;
+  recovered: number;
+}
+
 export const integrationOutboxService = {
   async deliverPending(
     adapter: IntegrationEventAdapter,
-    batchSize = 25,
-  ): Promise<{ delivered: number; failed: number }> {
-    const boundedBatchSize = Math.max(1, Math.min(100, Math.trunc(batchSize)));
+    batchSize = INTEGRATION_OUTBOX_BATCH_DEFAULT,
+  ): Promise<IntegrationOutboxDeliverySummary> {
+    const boundedBatchSize = boundedIntegrationOutboxInteger(
+      batchSize,
+      INTEGRATION_OUTBOX_BATCH_DEFAULT,
+      INTEGRATION_OUTBOX_BATCH_MINIMUM,
+      INTEGRATION_OUTBOX_BATCH_MAXIMUM,
+    );
     const now = new Date();
     const expiredLease = new Date(now.getTime() - 15 * 60_000);
-    await prisma.integrationOutboxEvent.updateMany({
+    const recovered = await prisma.integrationOutboxEvent.updateMany({
       data: { lockedAt: null, status: 'PENDING' },
       where: { lockedAt: { lt: expiredLease }, status: 'PROCESSING' },
     });
@@ -33,6 +53,7 @@ export const integrationOutboxService = {
     });
     let delivered = 0;
     let failed = 0;
+    let deadLettered = 0;
 
     for (const event of events) {
       const claimed = await prisma.integrationOutboxEvent.updateMany({
@@ -49,7 +70,7 @@ export const integrationOutboxService = {
           occurredAt: event.createdAt.toISOString(),
           payload: JSON.parse(event.payloadJson) as unknown,
         });
-        await prisma.integrationOutboxEvent.update({
+        const completed = await prisma.integrationOutboxEvent.updateMany({
           data: {
             attempts: { increment: 1 },
             lastError: '',
@@ -57,8 +78,9 @@ export const integrationOutboxService = {
             processedAt: new Date(),
             status: 'DELIVERED',
           },
-          where: { id: event.id },
+          where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
         });
+        if (completed.count !== 1) throw new Error('INTEGRATION_OUTBOX_LEASE_LOST');
         delivered += 1;
       } catch (error) {
         const retry = outboxRetryDecision({
@@ -66,7 +88,7 @@ export const integrationOutboxService = {
           maxAttempts: event.maxAttempts,
           now: new Date(),
         });
-        await prisma.integrationOutboxEvent.update({
+        await prisma.integrationOutboxEvent.updateMany({
           data: {
             attempts: { increment: 1 },
             lastError: safeOutboxError(error),
@@ -74,11 +96,12 @@ export const integrationOutboxService = {
             nextAttemptAt: retry.nextAttemptAt,
             status: retry.status,
           },
-          where: { id: event.id },
+          where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
         });
         failed += 1;
+        if (retry.status === 'DEAD_LETTER') deadLettered += 1;
       }
     }
-    return { delivered, failed };
+    return { deadLettered, delivered, failed, recovered: recovered.count };
   },
 };

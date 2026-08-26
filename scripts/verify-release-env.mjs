@@ -59,6 +59,7 @@ for (const name of [
   'MFA_ENCRYPTION_KEY',
   'NOTIFICATION_WORKER_SECRET',
   'AUTOPILOT_WORKER_SECRET',
+  'INTEGRATION_OUTBOX_WORKER_SECRET',
 ]) {
   const value = process.env[name] ?? '';
   if (value.length < 32) failures.push(`${name} must contain at least 32 characters.`);
@@ -118,6 +119,15 @@ if (payoutApiKey.length < 16)
   failures.push('PAYOUT_PROVIDER_API_KEY must contain at least 16 characters.');
 if (/replace|example|change-me/i.test(payoutApiKey))
   failures.push('PAYOUT_PROVIDER_API_KEY still contains a placeholder value.');
+const integrationApiKey = process.env.INTEGRATION_OUTBOX_API_KEY ?? '';
+if (integrationApiKey.length < 16)
+  failures.push('INTEGRATION_OUTBOX_API_KEY must contain at least 16 characters.');
+if (/replace|example|change-me/i.test(integrationApiKey))
+  failures.push('INTEGRATION_OUTBOX_API_KEY still contains a placeholder value.');
+for (const name of ['INTEGRATION_OUTBOX_ENDPOINT', 'INTEGRATION_OUTBOX_ALLOWED_HOSTS']) {
+  if (!(process.env[name] ?? '').trim())
+    failures.push(`${name} is required for production integration delivery.`);
+}
 
 for (const [endpointName, hostsName] of [
   ['PAYMENT_GATEWAY_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
@@ -127,6 +137,7 @@ for (const [endpointName, hostsName] of [
   ['EMAIL_PROVIDER_ENDPOINT', 'EMAIL_PROVIDER_ALLOWED_HOSTS'],
   ['MOBILE_MESSAGING_ENDPOINT', 'MOBILE_MESSAGING_ALLOWED_HOSTS'],
   ['PUSH_PROVIDER_ENDPOINT', 'PUSH_PROVIDER_ALLOWED_HOSTS'],
+  ['INTEGRATION_OUTBOX_ENDPOINT', 'INTEGRATION_OUTBOX_ALLOWED_HOSTS'],
 ]) {
   endpointUsesAllowedHost(endpointName, hostsName);
 }

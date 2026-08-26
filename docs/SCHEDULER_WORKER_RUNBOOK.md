@@ -21,6 +21,22 @@ with scheduler logs as release evidence.
 
 Recurring work must be idempotent, lease-protected, bounded, observable, retryable with backoff, and safe under duplicate delivery. Jobs include notification delivery, provider synchronization, payment reconciliation, settlement generation, privacy retention, search projection rebuilds, backup verification, and stale-hold cleanup.
 
+## Integration outbox delivery
+
+Run `npm run worker:integration-outbox` only after an approved supplier-integration gateway is
+activated. The app requires `INTEGRATION_OUTBOX_ENDPOINT`, `INTEGRATION_OUTBOX_API_KEY`, an explicit
+`INTEGRATION_OUTBOX_ALLOWED_HOSTS` allow-list, and a separate 32-character
+`INTEGRATION_OUTBOX_WORKER_SECRET`. Configuration is validated before any queued event is claimed,
+so missing credentials cannot consume delivery attempts.
+
+Each one-shot pass acquires the `INTEGRATION_OUTBOX_DELIVERY_V1` database lease, accepts at most 25
+events, reclaims stale processing rows, sends a stable idempotency key, and requires an exact event
+acknowledgement. Provider failures use bounded retry and eventually enter the existing dead-letter
+queue for human review. The worker cannot modify a booking, rate, inventory row, payment, refund,
+settlement, or payout. Schedule one active invocation at a time, retain correlation evidence, alert
+on failure or dead-letter growth, and never interpret a delivery acknowledgement as supplier
+acceptance of a booking or financial instruction.
+
 ## Search projection autopilot
 
 Run `npm run worker:search-projections` as a one-shot scheduled job. The worker authenticates with

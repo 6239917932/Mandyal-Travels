@@ -73,6 +73,7 @@ test('autopilot presentation accepts only safe numeric summary fields', () => {
       failed: 0,
       financialMetricCount: 0,
       projected: 0,
+      recovered: 0,
       rebuilt: false,
       recoveryVerified: false,
       removed: 0,
@@ -89,6 +90,7 @@ test('autopilot presentation accepts only safe numeric summary fields', () => {
     failed: 0,
     financialMetricCount: 0,
     projected: 0,
+    recovered: 0,
     rebuilt: false,
     recoveryVerified: false,
     removed: 0,
@@ -109,4 +111,5 @@ test('autopilot workbench is administrator-only and read only', () => {
   assert.doesNotMatch(page, /AUTOPILOT_WORKER_SECRET/);
   assert.doesNotMatch(page, /leaseTokenHash/);
   assert.doesNotMatch(page, /errorCode/);
+  assert.match(page, /INTEGRATION_OUTBOX_DELIVERY_V1/);
 });

@@ -78,6 +78,7 @@ export function safeAutomationSummary(summaryJson: string): {
   failed: number;
   financialMetricCount: number;
   projected: number;
+  recovered: number;
   rebuilt: boolean;
   recoveryVerified: boolean;
   removed: number;
@@ -105,6 +106,7 @@ export function safeAutomationSummary(summaryJson: string): {
       financialMetricCount: value('financialMetricCount'),
       projected: value('projected'),
       rebuilt: booleanValue('rebuilt'),
+      recovered: value('recovered'),
       recoveryVerified: booleanValue('recoveryVerified'),
       removed: value('removed'),
       releasedPromotionClaims: value('releasedPromotionClaims'),
@@ -121,6 +123,7 @@ export function safeAutomationSummary(summaryJson: string): {
       financialMetricCount: 0,
       projected: 0,
       rebuilt: false,
+      recovered: 0,
       recoveryVerified: false,
       removed: 0,
       releasedPromotionClaims: 0,

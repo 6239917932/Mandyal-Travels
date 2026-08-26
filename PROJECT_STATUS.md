@@ -245,8 +245,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Provider-neutral standalone container packaging with a non-root runtime, a separate migration
   task, process liveness at `/api/v1/health/live`, database readiness at `/api/v1/health`, secret-free
   build context, and a guarded one-replica SQLite preview for deployment rehearsals
-- Transactional hotel-booking integration outbox with deduplication, worker leases, bounded
-  exponential retry, dead-letter handling, and a provider-neutral delivery adapter
+- Transactional hotel-booking integration outbox with deduplication, a separately authenticated
+  one-shot worker, database leases, exact provider acknowledgements, bounded exponential retry,
+  dead-letter handling, and numeric administrator run evidence
 - Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
   stay timing, physical-room assignment, housekeeping readiness, and integration retries
 - On-demand SQLite backups with SHA-256 sidecars and bounded retention, plus a production release
@@ -288,7 +289,8 @@ credentials, contracts, or signed-off business rules:
 4. Statutory GST tax invoices, tax component rules, credit notes, and invoice numbering
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
 6. Production database, off-site encrypted backup storage, monitoring, alerting, domain/DNS, TLS,
-   hosting, and a scheduler/worker for the prepared integration outbox
+   hosting, and activation/scheduling of the prepared integration-outbox worker against an approved
+   supplier gateway
 7. Operational legal-policy drafts now exist in the portal; independent legal approval and final
    jurisdiction-specific wording are still required before launch.
 
@@ -410,9 +412,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 198 regression tests, formatting verification, Prisma Client generation,
-strict TypeScript, ESLint, a Next.js production build with all 216 generated route entries,
-clean-database verification of all 72 SQLite migrations with foreign-key integrity enabled, a
-synchronized 81-table PostgreSQL-native baseline, and the portable deployment contract. Provider
+The current travel-domain milestone passes 462 regression tests, formatting verification, Prisma
+Client generation, strict TypeScript, ESLint, a Next.js production build including the authenticated
+integration-delivery worker route, clean-database verification of all 81 SQLite migrations with
+foreign-key integrity enabled, a synchronized 93-table PostgreSQL-native baseline, and the portable deployment contract. Provider
 integration work must preserve those checks and add
 provider-specific automated tests before going live.

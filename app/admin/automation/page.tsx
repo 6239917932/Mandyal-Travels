@@ -82,9 +82,9 @@ export default async function AdminAutomationPage({ searchParams }: Props) {
           <p className="admin-hero__eyebrow">Lease-protected routine operations</p>
           <h1>Autopilot operations</h1>
           <p>
-            Review bounded maintenance and notification-delivery runs with scheduler health. This
-            console is read only and cannot capture payments, refund customers, release payouts,
-            change prices, confirm bookings, or publish supplier inventory.
+            Review bounded maintenance, notification, and integration-delivery runs with scheduler
+            health. This console is read only and cannot capture payments, refund customers, release
+            payouts, change prices, confirm bookings, or publish supplier inventory.
           </p>
           <div className="admin-hero__actions">
             <Link className="ui-button ui-button--secondary" href="/admin/audit">
@@ -218,7 +218,15 @@ export default async function AdminAutomationPage({ searchParams }: Props) {
                       </span>
                     </td>
                     <td>
-                      {run.jobKey === 'NOTIFICATION_DELIVERY_V1' ? (
+                      {run.jobKey === 'INTEGRATION_OUTBOX_DELIVERY_V1' ? (
+                        <>
+                          <strong>{summary.delivered} delivered</strong>
+                          <span>
+                            {summary.failed} failed · {summary.deadLettered} dead-lettered ·{' '}
+                            {summary.recovered} stale recovered
+                          </span>
+                        </>
+                      ) : run.jobKey === 'NOTIFICATION_DELIVERY_V1' ? (
                         <>
                           <strong>{summary.delivered} delivered</strong>
                           <span>

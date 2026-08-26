@@ -38,6 +38,10 @@ services:
       NODE_ENV: production
       NOTIFICATION_WORKER_SECRET: ${NOTIFICATION_WORKER_SECRET:?Supply NOTIFICATION_WORKER_SECRET from the secret store}
       AUTOPILOT_WORKER_SECRET: ${AUTOPILOT_WORKER_SECRET:?Supply AUTOPILOT_WORKER_SECRET from the secret store}
+      INTEGRATION_OUTBOX_ALLOWED_HOSTS: ${INTEGRATION_OUTBOX_ALLOWED_HOSTS:?Supply the approved integration provider hosts}
+      INTEGRATION_OUTBOX_API_KEY: ${INTEGRATION_OUTBOX_API_KEY:?Supply the integration provider key from the secret store}
+      INTEGRATION_OUTBOX_ENDPOINT: ${INTEGRATION_OUTBOX_ENDPOINT:?Supply the approved integration provider endpoint}
+      INTEGRATION_OUTBOX_WORKER_SECRET: ${INTEGRATION_OUTBOX_WORKER_SECRET:?Supply INTEGRATION_OUTBOX_WORKER_SECRET from the secret store}
       PARTNER_ADMIN_KEY: ${PARTNER_ADMIN_KEY:?Supply PARTNER_ADMIN_KEY from the secret store}
       PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
       RELEASE_SHA: ${RELEASE_SHA:?Supply the immutable release revision}
@@ -80,6 +84,32 @@ services:
       NOTIFICATION_WORKER_LEASE_SECONDS: ${NOTIFICATION_WORKER_LEASE_SECONDS:-120}
       NOTIFICATION_WORKER_SECRET: ${NOTIFICATION_WORKER_SECRET:?Supply NOTIFICATION_WORKER_SECRET from the secret store}
       NOTIFICATION_WORKER_TIMEOUT_MS: ${NOTIFICATION_WORKER_TIMEOUT_MS:-30000}
+      PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
+    init: true
+    read_only: true
+    restart: 'no'
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+  integration-outbox-delivery:
+    profiles: ['scheduled-jobs']
+    build:
+      context: .
+      target: worker
+    command: ['npm', 'run', 'worker:integration-outbox']
+    cap_drop:
+      - ALL
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      INTEGRATION_OUTBOX_WORKER_BATCH_SIZE: ${INTEGRATION_OUTBOX_WORKER_BATCH_SIZE:-25}
+      INTEGRATION_OUTBOX_WORKER_LEASE_SECONDS: ${INTEGRATION_OUTBOX_WORKER_LEASE_SECONDS:-300}
+      INTEGRATION_OUTBOX_WORKER_SECRET: ${INTEGRATION_OUTBOX_WORKER_SECRET:?Supply INTEGRATION_OUTBOX_WORKER_SECRET from the secret store}
+      INTEGRATION_OUTBOX_WORKER_TIMEOUT_MS: ${INTEGRATION_OUTBOX_WORKER_TIMEOUT_MS:-300000}
+      NODE_ENV: production
       PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
     init: true
     read_only: true
