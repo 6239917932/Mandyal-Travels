@@ -23,6 +23,7 @@ const campaign = {
   productsJson: '["HOTEL"]',
   startsAt: new Date('2026-08-20T00:00:00.000Z'),
   usageLimit: null,
+  usageCount: 0,
   version: 3,
 };
 
@@ -51,11 +52,15 @@ test('promotion workbench filters and paths stay bounded and deterministic', () 
   });
 });
 
-test('promotion state fails closed for expired and untracked capped campaigns', () => {
+test('promotion state exposes active and exhausted capped campaigns', () => {
   assert.equal(promotionOperationalState(campaign, now), 'ACTIVE');
   assert.equal(
-    promotionOperationalState({ ...campaign, usageLimit: 100 }, now),
-    'BLOCKED_UNTRACKED_CAP',
+    promotionOperationalState({ ...campaign, usageCount: 99, usageLimit: 100 }, now),
+    'ACTIVE',
+  );
+  assert.equal(
+    promotionOperationalState({ ...campaign, usageCount: 100, usageLimit: 100 }, now),
+    'EXHAUSTED',
   );
   assert.equal(
     promotionOperationalState({ ...campaign, endsAt: new Date('2026-08-23T00:00:00.000Z') }, now),
@@ -67,12 +72,9 @@ test('promotion state fails closed for expired and untracked capped campaigns', 
   );
 });
 
-test('promotion activation requires valid products, an open window, and tracked usage', () => {
+test('promotion activation requires valid products and an open window', () => {
   assert.equal(promotionActivationBlockReason(campaign, now), null);
-  assert.match(
-    promotionActivationBlockReason({ ...campaign, usageLimit: 20 }, now) ?? '',
-    /redemption tracking/,
-  );
+  assert.equal(promotionActivationBlockReason({ ...campaign, usageLimit: 20 }, now), null);
   assert.match(
     promotionActivationBlockReason({ ...campaign, productsJson: 'invalid' }, now) ?? '',
     /product eligibility/,
@@ -108,7 +110,14 @@ test('campaign state changes require optimistic version and a bounded reason', (
 test('stored campaigns override baseline codes and never bypass a paused state', () => {
   assert.equal(resolveStoredPromotionRule(campaign, 'HOTEL', now)?.version, 3);
   assert.equal(resolveStoredPromotionRule({ ...campaign, active: false }, 'HOTEL', now), undefined);
-  assert.equal(resolveStoredPromotionRule({ ...campaign, usageLimit: 5 }, 'HOTEL', now), undefined);
+  assert.equal(
+    resolveStoredPromotionRule({ ...campaign, usageLimit: 5 }, 'HOTEL', now)?.version,
+    3,
+  );
+  assert.equal(
+    resolveStoredPromotionRule({ ...campaign, usageCount: 5, usageLimit: 5 }, 'HOTEL', now),
+    undefined,
+  );
   assert.deepEqual(readPromotionProducts('["HOTEL","HOTEL","BUS","UNKNOWN"]'), ['HOTEL', 'BUS']);
   const source = readFileSync('services/promotionService.ts', 'utf8');
   assert.match(source, /findUnique\(\{ where: \{ code: normalizedCode \} \}\)/);

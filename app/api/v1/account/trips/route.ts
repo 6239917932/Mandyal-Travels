@@ -37,6 +37,11 @@ import {
   confirmTransportPayment,
   TransportPaymentEvidenceError,
 } from '@/services/transportPaymentEvidenceService';
+import {
+  PromotionRedemptionError,
+  redeemPromotion,
+  reserveStoredPromotion,
+} from '@/services/promotionRedemptionService';
 
 const MAX_DETAILS_LENGTH = 32_000;
 const MAX_TRIP_AMOUNT = 100_000_000;
@@ -410,6 +415,7 @@ export async function POST(request: Request) {
   }
 
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
+  let promotionSubtotal: number | undefined;
   if (businessTravelRequestId) {
     try {
       businessCheckout = await validateBusinessCheckout({
@@ -419,6 +425,7 @@ export async function POST(request: Request) {
         selection: body.businessSelection,
         userId: user.id,
       });
+      promotionSubtotal = businessCheckout.subtotal;
     } catch (error) {
       const completedRetry = await concurrentTripResponse(
         confirmationCode,
@@ -457,6 +464,7 @@ export async function POST(request: Request) {
         body.businessSelection,
         promotionCode,
       );
+      promotionSubtotal = validatedSelection.subtotal;
       if (
         validatedSelection.startDate !== startDate ||
         validatedSelection.endDate !== endDate ||
@@ -530,6 +538,22 @@ export async function POST(request: Request) {
         const createdTrip = await transaction.customerTrip.create({
           data: { confirmationCode, ...tripData },
         });
+        const promotionClaim = await reserveStoredPromotion(transaction, {
+          claimKey: `TRANSPORT_BOOKING:${confirmationCode}`,
+          code: promotionCode,
+          currency: tripData.currency,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          productType,
+          subtotal: promotionSubtotal ?? (totalAmount as number),
+          userId: user.id,
+        });
+        if (promotionClaim) {
+          await redeemPromotion(transaction, {
+            claimKey: promotionClaim.claimKey,
+            customerTripId: createdTrip.id,
+            finalTotal: totalAmount as number,
+          });
+        }
         if (carOfferId?.startsWith('direct-')) {
           await partnerOperationsService.reserveDirectVehicle(transaction, {
             confirmationCode,
@@ -591,6 +615,22 @@ export async function POST(request: Request) {
       const completedTrip = await transaction.customerTrip.create({
         data: { confirmationCode, ...data },
       });
+      const promotionClaim = await reserveStoredPromotion(transaction, {
+        claimKey: `TRANSPORT_BOOKING:${confirmationCode}`,
+        code: promotionCode,
+        currency: tripData.currency,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        productType,
+        subtotal: promotionSubtotal ?? (totalAmount as number),
+        userId: user.id,
+      });
+      if (promotionClaim) {
+        await redeemPromotion(transaction, {
+          claimKey: promotionClaim.claimKey,
+          customerTripId: completedTrip.id,
+          finalTotal: totalAmount as number,
+        });
+      }
       if (carOfferId?.startsWith('direct-')) {
         await partnerOperationsService.reserveDirectVehicle(transaction, {
           confirmationCode,
@@ -637,6 +677,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: result.trip }, { status: result.created ? 201 : 200 });
   } catch (error) {
     if (error instanceof CustomerTripPersistenceError) return persistenceErrorResponse(error);
+    if (error instanceof PromotionRedemptionError) {
+      return errorResponse(error.code, error.message, 409);
+    }
     const completedRetry = await concurrentTripResponse(confirmationCode, immutableContext, owner);
     if (completedRetry) return completedRetry;
     if (error instanceof PartnerOperationsError) {

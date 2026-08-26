@@ -59,6 +59,7 @@ model User {
   updatedDestinationContent   DestinationContent[]           @relation("DestinationContentUpdater")
   destinationContentEvents    DestinationContentEvent[]      @relation("DestinationContentEventActor")
   promotionCampaignEvents     PromotionCampaignEvent[]       @relation("PromotionCampaignEventActor")
+  promotionRedemptions        PromotionRedemption[]
   partnerSettlementEvents     PartnerSettlementEvent[]       @relation("PartnerSettlementEventActor")
   integrationOutboxReviews    IntegrationOutboxReviewEvent[] @relation("IntegrationOutboxReviewActor")
   searchProjectionRebuilds    SearchProjectionRebuildEvent[] @relation("SearchProjectionRebuildActor")
@@ -855,6 +856,7 @@ model CustomerTrip {
   supportCases            CustomerSupportCase[]
   vehicleReservation      PartnerVehicleReservation?
   busReservation          PartnerBusReservation?
+  promotionRedemption     PromotionRedemption?
 
   @@index([userId, createdAt])
   @@index([email, createdAt])
@@ -921,21 +923,22 @@ model HotelQuote {
 }
 
 model PaymentCheckoutIntent {
-  id             String              @id @default(cuid())
-  quoteId        String
-  idempotencyKey String              @unique
-  provider       String
-  providerRef    String              @unique
-  amount         Int
-  currency       String
-  status         String              @default("CREATED")
-  checkoutUrl    String
-  expiresAt      DateTime
-  capturedAt     DateTime?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  quote          HotelQuote          @relation(fields: [quoteId], references: [id], onDelete: Restrict)
-  payment        PaymentTransaction?
+  id                  String               @id @default(cuid())
+  quoteId             String
+  idempotencyKey      String               @unique
+  provider            String
+  providerRef         String               @unique
+  amount              Int
+  currency            String
+  status              String               @default("CREATED")
+  checkoutUrl         String
+  expiresAt           DateTime
+  capturedAt          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  quote               HotelQuote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  payment             PaymentTransaction?
+  promotionRedemption PromotionRedemption?
 
   @@index([quoteId, status, createdAt])
   @@index([status, expiresAt])
@@ -1042,6 +1045,7 @@ model Booking {
   review                  HotelReview?
   integrationEvents       IntegrationOutboxEvent[]
   settlementLine          PartnerSettlementLine?
+  promotionRedemption     PromotionRedemption?
 
   @@index([hotelSlug, operationalStatus, createdAt])
 }
@@ -1659,6 +1663,7 @@ model PromotionCampaign {
   maximumDiscount Int
   minimumSubtotal Int
   usageLimit      Int?
+  usageCount      Int                      @default(0)
   startsAt        DateTime
   endsAt          DateTime
   active          Boolean                  @default(false)
@@ -1668,9 +1673,44 @@ model PromotionCampaign {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   events          PromotionCampaignEvent[]
+  redemptions     PromotionRedemption[]
 
   @@index([active, startsAt, endsAt])
   @@index([updatedAt])
+}
+
+model PromotionRedemption {
+  id               String                 @id @default(cuid())
+  campaignId       String
+  userId           String?
+  checkoutIntentId String?                @unique
+  bookingId        String?                @unique
+  customerTripId   String?                @unique
+  claimKey         String                 @unique
+  contextHash      String
+  status           String                 @default("RESERVED")
+  code             String
+  productType      String
+  ruleVersion      Int
+  subtotal         Int
+  discountAmount   Int
+  finalTotal       Int
+  currency         String
+  expiresAt        DateTime
+  createdAt        DateTime               @default(now())
+  redeemedAt       DateTime?
+  releasedAt       DateTime?
+  reversedAt       DateTime?
+  reversalReason   String                 @default("")
+  campaign         PromotionCampaign      @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  user             User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  checkoutIntent   PaymentCheckoutIntent? @relation(fields: [checkoutIntentId], references: [id], onDelete: Restrict)
+  booking          Booking?               @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  customerTrip     CustomerTrip?          @relation(fields: [customerTripId], references: [id], onDelete: Restrict)
+
+  @@index([campaignId, status, expiresAt])
+  @@index([userId, campaignId, status])
+  @@index([status, expiresAt])
 }
 
 model PromotionCampaignEvent {

@@ -7,6 +7,10 @@ import { createHostedPaymentIntent } from '@/services/paymentGatewayService';
 import { calculatePromotion } from '@/constants/promotionRules';
 import { resolvePromotionRule } from '@/services/promotionService';
 import { isCheckoutQuotePayable } from '@/lib/payments/gateway';
+import {
+  PromotionRedemptionError,
+  reserveStoredPromotion,
+} from '@/services/promotionRedemptionService';
 
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
@@ -25,8 +29,10 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  const existing = await prisma.paymentCheckoutIntent.findUnique({ where: { idempotencyKey } });
-  if (existing) return NextResponse.json({ data: existing });
+  const existing = await prisma.paymentCheckoutIntent.findUnique({
+    include: { promotionRedemption: { select: { code: true } } },
+    where: { idempotencyKey },
+  });
   const quote = await prisma.hotelQuote.findFirst({
     where: { id: quoteId, expiresAt: { gt: new Date() } },
     include: { availabilityLock: true, booking: { select: { id: true } } },
@@ -47,14 +53,41 @@ export async function POST(request: Request) {
   try {
     let amount = quote.totalAmount;
     if (promotionCode) {
-      const rule = await resolvePromotionRule(promotionCode, 'HOTEL');
-      if (!rule || quote.totalAmount < rule.minimumSubtotal) {
+      const normalizedCode = promotionCode.trim().toUpperCase();
+      if (existing?.promotionRedemption?.code === normalizedCode) {
+        amount = existing.amount;
+      } else {
+        const rule = await resolvePromotionRule(promotionCode, 'HOTEL');
+        if (!rule || quote.totalAmount < rule.minimumSubtotal) {
+          return NextResponse.json(
+            {
+              error: { code: 'PROMOTION_NOT_AVAILABLE', message: 'This offer is not available.' },
+            },
+            { status: 409 },
+          );
+        }
+        amount = calculatePromotion(rule, quote.totalAmount).finalTotal;
+      }
+    }
+    if (existing) {
+      const normalizedCode = promotionCode?.trim().toUpperCase();
+      if (
+        existing.quoteId !== quoteId ||
+        existing.amount !== amount ||
+        existing.currency !== quote.currency ||
+        (existing.promotionRedemption && existing.promotionRedemption.code !== normalizedCode)
+      ) {
         return NextResponse.json(
-          { error: { code: 'PROMOTION_NOT_AVAILABLE', message: 'This offer is not available.' } },
+          {
+            error: {
+              code: 'PAYMENT_IDEMPOTENCY_CONTEXT_MISMATCH',
+              message: 'This payment retry key belongs to different checkout details.',
+            },
+          },
           { status: 409 },
         );
       }
-      amount = calculatePromotion(rule, quote.totalAmount).finalTotal;
+      return NextResponse.json({ data: existing });
     }
     const provider = process.env.PAYMENT_PROVIDER_ID ?? 'configured-gateway';
     if (!/^[a-z0-9][a-z0-9_-]{0,49}$/.test(provider)) {
@@ -68,25 +101,59 @@ export async function POST(request: Request) {
       reference: quote.id,
       returnUrl: `${origin}/hotels/${encodeURIComponent(quote.hotelSlug)}/booking/payment?paymentReturn=1`,
     });
-    const created = await prisma.paymentCheckoutIntent.create({
-      data: {
-        quoteId,
-        idempotencyKey,
-        provider,
-        providerRef: intent.providerRef,
-        amount,
+    const created = await prisma.$transaction(async (transaction) => {
+      const createdIntent = await transaction.paymentCheckoutIntent.create({
+        data: {
+          quoteId,
+          idempotencyKey,
+          provider,
+          providerRef: intent.providerRef,
+          amount,
+          currency: quote.currency,
+          checkoutUrl: intent.checkoutUrl,
+          expiresAt: intent.expiresAt,
+        },
+      });
+      const claim = await reserveStoredPromotion(transaction, {
+        claimKey: `HOTEL_CHECKOUT:${idempotencyKey}`,
+        code: promotionCode,
         currency: quote.currency,
-        checkoutUrl: intent.checkoutUrl,
         expiresAt: intent.expiresAt,
-      },
+        productType: 'HOTEL',
+        subtotal: quote.totalAmount,
+      });
+      if (claim) {
+        if (claim.finalTotal !== amount) {
+          throw new PromotionRedemptionError(
+            'PROMOTION_TOTAL_MISMATCH',
+            'The promotion total changed. Review the booking price again.',
+          );
+        }
+        await transaction.promotionRedemption.update({
+          data: { checkoutIntentId: createdIntent.id },
+          where: { id: claim.id },
+        });
+      }
+      return createdIntent;
     });
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {
+    if (error instanceof PromotionRedemptionError) {
+      return NextResponse.json(
+        { error: { code: error.code, message: error.message } },
+        { status: 409 },
+      );
+    }
     if (hasPrismaErrorCode(error, 'P2002')) {
-      const concurrentIntent = await prisma.paymentCheckoutIntent.findUnique({
-        where: { idempotencyKey },
-      });
-      if (concurrentIntent) return NextResponse.json({ data: concurrentIntent });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'PAYMENT_REQUEST_IN_PROGRESS',
+            message: 'This payment request is already being created. Retry it safely.',
+          },
+        },
+        { status: 409 },
+      );
     }
     const code = error instanceof Error ? error.message : '';
     return NextResponse.json(
