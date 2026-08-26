@@ -11,3 +11,9 @@ field cannot discard another valid field or introduce non-string facets. Search 
 fall back to bounded relational queries rather than corrupt inventory or prices. Availability and final
 quotes always come from the live inventory/quote engines, never from search documents. Analytics events
 remain purpose-limited and are projected separately from operational data.
+
+The scheduled projection worker performs a lease-protected health check. Healthy and empty states
+record a no-op; only `ATTENTION` triggers a transactional rebuild. The configured source limit is a
+hard safety boundary, not a pagination control: exceeding it fails closed so an operator can review
+capacity without publishing a partial index. Automatic evidence is retained in `AutomationJobRun`
+and exposed as safe aggregate counts in `/admin/automation`.

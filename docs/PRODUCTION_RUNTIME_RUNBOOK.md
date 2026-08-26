@@ -13,12 +13,13 @@ traffic only to healthy web instances, and keep the migration and scheduled-job 
 
 ## Workload contract
 
-| Workload                | Lifecycle                 | Purpose                                                                                |
-| ----------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
-| `migrate`               | one shot, before web      | Applies the reviewed native PostgreSQL migration history over a direct TLS connection. |
-| `app`                   | long running, replaceable | Runs the immutable standalone Next.js web artifact as a non-root user.                 |
-| `notification-delivery` | one shot, scheduler-owned | Performs one bounded, authenticated notification delivery pass.                        |
-| `safe-maintenance`      | one shot, scheduler-owned | Expires stale holds and reservations under a database lease with run evidence.         |
+| Workload                        | Lifecycle                 | Purpose                                                                                |
+| ------------------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| `migrate`                       | one shot, before web      | Applies the reviewed native PostgreSQL migration history over a direct TLS connection. |
+| `app`                           | long running, replaceable | Runs the immutable standalone Next.js web artifact as a non-root user.                 |
+| `notification-delivery`         | one shot, scheduler-owned | Performs one bounded, authenticated notification delivery pass.                        |
+| `safe-maintenance`              | one shot, scheduler-owned | Expires stale holds and reservations under a database lease with run evidence.         |
+| `search-projection-maintenance` | one shot, scheduler-owned | Repairs the disposable public hotel search index within a hard source limit.           |
 
 The web workload cannot start until the migration workload succeeds. A failed migration blocks the
 release; never bypass it, mark it successful manually, or run SQLite migrations against PostgreSQL.
@@ -52,8 +53,9 @@ missing production database configuration fails closed instead of silently creat
 4. Run the `migrate` workload once. Preserve its exit status and migration evidence.
 5. Roll out the `app` workload gradually. Require readiness success before traffic and keep the prior
    image available for rollback.
-6. Run non-production `notification-delivery` and `safe-maintenance` passes, verify structured events,
-   lease/run evidence, and delivery state, then enable the production schedules.
+6. Run non-production `notification-delivery`, `safe-maintenance`, and
+   `search-projection-maintenance` passes, verify structured events, lease/run evidence, and delivery
+   state, then enable the production schedules.
 7. Complete the synthetic monitoring and alert checks in `docs/OBSERVABILITY_RUNBOOK.md` before
    declaring the release healthy.
 

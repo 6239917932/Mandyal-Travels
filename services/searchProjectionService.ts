@@ -51,11 +51,15 @@ export async function getHotelSearchProjectionHealth() {
 
 export async function rebuildHotelSearchProjectionsInTransaction(
   transaction: Prisma.TransactionClient,
+  options?: { maximumSourceCount?: number },
 ) {
   const properties = await transaction.partnerProperty.findMany({
     where: { status: 'ACTIVE', publicationStatus: 'PUBLISHED' },
     include: { rooms: { where: { status: 'ACTIVE' } } },
   });
+  if (options?.maximumSourceCount !== undefined && properties.length > options.maximumSourceCount) {
+    throw new Error('SEARCH_PROJECTION_SOURCE_LIMIT_EXCEEDED');
+  }
   const projectedAt = new Date();
   for (const property of properties) {
     const aliases = parseProjectionStringList(property.locationAliasesJson);

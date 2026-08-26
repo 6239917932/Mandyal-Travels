@@ -112,3 +112,28 @@ services:
       - no-new-privileges:true
     tmpfs:
       - /tmp:size=32m,mode=1777
+
+  search-projection-maintenance:
+    profiles: ['scheduled-jobs']
+    build:
+      context: .
+      target: worker
+    command: ['npm', 'run', 'worker:search-projections']
+    cap_drop:
+      - ALL
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      AUTOPILOT_WORKER_SECRET: ${AUTOPILOT_WORKER_SECRET:?Supply AUTOPILOT_WORKER_SECRET from the secret store}
+      PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
+      SEARCH_PROJECTION_SOURCE_LIMIT: ${SEARCH_PROJECTION_SOURCE_LIMIT:-5000}
+      SEARCH_PROJECTION_WORKER_LEASE_SECONDS: ${SEARCH_PROJECTION_WORKER_LEASE_SECONDS:-300}
+      SEARCH_PROJECTION_WORKER_TIMEOUT_MS: ${SEARCH_PROJECTION_WORKER_TIMEOUT_MS:-120000}
+    init: true
+    read_only: true
+    restart: 'no'
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
