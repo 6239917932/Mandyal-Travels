@@ -6,6 +6,7 @@ import { AdminPartnerReview } from '@/components/admin/AdminPartnerReview';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
 
 export const metadata: Metadata = { title: 'Supplier administration' };
 
@@ -13,7 +14,10 @@ export default async function AdminPartnersPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners');
   const [applications, partners, pendingProperties] = await Promise.all([
     prisma.partnerApplication.findMany({
-      include: { applicant: { select: { email: true, firstName: true, lastName: true } } },
+      include: {
+        applicant: { select: { email: true, firstName: true, lastName: true } },
+        kycDocuments: true,
+      },
       orderBy: { createdAt: 'asc' },
       where: { status: 'PENDING' },
     }),
@@ -70,38 +74,60 @@ export default async function AdminPartnersPage() {
         <p className="hotel-page__eyebrow">Verification queue</p>
         <h2>Pending applications</h2>
         <div className="supplier-admin__grid">
-          {applications.map((item) => (
-            <Card key={item.id}>
-              <div className="booking-confirmation__reference">
-                <span>
-                  {item.partnerType} · {item.city}
-                </span>
-                <strong>{item.businessName}</strong>
-              </div>
-              <p>
-                <strong>{item.contactName}</strong>
-                <br />
-                {item.contactEmail} · {item.contactPhone}
-              </p>
-              <p>{item.inventorySummary}</p>
-              <p>
-                <strong>KYC: {item.kycStatus.replaceAll('_', ' ')}</strong>
-                <br />
-                Legal name: {item.legalBusinessName}
-                <br />
-                Registration: {item.registrationId} · Tax ID: {item.taxIdentifier}
-                <br />
-                Representative: {item.identityType.replaceAll('_', ' ')} · {item.identityReference}
-                <br />
-                Address: {item.registeredAddress}
-              </p>
-              <small>
-                Account: {item.applicant.firstName} {item.applicant.lastName} (
-                {item.applicant.email})
-              </small>
-              <AdminPartnerReview applicationId={item.id} />
-            </Card>
-          ))}
+          {applications.map((item) => {
+            const summary =
+              item.partnerType === 'BUS' ||
+              item.partnerType === 'CAR' ||
+              item.partnerType === 'HOTEL'
+                ? summarizePersistedPartnerKyc({
+                    documents: item.kycDocuments,
+                    partnerType: item.partnerType,
+                    today: new Date().toISOString().slice(0, 10),
+                  })
+                : null;
+            return (
+              <Card key={item.id}>
+                <div className="booking-confirmation__reference">
+                  <span>
+                    {item.partnerType} · {item.city}
+                  </span>
+                  <strong>{item.businessName}</strong>
+                </div>
+                <p>
+                  <strong>{item.contactName}</strong>
+                  <br />
+                  {item.contactEmail} · {item.contactPhone}
+                </p>
+                <p>{item.inventorySummary}</p>
+                <p>
+                  <strong>KYC: {item.kycStatus.replaceAll('_', ' ')}</strong>
+                  <br />
+                  Legal name: {item.legalBusinessName}
+                  <br />
+                  Registration: {item.registrationId} · Tax ID: {item.taxIdentifier}
+                  <br />
+                  Representative: {item.identityType.replaceAll('_', ' ')} ·{' '}
+                  {item.identityReference}
+                  <br />
+                  Address: {item.registeredAddress}
+                </p>
+                <small>
+                  Account: {item.applicant.firstName} {item.applicant.lastName} (
+                  {item.applicant.email})
+                </small>
+                <p>
+                  <strong>
+                    Evidence: {summary?.verified.length ?? 0} of {summary?.required.length ?? 0}{' '}
+                    verified
+                  </strong>
+                </p>
+                <AdminPartnerReview
+                  applicationId={item.id}
+                  approvalAllowed={summary?.complete === true}
+                />
+              </Card>
+            );
+          })}
           {applications.length === 0 ? (
             <Card>No supplier applications are awaiting verification.</Card>
           ) : null}

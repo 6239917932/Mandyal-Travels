@@ -42,6 +42,9 @@ model User {
   partnerAuditEntries         PartnerAuditLog[]              @relation("PartnerAuditActor")
   partnerApplications         PartnerApplication[]           @relation("PartnerApplicationApplicant")
   reviewedPartnerApplications PartnerApplication[]           @relation("PartnerApplicationReviewer")
+  createdPartnerKycVersions   PartnerKycDocumentVersion[]    @relation("PartnerKycVersionCreator")
+  reviewedPartnerKycDocuments PartnerKycDocument[]           @relation("PartnerKycDocumentReviewer")
+  partnerKycDocumentEvents    PartnerKycDocumentEvent[]      @relation("PartnerKycDocumentEventActor")
   hotelReviews                HotelReview[]                  @relation("HotelReviewAuthor")
   moderatedHotelReviews       HotelReview[]                  @relation("HotelReviewModerator")
   analyticsEvents             AnalyticsEvent[]
@@ -214,6 +217,8 @@ model SupplyPartner {
   properties            PartnerProperty[]
   auditEntries          PartnerAuditLog[]
   applications          PartnerApplication[]
+  kycDocuments          PartnerKycDocument[]
+  kycDocumentEvents     PartnerKycDocumentEvent[]
   vehicles              PartnerVehicle[]
   vehicleReservations   PartnerVehicleReservation[]
   busRoutes             PartnerBusRoute[]
@@ -462,7 +467,7 @@ model PartnerRoomType {
 }
 
 model PartnerApplication {
-  id                String         @id @default(cuid())
+  id                String                    @id @default(cuid())
   applicantUserId   String
   reviewedByUserId  String?
   partnerId         String?
@@ -473,26 +478,99 @@ model PartnerApplication {
   contactPhone      String
   city              String
   inventorySummary  String
-  legalBusinessName String         @default("")
-  registeredAddress String         @default("")
-  taxIdentifier     String         @default("")
-  registrationId    String         @default("")
-  identityType      String         @default("")
-  identityReference String         @default("")
-  kycStatus         String         @default("SUBMITTED")
+  legalBusinessName String                    @default("")
+  registeredAddress String                    @default("")
+  taxIdentifier     String                    @default("")
+  registrationId    String                    @default("")
+  identityType      String                    @default("")
+  identityReference String                    @default("")
+  kycStatus         String                    @default("SUBMITTED")
   kycConsentAt      DateTime?
-  status            String         @default("PENDING")
+  status            String                    @default("PENDING")
   reviewNote        String?
   reviewedAt        DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  applicant         User           @relation("PartnerApplicationApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
-  reviewedBy        User?          @relation("PartnerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  partner           SupplyPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  applicant         User                      @relation("PartnerApplicationApplicant", fields: [applicantUserId], references: [id], onDelete: Cascade)
+  reviewedBy        User?                     @relation("PartnerApplicationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  partner           SupplyPartner?            @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  kycDocuments      PartnerKycDocument[]
+  kycDocumentEvents PartnerKycDocumentEvent[]
 
   @@index([status, createdAt])
   @@index([applicantUserId, createdAt])
   @@index([kycStatus, createdAt])
+}
+
+model PartnerKycDocument {
+  id               String                      @id @default(cuid())
+  applicationId    String
+  partnerId        String?
+  reviewedByUserId String?
+  documentType     String
+  status           String                      @default("DRAFT")
+  fileVersion      Int                         @default(0)
+  lockVersion      Int                         @default(1)
+  issuedOn         String?
+  expiresOn        String?
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  application      PartnerApplication          @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  partner          SupplyPartner?              @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  reviewedBy       User?                       @relation("PartnerKycDocumentReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  versions         PartnerKycDocumentVersion[]
+  events           PartnerKycDocumentEvent[]
+
+  @@unique([applicationId, documentType])
+  @@index([applicationId, status])
+  @@index([partnerId, status, expiresOn])
+}
+
+model PartnerKycDocumentVersion {
+  id                    String             @id @default(cuid())
+  documentId            String
+  createdByUserId       String
+  versionNumber         Int
+  objectKey             String             @unique
+  originalFilename      String
+  contentType           String
+  byteSize              Int
+  sha256                String
+  storageStatus         String             @default("INTENT_CREATED")
+  uploadIntentExpiresAt DateTime?
+  uploadedAt            DateTime?
+  createdAt             DateTime           @default(now())
+  document              PartnerKycDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  createdBy             User               @relation("PartnerKycVersionCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId, createdAt])
+  @@index([storageStatus, uploadIntentExpiresAt])
+}
+
+model PartnerKycDocumentEvent {
+  id            String             @id @default(cuid())
+  documentId    String
+  applicationId String
+  partnerId     String?
+  actorUserId   String?
+  action        String
+  fromStatus    String?
+  toStatus      String?
+  reason        String?
+  metadataJson  String             @default("{}")
+  createdAt     DateTime           @default(now())
+  document      PartnerKycDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  application   PartnerApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  partner       SupplyPartner?     @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  actor         User?              @relation("PartnerKycDocumentEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([documentId, createdAt])
+  @@index([applicationId, createdAt])
+  @@index([partnerId, createdAt])
 }
 
 model PartnerHotelInventoryDay {

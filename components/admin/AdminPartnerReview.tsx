@@ -6,7 +6,13 @@ import { useState } from 'react';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
-export function AdminPartnerReview({ applicationId }: { applicationId: string }) {
+export function AdminPartnerReview({
+  applicationId,
+  approvalAllowed = true,
+}: {
+  applicationId: string;
+  approvalAllowed?: boolean;
+}) {
   const router = useRouter();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -49,12 +55,17 @@ export function AdminPartnerReview({ applicationId }: { applicationId: string })
       </label>
       <button
         className="ui-button ui-button--primary"
-        disabled={busy}
+        disabled={busy || !approvalAllowed}
         onClick={() => review('APPROVE')}
         type="button"
       >
         Approve supplier
       </button>
+      {!approvalAllowed ? (
+        <small>
+          Approval is locked until every required evidence item is verified and current.
+        </small>
+      ) : null}
       <button
         className="ui-button ui-button--secondary"
         disabled={busy || note.trim().length < 3}

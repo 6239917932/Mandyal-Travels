@@ -14,6 +14,7 @@ import {
   vehicleComplianceState,
   type VehicleComplianceDates,
 } from '@/lib/car/complianceRules';
+import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -483,7 +484,7 @@ export const partnerOperationsService = {
   }) {
     return prisma.$transaction(async (transaction) => {
       const application = await transaction.partnerApplication.findUnique({
-        include: { applicant: true },
+        include: { applicant: true, kycDocuments: true },
         where: { id: input.applicationId },
       });
       if (!application || application.status !== 'PENDING') {
@@ -503,6 +504,28 @@ export const partnerOperationsService = {
           },
           where: { id: application.id },
         });
+      }
+      if (
+        application.partnerType !== 'BUS' &&
+        application.partnerType !== 'CAR' &&
+        application.partnerType !== 'HOTEL'
+      ) {
+        throw new PartnerOperationsError(
+          'PARTNER_TYPE_UNSUPPORTED',
+          'This supplier type cannot complete governed verification.',
+        );
+      }
+      const kycSummary = summarizePersistedPartnerKyc({
+        documents: application.kycDocuments,
+        partnerType: application.partnerType,
+        today: new Date().toISOString().slice(0, 10),
+      });
+      if (!kycSummary.complete) {
+        const blocked = [...kycSummary.missing, ...kycSummary.expired];
+        throw new PartnerOperationsError(
+          'KYC_EVIDENCE_INCOMPLETE',
+          `Verify all required supplier evidence before approval: ${blocked.join(', ')}.`,
+        );
       }
       if (!['CUSTOMER', 'PARTNER_ADMIN', 'PARTNER_OPERATOR'].includes(application.applicant.role)) {
         throw new PartnerOperationsError(
@@ -549,6 +572,10 @@ export const partnerOperationsService = {
           partnerId: partner.id,
           summary: 'Supplier application approved and secure workspace provisioned.',
         },
+      });
+      await transaction.partnerKycDocument.updateMany({
+        data: { partnerId: partner.id },
+        where: { applicationId: application.id },
       });
       return transaction.partnerApplication.update({
         data: {
