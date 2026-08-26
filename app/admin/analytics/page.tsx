@@ -5,7 +5,13 @@ import { PlatformOperationalMetrics } from '@/components/admin/PlatformOperation
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
-import { buildOperationalAnalyticsSnapshot } from '@/services/platformAnalyticsService';
+import {
+  analyticsPercent,
+  buildOperationalAnalyticsSnapshot,
+  buildPartnerPerformanceRows,
+  formatAnalyticsCurrency,
+  formatAnalyticsPercent,
+} from '@/services/platformAnalyticsService';
 
 export const metadata: Metadata = { title: 'Platform analytics' };
 export default async function AdminAnalyticsPage() {
@@ -29,6 +35,7 @@ export default async function AdminAnalyticsPage() {
     openCustomerSupportCases,
     openBusinessSupportCases,
     highRiskSignals,
+    partnerSettlementTotals,
   ] = await Promise.all([
     prisma.analyticsEvent.groupBy({
       _count: { _all: true },
@@ -73,7 +80,51 @@ export default async function AdminAnalyticsPage() {
     prisma.riskSignal.count({
       where: { severity: { in: ['HIGH', 'CRITICAL'] }, status: 'OPEN' },
     }),
+    prisma.partnerSettlement.aggregate({
+      _count: { _all: true },
+      _sum: {
+        bookingCount: true,
+        commissionAmount: true,
+        grossAmount: true,
+        netAmount: true,
+      },
+      where: { createdAt: { gte: since }, currency: 'INR' },
+    }),
   ]);
+  const partnerSettlementGroups = await prisma.partnerSettlement.groupBy({
+    _count: { _all: true },
+    _sum: {
+      bookingCount: true,
+      commissionAmount: true,
+      grossAmount: true,
+      netAmount: true,
+    },
+    by: ['partnerId'],
+    orderBy: { _sum: { grossAmount: 'desc' } },
+    take: 10,
+    where: { createdAt: { gte: since }, currency: 'INR' },
+  });
+  const partnerIds = partnerSettlementGroups.map((group) => group.partnerId);
+  const partnerIdentities =
+    partnerIds.length === 0
+      ? []
+      : await prisma.supplyPartner.findMany({
+          select: { id: true, name: true, status: true, type: true },
+          where: { id: { in: partnerIds } },
+        });
+  const partnerPerformance = buildPartnerPerformanceRows(
+    partnerSettlementGroups.map((group) => ({
+      bookingCount: group._sum.bookingCount,
+      commissionAmount: group._sum.commissionAmount,
+      grossAmount: group._sum.grossAmount,
+      netAmount: group._sum.netAmount,
+      partnerId: group.partnerId,
+      settlementCount: group._count._all,
+    })),
+    partnerIdentities,
+  );
+  const settlementGross = partnerSettlementTotals._sum.grossAmount ?? 0;
+  const settlementCommission = partnerSettlementTotals._sum.commissionAmount ?? 0;
   const operationalSnapshot = buildOperationalAnalyticsSnapshot({
     activeSuppliers,
     capturedCheckoutIntents,
@@ -123,6 +174,62 @@ export default async function AdminAnalyticsPage() {
         </Card>
       </div>
       <PlatformOperationalMetrics snapshot={operationalSnapshot} />
+      <section>
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Thirty-day governed settlement evidence</p>
+          <h2>Partner performance and commission</h2>
+          <p>
+            Read-only INR settlement results rank the ten partners with the highest recorded gross
+            value. They do not estimate unrecorded sales or initiate a payout.
+          </p>
+        </div>
+        <div className="partner-bookings__summary">
+          <Card>
+            <span>Recorded partner gross</span>
+            <strong>{formatAnalyticsCurrency(settlementGross)}</strong>
+            <small>{partnerSettlementTotals._count._all} settlement records</small>
+          </Card>
+          <Card>
+            <span>Recorded commissions</span>
+            <strong>{formatAnalyticsCurrency(settlementCommission)}</strong>
+            <small>
+              {formatAnalyticsPercent(analyticsPercent(settlementCommission, settlementGross))} of
+              gross
+            </small>
+          </Card>
+          <Card>
+            <span>Partner net value</span>
+            <strong>{formatAnalyticsCurrency(partnerSettlementTotals._sum.netAmount ?? 0)}</strong>
+            <small>Before any externally governed payout execution</small>
+          </Card>
+          <Card>
+            <span>Settled booking lines</span>
+            <strong>{partnerSettlementTotals._sum.bookingCount ?? 0}</strong>
+            <small>Bookings represented by these settlement records</small>
+          </Card>
+        </div>
+        <div className="supplier-admin__grid">
+          {partnerPerformance.map((partner) => (
+            <Card key={partner.partnerId}>
+              <span>
+                {partner.type} · {partner.status}
+              </span>
+              <strong>{partner.name}</strong>
+              <p>
+                {formatAnalyticsCurrency(partner.grossAmount)} gross ·{' '}
+                {formatAnalyticsCurrency(partner.netAmount)} net
+              </p>
+              <small>
+                {partner.bookingCount} bookings · {partner.settlementCount} settlements ·{' '}
+                {formatAnalyticsPercent(partner.commissionPercent)} commission
+              </small>
+            </Card>
+          ))}
+          {partnerPerformance.length === 0 ? (
+            <Card>No INR partner settlements were recorded during this period.</Card>
+          ) : null}
+        </div>
+      </section>
       <section>
         <h2>Product commerce</h2>
         <div className="supplier-admin__grid">
