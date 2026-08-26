@@ -65,6 +65,7 @@ model User {
   savedTravelers              SavedTraveler[]
   accessEvents                UserAccessEvent[]              @relation("UserAccessSubject")
   performedAccessEvents       UserAccessEvent[]              @relation("UserAccessActor")
+  busSeatHolds                PartnerBusSeatHold[]
 
   @@index([role, accessStatus])
 }
@@ -354,7 +355,7 @@ model PartnerBusRoute {
 }
 
 model PartnerBusTrip {
-  id                 String                  @id @default(cuid())
+  id                 String                   @id @default(cuid())
   routeId            String
   serviceDate        String
   departureTime      String
@@ -362,18 +363,49 @@ model PartnerBusTrip {
   busType            String
   seatCapacity       Int
   pricePerSeat       Int
-  currency           String                  @default("INR")
-  amenitiesJson      String                  @default("[]")
+  currency           String                   @default("INR")
+  amenitiesJson      String                   @default("[]")
   cancellationPolicy String
-  refundable         Boolean                 @default(false)
-  status             String                  @default("ACTIVE")
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  route              PartnerBusRoute         @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  refundable         Boolean                  @default(false)
+  status             String                   @default("ACTIVE")
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  route              PartnerBusRoute          @relation(fields: [routeId], references: [id], onDelete: Cascade)
   reservations       PartnerBusReservation[]
+  seatHolds          PartnerBusSeatHold[]
+  heldSeats          PartnerBusSeatHoldSeat[]
 
   @@unique([routeId, serviceDate, departureTime])
   @@index([serviceDate, status])
+}
+
+model PartnerBusSeatHold {
+  id        String                   @id @default(cuid())
+  tripId    String
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  trip      PartnerBusTrip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seats     PartnerBusSeatHoldSeat[]
+
+  @@unique([tripId, userId])
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
+}
+
+model PartnerBusSeatHoldSeat {
+  id         String             @id @default(cuid())
+  holdId     String
+  tripId     String
+  seatNumber String
+  createdAt  DateTime           @default(now())
+  hold       PartnerBusSeatHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+  trip       PartnerBusTrip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, seatNumber])
+  @@index([holdId])
 }
 
 model PartnerBusReservation {

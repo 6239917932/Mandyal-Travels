@@ -256,6 +256,13 @@ export async function POST(request: Request) {
     productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
       ? (body.businessSelection as Record<string, unknown>).seats
       : undefined;
+  const busSeatHoldId =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? (() => {
+          const value = (body.businessSelection as Record<string, unknown>).seatHoldId;
+          return isText(value) && value.trim().length <= 120 ? value.trim() : undefined;
+        })()
+      : undefined;
   const parsedBusSeats =
     productType === 'BUS' && busPassengers !== undefined
       ? parseBusSeats(busSeats, busPassengers)
@@ -328,7 +335,8 @@ export async function POST(request: Request) {
     productType === 'BUS' &&
     (busPassengers === undefined ||
       !hasValidBusPassengerDetails(details, busPassengers) ||
-      !parsedBusSeats)
+      !parsedBusSeats ||
+      (busOfferId?.startsWith('direct-bus-trip-') && !busSeatHoldId))
   ) {
     return errorResponse(
       'INVALID_BUS_TRAVELERS',
@@ -540,11 +548,13 @@ export async function POST(request: Request) {
             customerEmail: user.email,
             customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
             customerTripId: createdTrip.id,
+            holdId: busSeatHoldId as string,
             offerId: busOfferId,
             passengerCount: busPassengers,
             seats: parsedBusSeats,
             serviceDate: startDate,
             totalAmount: totalAmount as number,
+            userId: user.id,
           });
         }
         const response = customerTripResponse(createdTrip);
@@ -599,11 +609,13 @@ export async function POST(request: Request) {
           customerEmail: user.email,
           customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
           customerTripId: completedTrip.id,
+          holdId: busSeatHoldId as string,
           offerId: busOfferId,
           passengerCount: busPassengers,
           seats: parsedBusSeats,
           serviceDate: startDate,
           totalAmount: totalAmount as number,
+          userId: user.id,
         });
       }
       await transaction.businessAuditLog.create({

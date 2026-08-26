@@ -24,8 +24,10 @@ export default async function BusPassengersPage({
   const criteria = createBusSearchCriteria(params);
   const offerId = first(params.offerId);
   const seats = (first(params.seats) ?? '').split(',').filter(Boolean);
+  const seatHoldId = first(params.seatHoldId);
   const offer = offerId ? await busService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || seats.length !== criteria.passengers) {
+  const directTrip = offerId?.startsWith('direct-bus-trip-') ?? false;
+  if (!offer || seats.length !== criteria.passengers || (directTrip && !seatHoldId)) {
     return (
       <div className="bus-booking-page">
         <Card className="flight-booking-page__empty">
@@ -44,6 +46,7 @@ export default async function BusPassengersPage({
     origin: criteria.origin,
     passengers: String(criteria.passengers),
     seats: seats.join(','),
+    ...(seatHoldId ? { seatHoldId } : {}),
     travelDate: criteria.travelDate,
   };
   return (

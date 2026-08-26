@@ -2,6 +2,8 @@ const PERSON_NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}' .-]{1,79}$/u;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GENDERS = new Set(['female', 'male', 'other']);
 const SEAT_PATTERN = /^(?:[1-9]|[1-9]\d)[A-D]$/;
+export const DIRECT_BUS_OFFER_PREFIX = 'direct-bus-trip-';
+export const BUS_SEAT_HOLD_DURATION_MS = 10 * 60 * 1000;
 
 function readRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -39,6 +41,18 @@ export function seatsFitBusCapacity(seats: string[], seatCapacity: number): bool
     const column = match[2].charCodeAt(0) - 64;
     return (row - 1) * 4 + column <= seatCapacity;
   });
+}
+
+export function directBusTripId(offerId: unknown): string | undefined {
+  if (typeof offerId !== 'string' || !offerId.startsWith(DIRECT_BUS_OFFER_PREFIX)) return undefined;
+  const tripId = offerId.slice(DIRECT_BUS_OFFER_PREFIX.length).trim();
+  return tripId.length >= 1 && tripId.length <= 120 ? tripId : undefined;
+}
+
+export function busSeatSetsMatch(first: string[], second: string[]): boolean {
+  if (first.length !== second.length) return false;
+  const normalizedSecond = new Set(second.map((seat) => seat.toUpperCase()));
+  return first.every((seat) => normalizedSecond.has(seat.toUpperCase()));
 }
 
 export function hasValidBusPassengerDetails(details: unknown, passengers: number): boolean {

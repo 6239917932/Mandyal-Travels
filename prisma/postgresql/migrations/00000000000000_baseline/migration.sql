@@ -288,6 +288,29 @@ CREATE TABLE "PartnerBusTrip" (
 );
 
 -- CreateTable
+CREATE TABLE "PartnerBusSeatHold" (
+    "id" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PartnerBusSeatHold_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerBusSeatHoldSeat" (
+    "id" TEXT NOT NULL,
+    "holdId" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "seatNumber" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerBusSeatHoldSeat_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PartnerBusReservation" (
     "id" TEXT NOT NULL,
     "confirmationCode" TEXT NOT NULL,
@@ -1613,6 +1636,21 @@ CREATE INDEX "PartnerBusTrip_serviceDate_status_idx" ON "PartnerBusTrip"("servic
 CREATE UNIQUE INDEX "PartnerBusTrip_routeId_serviceDate_departureTime_key" ON "PartnerBusTrip"("routeId", "serviceDate", "departureTime");
 
 -- CreateIndex
+CREATE INDEX "PartnerBusSeatHold_expiresAt_idx" ON "PartnerBusSeatHold"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerBusSeatHold_userId_expiresAt_idx" ON "PartnerBusSeatHold"("userId", "expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerBusSeatHold_tripId_userId_key" ON "PartnerBusSeatHold"("tripId", "userId");
+
+-- CreateIndex
+CREATE INDEX "PartnerBusSeatHoldSeat_holdId_idx" ON "PartnerBusSeatHoldSeat"("holdId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerBusSeatHoldSeat_tripId_seatNumber_key" ON "PartnerBusSeatHoldSeat"("tripId", "seatNumber");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerBusReservation_confirmationCode_key" ON "PartnerBusReservation"("confirmationCode");
 
 -- CreateIndex
@@ -2220,6 +2258,18 @@ ALTER TABLE "PartnerBusRoute" ADD CONSTRAINT "PartnerBusRoute_partnerId_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "PartnerBusTrip" ADD CONSTRAINT "PartnerBusTrip_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "PartnerBusRoute"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHold" ADD CONSTRAINT "PartnerBusSeatHold_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "PartnerBusTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHold" ADD CONSTRAINT "PartnerBusSeatHold_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHoldSeat" ADD CONSTRAINT "PartnerBusSeatHoldSeat_holdId_fkey" FOREIGN KEY ("holdId") REFERENCES "PartnerBusSeatHold"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHoldSeat" ADD CONSTRAINT "PartnerBusSeatHoldSeat_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "PartnerBusTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerBusReservation" ADD CONSTRAINT "PartnerBusReservation_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
