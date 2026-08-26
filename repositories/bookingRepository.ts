@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createCaptureAccounting } from '@/lib/payments/accounting';
 import type { ConfirmedPaymentContext } from '@/services/paymentConfirmationService';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
-import { redeemPromotion, reversePromotionForBooking } from '@/services/promotionRedemptionService';
+import { redeemPromotion } from '@/services/promotionRedemptionService';
 
 export type BusinessBookingContext = {
   requestId: string;
@@ -266,11 +266,7 @@ export class PrismaBookingRepository implements BookingRepository {
           data: { status: 'refunded' },
           where: { bookingId },
         });
-        await reversePromotionForBooking(
-          transaction,
-          bookingId,
-          'Refundable booking cancellation released the promotion use.',
-        );
+        // Promotion usage remains consumed until the payment provider confirms a full refund.
       }
     });
   }
@@ -448,6 +444,7 @@ export class PrismaBookingRepository implements BookingRepository {
       const paymentId = createdBooking.payment?.id;
       if (!paymentId) throw new Error('Captured booking payment was not created.');
       await redeemPromotion(transaction, {
+        authorizedAt: paymentContext.capturedAt,
         bookingId: booking.id,
         checkoutIntentId: paymentContext.checkoutIntentId,
         finalTotal: booking.paymentAmount,

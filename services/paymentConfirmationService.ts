@@ -3,6 +3,7 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 
 export interface ConfirmedPaymentContext {
+  capturedAt?: Date;
   checkoutIntentId?: string;
   environment: 'LIVE' | 'SANDBOX';
   provider: string;
@@ -81,6 +82,7 @@ export async function confirmPaymentForBooking(input: {
   }
 
   return {
+    capturedAt: intent.capturedAt,
     checkoutIntentId: intent.id,
     environment: liveMode ? 'LIVE' : 'SANDBOX',
     provider: intent.provider,

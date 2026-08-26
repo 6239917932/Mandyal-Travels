@@ -12,6 +12,7 @@ import {
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { createBookingReference } from '@/lib/confirmationCode';
 import { DEMO_TRANSPORT_PAYMENT_EVIDENCE } from '@/constants/transportPayment';
+import { reserveTransportPromotion } from '@/lib/payments/transportPromotionReservation';
 
 interface BusPaymentFormProps {
   bookingSummary: Record<string, string | number>;
@@ -146,6 +147,14 @@ export function BusPaymentForm({
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
     try {
+      const promotionReservationToken = await reserveTransportPromotion({
+        businessSelection: nextQuery,
+        businessTravelRequestId: businessRequest?.id,
+        confirmationCode,
+        expectedTotal: finalTotal,
+        productType: 'BUS',
+        promotionCode: promotion?.code,
+      });
       const response = await fetch('/api/v1/account/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,6 +163,7 @@ export function BusPaymentForm({
           businessTravelRequestId: businessRequest?.id,
           productType: 'BUS',
           promotionCode: promotion?.code,
+          promotionReservationToken,
           confirmationCode,
           paymentEvidence: DEMO_TRANSPORT_PAYMENT_EVIDENCE,
           status: 'CONFIRMED',

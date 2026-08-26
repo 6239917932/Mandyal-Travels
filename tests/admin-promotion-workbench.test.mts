@@ -120,6 +120,7 @@ test('stored campaigns override baseline codes and never bypass a paused state',
   );
   assert.deepEqual(readPromotionProducts('["HOTEL","HOTEL","BUS","UNKNOWN"]'), ['HOTEL', 'BUS']);
   const source = readFileSync('services/promotionService.ts', 'utf8');
-  assert.match(source, /findUnique\(\{ where: \{ code: normalizedCode \} \}\)/);
+  assert.match(source, /findUnique\(\{[\s\S]*where:\s*\{\s*code:\s*normalizedCode\s*\}/);
+  assert.match(source, /releaseExpiredPromotionClaims/);
   assert.match(source, /if \(!campaign\) return findPromotionRule/);
 });

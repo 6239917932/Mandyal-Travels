@@ -12,6 +12,7 @@ import {
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { createBookingReference } from '@/lib/confirmationCode';
 import { DEMO_TRANSPORT_PAYMENT_EVIDENCE } from '@/constants/transportPayment';
+import { reserveTransportPromotion } from '@/lib/payments/transportPromotionReservation';
 
 type FormErrors = Record<string, string>;
 
@@ -159,6 +160,14 @@ export function FlightPaymentForm({
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
     try {
+      const promotionReservationToken = await reserveTransportPromotion({
+        businessSelection: nextQuery,
+        businessTravelRequestId: businessRequest?.id,
+        confirmationCode,
+        expectedTotal: finalTotal,
+        productType: 'FLIGHT',
+        promotionCode: promotion?.code,
+      });
       const response = await fetch('/api/v1/account/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,6 +176,7 @@ export function FlightPaymentForm({
           businessTravelRequestId: businessRequest?.id,
           productType: 'FLIGHT',
           promotionCode: promotion?.code,
+          promotionReservationToken,
           confirmationCode,
           paymentEvidence: DEMO_TRANSPORT_PAYMENT_EVIDENCE,
           status: 'CONFIRMED',

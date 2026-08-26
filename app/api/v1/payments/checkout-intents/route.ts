@@ -11,6 +11,7 @@ import {
   PromotionRedemptionError,
   reserveStoredPromotion,
 } from '@/services/promotionRedemptionService';
+import { publicCheckoutIntent } from '@/services/promotionRedemptionRules';
 
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
-      return NextResponse.json({ data: existing });
+      return NextResponse.json({ data: publicCheckoutIntent(existing) });
     }
     const provider = process.env.PAYMENT_PROVIDER_ID ?? 'configured-gateway';
     if (!/^[a-z0-9][a-z0-9_-]{0,49}$/.test(provider)) {
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
       }
       return createdIntent;
     });
-    return NextResponse.json({ data: created }, { status: 201 });
+    return NextResponse.json({ data: publicCheckoutIntent(created) }, { status: 201 });
   } catch (error) {
     if (error instanceof PromotionRedemptionError) {
       return NextResponse.json(

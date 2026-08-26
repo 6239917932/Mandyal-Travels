@@ -40,7 +40,7 @@ import {
 import {
   PromotionRedemptionError,
   redeemPromotion,
-  reserveStoredPromotion,
+  validateReservedPromotion,
 } from '@/services/promotionRedemptionService';
 
 const MAX_DETAILS_LENGTH = 32_000;
@@ -215,6 +215,9 @@ export async function POST(request: Request) {
   const promotionCode = isText(body.promotionCode)
     ? body.promotionCode.trim().toUpperCase()
     : undefined;
+  const promotionReservationToken = isText(body.promotionReservationToken)
+    ? body.promotionReservationToken.trim()
+    : undefined;
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
   const busOfferId = productType === 'BUS' ? readOfferId(body.businessSelection) : undefined;
   const carRentalMode =
@@ -313,6 +316,8 @@ export async function POST(request: Request) {
     !detailsJson ||
     detailsJson.length > MAX_DETAILS_LENGTH ||
     (promotionCode !== undefined && promotionCode.length > MAX_PROMOTION_CODE_LENGTH) ||
+    (promotionReservationToken !== undefined && promotionReservationToken.length > 200) ||
+    (promotionCode === undefined && promotionReservationToken !== undefined) ||
     (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
@@ -501,6 +506,43 @@ export async function POST(request: Request) {
     }
   }
 
+  let promotionAuthorizedAt: Date | undefined;
+  if (promotionCode) {
+    if (!promotionReservationToken || promotionSubtotal === undefined) {
+      return errorResponse(
+        'PROMOTION_RESERVATION_REQUIRED',
+        'Reserve the promotion before completing payment. No payment has been captured.',
+        409,
+      );
+    }
+    promotionAuthorizedAt = new Date();
+    try {
+      await prisma.$transaction((transaction) =>
+        validateReservedPromotion(transaction, {
+          claimKey: `TRANSPORT_CHECKOUT:${confirmationCode}`,
+          code: promotionCode,
+          currency: tripData.currency,
+          expiresAt: promotionAuthorizedAt as Date,
+          finalTotal: totalAmount as number,
+          productType,
+          reservationToken: promotionReservationToken,
+          subtotal: promotionSubtotal,
+          userId: user.id,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof PromotionRedemptionError) {
+        return errorResponse(error.code, `${error.message} No payment has been captured.`, 409);
+      }
+      console.error('Transport promotion reservation validation failed.', error);
+      return errorResponse(
+        'PROMOTION_RESERVATION_FAILED',
+        'The promotion reservation could not be checked. No payment has been captured.',
+        500,
+      );
+    }
+  }
+
   try {
     confirmTransportPayment({
       amount: totalAmount as number,
@@ -538,18 +580,10 @@ export async function POST(request: Request) {
         const createdTrip = await transaction.customerTrip.create({
           data: { confirmationCode, ...tripData },
         });
-        const promotionClaim = await reserveStoredPromotion(transaction, {
-          claimKey: `TRANSPORT_BOOKING:${confirmationCode}`,
-          code: promotionCode,
-          currency: tripData.currency,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-          productType,
-          subtotal: promotionSubtotal ?? (totalAmount as number),
-          userId: user.id,
-        });
-        if (promotionClaim) {
+        if (promotionReservationToken) {
           await redeemPromotion(transaction, {
-            claimKey: promotionClaim.claimKey,
+            authorizedAt: promotionAuthorizedAt,
+            claimKey: promotionReservationToken,
             customerTripId: createdTrip.id,
             finalTotal: totalAmount as number,
           });
@@ -615,18 +649,10 @@ export async function POST(request: Request) {
       const completedTrip = await transaction.customerTrip.create({
         data: { confirmationCode, ...data },
       });
-      const promotionClaim = await reserveStoredPromotion(transaction, {
-        claimKey: `TRANSPORT_BOOKING:${confirmationCode}`,
-        code: promotionCode,
-        currency: tripData.currency,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        productType,
-        subtotal: promotionSubtotal ?? (totalAmount as number),
-        userId: user.id,
-      });
-      if (promotionClaim) {
+      if (promotionReservationToken) {
         await redeemPromotion(transaction, {
-          claimKey: promotionClaim.claimKey,
+          authorizedAt: promotionAuthorizedAt,
+          claimKey: promotionReservationToken,
           customerTripId: completedTrip.id,
           finalTotal: totalAmount as number,
         });

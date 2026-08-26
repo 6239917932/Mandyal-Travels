@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
+import type { Prisma } from '@/generated/prisma/client';
 import { createRefundPostings } from '@/lib/payments/accounting';
 import {
   createLedgerData,
@@ -10,8 +12,22 @@ import {
   normalizeFinanceNote,
 } from '@/services/adminFinanceService';
 import { dispatchProviderRefund } from '@/services/paymentGatewayService';
+import { reversePromotionForConfirmedFullRefund } from '@/services/promotionRedemptionService';
 
 type RouteContext = { params: Promise<{ refundId: string }> };
+
+async function serializableTransactionWithRetry<T>(
+  operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(operation, { isolationLevel: 'Serializable' });
+    } catch (error) {
+      if (!hasPrismaErrorCode(error, 'P2034') || attempt === 2) throw error;
+    }
+  }
+  throw new Error('Serializable refund accounting retry exhausted.');
+}
 
 export async function PATCH(request: Request, context: RouteContext) {
   const administrator = await getPlatformAdmin();
@@ -58,7 +74,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       });
       if (result.count !== 1) return null;
       return transaction.refundRequest.findUnique({
-        include: { payment: { select: { providerRef: true } } },
+        include: {
+          payment: { select: { amount: true, bookingId: true, id: true, providerRef: true } },
+        },
         where: { id: refundId },
       });
     });
@@ -91,7 +109,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const refund = await prisma.$transaction(async (transaction) => {
+    const refund = await serializableTransactionWithRetry(async (transaction) => {
       const completed = await transaction.refundRequest.updateMany({
         data: {
           providerRefundRef,
@@ -134,6 +152,12 @@ export async function PATCH(request: Request, context: RouteContext) {
           }),
         });
       }
+      await reversePromotionForConfirmedFullRefund(transaction, {
+        bookingId: claimed.payment.bookingId,
+        paymentAmount: claimed.payment.amount,
+        paymentId: claimed.payment.id,
+        reason: `Provider-confirmed full refund completed by refund ${claimed.id}.`,
+      });
       return transaction.refundRequest.findUnique({ where: { id: claimed.id } });
     });
     if (!refund) {
