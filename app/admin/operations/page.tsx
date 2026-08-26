@@ -128,6 +128,9 @@ export default async function AdminOperationsPage({ searchParams }: Props) {
             <Link className="ui-button ui-button--secondary" href="/admin/integrations">
               Integration registry
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/automation">
+              Autopilot operations
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/admin">
               Back to operations
             </Link>
