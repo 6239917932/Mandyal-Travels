@@ -965,6 +965,37 @@ model RequestRateLimit {
   @@index([action, updatedAt])
 }
 
+model AutomationJobLease {
+  jobKey          String   @id
+  leaseTokenHash  String
+  leaseExpiresAt  DateTime
+  lastStartedAt   DateTime?
+  lastCompletedAt DateTime?
+  lastStatus      String   @default("IDLE")
+  lastSummaryJson String   @default("{}")
+  updatedAt       DateTime @updatedAt
+
+  @@index([leaseExpiresAt])
+  @@index([lastStatus, updatedAt])
+}
+
+model AutomationJobRun {
+  id             String    @id @default(cuid())
+  jobKey         String
+  correlationId  String    @unique
+  status         String
+  processedCount Int       @default(0)
+  failureCount   Int       @default(0)
+  summaryJson    String    @default("{}")
+  errorCode      String    @default("")
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([jobKey, startedAt])
+  @@index([status, startedAt])
+}
+
 model AvailabilityLock {
   id              String      @id
   roomTypeId      String

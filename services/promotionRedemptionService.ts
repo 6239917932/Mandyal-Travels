@@ -93,6 +93,39 @@ export async function releaseExpiredPromotionClaims(
   }
 }
 
+export async function releaseExpiredPromotionClaimsBatch(
+  transaction: PromotionRedemptionTransaction,
+  now: Date,
+  batchSize: number,
+): Promise<number> {
+  const expired = await transaction.promotionRedemption.findMany({
+    orderBy: [{ expiresAt: 'asc' }, { id: 'asc' }],
+    select: { campaignId: true, id: true },
+    take: batchSize,
+    where: { expiresAt: { lte: now }, status: 'RESERVED' },
+  });
+  let releasedCount = 0;
+  for (const claim of expired) {
+    const released = await transaction.promotionRedemption.updateMany({
+      data: { releasedAt: now, status: 'RELEASED' },
+      where: { id: claim.id, status: 'RESERVED' },
+    });
+    if (released.count !== 1) continue;
+    const decremented = await transaction.promotionCampaign.updateMany({
+      data: { usageCount: { decrement: 1 } },
+      where: { id: claim.campaignId, usageCount: { gt: 0 } },
+    });
+    if (decremented.count !== 1) {
+      throw new PromotionRedemptionError(
+        'PROMOTION_USAGE_INCONSISTENT',
+        'The promotion usage count requires administrator reconciliation.',
+      );
+    }
+    releasedCount += 1;
+  }
+  return releasedCount;
+}
+
 function assertSameClaim(existing: ClaimSnapshot, input: ReservationInput) {
   if (existing.contextHash !== promotionClaimContextHash(input)) {
     throw new PromotionRedemptionError(

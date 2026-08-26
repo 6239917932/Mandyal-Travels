@@ -785,6 +785,37 @@ CREATE TABLE "RequestRateLimit" (
 );
 
 -- CreateTable
+CREATE TABLE "AutomationJobLease" (
+    "jobKey" TEXT NOT NULL,
+    "leaseTokenHash" TEXT NOT NULL,
+    "leaseExpiresAt" TIMESTAMP(3) NOT NULL,
+    "lastStartedAt" TIMESTAMP(3),
+    "lastCompletedAt" TIMESTAMP(3),
+    "lastStatus" TEXT NOT NULL DEFAULT 'IDLE',
+    "lastSummaryJson" TEXT NOT NULL DEFAULT '{}',
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AutomationJobLease_pkey" PRIMARY KEY ("jobKey")
+);
+
+-- CreateTable
+CREATE TABLE "AutomationJobRun" (
+    "id" TEXT NOT NULL,
+    "jobKey" TEXT NOT NULL,
+    "correlationId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "processedCount" INTEGER NOT NULL DEFAULT 0,
+    "failureCount" INTEGER NOT NULL DEFAULT 0,
+    "summaryJson" TEXT NOT NULL DEFAULT '{}',
+    "errorCode" TEXT NOT NULL DEFAULT '',
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AutomationJobRun_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AvailabilityLock" (
     "id" TEXT NOT NULL,
     "roomTypeId" TEXT NOT NULL,
@@ -1939,6 +1970,21 @@ CREATE UNIQUE INDEX "RequestRateLimit_keyHash_key" ON "RequestRateLimit"("keyHas
 
 -- CreateIndex
 CREATE INDEX "RequestRateLimit_action_updatedAt_idx" ON "RequestRateLimit"("action", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobLease_leaseExpiresAt_idx" ON "AutomationJobLease"("leaseExpiresAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobLease_lastStatus_updatedAt_idx" ON "AutomationJobLease"("lastStatus", "updatedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AutomationJobRun_correlationId_key" ON "AutomationJobRun"("correlationId");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobRun_jobKey_startedAt_idx" ON "AutomationJobRun"("jobKey", "startedAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobRun_status_startedAt_idx" ON "AutomationJobRun"("status", "startedAt");
 
 -- CreateIndex
 CREATE INDEX "AvailabilityLock_roomTypeId_status_expiresAt_idx" ON "AvailabilityLock"("roomTypeId", "status", "expiresAt");

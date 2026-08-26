@@ -18,6 +18,7 @@ traffic only to healthy web instances, and keep the migration and scheduled-job 
 | `migrate`               | one shot, before web      | Applies the reviewed native PostgreSQL migration history over a direct TLS connection. |
 | `app`                   | long running, replaceable | Runs the immutable standalone Next.js web artifact as a non-root user.                 |
 | `notification-delivery` | one shot, scheduler-owned | Performs one bounded, authenticated notification delivery pass.                        |
+| `safe-maintenance`      | one shot, scheduler-owned | Expires stale holds and reservations under a database lease with run evidence.         |
 
 The web workload cannot start until the migration workload succeeds. A failed migration blocks the
 release; never bypass it, mark it successful manually, or run SQLite migrations against PostgreSQL.
@@ -31,7 +32,8 @@ missing production database configuration fails closed instead of silently creat
    direct TLS migration URL from the approved secret manager. Follow
    `docs/PRODUCTION_DATA_PLATFORM.md` for cutover and reconciliation.
 2. Inject `BOOKING_TOKEN_SECRET`, `MFA_ENCRYPTION_KEY`, `PARTNER_ADMIN_KEY`, and
-   `NOTIFICATION_WORKER_SECRET` as independently generated production values. Do not store them in a
+   `NOTIFICATION_WORKER_SECRET`, and `AUTOPILOT_WORKER_SECRET` as independently generated production
+   values. Do not store them in a
    Compose file, image, CI log, or operator note.
 3. Set `PUBLIC_APP_ORIGIN` to the canonical HTTPS origin, `DEPLOYMENT_ENVIRONMENT=production`, and
    `RELEASE_SHA` to an immutable source revision.
@@ -50,8 +52,8 @@ missing production database configuration fails closed instead of silently creat
 4. Run the `migrate` workload once. Preserve its exit status and migration evidence.
 5. Roll out the `app` workload gradually. Require readiness success before traffic and keep the prior
    image available for rollback.
-6. Run a non-production `notification-delivery` pass, verify structured events and delivery state,
-   then enable the production schedule.
+6. Run non-production `notification-delivery` and `safe-maintenance` passes, verify structured events,
+   lease/run evidence, and delivery state, then enable the production schedules.
 7. Complete the synthetic monitoring and alert checks in `docs/OBSERVABILITY_RUNBOOK.md` before
    declaring the release healthy.
 
