@@ -47,14 +47,14 @@ export default async function AdminPromotionsPage({ searchParams }: Props) {
   const filters = normalizeAdminPromotionFilters(await searchParams);
   const statusWhere: Prisma.PromotionCampaignWhereInput =
     filters.status === 'ACTIVE'
-      ? { active: true, endsAt: { gte: now }, startsAt: { lte: now }, usageLimit: null }
+      ? { active: true, endsAt: { gte: now }, startsAt: { lte: now } }
       : filters.status === 'SCHEDULED'
-        ? { endsAt: { gte: now }, startsAt: { gt: now }, usageLimit: null }
+        ? { endsAt: { gte: now }, startsAt: { gt: now } }
         : filters.status === 'PAUSED'
-          ? { active: false, endsAt: { gte: now }, startsAt: { lte: now }, usageLimit: null }
+          ? { active: false, endsAt: { gte: now }, startsAt: { lte: now } }
           : filters.status === 'EXPIRED'
             ? { endsAt: { lt: now } }
-            : filters.status === 'BLOCKED_UNTRACKED_CAP'
+            : filters.status === 'EXHAUSTED'
               ? { endsAt: { gte: now }, usageLimit: { not: null } }
               : {};
   const where: Prisma.PromotionCampaignWhereInput = {
@@ -70,17 +70,17 @@ export default async function AdminPromotionsPage({ searchParams }: Props) {
         }
       : {}),
   };
-  const [matchingCount, activeCount, scheduledCount, blockedCount, expiredCount, events] =
+  const [matchingCount, activeCount, scheduledCount, cappedCount, expiredCount, events] =
     await Promise.all([
       prisma.promotionCampaign.count({ where }),
       prisma.promotionCampaign.count({
-        where: { active: true, endsAt: { gte: now }, startsAt: { lte: now }, usageLimit: null },
+        where: { active: true, endsAt: { gte: now }, startsAt: { lte: now } },
       }),
       prisma.promotionCampaign.count({
-        where: { endsAt: { gte: now }, startsAt: { gt: now }, usageLimit: null },
+        where: { endsAt: { gte: now }, startsAt: { gt: now } },
       }),
       prisma.promotionCampaign.count({
-        where: { endsAt: { gte: now }, usageLimit: { not: null } },
+        where: { active: true, endsAt: { gte: now }, usageLimit: { not: null } },
       }),
       prisma.promotionCampaign.count({ where: { endsAt: { lt: now } } }),
       prisma.promotionCampaignEvent.findMany({
@@ -126,16 +126,16 @@ export default async function AdminPromotionsPage({ searchParams }: Props) {
 
       <div className="partner-bookings__summary">
         <Card>
-          <span>Active campaigns</span>
+          <span>Enabled campaigns</span>
           <strong>{activeCount.toLocaleString('en-IN')}</strong>
         </Card>
         <Card>
           <span>Scheduled campaigns</span>
           <strong>{scheduledCount.toLocaleString('en-IN')}</strong>
         </Card>
-        <Card className={blockedCount ? 'admin-metric admin-metric--attention' : 'admin-metric'}>
-          <span>Blocked untracked caps</span>
-          <strong>{blockedCount.toLocaleString('en-IN')}</strong>
+        <Card className={cappedCount ? 'admin-metric admin-metric--attention' : 'admin-metric'}>
+          <span>Usage-capped campaigns</span>
+          <strong>{cappedCount.toLocaleString('en-IN')}</strong>
         </Card>
         <Card>
           <span>Expired campaigns</span>
@@ -245,7 +245,7 @@ export default async function AdminPromotionsPage({ searchParams }: Props) {
                         </span>
                         <span>
                           {campaign.usageLimit
-                            ? `${campaign.usageLimit} uses maximum · activation blocked until redemption tracking exists`
+                            ? `${campaign.usageCount} of ${campaign.usageLimit} uses claimed`
                             : 'No usage cap configured'}
                         </span>
                       </td>

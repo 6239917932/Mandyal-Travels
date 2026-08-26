@@ -58,6 +58,7 @@ for (const name of [
   'PARTNER_ADMIN_KEY',
   'MFA_ENCRYPTION_KEY',
   'NOTIFICATION_WORKER_SECRET',
+  'AUTOPILOT_WORKER_SECRET',
 ]) {
   const value = process.env[name] ?? '';
   if (value.length < 32) failures.push(`${name} must contain at least 32 characters.`);

@@ -3,6 +3,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { API_V1_CONTRACT, API_V1_SUPPORTED_OPERATIONS } from '../config/apiV1Contract.ts';
+import { hasSameGeneratedContent } from '../scripts/generated-contract-text.mjs';
+
+test('generated contract verification normalizes line endings without hiding API drift', () => {
+  const expected = '{\n  "openapi": "3.1.0"\n}\n';
+  const windowsCheckout = expected.replace(/\n/g, '\r\n');
+  const changedContract = '{\r\n  "openapi": "3.0.0"\r\n}\r\n';
+
+  assert.equal(hasSameGeneratedContent(windowsCheckout, expected), true);
+  assert.equal(hasSameGeneratedContent(changedContract, expected), false);
+});
 
 test('catalogue is explicitly partial, local, closed, and duplicate safe', () => {
   assert.equal(API_V1_CONTRACT.apiVersion, 'v1');

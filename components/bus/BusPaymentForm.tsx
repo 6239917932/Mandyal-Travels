@@ -11,9 +11,12 @@ import {
 } from '@/lib/businessTravelClient';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import { createBookingReference } from '@/lib/confirmationCode';
+import { DEMO_TRANSPORT_PAYMENT_EVIDENCE } from '@/constants/transportPayment';
+import { reserveTransportPromotion } from '@/lib/payments/transportPromotionReservation';
 
 interface BusPaymentFormProps {
   bookingSummary: Record<string, string | number>;
+  demoCheckoutEnabled: boolean;
   nextQuery: Record<string, string>;
 }
 
@@ -29,7 +32,11 @@ interface PromotionResponse {
   error?: { message?: string };
 }
 
-export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProps) {
+export function BusPaymentForm({
+  bookingSummary,
+  demoCheckoutEnabled,
+  nextQuery,
+}: BusPaymentFormProps) {
   const router = useRouter();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paid, setPaid] = useState(false);
@@ -136,10 +143,18 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
       total: finalTotal,
       confirmationCode,
       passengerDraft: parsedPassengerDraft,
-      paymentStatus: 'captured',
+      paymentStatus: 'demonstration',
       documentQuery: new URLSearchParams(nextQuery).toString(),
     };
     try {
+      const promotionReservationToken = await reserveTransportPromotion({
+        businessSelection: nextQuery,
+        businessTravelRequestId: businessRequest?.id,
+        confirmationCode,
+        expectedTotal: finalTotal,
+        productType: 'BUS',
+        promotionCode: promotion?.code,
+      });
       const response = await fetch('/api/v1/account/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -148,7 +163,9 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
           businessTravelRequestId: businessRequest?.id,
           productType: 'BUS',
           promotionCode: promotion?.code,
+          promotionReservationToken,
           confirmationCode,
+          paymentEvidence: DEMO_TRANSPORT_PAYMENT_EVIDENCE,
           status: 'CONFIRMED',
           title: `${bookingSummary.origin} → ${bookingSummary.destination}`,
           subtitle: bookingSummary.operatorName,
@@ -180,6 +197,15 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
     setProcessing(false);
     const query = new URLSearchParams({ ...nextQuery, confirmationCode });
     router.push(`/buses/booking/confirmation?${query.toString()}`);
+  }
+
+  if (!demoCheckoutEnabled) {
+    return (
+      <div className="flight-payment-form__protected" role="status">
+        <strong>Secure checkout is not available yet</strong>
+        <span>No booking, payment, or seat reservation has been created.</span>
+      </div>
+    );
   }
 
   return (
@@ -237,7 +263,11 @@ export function BusPaymentForm({ bookingSummary, nextQuery }: BusPaymentFormProp
         disabled={paid || processing}
         type="submit"
       >
-        {paid ? 'Payment captured' : processing ? 'Checking approval...' : 'Pay securely'}
+        {paid
+          ? 'Demo booking confirmed'
+          : processing
+            ? 'Checking approval...'
+            : 'Run demo checkout'}
       </button>
       {errors.payment ? (
         <p className="ui-field__error" role="alert">

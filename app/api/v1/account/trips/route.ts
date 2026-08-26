@@ -33,6 +33,15 @@ import {
   type CustomerTripOwnershipRecord,
   type CustomerTripResponse,
 } from '@/services/customerTripPersistenceRules';
+import {
+  confirmTransportPayment,
+  TransportPaymentEvidenceError,
+} from '@/services/transportPaymentEvidenceService';
+import {
+  PromotionRedemptionError,
+  redeemPromotion,
+  validateReservedPromotion,
+} from '@/services/promotionRedemptionService';
 
 const MAX_DETAILS_LENGTH = 32_000;
 const MAX_TRIP_AMOUNT = 100_000_000;
@@ -206,6 +215,9 @@ export async function POST(request: Request) {
   const promotionCode = isText(body.promotionCode)
     ? body.promotionCode.trim().toUpperCase()
     : undefined;
+  const promotionReservationToken = isText(body.promotionReservationToken)
+    ? body.promotionReservationToken.trim()
+    : undefined;
   const carOfferId = productType === 'CAR' ? readCarOfferId(body.businessSelection) : undefined;
   const busOfferId = productType === 'BUS' ? readOfferId(body.businessSelection) : undefined;
   const carRentalMode =
@@ -252,6 +264,13 @@ export async function POST(request: Request) {
     productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
       ? (body.businessSelection as Record<string, unknown>).seats
       : undefined;
+  const busSeatHoldId =
+    productType === 'BUS' && body.businessSelection && typeof body.businessSelection === 'object'
+      ? (() => {
+          const value = (body.businessSelection as Record<string, unknown>).seatHoldId;
+          return isText(value) && value.trim().length <= 120 ? value.trim() : undefined;
+        })()
+      : undefined;
   const parsedBusSeats =
     productType === 'BUS' && busPassengers !== undefined
       ? parseBusSeats(busSeats, busPassengers)
@@ -297,6 +316,8 @@ export async function POST(request: Request) {
     !detailsJson ||
     detailsJson.length > MAX_DETAILS_LENGTH ||
     (promotionCode !== undefined && promotionCode.length > MAX_PROMOTION_CODE_LENGTH) ||
+    (promotionReservationToken !== undefined && promotionReservationToken.length > 200) ||
+    (promotionCode === undefined && promotionReservationToken !== undefined) ||
     (businessTravelRequestId !== undefined && businessTravelRequestId.length > 200)
   ) {
     return errorResponse('INVALID_TRIP', 'The trip details are invalid or too large.', 400);
@@ -324,7 +345,8 @@ export async function POST(request: Request) {
     productType === 'BUS' &&
     (busPassengers === undefined ||
       !hasValidBusPassengerDetails(details, busPassengers) ||
-      !parsedBusSeats)
+      !parsedBusSeats ||
+      (busOfferId?.startsWith('direct-bus-trip-') && !busSeatHoldId))
   ) {
     return errorResponse(
       'INVALID_BUS_TRAVELERS',
@@ -398,6 +420,7 @@ export async function POST(request: Request) {
   }
 
   let businessCheckout: Awaited<ReturnType<typeof validateBusinessCheckout>> | undefined;
+  let promotionSubtotal: number | undefined;
   if (businessTravelRequestId) {
     try {
       businessCheckout = await validateBusinessCheckout({
@@ -407,6 +430,7 @@ export async function POST(request: Request) {
         selection: body.businessSelection,
         userId: user.id,
       });
+      promotionSubtotal = businessCheckout.subtotal;
     } catch (error) {
       const completedRetry = await concurrentTripResponse(
         confirmationCode,
@@ -445,6 +469,7 @@ export async function POST(request: Request) {
         body.businessSelection,
         promotionCode,
       );
+      promotionSubtotal = validatedSelection.subtotal;
       if (
         validatedSelection.startDate !== startDate ||
         validatedSelection.endDate !== endDate ||
@@ -481,6 +506,67 @@ export async function POST(request: Request) {
     }
   }
 
+  let promotionAuthorizedAt: Date | undefined;
+  if (promotionCode) {
+    if (!promotionReservationToken || promotionSubtotal === undefined) {
+      return errorResponse(
+        'PROMOTION_RESERVATION_REQUIRED',
+        'Reserve the promotion before completing payment. No payment has been captured.',
+        409,
+      );
+    }
+    promotionAuthorizedAt = new Date();
+    try {
+      await prisma.$transaction((transaction) =>
+        validateReservedPromotion(transaction, {
+          claimKey: `TRANSPORT_CHECKOUT:${confirmationCode}`,
+          code: promotionCode,
+          currency: tripData.currency,
+          expiresAt: promotionAuthorizedAt as Date,
+          finalTotal: totalAmount as number,
+          productType,
+          reservationToken: promotionReservationToken,
+          subtotal: promotionSubtotal,
+          userId: user.id,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof PromotionRedemptionError) {
+        return errorResponse(error.code, `${error.message} No payment has been captured.`, 409);
+      }
+      console.error('Transport promotion reservation validation failed.', error);
+      return errorResponse(
+        'PROMOTION_RESERVATION_FAILED',
+        'The promotion reservation could not be checked. No payment has been captured.',
+        500,
+      );
+    }
+  }
+
+  try {
+    confirmTransportPayment({
+      amount: totalAmount as number,
+      confirmationCode,
+      evidence: body.paymentEvidence,
+      productType,
+      userId: user.id,
+    });
+  } catch (error) {
+    if (error instanceof TransportPaymentEvidenceError) {
+      return errorResponse(
+        error.code,
+        error.message,
+        error.code === 'PAYMENT_EVIDENCE_NOT_CONFIGURED' ? 503 : 402,
+      );
+    }
+    console.error('Transport payment confirmation failed.', error);
+    return errorResponse(
+      'PAYMENT_CONFIRMATION_FAILED',
+      'The payment confirmation could not be checked safely.',
+      500,
+    );
+  }
+
   try {
     if (!businessCheckout) {
       const result = await prisma.$transaction(async (transaction) => {
@@ -494,6 +580,14 @@ export async function POST(request: Request) {
         const createdTrip = await transaction.customerTrip.create({
           data: { confirmationCode, ...tripData },
         });
+        if (promotionReservationToken) {
+          await redeemPromotion(transaction, {
+            authorizedAt: promotionAuthorizedAt,
+            claimKey: promotionReservationToken,
+            customerTripId: createdTrip.id,
+            finalTotal: totalAmount as number,
+          });
+        }
         if (carOfferId?.startsWith('direct-')) {
           await partnerOperationsService.reserveDirectVehicle(transaction, {
             confirmationCode,
@@ -512,11 +606,13 @@ export async function POST(request: Request) {
             customerEmail: user.email,
             customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
             customerTripId: createdTrip.id,
+            holdId: busSeatHoldId as string,
             offerId: busOfferId,
             passengerCount: busPassengers,
             seats: parsedBusSeats,
             serviceDate: startDate,
             totalAmount: totalAmount as number,
+            userId: user.id,
           });
         }
         const response = customerTripResponse(createdTrip);
@@ -553,6 +649,14 @@ export async function POST(request: Request) {
       const completedTrip = await transaction.customerTrip.create({
         data: { confirmationCode, ...data },
       });
+      if (promotionReservationToken) {
+        await redeemPromotion(transaction, {
+          authorizedAt: promotionAuthorizedAt,
+          claimKey: promotionReservationToken,
+          customerTripId: completedTrip.id,
+          finalTotal: totalAmount as number,
+        });
+      }
       if (carOfferId?.startsWith('direct-')) {
         await partnerOperationsService.reserveDirectVehicle(transaction, {
           confirmationCode,
@@ -571,11 +675,13 @@ export async function POST(request: Request) {
           customerEmail: user.email,
           customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
           customerTripId: completedTrip.id,
+          holdId: busSeatHoldId as string,
           offerId: busOfferId,
           passengerCount: busPassengers,
           seats: parsedBusSeats,
           serviceDate: startDate,
           totalAmount: totalAmount as number,
+          userId: user.id,
         });
       }
       await transaction.businessAuditLog.create({
@@ -597,6 +703,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: result.trip }, { status: result.created ? 201 : 200 });
   } catch (error) {
     if (error instanceof CustomerTripPersistenceError) return persistenceErrorResponse(error);
+    if (error instanceof PromotionRedemptionError) {
+      return errorResponse(error.code, error.message, 409);
+    }
     const completedRetry = await concurrentTripResponse(confirmationCode, immutableContext, owner);
     if (completedRetry) return completedRetry;
     if (error instanceof PartnerOperationsError) {

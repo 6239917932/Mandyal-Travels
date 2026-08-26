@@ -37,6 +37,7 @@ services:
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Supply MFA_ENCRYPTION_KEY from the secret store}
       NODE_ENV: production
       NOTIFICATION_WORKER_SECRET: ${NOTIFICATION_WORKER_SECRET:?Supply NOTIFICATION_WORKER_SECRET from the secret store}
+      AUTOPILOT_WORKER_SECRET: ${AUTOPILOT_WORKER_SECRET:?Supply AUTOPILOT_WORKER_SECRET from the secret store}
       PARTNER_ADMIN_KEY: ${PARTNER_ADMIN_KEY:?Supply PARTNER_ADMIN_KEY from the secret store}
       PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
       RELEASE_SHA: ${RELEASE_SHA:?Supply the immutable release revision}
@@ -78,6 +79,30 @@ services:
       NOTIFICATION_WORKER_BATCH_SIZE: ${NOTIFICATION_WORKER_BATCH_SIZE:-25}
       NOTIFICATION_WORKER_SECRET: ${NOTIFICATION_WORKER_SECRET:?Supply NOTIFICATION_WORKER_SECRET from the secret store}
       NOTIFICATION_WORKER_TIMEOUT_MS: ${NOTIFICATION_WORKER_TIMEOUT_MS:-30000}
+      PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
+    init: true
+    read_only: true
+    restart: 'no'
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+  safe-maintenance:
+    profiles: ['scheduled-jobs']
+    build:
+      context: .
+      target: worker
+    command: ['npm', 'run', 'worker:maintenance']
+    cap_drop:
+      - ALL
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      AUTOPILOT_WORKER_BATCH_SIZE: ${AUTOPILOT_WORKER_BATCH_SIZE:-25}
+      AUTOPILOT_WORKER_SECRET: ${AUTOPILOT_WORKER_SECRET:?Supply AUTOPILOT_WORKER_SECRET from the secret store}
+      AUTOPILOT_WORKER_TIMEOUT_MS: ${AUTOPILOT_WORKER_TIMEOUT_MS:-30000}
       PUBLIC_APP_ORIGIN: ${PUBLIC_APP_ORIGIN:?Supply the public HTTPS origin}
     init: true
     read_only: true

@@ -8,7 +8,7 @@ export const ADMIN_PROMOTION_STATUSES = [
   'SCHEDULED',
   'PAUSED',
   'EXPIRED',
-  'BLOCKED_UNTRACKED_CAP',
+  'EXHAUSTED',
 ] as const;
 export const ADMIN_PROMOTION_PRODUCTS = ['ALL', 'HOTEL', 'FLIGHT', 'BUS', 'CAR'] as const;
 
@@ -71,24 +71,29 @@ export function readPromotionProducts(value: string): PromotionProduct[] {
 }
 
 export function promotionOperationalState(
-  campaign: { active: boolean; endsAt: Date; startsAt: Date; usageLimit: number | null },
+  campaign: {
+    active: boolean;
+    endsAt: Date;
+    startsAt: Date;
+    usageCount?: number;
+    usageLimit: number | null;
+  },
   now: Date,
 ): AdminPromotionStatus {
   if (campaign.endsAt < now) return 'EXPIRED';
-  if (campaign.usageLimit !== null) return 'BLOCKED_UNTRACKED_CAP';
   if (campaign.startsAt > now) return 'SCHEDULED';
+  if (campaign.usageLimit !== null && (campaign.usageCount ?? 0) >= campaign.usageLimit)
+    return 'EXHAUSTED';
   return campaign.active ? 'ACTIVE' : 'PAUSED';
 }
 
 export function promotionActivationBlockReason(
-  campaign: { endsAt: Date; productsJson: string; usageLimit: number | null },
+  campaign: { endsAt: Date; productsJson: string; usageLimit?: number | null },
   now: Date,
 ) {
   if (campaign.endsAt <= now) return 'Expired campaigns cannot be activated.';
   if (readPromotionProducts(campaign.productsJson).length === 0)
     return 'Campaign product eligibility is invalid.';
-  if (campaign.usageLimit !== null)
-    return 'Usage-capped campaigns require persisted redemption tracking before activation.';
   return null;
 }
 
@@ -121,6 +126,7 @@ export function resolveStoredPromotionRule(
     productsJson: string;
     startsAt: Date;
     usageLimit: number | null;
+    usageCount?: number;
     version: number;
   },
   productType: PromotionProduct,

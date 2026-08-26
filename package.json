@@ -16,6 +16,7 @@
     "test:load": "node scripts/load-smoke.mjs",
     "test:runtime": "npm run test:smoke && npm run test:a11y && npm run test:load",
     "worker:notifications": "node scripts/run-notification-worker.mjs",
+    "worker:maintenance": "node scripts/run-maintenance-worker.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:verify-contract && npm run test:domain && npm run db:verify-migrations && npm run db:verify:postgresql && npm run deployment:verify && npm run build -- --webpack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

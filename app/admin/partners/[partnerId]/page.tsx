@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { AdminPartnerPropertyAssignment } from '@/components/admin/AdminPartnerPropertyAssignment';
 import { AdminPropertyReviewActions } from '@/components/admin/AdminPropertyReviewActions';
+import { AdminPartnerKycReview } from '@/components/admin/AdminPartnerKycReview';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
@@ -19,6 +20,10 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
     prisma.supplyPartner.findUnique({
       include: {
         applications: { orderBy: { createdAt: 'desc' } },
+        kycDocuments: {
+          include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
+          orderBy: { documentType: 'asc' },
+        },
         auditEntries: {
           include: { actor: { select: { firstName: true, lastName: true } } },
           orderBy: { createdAt: 'desc' },
@@ -134,6 +139,36 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
         </Card>
       )}
       <div className="partner-workspace__columns">
+        <Card>
+          <p className="hotel-page__eyebrow">Restricted evidence</p>
+          <h2>Supplier compliance</h2>
+          {partner.kycDocuments.length ? (
+            partner.kycDocuments.map((document) => (
+              <div key={document.id}>
+                <p>
+                  <strong>{document.documentType.replaceAll('_', ' ')}</strong> ·{' '}
+                  {document.status.replaceAll('_', ' ')}
+                  <br />
+                  <small>
+                    {document.versions[0]?.originalFilename ?? 'No verified file metadata'}
+                    {document.expiresOn ? ` · expires ${document.expiresOn}` : ''}
+                  </small>
+                </p>
+                <AdminPartnerKycReview
+                  documentId={document.id}
+                  lockVersion={document.lockVersion}
+                  status={document.status}
+                />
+              </div>
+            ))
+          ) : (
+            <p>No governed evidence is linked to this supplier.</p>
+          )}
+          <small>
+            Evidence downloads remain disabled until private object storage, malware scanning, and
+            audited signed reads are activated.
+          </small>
+        </Card>
         <Card>
           <p className="hotel-page__eyebrow">Access</p>
           <h2>Named supplier users</h2>

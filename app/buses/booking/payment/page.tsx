@@ -5,6 +5,7 @@ import { BusPaymentForm } from '@/components/bus/BusPaymentForm';
 import { Card } from '@/components/ui/Card';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
+import { isDemoTransportCheckoutEnabled } from '@/lib/payments/transportEvidence';
 
 export const metadata: Metadata = { title: 'Bus payment' };
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
@@ -24,8 +25,10 @@ export default async function BusPaymentPage({
   const criteria = createBusSearchCriteria(params);
   const offerId = first(params.offerId);
   const seats = (first(params.seats) ?? '').split(',').filter(Boolean);
+  const seatHoldId = first(params.seatHoldId);
   const offer = offerId ? await busService.revalidateOffer(offerId, criteria) : undefined;
-  if (!offer || seats.length !== criteria.passengers)
+  const directTrip = offerId?.startsWith('direct-bus-trip-') ?? false;
+  if (!offer || seats.length !== criteria.passengers || (directTrip && !seatHoldId))
     return (
       <div className="bus-booking-page">
         <Card className="flight-booking-page__empty">
@@ -42,15 +45,19 @@ export default async function BusPaymentPage({
     origin: criteria.origin,
     passengers: String(criteria.passengers),
     seats: seats.join(','),
+    ...(seatHoldId ? { seatHoldId } : {}),
     travelDate: criteria.travelDate,
   };
+  const demoCheckoutEnabled = isDemoTransportCheckoutEnabled();
   return (
     <div className="bus-booking-page">
       <div className="bus-booking-page__container">
         <p className="hotel-page__eyebrow">Secure payment</p>
         <h1>Complete your bus booking</h1>
         <p className="flight-booking-page__intro">
-          Review the trip and use the demonstration payment form below.
+          {demoCheckoutEnabled
+            ? 'Review the trip and use the explicitly enabled demonstration checkout below.'
+            : 'Review the trip. A booking is created only after secure payment confirmation.'}
         </p>
         <div className="bus-booking-page__grid">
           <Card>
@@ -63,6 +70,7 @@ export default async function BusPaymentPage({
                 seats: seats.join(','),
                 total: offer.totalPrice,
               }}
+              demoCheckoutEnabled={demoCheckoutEnabled}
               nextQuery={query}
             />
           </Card>

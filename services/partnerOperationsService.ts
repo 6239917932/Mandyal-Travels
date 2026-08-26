@@ -8,12 +8,13 @@ import {
   normalizeRoomAssignments,
 } from '@/lib/hotel/stayOperations';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
-import { seatsFitBusCapacity } from '@/lib/bus/bookingRules';
+import { busSeatSetsMatch, seatsFitBusCapacity } from '@/lib/bus/bookingRules';
 import {
   normalizeVehicleComplianceDates,
   vehicleComplianceState,
   type VehicleComplianceDates,
 } from '@/lib/car/complianceRules';
+import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -483,7 +484,7 @@ export const partnerOperationsService = {
   }) {
     return prisma.$transaction(async (transaction) => {
       const application = await transaction.partnerApplication.findUnique({
-        include: { applicant: true },
+        include: { applicant: true, kycDocuments: true },
         where: { id: input.applicationId },
       });
       if (!application || application.status !== 'PENDING') {
@@ -503,6 +504,28 @@ export const partnerOperationsService = {
           },
           where: { id: application.id },
         });
+      }
+      if (
+        application.partnerType !== 'BUS' &&
+        application.partnerType !== 'CAR' &&
+        application.partnerType !== 'HOTEL'
+      ) {
+        throw new PartnerOperationsError(
+          'PARTNER_TYPE_UNSUPPORTED',
+          'This supplier type cannot complete governed verification.',
+        );
+      }
+      const kycSummary = summarizePersistedPartnerKyc({
+        documents: application.kycDocuments,
+        partnerType: application.partnerType,
+        today: new Date().toISOString().slice(0, 10),
+      });
+      if (!kycSummary.complete) {
+        const blocked = [...kycSummary.missing, ...kycSummary.expired];
+        throw new PartnerOperationsError(
+          'KYC_EVIDENCE_INCOMPLETE',
+          `Verify all required supplier evidence before approval: ${blocked.join(', ')}.`,
+        );
       }
       if (!['CUSTOMER', 'PARTNER_ADMIN', 'PARTNER_OPERATOR'].includes(application.applicant.role)) {
         throw new PartnerOperationsError(
@@ -549,6 +572,10 @@ export const partnerOperationsService = {
           partnerId: partner.id,
           summary: 'Supplier application approved and secure workspace provisioned.',
         },
+      });
+      await transaction.partnerKycDocument.updateMany({
+        data: { partnerId: partner.id },
+        where: { applicationId: application.id },
       });
       return transaction.partnerApplication.update({
         data: {
@@ -2010,11 +2037,13 @@ export const partnerOperationsService = {
       customerEmail: string;
       customerName: string;
       customerTripId: string;
+      holdId: string;
       offerId: string;
       passengerCount: number;
       seats: string[];
       serviceDate: string;
       totalAmount: number;
+      userId: string;
     },
   ) {
     const prefix = 'direct-bus-trip-';
@@ -2040,6 +2069,23 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError(
         'BUS_TRIP_UNAVAILABLE',
         'This direct operator trip is no longer available.',
+      );
+    }
+    const hold = await transaction.partnerBusSeatHold.findFirst({
+      include: { seats: { select: { seatNumber: true } } },
+      where: { id: input.holdId, tripId: trip.id, userId: input.userId },
+    });
+    if (
+      !hold ||
+      hold.expiresAt <= new Date() ||
+      !busSeatSetsMatch(
+        hold.seats.map((seat) => seat.seatNumber),
+        input.seats,
+      )
+    ) {
+      throw new PartnerOperationsError(
+        'BUS_SEAT_HOLD_INVALID',
+        'Your seat hold has expired or no longer matches this booking. Please select seats again.',
       );
     }
     if (
@@ -2080,6 +2126,15 @@ export const partnerOperationsService = {
         tripId: trip.id,
       },
     });
+    const consumedHold = await transaction.partnerBusSeatHold.deleteMany({
+      where: { id: hold.id, userId: input.userId },
+    });
+    if (consumedHold.count !== 1) {
+      throw new PartnerOperationsError(
+        'BUS_SEAT_HOLD_INVALID',
+        'Your seat hold could not be consumed. Please select seats again.',
+      );
+    }
     await transaction.partnerAuditLog.create({
       data: {
         action: 'BUS_TRIP_RESERVED',

@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 
 import { BusSeatSelector } from '@/components/bus/BusSeatSelector';
 import { Card } from '@/components/ui/Card';
+import { getCurrentUser } from '@/lib/auth/session';
+import { directBusTripId } from '@/lib/bus/bookingRules';
+import { busSeatHoldService } from '@/services/busSeatHoldService';
 import { busService } from '@/services/busService';
 import { createBusSearchCriteria } from '@/utils/busSearchCriteria';
 
@@ -37,9 +40,13 @@ export default async function BusSeatsPage({
       </div>
     );
 
-  const blockedSeats = offer.id.includes('northern')
-    ? ['1A', '1D', '2B', '3C', '4A', '5D']
-    : ['1B', '2A', '2D', '4C', '5B'];
+  const directTrip = Boolean(directBusTripId(offer.id));
+  const user = directTrip ? await getCurrentUser() : null;
+  const blockedSeats = directTrip
+    ? await busSeatHoldService.unavailableSeats(offer.id, new Date(), user?.id)
+    : offer.id.includes('northern')
+      ? ['1A', '1D', '2B', '3C', '4A', '5D']
+      : ['1B', '2A', '2D', '4C', '5B'];
   return (
     <div className="bus-booking-page">
       <div className="bus-booking-page__container">
@@ -62,6 +69,7 @@ export default async function BusSeatsPage({
               }}
               passengers={criteria.passengers}
               pricePerSeat={offer.pricePerSeat}
+              requiresServerHold={directTrip}
             />
           </Card>
           <Card className="bus-booking-page__summary">

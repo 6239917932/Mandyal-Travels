@@ -26,6 +26,7 @@ const STORED_CAMPAIGN_SELECT = {
   productsJson: true,
   startsAt: true,
   usageLimit: true,
+  usageCount: true,
   version: true,
 } as const;
 
@@ -41,6 +42,7 @@ type StoredCampaign = {
   productsJson: string;
   startsAt: Date;
   usageLimit: number | null;
+  usageCount: number;
   version: number;
 };
 

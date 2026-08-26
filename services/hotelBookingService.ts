@@ -4,6 +4,7 @@ import { calculatePromotion } from '@/constants/promotionRules';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { readConfiguredSecret } from '@/lib/security/configuredSecret';
 import { createBookingReference } from '@/lib/confirmationCode';
+import { prisma } from '@/lib/prisma';
 
 import {
   availabilityLockRepository,
@@ -11,6 +12,7 @@ import {
 } from '@/repositories/availabilityLockRepository';
 import { hotelService, type HotelService } from '@/services/hotelService';
 import { resolvePromotionRule } from '@/services/promotionService';
+import { PromotionRedemptionError } from '@/services/promotionRedemptionService';
 import {
   confirmPaymentForBooking,
   PaymentConfirmationError,
@@ -343,7 +345,26 @@ export class HotelBookingService {
     }
 
     let totalAmount = quote.totalAmount;
-    if (request.promotionCode) {
+    const reservedPromotion = request.paymentIntentId
+      ? await prisma.promotionRedemption.findUnique({
+          where: { checkoutIntentId: request.paymentIntentId },
+        })
+      : null;
+    if (reservedPromotion) {
+      if (
+        reservedPromotion.productType !== 'HOTEL' ||
+        reservedPromotion.subtotal !== quote.totalAmount ||
+        reservedPromotion.currency !== quote.currency ||
+        (request.promotionCode &&
+          request.promotionCode.trim().toUpperCase() !== reservedPromotion.code)
+      ) {
+        throw new HotelBookingRuleError(
+          'PROMOTION_CLAIM_CONTEXT_MISMATCH',
+          'The reserved promotion does not match this hotel booking.',
+        );
+      }
+      totalAmount = reservedPromotion.finalTotal;
+    } else if (request.promotionCode) {
       const promotionRule = await resolvePromotionRule(request.promotionCode, 'HOTEL');
       if (!promotionRule) {
         throw new HotelBookingRuleError(
@@ -432,6 +453,9 @@ export class HotelBookingService {
           'BUSINESS_REQUEST_ALREADY_USED',
           'This company request is no longer available for booking.',
         );
+      }
+      if (error instanceof PromotionRedemptionError) {
+        throw new HotelBookingRuleError(error.code, error.message);
       }
       throw error;
     }

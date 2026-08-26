@@ -123,6 +123,7 @@ export async function revalidateTravelSelection(
           ? (criteria.multiCitySegments?.at(-1)?.departureDate ?? null)
           : (criteria.returnDate ?? null),
       finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
+      subtotal: offer.totalPrice,
       policyCabin: criteria.cabinClass.replaceAll('-', '_').toUpperCase(),
       startDate: criteria.departureDate,
     };
@@ -143,6 +144,7 @@ export async function revalidateTravelSelection(
     return {
       endDate: null,
       finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
+      subtotal: offer.totalPrice,
       policyCabin: null,
       startDate: criteria.travelDate,
     };
@@ -170,6 +172,7 @@ export async function revalidateTravelSelection(
     return {
       endDate: criteria.dropoffDate,
       finalTotal: await applyPromotion(productType, offer.totalPrice, promotionCode),
+      subtotal: offer.totalPrice,
       policyCabin: null,
       startDate: criteria.pickupDate,
     };
@@ -186,6 +189,7 @@ export async function revalidateTravelSelection(
   return {
     endDate: quote.checkOutDate,
     finalTotal: await applyPromotion(productType, quote.totalAmount, promotionCode),
+    subtotal: quote.totalAmount,
     policyCabin: null,
     startDate: quote.checkInDate,
   };
@@ -264,6 +268,7 @@ export async function validateBusinessCheckout({
 
   return {
     finalTotal: selectionResult.finalTotal,
+    subtotal: selectionResult.subtotal,
     organizationId: travelRequest.organizationId,
     organizationName: travelRequest.organization.name,
     requestId: travelRequest.id,

@@ -4,6 +4,7 @@ import { CarPaymentForm } from '@/components/car/CarPaymentForm';
 import { Card } from '@/components/ui/Card';
 import { carService } from '@/services/carService';
 import { createCarSearchCriteria } from '@/utils/carSearchCriteria';
+import { isDemoTransportCheckoutEnabled } from '@/lib/payments/transportEvidence';
 export const metadata: Metadata = { title: 'Car rental payment' };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const money = (n: number) =>
@@ -33,13 +34,16 @@ export default async function CarPaymentPage({
       </div>
     );
   const query = { ...criteria, drivers: String(criteria.drivers), offerId: offer.id };
+  const demoCheckoutEnabled = isDemoTransportCheckoutEnabled();
   return (
     <div className="car-booking-page">
       <div className="car-booking-page__container">
         <p className="hotel-page__eyebrow">Secure payment</p>
         <h1>Complete your car rental</h1>
         <p className="flight-booking-page__intro">
-          Review the total and use the demonstration payment form.
+          {demoCheckoutEnabled
+            ? 'Review the total and use the explicitly enabled demonstration checkout.'
+            : 'Review the total. A booking is created only after secure payment confirmation.'}
         </p>
         <div className="car-booking-page__grid">
           <Card>
@@ -55,6 +59,7 @@ export default async function CarPaymentPage({
                 dropoffTime: criteria.dropoffTime,
                 total: offer.totalPrice,
               }}
+              demoCheckoutEnabled={demoCheckoutEnabled}
               nextQuery={query}
             />
           </Card>

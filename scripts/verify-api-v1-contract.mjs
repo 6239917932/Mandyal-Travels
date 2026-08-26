@@ -5,6 +5,7 @@ import process from 'node:process';
 import prettier from 'prettier';
 
 import { API_V1_CONTRACT } from '../config/apiV1Contract.ts';
+import { hasSameGeneratedContent } from './generated-contract-text.mjs';
 
 const root = process.cwd();
 const write = process.argv.includes('--write');
@@ -171,7 +172,10 @@ const serialized = await prettier.format(JSON.stringify(createOpenApiDocument())
 });
 if (write) {
   fs.writeFileSync(documentPath, serialized);
-} else if (!fs.existsSync(documentPath) || fs.readFileSync(documentPath, 'utf8') !== serialized) {
+} else if (
+  !fs.existsSync(documentPath) ||
+  !hasSameGeneratedContent(fs.readFileSync(documentPath, 'utf8'), serialized)
+) {
   fail('docs/openapi-v1.json is stale; run npm run api:write-contract and review the diff.');
 }
 

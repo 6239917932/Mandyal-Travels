@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
+import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
 
 export const metadata: Metadata = { title: 'Partner onboarding' };
 
@@ -23,6 +24,7 @@ export default async function PartnerApplicationPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login?returnTo=/partners/apply');
   const application = await prisma.partnerApplication.findFirst({
+    include: { kycDocuments: true },
     orderBy: { createdAt: 'desc' },
     where: { applicantUserId: user.id },
   });
@@ -32,6 +34,17 @@ export default async function PartnerApplicationPage() {
   });
 
   if (membership) redirect('/partner');
+  const kycSummary =
+    application &&
+    (application.partnerType === 'BUS' ||
+      application.partnerType === 'CAR' ||
+      application.partnerType === 'HOTEL')
+      ? summarizePersistedPartnerKyc({
+          documents: application.kycDocuments,
+          partnerType: application.partnerType,
+          today: new Date().toISOString().slice(0, 10),
+        })
+      : null;
   return (
     <section className="auth-page partner-application">
       <div className="auth-page__intro">
@@ -52,6 +65,25 @@ export default async function PartnerApplicationPage() {
             Your {application.partnerType.toLowerCase()} supplier request is in the review queue. No
             inventory access has been granted yet.
           </p>
+          {kycSummary ? (
+            <>
+              <p>
+                <strong>
+                  Compliance evidence: {kycSummary.verified.length} of {kycSummary.required.length}{' '}
+                  verified
+                </strong>
+              </p>
+              <p>
+                {kycSummary.complete
+                  ? 'Your required evidence is current.'
+                  : `Still required: ${kycSummary.missing.join(', ').replaceAll('_', ' ') || 'expired evidence replacement'}.`}
+              </p>
+              <small>
+                Private upload storage and malware scanning are not activated. No file can be safely
+                accepted yet.
+              </small>
+            </>
+          ) : null}
           <Link className="ui-button ui-button--secondary" href="/partners">
             Back to partner network
           </Link>

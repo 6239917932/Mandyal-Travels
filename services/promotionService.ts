@@ -5,6 +5,7 @@ import {
 } from '@/constants/promotionRules';
 import { prisma } from '@/lib/prisma';
 import { resolveStoredPromotionRule } from '@/services/adminPromotionWorkbenchService';
+import { releaseExpiredPromotionClaims } from '@/services/promotionRedemptionService';
 
 const PRODUCTS = new Set<PromotionProduct>(['FLIGHT', 'HOTEL', 'BUS', 'CAR']);
 
@@ -14,7 +15,14 @@ export async function resolvePromotionRule(
 ): Promise<PromotionRule | undefined> {
   const normalizedCode = code.trim().toUpperCase();
   const now = new Date();
-  const campaign = await prisma.promotionCampaign.findUnique({ where: { code: normalizedCode } });
+  const campaign = await prisma.$transaction(async (transaction) => {
+    const stored = await transaction.promotionCampaign.findUnique({
+      where: { code: normalizedCode },
+    });
+    if (!stored) return null;
+    await releaseExpiredPromotionClaims(transaction, stored.id, now);
+    return transaction.promotionCampaign.findUnique({ where: { id: stored.id } });
+  });
   if (!campaign) return findPromotionRule(normalizedCode, productType);
   return resolveStoredPromotionRule(campaign, productType, now);
 }

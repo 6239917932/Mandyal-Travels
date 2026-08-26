@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createCaptureAccounting } from '@/lib/payments/accounting';
 import type { ConfirmedPaymentContext } from '@/services/paymentConfirmationService';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
+import { redeemPromotion } from '@/services/promotionRedemptionService';
 
 export type BusinessBookingContext = {
   requestId: string;
@@ -254,21 +255,20 @@ export class PrismaBookingRepository implements BookingRepository {
       return;
     }
 
-    await prisma.$transaction([
-      prisma.booking.update({ data: { status: 'cancelled' }, where: { id: bookingId } }),
-      prisma.availabilityLock.update({
+    await prisma.$transaction(async (transaction) => {
+      await transaction.booking.update({ data: { status: 'cancelled' }, where: { id: bookingId } });
+      await transaction.availabilityLock.update({
         data: { status: 'released' },
         where: { id: booking.availabilityLockId },
-      }),
-      ...(refundPayment
-        ? [
-            prisma.paymentTransaction.update({
-              data: { status: 'refunded' },
-              where: { bookingId },
-            }),
-          ]
-        : []),
-    ]);
+      });
+      if (refundPayment) {
+        await transaction.paymentTransaction.update({
+          data: { status: 'refunded' },
+          where: { bookingId },
+        });
+        // Promotion usage remains consumed until the payment provider confirms a full refund.
+      }
+    });
   }
 
   async findByConfirmationCode(
@@ -443,6 +443,12 @@ export class PrismaBookingRepository implements BookingRepository {
 
       const paymentId = createdBooking.payment?.id;
       if (!paymentId) throw new Error('Captured booking payment was not created.');
+      await redeemPromotion(transaction, {
+        authorizedAt: paymentContext.capturedAt,
+        bookingId: booking.id,
+        checkoutIntentId: paymentContext.checkoutIntentId,
+        finalTotal: booking.paymentAmount,
+      });
       await transaction.paymentAllocation.createMany({
         data: accounting.allocations.map((allocation) => ({
           ...allocation,

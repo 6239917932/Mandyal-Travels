@@ -288,6 +288,29 @@ CREATE TABLE "PartnerBusTrip" (
 );
 
 -- CreateTable
+CREATE TABLE "PartnerBusSeatHold" (
+    "id" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PartnerBusSeatHold_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerBusSeatHoldSeat" (
+    "id" TEXT NOT NULL,
+    "holdId" TEXT NOT NULL,
+    "tripId" TEXT NOT NULL,
+    "seatNumber" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerBusSeatHoldSeat_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PartnerBusReservation" (
     "id" TEXT NOT NULL,
     "confirmationCode" TEXT NOT NULL,
@@ -362,6 +385,63 @@ CREATE TABLE "PartnerApplication" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PartnerApplication_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerKycDocument" (
+    "id" TEXT NOT NULL,
+    "applicationId" TEXT NOT NULL,
+    "partnerId" TEXT,
+    "reviewedByUserId" TEXT,
+    "documentType" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "fileVersion" INTEGER NOT NULL DEFAULT 0,
+    "lockVersion" INTEGER NOT NULL DEFAULT 1,
+    "issuedOn" TEXT,
+    "expiresOn" TEXT,
+    "submittedAt" TIMESTAMP(3),
+    "reviewedAt" TIMESTAMP(3),
+    "reviewNote" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PartnerKycDocument_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerKycDocumentVersion" (
+    "id" TEXT NOT NULL,
+    "documentId" TEXT NOT NULL,
+    "createdByUserId" TEXT NOT NULL,
+    "versionNumber" INTEGER NOT NULL,
+    "objectKey" TEXT NOT NULL,
+    "originalFilename" TEXT NOT NULL,
+    "contentType" TEXT NOT NULL,
+    "byteSize" INTEGER NOT NULL,
+    "sha256" TEXT NOT NULL,
+    "storageStatus" TEXT NOT NULL DEFAULT 'INTENT_CREATED',
+    "uploadIntentExpiresAt" TIMESTAMP(3),
+    "uploadedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerKycDocumentVersion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerKycDocumentEvent" (
+    "id" TEXT NOT NULL,
+    "documentId" TEXT NOT NULL,
+    "applicationId" TEXT NOT NULL,
+    "partnerId" TEXT,
+    "actorUserId" TEXT,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT,
+    "toStatus" TEXT,
+    "reason" TEXT,
+    "metadataJson" TEXT NOT NULL DEFAULT '{}',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerKycDocumentEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -702,6 +782,37 @@ CREATE TABLE "RequestRateLimit" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "RequestRateLimit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AutomationJobLease" (
+    "jobKey" TEXT NOT NULL,
+    "leaseTokenHash" TEXT NOT NULL,
+    "leaseExpiresAt" TIMESTAMP(3) NOT NULL,
+    "lastStartedAt" TIMESTAMP(3),
+    "lastCompletedAt" TIMESTAMP(3),
+    "lastStatus" TEXT NOT NULL DEFAULT 'IDLE',
+    "lastSummaryJson" TEXT NOT NULL DEFAULT '{}',
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AutomationJobLease_pkey" PRIMARY KEY ("jobKey")
+);
+
+-- CreateTable
+CREATE TABLE "AutomationJobRun" (
+    "id" TEXT NOT NULL,
+    "jobKey" TEXT NOT NULL,
+    "correlationId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "processedCount" INTEGER NOT NULL DEFAULT 0,
+    "failureCount" INTEGER NOT NULL DEFAULT 0,
+    "summaryJson" TEXT NOT NULL DEFAULT '{}',
+    "errorCode" TEXT NOT NULL DEFAULT '',
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AutomationJobRun_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1394,6 +1505,7 @@ CREATE TABLE "PromotionCampaign" (
     "maximumDiscount" INTEGER NOT NULL,
     "minimumSubtotal" INTEGER NOT NULL,
     "usageLimit" INTEGER,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
     "startsAt" TIMESTAMP(3) NOT NULL,
     "endsAt" TIMESTAMP(3) NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT false,
@@ -1404,6 +1516,34 @@ CREATE TABLE "PromotionCampaign" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PromotionCampaign_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PromotionRedemption" (
+    "id" TEXT NOT NULL,
+    "campaignId" TEXT NOT NULL,
+    "userId" TEXT,
+    "checkoutIntentId" TEXT,
+    "bookingId" TEXT,
+    "customerTripId" TEXT,
+    "claimKey" TEXT NOT NULL,
+    "contextHash" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'RESERVED',
+    "code" TEXT NOT NULL,
+    "productType" TEXT NOT NULL,
+    "ruleVersion" INTEGER NOT NULL,
+    "subtotal" INTEGER NOT NULL,
+    "discountAmount" INTEGER NOT NULL,
+    "finalTotal" INTEGER NOT NULL,
+    "currency" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "redeemedAt" TIMESTAMP(3),
+    "releasedAt" TIMESTAMP(3),
+    "reversedAt" TIMESTAMP(3),
+    "reversalReason" TEXT NOT NULL DEFAULT '',
+
+    CONSTRAINT "PromotionRedemption_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1613,6 +1753,21 @@ CREATE INDEX "PartnerBusTrip_serviceDate_status_idx" ON "PartnerBusTrip"("servic
 CREATE UNIQUE INDEX "PartnerBusTrip_routeId_serviceDate_departureTime_key" ON "PartnerBusTrip"("routeId", "serviceDate", "departureTime");
 
 -- CreateIndex
+CREATE INDEX "PartnerBusSeatHold_expiresAt_idx" ON "PartnerBusSeatHold"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerBusSeatHold_userId_expiresAt_idx" ON "PartnerBusSeatHold"("userId", "expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerBusSeatHold_tripId_userId_key" ON "PartnerBusSeatHold"("tripId", "userId");
+
+-- CreateIndex
+CREATE INDEX "PartnerBusSeatHoldSeat_holdId_idx" ON "PartnerBusSeatHoldSeat"("holdId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerBusSeatHoldSeat_tripId_seatNumber_key" ON "PartnerBusSeatHoldSeat"("tripId", "seatNumber");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerBusReservation_confirmationCode_key" ON "PartnerBusReservation"("confirmationCode");
 
 -- CreateIndex
@@ -1638,6 +1793,36 @@ CREATE INDEX "PartnerApplication_applicantUserId_createdAt_idx" ON "PartnerAppli
 
 -- CreateIndex
 CREATE INDEX "PartnerApplication_kycStatus_createdAt_idx" ON "PartnerApplication"("kycStatus", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocument_applicationId_status_idx" ON "PartnerKycDocument"("applicationId", "status");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocument_partnerId_status_expiresOn_idx" ON "PartnerKycDocument"("partnerId", "status", "expiresOn");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerKycDocument_applicationId_documentType_key" ON "PartnerKycDocument"("applicationId", "documentType");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerKycDocumentVersion_objectKey_key" ON "PartnerKycDocumentVersion"("objectKey");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocumentVersion_documentId_createdAt_idx" ON "PartnerKycDocumentVersion"("documentId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocumentVersion_storageStatus_uploadIntentExpires_idx" ON "PartnerKycDocumentVersion"("storageStatus", "uploadIntentExpiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerKycDocumentVersion_documentId_versionNumber_key" ON "PartnerKycDocumentVersion"("documentId", "versionNumber");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocumentEvent_documentId_createdAt_idx" ON "PartnerKycDocumentEvent"("documentId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocumentEvent_applicationId_createdAt_idx" ON "PartnerKycDocumentEvent"("applicationId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerKycDocumentEvent_partnerId_createdAt_idx" ON "PartnerKycDocumentEvent"("partnerId", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "PartnerHotelInventoryDay_propertyId_stayDate_idx" ON "PartnerHotelInventoryDay"("propertyId", "stayDate");
@@ -1785,6 +1970,21 @@ CREATE UNIQUE INDEX "RequestRateLimit_keyHash_key" ON "RequestRateLimit"("keyHas
 
 -- CreateIndex
 CREATE INDEX "RequestRateLimit_action_updatedAt_idx" ON "RequestRateLimit"("action", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobLease_leaseExpiresAt_idx" ON "AutomationJobLease"("leaseExpiresAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobLease_lastStatus_updatedAt_idx" ON "AutomationJobLease"("lastStatus", "updatedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AutomationJobRun_correlationId_key" ON "AutomationJobRun"("correlationId");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobRun_jobKey_startedAt_idx" ON "AutomationJobRun"("jobKey", "startedAt");
+
+-- CreateIndex
+CREATE INDEX "AutomationJobRun_status_startedAt_idx" ON "AutomationJobRun"("status", "startedAt");
 
 -- CreateIndex
 CREATE INDEX "AvailabilityLock_roomTypeId_status_expiresAt_idx" ON "AvailabilityLock"("roomTypeId", "status", "expiresAt");
@@ -2126,6 +2326,27 @@ CREATE INDEX "PromotionCampaign_active_startsAt_endsAt_idx" ON "PromotionCampaig
 CREATE INDEX "PromotionCampaign_updatedAt_idx" ON "PromotionCampaign"("updatedAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PromotionRedemption_checkoutIntentId_key" ON "PromotionRedemption"("checkoutIntentId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PromotionRedemption_bookingId_key" ON "PromotionRedemption"("bookingId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PromotionRedemption_customerTripId_key" ON "PromotionRedemption"("customerTripId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PromotionRedemption_claimKey_key" ON "PromotionRedemption"("claimKey");
+
+-- CreateIndex
+CREATE INDEX "PromotionRedemption_campaignId_status_expiresAt_idx" ON "PromotionRedemption"("campaignId", "status", "expiresAt");
+
+-- CreateIndex
+CREATE INDEX "PromotionRedemption_userId_campaignId_status_idx" ON "PromotionRedemption"("userId", "campaignId", "status");
+
+-- CreateIndex
+CREATE INDEX "PromotionRedemption_status_expiresAt_idx" ON "PromotionRedemption"("status", "expiresAt");
+
+-- CreateIndex
 CREATE INDEX "PromotionCampaignEvent_campaignId_createdAt_idx" ON "PromotionCampaignEvent"("campaignId", "createdAt");
 
 -- CreateIndex
@@ -2222,6 +2443,18 @@ ALTER TABLE "PartnerBusRoute" ADD CONSTRAINT "PartnerBusRoute_partnerId_fkey" FO
 ALTER TABLE "PartnerBusTrip" ADD CONSTRAINT "PartnerBusTrip_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "PartnerBusRoute"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PartnerBusSeatHold" ADD CONSTRAINT "PartnerBusSeatHold_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "PartnerBusTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHold" ADD CONSTRAINT "PartnerBusSeatHold_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHoldSeat" ADD CONSTRAINT "PartnerBusSeatHoldSeat_holdId_fkey" FOREIGN KEY ("holdId") REFERENCES "PartnerBusSeatHold"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerBusSeatHoldSeat" ADD CONSTRAINT "PartnerBusSeatHoldSeat_tripId_fkey" FOREIGN KEY ("tripId") REFERENCES "PartnerBusTrip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PartnerBusReservation" ADD CONSTRAINT "PartnerBusReservation_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -2241,6 +2474,33 @@ ALTER TABLE "PartnerApplication" ADD CONSTRAINT "PartnerApplication_reviewedByUs
 
 -- AddForeignKey
 ALTER TABLE "PartnerApplication" ADD CONSTRAINT "PartnerApplication_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocument" ADD CONSTRAINT "PartnerKycDocument_applicationId_fkey" FOREIGN KEY ("applicationId") REFERENCES "PartnerApplication"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocument" ADD CONSTRAINT "PartnerKycDocument_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocument" ADD CONSTRAINT "PartnerKycDocument_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentVersion" ADD CONSTRAINT "PartnerKycDocumentVersion_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "PartnerKycDocument"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentVersion" ADD CONSTRAINT "PartnerKycDocumentVersion_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentEvent" ADD CONSTRAINT "PartnerKycDocumentEvent_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "PartnerKycDocument"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentEvent" ADD CONSTRAINT "PartnerKycDocumentEvent_applicationId_fkey" FOREIGN KEY ("applicationId") REFERENCES "PartnerApplication"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentEvent" ADD CONSTRAINT "PartnerKycDocumentEvent_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerKycDocumentEvent" ADD CONSTRAINT "PartnerKycDocumentEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerHotelInventoryDay" ADD CONSTRAINT "PartnerHotelInventoryDay_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "PartnerProperty"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -2499,6 +2759,21 @@ ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_
 
 -- AddForeignKey
 ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionRedemption" ADD CONSTRAINT "PromotionRedemption_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "PromotionCampaign"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionRedemption" ADD CONSTRAINT "PromotionRedemption_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionRedemption" ADD CONSTRAINT "PromotionRedemption_checkoutIntentId_fkey" FOREIGN KEY ("checkoutIntentId") REFERENCES "PaymentCheckoutIntent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionRedemption" ADD CONSTRAINT "PromotionRedemption_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PromotionRedemption" ADD CONSTRAINT "PromotionRedemption_customerTripId_fkey" FOREIGN KEY ("customerTripId") REFERENCES "CustomerTrip"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PromotionCampaignEvent" ADD CONSTRAINT "PromotionCampaignEvent_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "PromotionCampaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
