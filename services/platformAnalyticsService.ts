@@ -54,3 +54,66 @@ export function buildOperationalAnalyticsSnapshot(
 export function formatAnalyticsPercent(value: number | null): string {
   return value === null ? 'Not enough data' : `${value}%`;
 }
+
+export type PartnerSettlementAggregate = {
+  bookingCount: number | null;
+  commissionAmount: number | null;
+  grossAmount: number | null;
+  netAmount: number | null;
+  partnerId: string;
+  settlementCount: number;
+};
+
+export type PartnerAnalyticsIdentity = {
+  id: string;
+  name: string;
+  status: string;
+  type: string;
+};
+
+export type PartnerPerformanceRow = {
+  bookingCount: number;
+  commissionAmount: number;
+  commissionPercent: number | null;
+  grossAmount: number;
+  name: string;
+  netAmount: number;
+  partnerId: string;
+  settlementCount: number;
+  status: string;
+  type: string;
+};
+
+function safeAnalyticsInteger(value: number | null): number {
+  return Number.isSafeInteger(value) && (value ?? 0) > 0 ? (value ?? 0) : 0;
+}
+
+export function buildPartnerPerformanceRows(
+  aggregates: readonly PartnerSettlementAggregate[],
+  identities: readonly PartnerAnalyticsIdentity[],
+): PartnerPerformanceRow[] {
+  const identityById = new Map(identities.map((identity) => [identity.id, identity]));
+
+  return aggregates.map((aggregate) => {
+    const identity = identityById.get(aggregate.partnerId);
+    const grossAmount = safeAnalyticsInteger(aggregate.grossAmount);
+    const commissionAmount = safeAnalyticsInteger(aggregate.commissionAmount);
+
+    return {
+      bookingCount: safeAnalyticsInteger(aggregate.bookingCount),
+      commissionAmount,
+      commissionPercent: analyticsPercent(commissionAmount, grossAmount),
+      grossAmount,
+      name: identity?.name.trim() || 'Partner record',
+      netAmount: safeAnalyticsInteger(aggregate.netAmount),
+      partnerId: aggregate.partnerId,
+      settlementCount: safeAnalyticsInteger(aggregate.settlementCount),
+      status: identity?.status || 'UNKNOWN',
+      type: identity?.type || 'UNKNOWN',
+    };
+  });
+}
+
+export function formatAnalyticsCurrency(value: number): string {
+  return `₹${Math.max(0, value).toLocaleString('en-IN')}`;
+}
