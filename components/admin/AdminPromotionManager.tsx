@@ -66,7 +66,7 @@ export function AdminPromotionCreateForm() {
           <input min={1} name="minimumSubtotal" type="number" required />
         </label>
         <label>
-          Reserved usage cap (activation blocked until redemption tracking exists)
+          Usage cap (optional; reserved and redeemed claims count toward the limit)
           <input min={1} name="usageLimit" type="number" />
         </label>
         <label>
