@@ -12,6 +12,8 @@ import {
   resolveStoredPromotionRule,
 } from '../services/adminPromotionWorkbenchService.ts';
 
+const promotionManagerSource = readFileSync('components/admin/AdminPromotionManager.tsx', 'utf8');
+
 const now = new Date('2026-08-24T12:00:00.000Z');
 const campaign = {
   active: true,
@@ -123,4 +125,15 @@ test('stored campaigns override baseline codes and never bypass a paused state',
   assert.match(source, /findUnique\(\{[\s\S]*where:\s*\{\s*code:\s*normalizedCode\s*\}/);
   assert.match(source, /releaseExpiredPromotionClaims/);
   assert.match(source, /if \(!campaign\) return findPromotionRule/);
+});
+
+test('promotion form describes persisted usage-cap enforcement', () => {
+  assert.match(
+    promotionManagerSource,
+    /Usage cap \(optional; reserved and redeemed claims count toward the limit\)/,
+  );
+  assert.doesNotMatch(
+    promotionManagerSource,
+    /activation blocked until redemption tracking exists/i,
+  );
 });
