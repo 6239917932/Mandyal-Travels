@@ -7,5 +7,7 @@ Every exception must carry an owner, reason, effective dates, evidence reference
 ## Implementation decisions
 
 - 24 August 2026: stored promotion campaigns became authoritative for matching coupon codes, with
-  version-safe, reason-required, append-only activation controls. Usage-capped campaigns fail closed
-  until persisted redemption counting is implemented. See `PROMOTION_GOVERNANCE.md`.
+  version-safe, reason-required, append-only activation controls. See `PROMOTION_GOVERNANCE.md`.
+- 26 August 2026: usage-capped campaigns gained persisted, transactionally attributed reservation,
+  redemption, expiry-release, and provider-confirmed full-refund reversal accounting. Commercial
+  owners still approve each campaign budget, wording, eligibility, and support procedure.

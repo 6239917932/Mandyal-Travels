@@ -7,8 +7,9 @@ same governed campaign controls used during checkout validation.
 
 - The built-in promotion catalogue remains the fallback only when no stored campaign exists for
   that code. A stored campaign is authoritative even when it is paused, scheduled, expired,
-  malformed, or blocked because capped redemption is not tracked; in those states the baseline
-  code is not advertised.
+  malformed, or exhausted; in those states the baseline code is not advertised. Usage-capped
+  campaigns are advertised only while their persisted reserved-and-redeemed count remains below
+  the configured cap, and checkout remains the final concurrency-safe authority.
 - Stored overrides for every built-in code are queried separately from additional campaigns so the
   100-record public bound can never hide an override and accidentally revive stale baseline copy.
 - Additional stored campaigns are ordered by code and read with a 101-record sentinel. The page
