@@ -93,7 +93,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   exceptions; private references; and an explicit block on unsupported statutory GST documents
 - Governed administrator promotion workbench with exact campaign posture, bounded search and
   pagination, authoritative stored-code states, version-safe reason-required activation,
-  append-only change history, and fail-closed usage caps until redemption attribution exists
+  append-only change history, and concurrency-safe persisted redemption attribution for usage caps,
+  including expiry release and provider-confirmed full-refund reversal
 - Protected read-only administrator inventory and rate directory with bounded search, 7/30/90-day
   windows, pagination, capacity/rate-plan issue detection, seasonal price posture, and explicit
   stop-sale and restriction visibility without changing partner-owned PMS controls

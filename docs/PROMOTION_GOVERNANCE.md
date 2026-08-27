@@ -17,9 +17,11 @@ Campaign activation is optimistic-version protected, requires a 10-500 character
 reason, and creates an append-only event. Expired campaigns and campaigns with invalid product
 eligibility cannot be activated.
 
-Usage-capped campaigns fail closed until persisted, transactionally attributed redemption counting
-exists. The optional cap remains architecture-ready, but the portal does not imply that an
-unenforced cap is live.
+Usage-capped campaigns are enforced through persisted, transactionally attributed redemption
+reservations. A guarded campaign counter prevents concurrent claims from exceeding the cap;
+expired reservations release capacity, booking completion redeems the exact claim, and only a
+provider-confirmed full refund reverses the usage. Stable claim keys make checkout retries
+idempotent, while a mismatched retry fails closed.
 
 ## Workbench completeness
 
@@ -34,7 +36,9 @@ unenforced cap is live.
 
 Before activating a real commercial campaign, an authorized owner must approve its products,
 effective window, percentage, minimum subtotal, maximum discount, legal wording, budget exposure,
-support process, and rollback reason. A usage cap additionally requires persisted redemption
-attribution and concurrency-safe enforcement.
+support process, and rollback reason. A usage cap additionally requires an authorized budget and
+support owner, monitoring for reservation or counter inconsistencies, and an operator procedure for
+reviewing failed or expired claims. The portal already provides persisted attribution and
+concurrency-safe enforcement; this does not replace commercial approval.
 
 This milestone does not activate or configure Cashfree or any other payment provider.
