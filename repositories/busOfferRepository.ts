@@ -1,4 +1,5 @@
 import { mockBusOffers } from '@/constants/busData';
+import { settleAvailableSources } from '@/lib/inventory/settleAvailableSources';
 import { prisma } from '@/lib/prisma';
 import type { BusOffer, BusSearchCriteria } from '@/types/bus';
 
@@ -89,15 +90,21 @@ export class DirectBusSupplierAdapter implements BusSupplierAdapter {
 }
 
 export class CompositeBusSupplierAdapter implements BusSupplierAdapter {
+  private readonly suppliers: BusSupplierAdapter[];
+
   constructor(
-    private readonly suppliers: BusSupplierAdapter[] = [
+    suppliers: BusSupplierAdapter[] = [
       new DirectBusSupplierAdapter(),
       new FixtureBusSupplierAdapter(),
     ],
-  ) {}
+  ) {
+    this.suppliers = suppliers;
+  }
 
   async search(criteria: BusSearchCriteria): Promise<BusOffer[]> {
-    const results = await Promise.all(this.suppliers.map((supplier) => supplier.search(criteria)));
-    return results.flat();
+    return settleAvailableSources(
+      this.suppliers.map((supplier) => () => supplier.search(criteria)),
+      'Bus inventory sources are temporarily unavailable.',
+    );
   }
 }

@@ -13,10 +13,10 @@ async function publishedDestination(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const destination = await publishedDestination((await params).slug);
-  if (!destination) return { title: 'Destination not found | Mandyal Travels' };
+  if (!destination) return { title: 'Destination not found' };
   return {
     description: destination.summary,
-    title: `${destination.name} travel guide | Mandyal Travels`,
+    title: `${destination.name} travel guide`,
   };
 }
 

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { POLICY_DOCUMENTS } from '@/lib/legal/policies';
 
 export const metadata: Metadata = {
-  title: 'Legal and policy center | Mandyal Travels',
+  title: 'Legal and policy center',
   description:
     'Versioned operating notices for privacy, platform use, cancellations, refunds, and browser storage.',
 };

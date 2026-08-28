@@ -23,8 +23,8 @@ export default async function CarsPage({
   let availableOffers = [] as Awaited<ReturnType<typeof carService.search>>;
   try {
     availableOffers = await carService.search(criteria);
-  } catch (cause) {
-    error = cause instanceof Error ? cause.message : 'Car search is unavailable.';
+  } catch {
+    error = 'Car search is temporarily unavailable. Please try again.';
   }
   const catalogue = {
     categories: [...new Set(availableOffers.map((offer) => offer.category))].toSorted(),

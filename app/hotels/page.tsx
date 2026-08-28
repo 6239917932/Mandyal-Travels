@@ -27,7 +27,19 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
   const rawSearchParams = await searchParams;
   const criteria = createHotelSearchCriteria(rawSearchParams);
   const filters = createHotelSearchFilters(rawSearchParams);
-  const resultPage = await hotelService.searchHotels(criteria, filters);
+  let error: string | undefined;
+  let resultPage: Awaited<ReturnType<typeof hotelService.searchHotels>> = {
+    page: 1,
+    pageCount: 1,
+    pageSize: 10,
+    results: [],
+    totalResults: 0,
+  };
+  try {
+    resultPage = await hotelService.searchHotels(criteria, filters);
+  } catch {
+    error = 'Hotel search is temporarily unavailable. Please try again.';
+  }
 
   function pageHref(page: number) {
     const query = new URLSearchParams();
@@ -73,20 +85,28 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
             requestToken={first(rawSearchParams.guidedAt)}
           />
 
-          <div className="hotel-page__results-heading">
-            <div>
-              <p className="hotel-page__eyebrow">Available stays</p>
-              <h2>{resultPage.totalResults} hotels found</h2>
-            </div>
-
-            <p>
-              {criteria.destination
-                ? `Showing stays matching “${criteria.destination}”`
-                : 'Showing all available destinations'}
+          {error ? (
+            <p className="flight-page__error" role="alert">
+              {error}
             </p>
-          </div>
+          ) : null}
 
-          {resultPage.results.length > 0 ? (
+          {!error ? (
+            <div className="hotel-page__results-heading">
+              <div>
+                <p className="hotel-page__eyebrow">Available stays</p>
+                <h2>{resultPage.totalResults} hotels found</h2>
+              </div>
+
+              <p>
+                {criteria.destination
+                  ? `Showing stays matching “${criteria.destination}”`
+                  : 'Showing all available destinations'}
+              </p>
+            </div>
+          ) : null}
+
+          {!error && resultPage.results.length > 0 ? (
             <HotelResultsExplorer markers={createHotelResultsLocationMarkers(resultPage.results)}>
               {resultPage.results.map((result, index) => (
                 <div
@@ -99,14 +119,14 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
                 </div>
               ))}
             </HotelResultsExplorer>
-          ) : (
+          ) : !error ? (
             <p className="hotel-page__empty-state">
               No hotels match this search yet. Try Shimla or Jaipur with the current fixture
               inventory.
             </p>
-          )}
+          ) : null}
 
-          {resultPage.pageCount > 1 ? (
+          {!error && resultPage.pageCount > 1 ? (
             <nav aria-label="Hotel results pages" className="hotel-results-pagination">
               {resultPage.page > 1 ? (
                 <Link href={pageHref(resultPage.page - 1)}>Previous</Link>
