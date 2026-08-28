@@ -2,8 +2,19 @@ import {
   FixtureFlightSupplierAdapter,
   type FlightSupplierAdapter,
 } from '@/repositories/flightOfferRepository';
+import { AmadeusFlightSupplierAdapter } from '@/repositories/amadeusFlightSupplierAdapter';
 import type { FlightOffer, FlightSearchCriteria } from '@/types/flight';
 import { normalizeFlightOffer, validateFlightSearchCriteria } from '@/lib/flight/searchRules';
+import { readAmadeusFlightConfiguration } from '@/lib/flight/amadeusRules';
+
+export function createFlightSupplierAdapter(
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): FlightSupplierAdapter {
+  const configuration = readAmadeusFlightConfiguration(environment);
+  return configuration
+    ? new AmadeusFlightSupplierAdapter(configuration)
+    : new FixtureFlightSupplierAdapter();
+}
 
 export class FlightService {
   constructor(
@@ -28,4 +39,4 @@ export class FlightService {
   }
 }
 
-export const flightService = new FlightService();
+export const flightService = new FlightService(createFlightSupplierAdapter());
