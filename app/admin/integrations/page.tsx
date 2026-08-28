@@ -76,6 +76,9 @@ export default async function AdminIntegrationsPage() {
           <Link className="ui-button ui-button--secondary" href="/admin/integrations/flights">
             Flight operation ledger
           </Link>
+          <Link className="ui-button ui-button--secondary" href="/admin/integrations/hotelbeds">
+            Hotelbeds readiness
+          </Link>
           <Link className="ui-button ui-button--secondary" href="/admin">
             Operations console
           </Link>

@@ -39,6 +39,7 @@
     "db:verify-backup": "node scripts/verify-backup-restore.mjs",
     "deployment:verify": "node scripts/verify-deployment-contract.mjs",
     "release:verify-env": "node scripts/verify-release-env.mjs",
+    "supplier:verify:hotelbeds": "node --experimental-strip-types scripts/verify-hotelbeds-evaluation.mjs",
     "postinstall": "node scripts/generate-prisma-clients.mjs"
   },
   "dependencies": {
