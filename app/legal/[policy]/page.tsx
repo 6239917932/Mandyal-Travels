@@ -16,11 +16,11 @@ export async function generateMetadata({ params }: LegalPolicyPageProps): Promis
   const document = getPolicyDocument(policy);
 
   if (!document) {
-    return { title: 'Policy not found | Mandyal Travels' };
+    return { title: 'Policy not found' };
   }
 
   return {
-    title: `${document.title} | Mandyal Travels`,
+    title: document.title,
     description: document.summary,
   };
 }

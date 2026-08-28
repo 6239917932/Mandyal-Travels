@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
   description: 'Published Mandyal Travels destination guides with practical planning context.',
-  title: 'Destination guides | Mandyal Travels',
+  title: 'Destination guides',
 };
 
 export default async function DestinationsPage() {

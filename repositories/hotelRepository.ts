@@ -11,22 +11,26 @@ export interface HotelRepository {
 
 export class InMemoryHotelRepository implements HotelRepository {
   async findAll(): Promise<Hotel[]> {
-    const managedProperties = await prisma.partnerProperty.findMany({
-      include: {
-        partner: { select: { name: true, status: true } },
-        rooms: {
-          include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
-          orderBy: { createdAt: 'asc' },
-          where: { status: 'ACTIVE' },
+    const managedPropertiesResult = await Promise.allSettled([
+      prisma.partnerProperty.findMany({
+        include: {
+          partner: { select: { name: true, status: true } },
+          rooms: {
+            include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+            orderBy: { createdAt: 'asc' },
+            where: { status: 'ACTIVE' },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      where: {
-        listingSource: 'MANAGED',
-        publicationStatus: 'PUBLISHED',
-        status: 'ACTIVE',
-      },
-    });
+        orderBy: { createdAt: 'desc' },
+        where: {
+          listingSource: 'MANAGED',
+          publicationStatus: 'PUBLISHED',
+          status: 'ACTIVE',
+        },
+      }),
+    ]);
+    const managedProperties =
+      managedPropertiesResult[0]?.status === 'fulfilled' ? managedPropertiesResult[0].value : [];
     const partnerHotels = managedProperties
       .filter((property) => property.partner.status === 'ACTIVE' && property.rooms.length > 0)
       .map((property): Hotel => {

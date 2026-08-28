@@ -1,4 +1,5 @@
 import { mockCarOffers } from '@/constants/carData';
+import { settleAvailableSources } from '@/lib/inventory/settleAvailableSources';
 import { partnerOperationsService } from '@/services/partnerOperationsService';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 
@@ -26,15 +27,21 @@ export class DirectCarSupplierAdapter implements CarSupplierAdapter {
 }
 
 export class CompositeCarSupplierAdapter implements CarSupplierAdapter {
+  private readonly suppliers: CarSupplierAdapter[];
+
   constructor(
-    private readonly suppliers: CarSupplierAdapter[] = [
+    suppliers: CarSupplierAdapter[] = [
       new DirectCarSupplierAdapter(),
       new FixtureCarSupplierAdapter(),
     ],
-  ) {}
+  ) {
+    this.suppliers = suppliers;
+  }
 
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
-    const results = await Promise.all(this.suppliers.map((supplier) => supplier.search(criteria)));
-    return results.flat();
+    return settleAvailableSources(
+      this.suppliers.map((supplier) => () => supplier.search(criteria)),
+      'Car inventory sources are temporarily unavailable.',
+    );
   }
 }

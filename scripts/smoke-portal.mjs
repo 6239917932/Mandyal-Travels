@@ -28,7 +28,11 @@ for (const contract of routeContracts) {
       routeFailures.push(`returned ${result.contentType || 'no content type'}`);
     if (!result.body.toLowerCase().includes(contract.content.toLowerCase()))
       routeFailures.push(`did not include expected content: ${contract.content}`);
-    if (/internal server error|application error/i.test(result.body))
+    if (
+      /internal server error|application error|temporary problem|we could not open this page|invalid\s+`?prisma|does not exist in the current database/i.test(
+        result.body,
+      )
+    )
       routeFailures.push('rendered an application error');
 
     failures.push(...routeFailures.map((message) => `${contract.path} ${message}`));

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Contact us | Mandyal Travels',
+  title: 'Contact us',
   description:
     'Contact Mandyal Travels for booking support and find our office presence in Bir, Joginder Nagar, and Chandigarh.',
 };
