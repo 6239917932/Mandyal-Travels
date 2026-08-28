@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { MandyalLogo } from '@/components/brand/MandyalLogo';
+import { siteConfig } from '@/config/site';
 
 type TravelOption = {
   description: string;
@@ -227,6 +228,48 @@ export default function Home() {
               </article>
             ))}
           </div>
+
+          <section aria-labelledby="office-presence-title" className="home-presence">
+            <div className="home-presence__intro">
+              <div>
+                <p className="home-section__eyebrow">Here when you need us</p>
+                <h2 id="office-presence-title">Himachal roots. A growing regional presence.</h2>
+              </div>
+              <p>
+                Reach our travel support team directly or find the Mandyal Travels office presence
+                closest to you. For booking help, include your confirmation reference so we can
+                assist faster.
+              </p>
+            </div>
+
+            <div className="home-presence__grid">
+              {siteConfig.officeLocations.map((office) => (
+                <article className="home-office-card" key={`${office.type}-${office.locality}`}>
+                  <span>{office.type}</span>
+                  <address>
+                    <strong>{office.locality}</strong>
+                    <small>{office.region}</small>
+                  </address>
+                </article>
+              ))}
+            </div>
+
+            <div className="home-contact-strip">
+              <div>
+                <span>Call our team</span>
+                <a href={`tel:${siteConfig.supportPhone.href}`}>
+                  {siteConfig.supportPhone.display}
+                </a>
+              </div>
+              <div>
+                <span>Email support</span>
+                <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
+              </div>
+              <Link className="home-link-button home-link-button--primary" href="/contact">
+                Contact us <ArrowIcon />
+              </Link>
+            </div>
+          </section>
 
           <div className="home-cta">
             <div>

@@ -2,7 +2,17 @@ import process from 'node:process';
 
 import { fetchRuntimePath, runtimeBaseUrl } from './lib/runtime-http.mjs';
 
-const routes = ['/', '/hotels', '/flights', '/buses', '/cars', '/offers', '/business', '/partners'];
+const routes = [
+  '/',
+  '/hotels',
+  '/flights',
+  '/buses',
+  '/cars',
+  '/offers',
+  '/business',
+  '/partners',
+  '/contact',
+];
 const failures = [];
 
 function attribute(tag, name) {
