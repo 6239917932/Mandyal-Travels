@@ -19,6 +19,7 @@
     "worker:integration-outbox": "node scripts/run-integration-outbox-worker.mjs",
     "worker:maintenance": "node scripts/run-maintenance-worker.mjs",
     "worker:search-projections": "node scripts/run-search-projection-worker.mjs",
+    "worker:hotelbeds-content": "node scripts/run-hotelbeds-content-worker.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:verify-contract && npm run test:domain && npm run db:verify-migrations && npm run db:verify:postgresql && npm run deployment:verify && npm run build -- --webpack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

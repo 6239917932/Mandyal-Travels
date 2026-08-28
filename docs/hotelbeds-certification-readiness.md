@@ -16,6 +16,10 @@ made automatically.
 - A booking workflow cannot become ready until the required CheckRate has completed.
 - The future booking transport must use a timeout of at least 60 seconds; the local contract reserves
   65 seconds.
+- A governed Content API cache stores bounded, hashed hotel payloads without publishing them.
+- Initial content loads use pages of at most 1,000 hotels; later runs use daily differential dates.
+- Content synchronization is separately disabled by default, authenticated, lease-protected,
+  idempotent by correlation ID, bounded to five pages, and never called from customer search.
 
 ## Deliberately blocked
 
@@ -24,8 +28,9 @@ made automatically.
 - Customer search cannot invoke this adapter.
 - Production credentials cannot be enabled in a production runtime until the provider environment is
   explicitly set to production.
-- The Content API cache is not yet provisioned. Content must be stored in a governed local data store
-  and refreshed by a scheduled batch/differential job, rather than called during customer searches.
+- The Content API cache schema and worker foundation are provisioned, but no provider request is
+  made until a release owner explicitly enables the connector and content-sync gates. Cached HBX
+  content is not connected to public search or booking results.
 - Voucher output cannot be certified until the exact Hotelbeds booking response fixture is approved.
 
 ## Evidence still needed before requesting certification
@@ -35,7 +40,8 @@ made automatically.
 3. Agreed commercial exclusions and a reliable administrator-only HBX inventory filter.
 4. Reviewed Availability and CheckRate evidence from the evaluation account.
 5. Approved booking, cancellation, rate-comment, cancellation-policy, and voucher fixtures.
-6. A Content API cache design, initial load, differential refresh, and freshness monitoring.
+6. An approved evaluation run of the Content API initial load, differential refresh, and freshness
+   monitoring with retained scheduler evidence.
 7. A supervised certification booking with no customer traffic and no live payment.
 
 ## Certification request outline

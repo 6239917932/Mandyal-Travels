@@ -115,8 +115,10 @@ export default async function AdminHotelbedsReadinessPage() {
           </Card>
           <Card>
             <span>Content cache</span>
-            <strong>Pending</strong>
-            <p>Requires an approved content-data store and scheduled differential refresh.</p>
+            <strong>Foundation ready</strong>
+            <p>
+              Scheduled initial and differential sync remains disabled pending approved activation.
+            </p>
           </Card>
         </div>
         <Card>
@@ -126,6 +128,10 @@ export default async function AdminHotelbedsReadinessPage() {
             <li>Children require explicit ages; invalid dates and malformed values fail closed.</li>
             <li>Requests use signed server-only headers and request gzip-compressed responses.</li>
             <li>Unknown response fields are ignored so additive provider changes remain safe.</li>
+            <li>
+              Static hotel content is stored only by a bounded scheduled batch; customer searches
+              never call the Content API in real time.
+            </li>
           </ul>
           <p>
             Review the controlled certification plan in{' '}

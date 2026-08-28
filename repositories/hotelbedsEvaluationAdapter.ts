@@ -8,6 +8,12 @@ import {
   buildHotelbedsCheckRateRequest,
   type HotelbedsAvailabilityInput,
 } from '../lib/hotel/hotelbedsCertification.ts';
+import {
+  buildHotelbedsContentPath,
+  parseHotelbedsContentPage,
+  type HotelbedsContentPage,
+  type HotelbedsContentPageInput,
+} from '../lib/hotel/hotelbedsContentRules.ts';
 
 type ProviderFetch = typeof fetch;
 
@@ -53,6 +59,12 @@ export class HotelbedsEvaluationAdapter {
       'POST',
       20_000,
       buildHotelbedsCheckRateRequest(rateKeys),
+    );
+  }
+
+  async fetchContentPage(input: HotelbedsContentPageInput): Promise<HotelbedsContentPage> {
+    return parseHotelbedsContentPage(
+      await this.request(buildHotelbedsContentPath(input), 'GET', 30_000),
     );
   }
 
