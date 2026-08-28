@@ -249,6 +249,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Transactional hotel-booking integration outbox with deduplication, a separately authenticated
   one-shot worker, database leases, exact provider acknowledgements, bounded exponential retry,
   dead-letter handling, and numeric administrator run evidence
+- A disabled-by-default Hotelbeds static-content cache with authenticated scheduled batches,
+  resumable 1,000-property pagination, daily differential refreshes, correlation evidence, and no
+  connection to customer search, availability, booking, cancellation, or payments
 - Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
   stay timing, physical-room assignment, housekeeping readiness, and integration retries
 - On-demand SQLite backups with SHA-256 sidecars and bounded retention, plus a production release
@@ -256,7 +259,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 93-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 94-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -413,9 +416,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 464 regression tests, formatting verification, Prisma
-Client generation, strict TypeScript, ESLint, a Next.js production build including the authenticated
-integration-delivery worker route, clean-database verification of all 81 SQLite migrations with
-foreign-key integrity enabled, a synchronized 93-table PostgreSQL-native baseline, and the portable deployment contract. Provider
-integration work must preserve those checks and add
-provider-specific automated tests before going live.
+The current travel-domain milestone passes 491 regression tests, formatting verification, Prisma
+Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
+internal worker routes, clean-database verification of all 82 SQLite migrations with foreign-key
+integrity enabled, a synchronized 94-table PostgreSQL-native baseline, and the portable deployment
+contract. Provider integration work must preserve those checks and add provider-specific automated
+tests before going live.

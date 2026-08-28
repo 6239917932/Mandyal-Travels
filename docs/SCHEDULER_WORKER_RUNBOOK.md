@@ -61,6 +61,21 @@ successful pass records a fresh replay-safe summary in `/admin/automation`. Neve
 `RESTORE_DATABASE_URL` at the active database, automate cutover approval, or treat a reported summary
 as proof that provider backups, retention, PITR, alerts, and restore access are configured.
 
+## Hotelbeds static-content cache
+
+`npm run worker:hotelbeds-content` is a separately gated, one-shot Content API batch. It requires
+the authenticated scheduler secret, an enabled Hotelbeds connector, and the additional explicit
+`HOTELBEDS_CONTENT_SYNC_ENABLED=true` gate. Keep that gate false until the HBX evaluation run is
+approved. Each invocation acquires the `HOTELBEDS_CONTENT_CACHE_V1` lease, records correlation
+evidence, requests at most `HOTELBEDS_CONTENT_MAX_PAGES_PER_RUN` pages (hard maximum five), and
+stores only bounded, hashed static hotel payloads. Initial pages contain no more than 1,000 hotels;
+subsequent successful schedules use Hotelbeds' differential date.
+
+This worker must not be triggered from customer traffic. It cannot publish supplier inventory,
+search availability, call CheckRate, create or cancel a booking, or move money. Cached content
+remains isolated until certification, commercial approval, mapping review, freshness monitoring,
+and an explicit publication change are separately approved.
+
 Notification delivery uses the independent `NOTIFICATION_WORKER_SECRET`, a bounded batch, provider
 deduplication keys, stale-item recovery, and the `NOTIFICATION_DELIVERY_V1` database lease. Every
 invocation records private correlation evidence in `AutomationJobRun`; a duplicate active pass is

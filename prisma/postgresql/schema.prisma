@@ -996,6 +996,24 @@ model AutomationJobRun {
   @@index([status, startedAt])
 }
 
+model HotelbedsContentProperty {
+  id                String   @id @default(cuid())
+  providerHotelCode Int
+  language          String
+  payloadJson       String
+  contentHash       String
+  providerUpdatedAt DateTime?
+  fetchedAt         DateTime
+  firstSeenAt       DateTime @default(now())
+  syncCorrelationId String
+  active            Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+
+  @@unique([language, providerHotelCode])
+  @@index([active, fetchedAt])
+  @@index([syncCorrelationId])
+}
+
 model AvailabilityLock {
   id              String      @id
   roomTypeId      String

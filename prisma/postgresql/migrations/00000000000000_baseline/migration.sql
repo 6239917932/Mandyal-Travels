@@ -816,6 +816,23 @@ CREATE TABLE "AutomationJobRun" (
 );
 
 -- CreateTable
+CREATE TABLE "HotelbedsContentProperty" (
+    "id" TEXT NOT NULL,
+    "providerHotelCode" INTEGER NOT NULL,
+    "language" TEXT NOT NULL,
+    "payloadJson" TEXT NOT NULL,
+    "contentHash" TEXT NOT NULL,
+    "providerUpdatedAt" TIMESTAMP(3),
+    "fetchedAt" TIMESTAMP(3) NOT NULL,
+    "firstSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "syncCorrelationId" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "HotelbedsContentProperty_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AvailabilityLock" (
     "id" TEXT NOT NULL,
     "roomTypeId" TEXT NOT NULL,
@@ -1985,6 +2002,15 @@ CREATE INDEX "AutomationJobRun_jobKey_startedAt_idx" ON "AutomationJobRun"("jobK
 
 -- CreateIndex
 CREATE INDEX "AutomationJobRun_status_startedAt_idx" ON "AutomationJobRun"("status", "startedAt");
+
+-- CreateIndex
+CREATE INDEX "HotelbedsContentProperty_active_fetchedAt_idx" ON "HotelbedsContentProperty"("active", "fetchedAt");
+
+-- CreateIndex
+CREATE INDEX "HotelbedsContentProperty_syncCorrelationId_idx" ON "HotelbedsContentProperty"("syncCorrelationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HotelbedsContentProperty_language_providerHotelCode_key" ON "HotelbedsContentProperty"("language", "providerHotelCode");
 
 -- CreateIndex
 CREATE INDEX "AvailabilityLock_roomTypeId_status_expiresAt_idx" ON "AvailabilityLock"("roomTypeId", "status", "expiresAt");
