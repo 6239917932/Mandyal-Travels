@@ -3,6 +3,11 @@ import {
   hotelbedsApiOrigin,
   type HotelbedsConfiguration,
 } from '../lib/hotel/hotelbedsRules.ts';
+import {
+  buildHotelbedsAvailabilityRequest,
+  buildHotelbedsCheckRateRequest,
+  type HotelbedsAvailabilityInput,
+} from '../lib/hotel/hotelbedsCertification.ts';
 
 type ProviderFetch = typeof fetch;
 
@@ -29,20 +34,51 @@ export class HotelbedsEvaluationAdapter {
   }
 
   async verifyStatus(): Promise<HotelbedsStatusResult> {
+    await this.request('/hotel-api/1.0/status', 'GET', 10_000);
+    return { environment: this.configuration.environment, reachable: true };
+  }
+
+  async searchAvailability(input: HotelbedsAvailabilityInput): Promise<unknown> {
+    return this.request(
+      '/hotel-api/1.0/hotels',
+      'POST',
+      20_000,
+      buildHotelbedsAvailabilityRequest(input),
+    );
+  }
+
+  async checkRates(rateKeys: readonly string[]): Promise<unknown> {
+    return this.request(
+      '/hotel-api/1.0/checkrates',
+      'POST',
+      20_000,
+      buildHotelbedsCheckRateRequest(rateKeys),
+    );
+  }
+
+  private async request(
+    path: string,
+    method: 'GET' | 'POST',
+    timeoutMs: number,
+    body?: object,
+  ): Promise<unknown> {
     const epochSeconds = Math.floor(this.now() / 1000);
-    const response = await this.providerFetch(`${this.origin}/hotel-api/1.0/status`, {
+    const response = await this.providerFetch(`${this.origin}${path}`, {
+      ...(body ? { body: JSON.stringify(body) } : {}),
       headers: {
         Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
         'Api-key': this.configuration.apiKey,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
         'X-Signature': createHotelbedsSignature(this.configuration, epochSeconds),
       },
-      method: 'GET',
+      method,
       redirect: 'error',
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) {
-      throw new Error('Hotelbeds credential verification was not accepted.');
+      throw new Error('Hotelbeds evaluation request was not accepted.');
     }
-    return { environment: this.configuration.environment, reachable: true };
+    return response.json();
   }
 }
