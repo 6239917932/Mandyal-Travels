@@ -115,7 +115,13 @@ export default async function FlightBookingReviewPage({
               </div>
               <div>
                 <dt>Fare rule</dt>
-                <dd>{offer.refundable ? 'Refundable' : 'Non-refundable'}</dd>
+                <dd>
+                  {offer.refundabilityStatus === 'requires-confirmation'
+                    ? 'Requires fare confirmation'
+                    : offer.refundable
+                      ? 'Refundable'
+                      : 'Non-refundable'}
+                </dd>
               </div>
               <div>
                 <dt>Supplier</dt>

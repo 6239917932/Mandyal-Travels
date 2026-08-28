@@ -39,6 +39,7 @@ export interface FlightOffer {
   id: string;
   pricePerAdult: number;
   refundable: boolean;
+  refundabilityStatus?: 'requires-confirmation';
   seatsRemaining: number;
   segments: FlightSegment[];
   supplier: string;

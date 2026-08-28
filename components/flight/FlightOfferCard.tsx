@@ -67,7 +67,13 @@ export function FlightOfferCard({
       </div>
       <div className="flight-offer-card__details">
         <span>{offer.baggage}</span>
-        <span>{offer.refundable ? 'Refundable fare' : 'Non-refundable fare'}</span>
+        <span>
+          {offer.refundabilityStatus === 'requires-confirmation'
+            ? 'Refundability requires fare confirmation'
+            : offer.refundable
+              ? 'Refundable fare'
+              : 'Non-refundable fare'}
+        </span>
         <span>{offer.seatsRemaining} seats left</span>
         <small>Source: {offer.supplier}</small>
       </div>
