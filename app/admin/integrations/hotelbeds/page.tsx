@@ -89,6 +89,50 @@ export default async function AdminHotelbedsReadinessPage() {
           </ul>
         </Card>
       </section>
+
+      <section className="admin-section-block" aria-labelledby="hotelbeds-certification">
+        <div className="admin-section-block__heading">
+          <div>
+            <p className="hotel-page__eyebrow">Certification controls</p>
+            <h2 id="hotelbeds-certification">Evaluation workflow is guarded</h2>
+          </div>
+        </div>
+        <div className="partner-bookings__summary">
+          <Card>
+            <span>Availability</span>
+            <strong>Validated</strong>
+            <p>One call per workflow, with at most 2,000 unique hotels.</p>
+          </Card>
+          <Card>
+            <span>CheckRate</span>
+            <strong>Conditional</strong>
+            <p>Called only for RECHECK rates, with at most 10 rates per call.</p>
+          </Card>
+          <Card>
+            <span>Booking and cancel</span>
+            <strong>Not wired</strong>
+            <p>Chargeable operations remain blocked pending certification approval.</p>
+          </Card>
+          <Card>
+            <span>Content cache</span>
+            <strong>Pending</strong>
+            <p>Requires an approved content-data store and scheduled differential refresh.</p>
+          </Card>
+        </div>
+        <Card>
+          <h3>Implemented evidence</h3>
+          <ul>
+            <li>All requested occupancies are grouped into the same availability request.</li>
+            <li>Children require explicit ages; invalid dates and malformed values fail closed.</li>
+            <li>Requests use signed server-only headers and request gzip-compressed responses.</li>
+            <li>Unknown response fields are ignored so additive provider changes remain safe.</li>
+          </ul>
+          <p>
+            Review the controlled certification plan in{' '}
+            <code>docs/hotelbeds-certification-readiness.md</code> before requesting HBX review.
+          </p>
+        </Card>
+      </section>
     </section>
   );
 }

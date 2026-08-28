@@ -107,6 +107,8 @@ test('Hotelbeds readiness is administrator-only and cannot activate customer inv
   assert.match(page, /never mixed into public hotel results/);
   assert.doesNotMatch(page, /HOTELBEDS_SECRET/);
   assert.match(adapter, /\/hotel-api\/1\.0\/status/);
-  assert.doesNotMatch(adapter, /\/bookings|\/checkrates/);
+  assert.match(adapter, /\/hotel-api\/1\.0\/hotels/);
+  assert.match(adapter, /\/hotel-api\/1\.0\/checkrates/);
+  assert.doesNotMatch(adapter, /\/bookings|\/bookings\/|\/cancellations/);
   assert.match(script, /No availability search, booking, cancellation, payment/);
 });
