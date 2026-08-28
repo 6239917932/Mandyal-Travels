@@ -11,6 +11,7 @@ const routeContracts = [
   { content: 'Offers', path: '/offers', type: 'text/html' },
   { content: 'Business', path: '/business', type: 'text/html' },
   { content: 'Partners', path: '/partners', type: 'text/html' },
+  { content: 'Travel questions deserve a human answer.', path: '/contact', type: 'text/html' },
   { content: '"status":"alive"', path: '/api/v1/health/live', type: 'application/json' },
 ];
 

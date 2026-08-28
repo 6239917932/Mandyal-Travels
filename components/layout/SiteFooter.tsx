@@ -40,7 +40,11 @@ export function SiteFooter() {
 
         <div>
           <p className="site-footer__heading">Need help?</p>
-          <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
+          <div className="site-footer__contacts">
+            <a href={`tel:${siteConfig.supportPhone.href}`}>{siteConfig.supportPhone.display}</a>
+            <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
+            <Link href="/contact">Contact us and office locations</Link>
+          </div>
         </div>
       </div>
 
