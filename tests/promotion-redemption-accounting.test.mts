@@ -17,6 +17,7 @@ const reservationRoute = readFileSync('app/api/v1/promotions/reservations/route.
 const refundRoute = readFileSync('app/api/v1/admin/finance/refunds/[refundId]/route.ts', 'utf8');
 const sqliteSchema = readFileSync('prisma/schema.prisma', 'utf8');
 const postgresSchema = readFileSync('prisma/postgresql/schema.prisma', 'utf8');
+const readme = readFileSync('README.md', 'utf8');
 
 test('usage-capped claims use an atomic guarded campaign increment', () => {
   assert.match(service, /usageCount:\s*\{\s*lt:\s*campaign\.usageLimit\s*\}/);
@@ -100,4 +101,12 @@ test('SQLite and PostgreSQL keep the redemption contract in parity', () => {
     assert.match(schema, /bookingId\s+String\?\s+@unique/);
     assert.match(schema, /customerTripId\s+String\?\s+@unique/);
   }
+});
+
+test('operator documentation reflects active usage-cap governance', () => {
+  assert.match(
+    readme,
+    /transactional\s+reservation, redemption, expiry release, and full-refund reversal for usage-capped campaigns/,
+  );
+  assert.doesNotMatch(readme, /usage-capped campaigns until redemption tracking exists/i);
 });

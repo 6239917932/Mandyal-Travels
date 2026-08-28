@@ -55,8 +55,8 @@ and release checklist.
   bounded registers, private provider correlation, captured-payment mutation guards, and retry-safe
   refund review controls; no live payment provider is activated
 - Governed promotion operations with authoritative stored campaign states, bounded search and
-  pagination, version-safe reason-required activation, append-only history, and fail-closed
-  usage-capped campaigns until redemption tracking exists
+  pagination, version-safe reason-required activation, append-only history, and transactional
+  reservation, redemption, expiry release, and full-refund reversal for usage-capped campaigns
 - Privacy-safe hotel review moderation with complete status history, bounded filters and
   pagination, exact queue counts, reasoned rejection controls, and all-published-review customer
   rating summaries
