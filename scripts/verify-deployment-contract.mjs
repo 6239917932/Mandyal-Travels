@@ -23,7 +23,12 @@ const dockerignore = read('.dockerignore');
 const compose = read('compose.portable-preview.yaml');
 const productionCompose = read('compose.production-contract.yaml');
 const deploymentGuide = read('docs/PORTABLE_DEPLOYMENT.md');
+const productionDataGuide = read('docs/PRODUCTION_DATA_PLATFORM.md');
 const productionRunbook = read('docs/PRODUCTION_RUNTIME_RUNBOOK.md');
+const projectStatus = read('PROJECT_STATUS.md');
+const postgresqlBaseline = read(
+  'prisma/postgresql/migrations/00000000000000_baseline/migration.sql',
+);
 const schema = read('prisma/schema.prisma');
 const packageJson = read('package.json');
 const databaseRuntime = read('lib/database/runtime.ts');
@@ -134,6 +139,27 @@ requireText(
   'not a production database architecture',
   'Deployment documentation must state that the SQLite preview is not production architecture.',
 );
+const postgresqlTableCount = (postgresqlBaseline.match(/^CREATE TABLE /gm) ?? []).length;
+if (postgresqlTableCount === 0) {
+  failures.push('The PostgreSQL baseline must contain at least one table.');
+} else {
+  const tableCountLabel = `${postgresqlTableCount}-table`;
+  requireText(
+    deploymentGuide,
+    tableCountLabel,
+    'Portable deployment documentation must report the current PostgreSQL table count.',
+  );
+  requireText(
+    productionDataGuide,
+    tableCountLabel,
+    'Production data documentation must report the current PostgreSQL table count.',
+  );
+  requireText(
+    projectStatus,
+    tableCountLabel,
+    'Project status must report the current PostgreSQL table count.',
+  );
+}
 requireText(
   schema,
   'provider = "sqlite"',
