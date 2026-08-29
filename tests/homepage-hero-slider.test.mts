@@ -50,6 +50,11 @@ test('homepage hero slider is controllable, motion-aware, and page-integrated', 
   assert.match(styles, /\.home-hero-slider__dots button\.is-active/);
   assert.match(
     styles,
+    /\.home-hero-slider__image\s*\{[\s\S]*?object-fit:\s*contain;/,
+    'the complete hero photograph must remain visible without cover cropping',
+  );
+  assert.match(
+    styles,
     /\.home-hero-slider__controls\s*\{[\s\S]*?left:\s*50%;[\s\S]*?width:\s*min\(23rem,[\s\S]*?transform:\s*translateX\(-50%\);/,
     'the compact gallery control must remain centered over the photograph',
   );
