@@ -214,25 +214,6 @@
   }
 }
 
-.home-hero__overlay {
-  position: absolute;
-  z-index: -2;
-  inset: 0;
-  background:
-    linear-gradient(
-      90deg,
-      rgb(4 19 36 / 97%) 0%,
-      rgb(4 21 40 / 88%) 40%,
-      rgb(4 21 40 / 34%) 74%,
-      rgb(4 21 40 / 10%) 100%
-    ),
-    linear-gradient(0deg, rgb(4 21 40 / 55%) 0%, transparent 42%);
-}
-
-.home-hero__content {
-  padding: clamp(5rem, 10vw, 8rem) 0;
-}
-
 .home-hero__eyebrow,
 .home-section__eyebrow {
   margin: 0;
@@ -240,23 +221,6 @@
   font-weight: 850;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-.home-hero__eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: #d5e7f7;
-}
-
-.home-hero__eyebrow span {
-  width: 2.5rem;
-  height: 2px;
-  background: #f59e3d;
-}
-
-.home-hero__logo {
-  margin-top: 1.5rem;
 }
 
 .home-hero__title {
@@ -354,25 +318,25 @@
   color: var(--color-brand-900);
 }
 
-.home-hero__assurances {
+.home-intro__assurances {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem 1.5rem;
-  margin: 2.25rem 0 0;
+  margin: 1.75rem 0 0;
   padding: 0;
-  color: #d5e7f7;
+  color: #36536d;
   font-size: 0.8125rem;
   font-weight: 700;
   list-style: none;
 }
 
-.home-hero__assurances li {
+.home-intro__assurances li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.home-hero__assurances li::before {
+.home-intro__assurances li::before {
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 50%;
@@ -382,6 +346,7 @@
 
 .home-hero-slider__controls {
   position: absolute;
+  z-index: 2;
   right: max(1rem, calc((100vw - var(--container-max-width)) / 2));
   bottom: 2.4rem;
   display: grid;
@@ -395,6 +360,62 @@
   box-shadow: 0 1rem 3rem rgb(0 0 0 / 18%);
   padding: 0.85rem 0.95rem;
   backdrop-filter: blur(14px);
+}
+
+.home-hero--gallery {
+  min-height: clamp(34rem, 72vh, 48rem);
+  background: #071d36;
+}
+
+.home-hero--gallery .home-hero-slider__media {
+  z-index: 0;
+}
+
+.home-intro {
+  border-bottom: 1px solid #d8e5ef;
+  background: linear-gradient(135deg, #fff 0%, #f3f8fc 100%);
+  padding: clamp(3.5rem, 7vw, 6rem) 0;
+}
+
+.home-intro__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+}
+
+.home-intro__heading .home-section__eyebrow {
+  color: #276b9f;
+}
+
+.home-intro__title {
+  max-width: 48rem;
+  margin: 1rem 0 0;
+  color: var(--color-brand-900);
+  font-size: clamp(2.6rem, 5.5vw, 5rem);
+  font-weight: 760;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.home-intro__title span {
+  display: block;
+  color: #347caf;
+}
+
+.home-intro__details > p {
+  margin: 0;
+  color: #36536d;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.75;
+}
+
+.home-intro__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
 }
 
 .home-hero-slider__caption {
@@ -1190,22 +1211,8 @@
     min-height: 46rem;
   }
 
-  .home-hero__overlay {
-    background: linear-gradient(90deg, rgb(4 19 36 / 94%), rgb(4 21 40 / 66%));
-  }
-
-  .home-hero__content {
-    padding: 4.25rem 0 7rem;
-  }
-
-  .home-hero__logo {
-    display: flex;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .home-hero__title {
-    font-size: clamp(2.5rem, 13vw, 4rem);
+  .home-hero--gallery {
+    min-height: clamp(27rem, 64svh, 36rem);
   }
 
   .home-hero-slider__controls {
@@ -1218,7 +1225,16 @@
     width: 100%;
   }
 
-  .home-hero__assurances {
+  .home-intro__grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .home-intro__title {
+    font-size: clamp(2.45rem, 12vw, 3.75rem);
+  }
+
+  .home-intro__assurances {
     display: grid;
   }
 
