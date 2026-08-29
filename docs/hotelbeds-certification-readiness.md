@@ -26,6 +26,11 @@ made automatically.
 - Content is considered fresh through 36 hours, due soon through 72 hours, and overdue after that.
   An unmigrated database produces a migration-required administrator message instead of a portal
   runtime error.
+- Runtime readiness remains unaffected while content sync is disabled. After a release owner
+  explicitly requires the sync, `/api/v1/health` fails closed for incomplete connector
+  configuration, an unsafe environment, a missing migration, an empty cache, or content older than
+  72 hours. A still-usable cache reports attention during an active refresh or after a recent failed
+  refresh. The health probe reads local evidence only and never calls Hotelbeds.
 
 ## Deliberately blocked
 
