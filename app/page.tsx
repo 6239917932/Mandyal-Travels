@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { MandyalLogo } from '@/components/brand/MandyalLogo';
+import { HomeHeroSlider } from '@/components/home/HomeHeroSlider';
 import { siteConfig } from '@/config/site';
 
 type TravelOption = {
@@ -89,14 +90,7 @@ export default function Home() {
   return (
     <div className="home-page">
       <section className="home-hero">
-        <Image
-          alt="A Himalayan valley, river, village, and mountain road in warm morning light"
-          className="home-hero__image"
-          fill
-          preload
-          sizes="100vw"
-          src="/brand/mandi-himalayan-hero-v1.png"
-        />
+        <HomeHeroSlider />
         <div aria-hidden="true" className="home-hero__overlay" />
 
         <div className="home-container home-hero__content">
@@ -130,12 +124,6 @@ export default function Home() {
             <li>Secure booking journey</li>
             <li>Local understanding</li>
           </ul>
-        </div>
-
-        <div aria-hidden="true" className="home-hero__place">
-          <span>31.5892° N</span>
-          <strong>Mandi</strong>
-          <span>76.9182° E</span>
         </div>
       </section>
 

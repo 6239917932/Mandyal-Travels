@@ -93,7 +93,9 @@
 }
 
 .mandyal-logo--hero {
-  width: min(100%, 38rem);
+  width: 38rem;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: clamp(0.65rem, 1.5vw, 1rem) clamp(0.85rem, 2vw, 1.35rem);
   border: 1px solid rgb(255 255 255 / 72%);
   border-radius: var(--radius-lg);
@@ -264,5 +266,13 @@
   .mandyal-logo--compact .mandyal-logo__artwork,
   .mandyal-logo__artwork {
     width: 11.5rem;
+  }
+
+  .mandyal-logo--hero {
+    width: 100%;
+  }
+
+  .mandyal-logo--hero .mandyal-logo__artwork {
+    width: 100%;
   }
 }
