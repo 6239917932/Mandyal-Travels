@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import {
+  customerConsentPolicyEvidence,
+  customerConsentPurpose,
+  customerConsentSource,
+  customerConsentStatus,
+} from '@/services/customerConsentCenterService';
 import { customerNotificationTitle } from '@/services/customerNotificationCenterService';
 
 const MAX_EXPORT_RECORDS = 5000;
@@ -28,6 +34,7 @@ export async function GET() {
         }),
         tx.accountSecurityEvent.count({ where: { userId: user.id } }),
         tx.notificationDelivery.count({ where: { userId: user.id } }),
+        tx.userConsentRecord.count({ where: { userId: user.id } }),
         tx.loyaltyAccount.count({ where: { userId: user.id } }),
         tx.loyaltyLedger.count({ where: { account: { is: { userId: user.id } } } }),
         tx.referralCode.count({ where: { ownerUserId: user.id } }),
@@ -157,6 +164,19 @@ export async function GET() {
           take: MAX_EXPORT_RECORDS + 1,
           where: { userId: user.id },
         }),
+        tx.userConsentRecord.findMany({
+          orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
+          select: {
+            policyVersion: true,
+            purpose: true,
+            recordedAt: true,
+            source: true,
+            status: true,
+            withdrawnAt: true,
+          },
+          take: MAX_EXPORT_RECORDS + 1,
+          where: { userId: user.id },
+        }),
         tx.loyaltyAccount.findUnique({
           select: {
             createdAt: true,
@@ -231,6 +251,7 @@ export async function GET() {
       membership,
       securityEvents,
       notificationHistory,
+      consentHistory,
       loyaltyAccount,
       referralCodes,
       savedTravelers,
@@ -240,6 +261,19 @@ export async function GET() {
       ...delivery,
       description: customerNotificationTitle(_.templateKey),
     }));
+
+    const safeConsentHistory = consentHistory.map((record) => {
+      const policy = customerConsentPolicyEvidence(record.policyVersion);
+
+      return {
+        policyVersion: policy.label,
+        purpose: customerConsentPurpose(record.purpose),
+        recordedAt: record.recordedAt,
+        source: customerConsentSource(record.source),
+        status: customerConsentStatus(record.status).label,
+        withdrawnAt: record.withdrawnAt,
+      };
+    });
 
     const exportedAt = new Date();
     const data = {
@@ -263,6 +297,7 @@ export async function GET() {
         : null,
       companyTravelRequests: companyRequests,
       benefitsReadiness: { loyaltyAccount, referralCodes },
+      consentHistory: safeConsentHistory,
       exportedAt,
       hotelBookings,
       notificationHistory: safeNotificationHistory,

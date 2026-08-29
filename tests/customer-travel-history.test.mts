@@ -174,7 +174,7 @@ test('account quick-history actions consume the same bounded document projection
   assert.match(accountPage, /SessionManager/);
   assert.match(accountPage, /href: '\/account\/notifications'/);
   assert.match(accountPage, /href: '\/account\/benefits'/);
-  assert.match(accountPage, /benefits-readiness records/);
+  assert.match(accountPage, /benefits-readiness\s+records/);
 });
 
 test('account dashboard transport ownership permits email fallback only for unclaimed rows', () => {

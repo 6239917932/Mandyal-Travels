@@ -5,6 +5,8 @@ import test from 'node:test';
 test('account readiness navigation exposes notifications and governed benefits', async () => {
   const page = await readFile(new URL('../app/account/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /href: '\/account\/notifications'/);
+  assert.match(page, /href: '\/account\/consents'/);
+  assert.match(page, /label: 'Consent history'/);
   assert.match(page, /href: '\/account\/benefits'/);
 });
 
@@ -15,6 +17,8 @@ test('account export scopes readiness records to the authenticated user', async 
   );
 
   assert.match(route, /notificationDelivery\.findMany/);
+  assert.match(route, /userConsentRecord\.count/);
+  assert.match(route, /userConsentRecord\.findMany/);
   assert.match(route, /loyaltyAccount\.findUnique/);
   assert.match(route, /referralCode\.findMany/);
   assert.match(route, /where: \{ userId: user\.id \}/);
@@ -22,6 +26,7 @@ test('account export scopes readiness records to the authenticated user', async 
   assert.match(route, /account: \{ is: \{ userId: user\.id \} \}/);
   assert.match(route, /benefitsReadiness: \{ loyaltyAccount, referralCodes \}/);
   assert.match(route, /notificationHistory: safeNotificationHistory/);
+  assert.match(route, /consentHistory: safeConsentHistory/);
 });
 
 test('account readiness export omits notification and ledger operational identifiers', async () => {
@@ -31,9 +36,14 @@ test('account readiness export omits notification and ledger operational identif
   );
 
   assert.doesNotMatch(route, /providerRef|lastError|variablesJson|dedupeKey|nextAttemptAt/);
+  assert.doesNotMatch(route, /ipAddress|userAgent/);
   assert.doesNotMatch(route, /referenceId|accountId|ownerUserId: true|userId: true/);
   assert.doesNotMatch(route, /code: true/);
   assert.match(route, /customerNotificationTitle\(_\.templateKey\)/);
+  assert.match(route, /customerConsentPurpose\(record\.purpose\)/);
+  assert.match(route, /customerConsentPolicyEvidence\(record\.policyVersion\)/);
+  assert.match(route, /customerConsentStatus\(record\.status\)\.label/);
+  assert.match(route, /customerConsentSource\(record\.source\)/);
   assert.match(route, /'Cache-Control': 'no-store'/);
 });
 
@@ -54,6 +64,7 @@ test('account export description discloses all customer archive categories', asy
   const page = await readFile(new URL('../app/account/page.tsx', import.meta.url), 'utf8');
 
   assert.match(page, /security activity/);
-  assert.match(page, /customer-friendly notification history/);
-  assert.match(page, /benefits-readiness records/);
+  assert.match(page, /customer-friendly notification and consent history/);
+  assert.match(page, /consent history/);
+  assert.match(page, /benefits-readiness\s+records/);
 });
