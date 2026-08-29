@@ -21,8 +21,13 @@ production preflight intentionally rejects it.
 - `npm ci --ignore-scripts` prevents an incomplete dependency stage from running Prisma generation;
   the complete builder and migration stages generate the client after the schema is present.
 - `/api/v1/health/live` confirms that the process can answer HTTP without touching a dependency.
-- `/api/v1/health` is the readiness check and verifies the database, core schema, and integration
-  outbox. Traffic must reach an instance only while this endpoint returns HTTP 200.
+- `/api/v1/health` is the readiness check and verifies the database, core schema, integration
+  outbox, and any explicitly required Hotelbeds content cache. A disabled Hotelbeds content sync is
+  reported as not required. Once enabled, missing credentials, an unapplied cache migration, an
+  empty or stale cache, or an unsafe provider environment returns HTTP 503 without calling the
+  supplier. A fresh cache remains usable during a running refresh or a recent failed refresh, but
+  the response reports attention. Traffic must reach an instance only while this endpoint returns
+  HTTP 200.
 - `npm run deployment:verify` checks these invariants and is included in `npm run check`.
 
 ## Local preview rehearsal

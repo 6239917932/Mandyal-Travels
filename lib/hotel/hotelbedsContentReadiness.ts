@@ -112,29 +112,33 @@ export function hotelbedsContentReadiness(input: {
     ...(input.lastRun ? { lastRun: input.lastRun } : {}),
     ...(input.newestFetchedAt ? { newestFetchedAt: input.newestFetchedAt } : {}),
   };
-  if (input.lastRun?.status === 'RUNNING') {
-    return { ...evidence, state: 'RUNNING' };
-  }
-  if (input.lastRun?.status === 'FAILED') {
-    return { ...evidence, state: 'FAILED' };
-  }
-  if (!input.newestFetchedAt || input.activePropertyCount === 0) {
-    return { ...evidence, state: 'NOT_STARTED' };
-  }
-  if (Number.isNaN(input.newestFetchedAt.getTime())) {
+  if (input.newestFetchedAt && Number.isNaN(input.newestFetchedAt.getTime())) {
     throw new Error('Invalid Hotelbeds content freshness time.');
   }
-  const ageHours = Math.max(
-    0,
-    (input.now.getTime() - input.newestFetchedAt.getTime()) / (60 * 60 * 1_000),
-  );
+  const ageHours = input.newestFetchedAt
+    ? Math.max(0, (input.now.getTime() - input.newestFetchedAt.getTime()) / (60 * 60 * 1_000))
+    : undefined;
+  const evidenceWithAge = {
+    ...evidence,
+    ...(ageHours !== undefined ? { ageHours } : {}),
+  };
+  if (input.lastRun?.status === 'RUNNING') {
+    return { ...evidenceWithAge, state: 'RUNNING' };
+  }
+  if (input.lastRun?.status === 'FAILED') {
+    return { ...evidenceWithAge, state: 'FAILED' };
+  }
+  if (!input.newestFetchedAt || input.activePropertyCount === 0) {
+    return { ...evidenceWithAge, state: 'NOT_STARTED' };
+  }
+  if (ageHours === undefined) throw new Error('Hotelbeds content age could not be determined.');
   const state =
     ageHours <= HOTELBEDS_CONTENT_FRESH_HOURS
       ? 'FRESH'
       : ageHours <= HOTELBEDS_CONTENT_STALE_HOURS
         ? 'AGING'
         : 'STALE';
-  return { ...evidence, ageHours, state };
+  return { ...evidenceWithAge, state };
 }
 
 export function hotelbedsContentReadinessLabel(state: HotelbedsContentReadinessState): string {
