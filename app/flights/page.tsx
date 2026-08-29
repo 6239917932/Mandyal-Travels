@@ -103,8 +103,8 @@ export default async function FlightsPage({
                   </div>
                 ) : (
                   <p className="hotel-page__empty-state">
-                    No flights are available for this search. Try DEL to BOM or DEL to BLR in
-                    economy.
+                    No verified flights are available for this search. Try another route or adjust
+                    your dates and cabin selection.
                   </p>
                 )}
               </div>

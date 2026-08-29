@@ -1,5 +1,6 @@
 import { mockBusOffers } from '@/constants/busData';
 import { settleAvailableSources } from '@/lib/inventory/settleAvailableSources';
+import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { prisma } from '@/lib/prisma';
 import type { BusOffer, BusSearchCriteria } from '@/types/bus';
 
@@ -8,7 +9,10 @@ export interface BusSupplierAdapter {
 }
 
 export class FixtureBusSupplierAdapter implements BusSupplierAdapter {
+  constructor(private readonly fixtureInventoryEnabled = isFixtureInventoryEnabled()) {}
+
   async search(criteria: BusSearchCriteria): Promise<BusOffer[]> {
+    if (!this.fixtureInventoryEnabled) return [];
     return mockBusOffers.filter(
       (offer) =>
         offer.origin.toLowerCase() === criteria.origin.toLowerCase() &&

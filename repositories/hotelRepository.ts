@@ -1,5 +1,6 @@
 import { mockHotels } from '@/constants/hotelData';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
+import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { prisma } from '@/lib/prisma';
 import type { Hotel } from '@/types/hotel';
 
@@ -10,6 +11,8 @@ export interface HotelRepository {
 }
 
 export class InMemoryHotelRepository implements HotelRepository {
+  constructor(private readonly fixtureInventoryEnabled = isFixtureInventoryEnabled()) {}
+
   async findAll(): Promise<Hotel[]> {
     const managedPropertiesResult = await Promise.allSettled([
       prisma.partnerProperty.findMany({
@@ -170,7 +173,7 @@ export class InMemoryHotelRepository implements HotelRepository {
           starRating: property.starRating as 1 | 2 | 3 | 4 | 5,
         };
       });
-    return [...mockHotels, ...partnerHotels];
+    return [...(this.fixtureInventoryEnabled ? mockHotels : []), ...partnerHotels];
   }
 
   async findById(id: string): Promise<Hotel | undefined> {

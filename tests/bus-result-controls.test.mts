@@ -95,7 +95,7 @@ test('bus page keeps error, source-empty, and filter-empty result states distinc
   assert.match(page, /!error \? \(/);
   assert.match(page, /availableOffers\.length > 0 \? \(/);
   assert.match(page, /No buses match the active filters\./);
-  assert.match(page, /No buses are available for this search\./);
+  assert.match(page, /No verified buses are available for this search\./);
   assert.match(page, /Bus search is temporarily unavailable\. Please try again\./);
   assert.doesNotMatch(page, /cause\.message/);
 });

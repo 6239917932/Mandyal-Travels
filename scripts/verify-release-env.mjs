@@ -143,6 +143,8 @@ for (const [endpointName, hostsName] of [
 }
 if (process.env.NODE_ENV !== 'production')
   failures.push('NODE_ENV must be production for a release deployment.');
+if (process.env.FIXTURE_INVENTORY_ENABLED === 'true')
+  failures.push('FIXTURE_INVENTORY_ENABLED must not be true in production.');
 
 if (failures.length) {
   console.error('Release environment verification failed:');

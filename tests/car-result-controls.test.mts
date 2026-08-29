@@ -186,5 +186,5 @@ test('car results keep error, source-empty, and filter-empty states distinct', (
   assert.match(page, /availableOffers\.length > 0/);
   assert.match(page, /No cars match the active filters\./);
   assert.match(page, /Clear filters/);
-  assert.match(page, /No cars are available for this search\./);
+  assert.match(page, /No verified cars are available for this search\./);
 });
