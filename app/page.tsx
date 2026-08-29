@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { MandyalLogo } from '@/components/brand/MandyalLogo';
 import { HomeHeroSlider } from '@/components/home/HomeHeroSlider';
 import { siteConfig } from '@/config/site';
 
@@ -89,41 +88,44 @@ function MountainLine() {
 export default function Home() {
   return (
     <div className="home-page">
-      <section className="home-hero">
+      <section
+        aria-label="Bir Billing and Himalayan travel gallery"
+        className="home-hero home-hero--gallery"
+      >
         <HomeHeroSlider />
-        <div aria-hidden="true" className="home-hero__overlay" />
+      </section>
 
-        <div className="home-container home-hero__content">
-          <p className="home-hero__eyebrow">
-            <span /> Rooted in Mandi, Himachal Pradesh
-          </p>
-
-          <MandyalLogo appearance="inverse" className="home-hero__logo" showTagline size="hero" />
-
-          <h1 className="home-hero__title">
-            Journeys shaped by the mountains.
-            <span> Built for everywhere.</span>
-          </h1>
-
-          <p className="home-hero__description">
-            Mandyal Travels brings the grounded hospitality of our Himalayan home to a modern,
-            connected way of planning stays, flights, buses, and cars.
-          </p>
-
-          <div className="home-hero__actions">
-            <Link className="home-link-button home-link-button--primary" href="/hotels">
-              Find a stay <ArrowIcon />
-            </Link>
-            <Link className="home-link-button home-link-button--glass" href="/trip-planner">
-              Plan my whole trip
-            </Link>
+      <section aria-labelledby="home-intro-title" className="home-intro">
+        <div className="home-container home-intro__grid">
+          <div className="home-intro__heading">
+            <p className="home-section__eyebrow">Rooted in Mandi, Himachal Pradesh</p>
+            <h1 className="home-intro__title" id="home-intro-title">
+              Journeys shaped by the mountains.
+              <span> Built for everywhere.</span>
+            </h1>
           </div>
 
-          <ul className="home-hero__assurances" aria-label="Mandyal Travels platform benefits">
-            <li>Transparent choices</li>
-            <li>Secure booking journey</li>
-            <li>Local understanding</li>
-          </ul>
+          <div className="home-intro__details">
+            <p>
+              Mandyal Travels brings the grounded hospitality of our Himalayan home to a modern,
+              connected way of planning stays, flights, buses, and cars.
+            </p>
+
+            <div className="home-intro__actions">
+              <Link className="home-link-button home-link-button--primary" href="/hotels">
+                Find a stay <ArrowIcon />
+              </Link>
+              <Link className="home-link-button home-link-button--outline" href="/trip-planner">
+                Plan my whole trip
+              </Link>
+            </div>
+
+            <ul className="home-intro__assurances" aria-label="Mandyal Travels platform benefits">
+              <li>Transparent choices</li>
+              <li>Secure booking journey</li>
+              <li>Local understanding</li>
+            </ul>
+          </div>
         </div>
       </section>
 

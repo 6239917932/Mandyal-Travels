@@ -32,6 +32,14 @@ test('homepage hero slider is controllable, motion-aware, and page-integrated', 
 
   assert.match(page, /<HomeHeroSlider \/>/);
   assert.doesNotMatch(page, /mandi-himalayan-hero-v1\.png/);
+  assert.doesNotMatch(page, /<MandyalLogo/);
+  assert.doesNotMatch(page, /home-hero__overlay/);
+  assert.match(page, /className="home-hero home-hero--gallery"/);
+  assert.match(page, /aria-labelledby="home-intro-title" className="home-intro"/);
+  assert.ok(
+    page.indexOf('className="home-intro"') > page.indexOf('<HomeHeroSlider />'),
+    'the introductory copy must follow the unobstructed photography',
+  );
   assert.match(slider, /prefers-reduced-motion: reduce/);
   assert.match(slider, /document\.hidden/);
   assert.match(slider, /event\.key === 'ArrowLeft'/);
@@ -40,4 +48,6 @@ test('homepage hero slider is controllable, motion-aware, and page-integrated', 
   assert.match(slider, /aria-label="Show next hero photograph"/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /\.home-hero-slider__dots button\.is-active/);
+  assert.match(styles, /\.home-intro__grid/);
+  assert.match(styles, /\.home-intro__title/);
 });
