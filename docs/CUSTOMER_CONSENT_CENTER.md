@@ -30,8 +30,10 @@ approved. Legal counsel must still complete the decisions listed in
 `docs/PRIVACY_CONSENT_LEGAL_APPROVAL.md`.
 
 Consent and messaging preference mutations remain owned by the existing authenticated preferences
-workflow. Account navigation and privacy-export integration are deliberately deferred until the
-customer-readiness and saved-traveler branches have merged, avoiding edits to their shared files.
+workflow. The customer account quick actions link to the read-only consent history, and the privacy
+export includes only user-scoped, customer-safe purpose, policy, status, source, and timestamp
+evidence. Operational record identifiers, IP addresses, user agents, and raw internal values remain
+excluded.
 
 Cashfree, payment behavior, providers, schema, migrations, shared CSS, and customer balances are not
 modified by this feature.

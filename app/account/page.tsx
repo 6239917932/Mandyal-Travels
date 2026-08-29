@@ -36,6 +36,11 @@ const customerQuickActions = [
     label: 'Notifications',
   },
   {
+    description: 'Review consent evidence recorded for your account.',
+    href: '/account/consents',
+    label: 'Consent history',
+  },
+  {
     description: 'Review recorded benefits data and program readiness.',
     href: '/account/benefits',
     label: 'Benefits readiness',
@@ -249,8 +254,8 @@ export default async function AccountPage() {
           <h2 id="account-data-heading">Download my data</h2>
           <p>
             Export your profile, preferences, bookings, company requests, customer support, security
-            activity, customer-friendly notification history, and benefits-readiness records as
-            JSON.
+            activity, customer-friendly notification and consent history, and benefits-readiness
+            records as JSON.
           </p>
         </div>
         <div className="account-trips__empty ui-card ui-card--padded">
