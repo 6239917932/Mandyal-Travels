@@ -20,6 +20,12 @@ made automatically.
 - Initial content loads use pages of at most 1,000 hotels; later runs use daily differential dates.
 - Content synchronization is separately disabled by default, authenticated, lease-protected,
   idempotent by correlation ID, bounded to five pages, and never called from customer search.
+- The protected Hotelbeds readiness page reports the sync gate, active cached-property count,
+  newest fetch time, freshness state, and ten most recent bounded runs without exposing secrets,
+  correlation IDs, or raw provider payloads.
+- Content is considered fresh through 36 hours, due soon through 72 hours, and overdue after that.
+  An unmigrated database produces a migration-required administrator message instead of a portal
+  runtime error.
 
 ## Deliberately blocked
 

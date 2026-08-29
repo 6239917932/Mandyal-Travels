@@ -7,11 +7,11 @@ import {
   boundedHotelbedsContentPages,
   planHotelbedsContentSync,
 } from '@/lib/hotel/hotelbedsContentRules';
+import { HOTELBEDS_CONTENT_JOB_KEY } from '@/lib/hotel/hotelbedsContentReadiness';
 import { readHotelbedsConfiguration } from '@/lib/hotel/hotelbedsRules';
 import { prisma } from '@/lib/prisma';
 import { HotelbedsEvaluationAdapter } from '@/repositories/hotelbedsEvaluationAdapter';
 
-const JOB_KEY = 'HOTELBEDS_CONTENT_CACHE_V1';
 const LEASE_SECONDS = 300;
 
 export class HotelbedsContentAutomationError extends Error {
@@ -57,7 +57,7 @@ async function acquireLease(now: Date, leaseTokenHash: string): Promise<boolean>
   try {
     await prisma.automationJobLease.create({
       data: {
-        jobKey: JOB_KEY,
+        jobKey: HOTELBEDS_CONTENT_JOB_KEY,
         lastStartedAt: now,
         lastStatus: 'RUNNING',
         leaseExpiresAt,
@@ -77,7 +77,7 @@ async function acquireLease(now: Date, leaseTokenHash: string): Promise<boolean>
   }
   const result = await prisma.automationJobLease.updateMany({
     data: { lastStartedAt: now, lastStatus: 'RUNNING', leaseExpiresAt, leaseTokenHash },
-    where: { jobKey: JOB_KEY, leaseExpiresAt: { lte: now } },
+    where: { jobKey: HOTELBEDS_CONTENT_JOB_KEY, leaseExpiresAt: { lte: now } },
   });
   return result.count === 1;
 }
@@ -120,7 +120,7 @@ export async function runHotelbedsContentAutomation(input?: {
     throw new HotelbedsContentAutomationError('AUTOMATION_ALREADY_RUNNING');
   }
   const run = await prisma.automationJobRun.create({
-    data: { correlationId, jobKey: JOB_KEY, status: 'RUNNING' },
+    data: { correlationId, jobKey: HOTELBEDS_CONTENT_JOB_KEY, status: 'RUNNING' },
   });
 
   try {
@@ -128,7 +128,11 @@ export async function runHotelbedsContentAutomation(input?: {
       prisma.hotelbedsContentProperty.count({ where: { active: true, language } }),
       prisma.automationJobRun.findFirst({
         orderBy: { completedAt: 'desc' },
-        where: { completedAt: { not: null }, jobKey: JOB_KEY, status: 'SUCCEEDED' },
+        where: {
+          completedAt: { not: null },
+          jobKey: HOTELBEDS_CONTENT_JOB_KEY,
+          status: 'SUCCEEDED',
+        },
       }),
     ]);
     const plan = planHotelbedsContentSync({
@@ -232,7 +236,7 @@ export async function runHotelbedsContentAutomation(input?: {
           lastSummaryJson: summaryJson,
           leaseExpiresAt: completedAt,
         },
-        where: { jobKey: JOB_KEY, leaseTokenHash },
+        where: { jobKey: HOTELBEDS_CONTENT_JOB_KEY, leaseTokenHash },
       }),
     ]);
     return result;
@@ -250,7 +254,7 @@ export async function runHotelbedsContentAutomation(input?: {
       }),
       prisma.automationJobLease.updateMany({
         data: { lastCompletedAt: completedAt, lastStatus: 'FAILED', leaseExpiresAt: completedAt },
-        where: { jobKey: JOB_KEY, leaseTokenHash },
+        where: { jobKey: HOTELBEDS_CONTENT_JOB_KEY, leaseTokenHash },
       }),
     ]);
     throw error;

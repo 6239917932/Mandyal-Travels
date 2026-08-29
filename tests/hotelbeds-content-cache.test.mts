@@ -118,16 +118,18 @@ test('content adapter uses the fixed gzip endpoint without booking operations', 
 });
 
 test('content worker is private, fail-closed, and disconnected from public search', async () => {
-  const [route, worker, hotelsPage, schema] = await Promise.all([
+  const [route, worker, readiness, hotelsPage, schema] = await Promise.all([
     readFile('app/api/v1/internal/workers/hotelbeds-content/route.ts', 'utf8'),
     readFile('services/hotelbedsContentAutomationService.ts', 'utf8'),
+    readFile('lib/hotel/hotelbedsContentReadiness.ts', 'utf8'),
     readFile('app/hotels/page.tsx', 'utf8'),
     readFile('prisma/schema.prisma', 'utf8'),
   ]);
   assert.match(route, /AUTOPILOT_WORKER_SECRET/);
   assert.match(route, /timingSafeEqual/);
   assert.match(worker, /HOTELBEDS_CONTENT_SYNC_ENABLED/);
-  assert.match(worker, /HOTELBEDS_CONTENT_CACHE_V1/);
+  assert.match(worker, /HOTELBEDS_CONTENT_JOB_KEY/);
+  assert.match(readiness, /HOTELBEDS_CONTENT_CACHE_V1/);
   assert.doesNotMatch(worker, /checkRates|searchAvailability|bookings|cancellations/);
   assert.doesNotMatch(hotelsPage, /HotelbedsContentProperty|hotelbedsContentProperty/);
   assert.match(schema, /model HotelbedsContentProperty/);
