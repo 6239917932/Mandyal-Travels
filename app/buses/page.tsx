@@ -82,8 +82,8 @@ export default async function BusesPage({
                   </div>
                 ) : (
                   <p className="hotel-page__empty-state">
-                    No buses are available for this search. Try Chandigarh to Delhi or Delhi to
-                    Jaipur.
+                    No verified buses are available for this search. Try another route or adjust
+                    your travel date.
                   </p>
                 )}
               </div>

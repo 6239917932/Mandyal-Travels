@@ -1,5 +1,6 @@
 import { mockCarOffers } from '@/constants/carData';
 import { settleAvailableSources } from '@/lib/inventory/settleAvailableSources';
+import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { partnerOperationsService } from '@/services/partnerOperationsService';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 
@@ -8,7 +9,10 @@ export interface CarSupplierAdapter {
 }
 
 export class FixtureCarSupplierAdapter implements CarSupplierAdapter {
+  constructor(private readonly fixtureInventoryEnabled = isFixtureInventoryEnabled()) {}
+
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
+    if (!this.fixtureInventoryEnabled) return [];
     return mockCarOffers.filter(
       (offer) =>
         offer.pickupLocation.toLowerCase() === criteria.pickupLocation.toLowerCase() &&

@@ -140,5 +140,5 @@ test('flight results keep error, source-empty, and filter-empty states distinct'
   assert.match(page, /availableOffers\.length > 0/);
   assert.match(page, /No flights match the active filters\./);
   assert.match(page, /Clear filters/);
-  assert.match(page, /No flights are available for this search\./);
+  assert.match(page, /No verified flights are available for this search\./);
 });

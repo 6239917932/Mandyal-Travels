@@ -121,8 +121,8 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
             </HotelResultsExplorer>
           ) : !error ? (
             <p className="hotel-page__empty-state">
-              No hotels match this search yet. Try Shimla or Jaipur with the current fixture
-              inventory.
+              No verified hotels are available for this search yet. Try another destination or
+              adjust your dates and filters.
             </p>
           ) : null}
 

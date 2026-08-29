@@ -83,8 +83,8 @@ export default async function CarsPage({
                   </div>
                 ) : (
                   <p className="hotel-page__empty-state">
-                    No cars are available for this search. Try Delhi to Delhi or Chandigarh to
-                    Chandigarh.
+                    No verified cars are available for this search. Try another location or adjust
+                    your rental dates.
                   </p>
                 )}
               </div>
