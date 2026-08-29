@@ -48,6 +48,17 @@ test('homepage hero slider is controllable, motion-aware, and page-integrated', 
   assert.match(slider, /aria-label="Show next hero photograph"/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /\.home-hero-slider__dots button\.is-active/);
+  assert.match(slider, /className="home-hero-slider__backdrop"/);
+  assert.match(
+    styles,
+    /\.home-hero-slider__media\s*\{[\s\S]*?overflow:\s*hidden;/,
+    'the hero media frame must contain the softened backdrop',
+  );
+  assert.match(
+    styles,
+    /\.home-hero-slider__backdrop\s*\{[\s\S]*?object-fit:\s*cover;[\s\S]*?filter:\s*blur\(24px\) brightness\(0\.48\)/,
+    'the unused hero margins should be filled by a softened image extension',
+  );
   assert.match(
     styles,
     /\.home-hero-slider__image\s*\{[\s\S]*?object-fit:\s*contain;/,

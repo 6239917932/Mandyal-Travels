@@ -128,6 +128,16 @@ export function HomeHeroSlider() {
     <>
       <div aria-hidden="true" className="home-hero-slider__media">
         <Image
+          key={`${currentSlide.src}-backdrop`}
+          alt=""
+          className="home-hero-slider__backdrop"
+          fill
+          preload={currentIndex === 0}
+          sizes="100vw"
+          src={currentSlide.src}
+          style={{ objectPosition: currentSlide.position }}
+        />
+        <Image
           key={currentSlide.src}
           alt=""
           className="home-hero-slider__image"
