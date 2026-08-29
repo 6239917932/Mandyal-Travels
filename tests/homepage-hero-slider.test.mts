@@ -48,6 +48,11 @@ test('homepage hero slider is controllable, motion-aware, and page-integrated', 
   assert.match(slider, /aria-label="Show next hero photograph"/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /\.home-hero-slider__dots button\.is-active/);
+  assert.match(
+    styles,
+    /\.home-hero-slider__controls\s*\{[\s\S]*?left:\s*50%;[\s\S]*?width:\s*min\(23rem,[\s\S]*?transform:\s*translateX\(-50%\);/,
+    'the compact gallery control must remain centered over the photograph',
+  );
   assert.match(styles, /\.home-intro__grid/);
   assert.match(styles, /\.home-intro__title/);
 });
