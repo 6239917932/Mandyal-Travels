@@ -193,10 +193,36 @@
   position: absolute;
   z-index: -3;
   inset: 0;
+  overflow: hidden;
   background: #071d36;
 }
 
+.home-hero-slider__backdrop {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 58% center;
+  filter: blur(24px) brightness(0.48) saturate(0.82);
+  opacity: 0.72;
+  transform: scale(1.08);
+}
+
+.home-hero-slider__media::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(7 29 54 / 45%),
+    transparent 28%,
+    transparent 72%,
+    rgb(7 29 54 / 45%)
+  );
+  content: '';
+  pointer-events: none;
+}
+
 .home-hero-slider__image {
+  z-index: 2;
   object-fit: contain;
   object-position: 58% center;
   animation: home-hero-image-reveal 700ms ease both;
