@@ -70,6 +70,8 @@ model User {
   accessEvents                UserAccessEvent[]              @relation("UserAccessSubject")
   performedAccessEvents       UserAccessEvent[]              @relation("UserAccessActor")
   busSeatHolds                PartnerBusSeatHold[]
+  createdServiceAdvisories    ServiceAdvisory[]              @relation("ServiceAdvisoryCreator")
+  serviceAdvisoryEvents       ServiceAdvisoryEvent[]         @relation("ServiceAdvisoryEventActor")
 
   @@index([role, accessStatus])
 }
@@ -994,6 +996,44 @@ model AutomationJobRun {
 
   @@index([jobKey, startedAt])
   @@index([status, startedAt])
+}
+
+model ServiceAdvisory {
+  id              String                 @id @default(cuid())
+  publicReference String                 @unique
+  title           String
+  message         String
+  severity        String                 @default("INFO")
+  surface         String                 @default("ALL")
+  status          String                 @default("DRAFT")
+  startsAt        DateTime?
+  endsAt          DateTime?
+  resolvedAt      DateTime?
+  version         Int                    @default(1)
+  createdById     String
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  createdBy       User                   @relation("ServiceAdvisoryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  events          ServiceAdvisoryEvent[]
+
+  @@index([status, startsAt, endsAt])
+  @@index([createdAt])
+}
+
+model ServiceAdvisoryEvent {
+  id           String          @id @default(cuid())
+  advisoryId   String
+  actorUserId  String
+  action       String
+  reason       String
+  snapshotJson String
+  createdAt    DateTime        @default(now())
+  advisory     ServiceAdvisory @relation(fields: [advisoryId], references: [id], onDelete: Cascade)
+  actor        User            @relation("ServiceAdvisoryEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([advisoryId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
 }
 
 model HotelbedsContentProperty {

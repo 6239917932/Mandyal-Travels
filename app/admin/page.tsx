@@ -208,6 +208,9 @@ export default async function AdminPage() {
             <Link className="ui-button ui-button--secondary" href="/admin/configuration">
               Platform configuration
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/admin/service-advisories">
+              Service advisories
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/admin/audit">
               Audit workbench
             </Link>
