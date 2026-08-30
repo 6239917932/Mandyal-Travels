@@ -20,6 +20,8 @@ services:
         value: 'false'
       - key: ALLOW_DEMO_TRANSPORT_CHECKOUT
         value: 'false'
+      - key: PARTNER_MUTATIONS_ENABLED
+        value: 'false'
       - key: PAYMENT_GATEWAY_MODE
         value: sandbox
       - key: AMADEUS_FLIGHT_ENABLED
