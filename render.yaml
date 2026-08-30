@@ -24,6 +24,8 @@ services:
         value: 'false'
       - key: DATABASE_TRUST_RENDER_PRIVATE_NETWORK
         value: 'true'
+      - key: RENDER_REPAIR_REDUNDANT_BASELINE
+        value: 'true'
       - key: PAYMENT_GATEWAY_MODE
         value: sandbox
       - key: AMADEUS_FLIGHT_ENABLED
