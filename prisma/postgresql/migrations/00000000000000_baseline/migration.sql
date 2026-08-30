@@ -1688,6 +1688,22 @@ CREATE TABLE "DestinationContentEvent" (
     CONSTRAINT "DestinationContentEvent_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ContactInquiry" (
+    "id" TEXT NOT NULL,
+    "reference" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL DEFAULT '',
+    "category" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ContactInquiry_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -2461,6 +2477,15 @@ CREATE INDEX "DestinationContentEvent_destinationId_createdAt_idx" ON "Destinati
 
 -- CreateIndex
 CREATE INDEX "DestinationContentEvent_createdAt_idx" ON "DestinationContentEvent"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ContactInquiry_reference_key" ON "ContactInquiry"("reference");
+
+-- CreateIndex
+CREATE INDEX "ContactInquiry_status_createdAt_idx" ON "ContactInquiry"("status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ContactInquiry_email_createdAt_idx" ON "ContactInquiry"("email", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

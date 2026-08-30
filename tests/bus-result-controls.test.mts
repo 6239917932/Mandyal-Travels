@@ -88,16 +88,12 @@ test('bus operator and type controls fail closed against the returned catalogue'
   );
 });
 
-test('bus page keeps error, source-empty, and filter-empty result states distinct', async () => {
+test('public bus marketplace is clearly unavailable until its live API is verified', async () => {
   const page = await readFile(new URL('../app/buses/page.tsx', import.meta.url), 'utf8');
 
-  assert.match(page, /let availableOffers = \[\]/);
-  assert.match(page, /!error \? \(/);
-  assert.match(page, /availableOffers\.length > 0 \? \(/);
-  assert.match(page, /No buses match the active filters\./);
-  assert.match(page, /No verified buses are available for this search\./);
-  assert.match(page, /Bus search is temporarily unavailable\. Please try again\./);
-  assert.doesNotMatch(page, /cause\.message/);
+  assert.match(page, /MarketplaceComingSoon/);
+  assert.match(page, /product="Buses"/);
+  assert.doesNotMatch(page, /busService|availableOffers/);
 });
 
 test('bus clear-filter links preserve only the search criteria', async () => {

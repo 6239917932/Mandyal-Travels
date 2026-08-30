@@ -17,7 +17,11 @@ export function PublicPageHero({
   title,
 }: PublicPageHeroProps) {
   return (
-    <section className={`public-page-hero${size === 'large' ? 'public-page-hero--large' : ''}`}>
+    <section
+      className={['public-page-hero', size === 'large' ? 'public-page-hero--large' : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
       <Image
         alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
         className="public-page-hero__image"

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { ContactInquiryForm } from '@/components/contact/ContactInquiryForm';
 import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = {
   title: 'Contact us',
   description:
-    'Contact Mandyal Travels for booking support and find our office presence in Bir, Joginder Nagar, and Chandigarh.',
+    'Contact Mandyal Travels for booking help, hotel onboarding, car onboarding, or general support.',
 };
 
 function ContactArrow() {
@@ -50,6 +51,12 @@ export default function ContactPage() {
               <small>Include your booking reference when available</small>
             </a>
           </div>
+        </div>
+      </section>
+
+      <section aria-label="Message Mandyal Travels" className="contact-message-section">
+        <div className="home-container">
+          <ContactInquiryForm />
         </div>
       </section>
 

@@ -25,7 +25,7 @@ test('homepage moves every supplied Bir Billing photograph into the travel galle
   assert.match(gallery, /From Mandi&apos;s valleys to Bir Billing&apos;s open skies/);
 });
 
-test('homepage hero provides a focused multi-product booking widget', async () => {
+test('homepage hero provides a focused hotel-and-car-first booking widget', async () => {
   const [page, widget, styles] = await Promise.all([
     readFile(new URL('../app/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../components/home/HomeBookingWidget.tsx', import.meta.url), 'utf8'),
@@ -35,7 +35,11 @@ test('homepage hero provides a focused multi-product booking widget', async () =
   assert.match(page, /mandyal-travel-hero-v2\.png/);
   assert.match(page, /<HomeBookingWidget \/>/);
   assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /One search\. Your whole journey\./);
+  assert.match(page, /Stay, drive, and grow with us\./);
+  assert.match(
+    page,
+    /Flights and buses will follow after live\s+supplier integrations are verified/,
+  );
   assert.doesNotMatch(page, /<HomeHeroSlider \/>/);
   assert.match(page, /<h2 className="home-intro__title" id="home-intro-title">/);
 
@@ -45,6 +49,7 @@ test('homepage hero provides a focused multi-product booking widget', async () =
   for (const route of ['/hotels', '/flights', '/buses', '/cars']) {
     assert.match(widget, new RegExp(`href: '${route}'`));
   }
+  assert.match(widget, /Coming soon/);
 
   assert.match(styles, /\.home-search-hero\s*\{/);
   assert.match(styles, /\.home-booking-widget\s*\{/);

@@ -146,7 +146,7 @@ export default async function AdminSupportPage({ searchParams }: AdminSupportPag
         <Card>
           <span>Current result</span>
           <strong>{selectedTotal}</strong>
-          <small>Matching {filters.type.toLowerCase()} cases</small>
+          <Link href="/admin/contact-inquiries">Open public message inbox</Link>
         </Card>
       </div>
 

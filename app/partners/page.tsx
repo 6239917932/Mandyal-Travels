@@ -17,16 +17,6 @@ const partnerOptions = [
     description:
       'Manage fleets, vehicle availability, rental rates, operations, compliance documents, bookings, and settlements.',
   },
-  {
-    title: 'Bus operators',
-    description:
-      'Manage routes, schedules, fleets, seats, fares, bookings, manifests, cancellations, and operational reporting.',
-  },
-  {
-    title: 'Flight suppliers',
-    description:
-      'Manage supplier configuration, offer and booking synchronization, exceptions, reconciliation, and commercial controls.',
-  },
 ] as const;
 
 export default function PartnersPage() {
@@ -43,17 +33,17 @@ export default function PartnersPage() {
             </Link>
           </>
         }
-        description="A shared partner platform for onboarding, inventory, reservations, operations, documents, reporting, and settlement visibility."
-        eyebrow="Mandyal Travels partner network"
+        description="Launch with hotel property management or car fleet management today. Flights and buses will be added only after their live supplier integrations are verified."
+        eyebrow="Hotel and car partner network"
         size="large"
-        title="Connect your travel inventory to more customers."
+        title="Run your hotel or car business from one platform."
       />
 
       <section className="home-section">
         <div className="home-container">
           <div className="home-section__heading">
             <p className="home-section__eyebrow">Partner channels</p>
-            <h2 className="home-section__title">Tools designed for every supply partner.</h2>
+            <h2 className="home-section__title">Tools ready for hotel and car owners.</h2>
           </div>
           <div className="travel-options-grid">
             {partnerOptions.map((option, index) => (

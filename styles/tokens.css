@@ -31,8 +31,8 @@
   --color-text-muted: #738399;
 
   /* Typography */
-  --font-family-sans: Inter, Aptos, 'Segoe UI', Arial, sans-serif;
-  --font-family-mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+  --font-family-sans: 'Book Antiqua', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-family-mono: 'Book Antiqua', 'Palatino Linotype', Palatino, Georgia, serif;
 
   /* Layout */
   --container-max-width: 1280px;
