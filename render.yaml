@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: mandyal-travels
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: npm ci && npm run build -- --webpack
+    startCommand: node scripts/start-render.mjs
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: NODE_ENV
+        value: production
+      - key: DEPLOYMENT_ENVIRONMENT
+        value: production
+      - key: FIXTURE_INVENTORY_ENABLED
+        value: 'false'
+      - key: ALLOW_DEMO_TRANSPORT_CHECKOUT
+        value: 'false'
+      - key: PAYMENT_GATEWAY_MODE
+        value: sandbox
+      - key: AMADEUS_FLIGHT_ENABLED
+        value: 'false'
+      - key: HOTELBEDS_ENABLED
+        value: 'false'
+      - key: HOTELBEDS_CONTENT_SYNC_ENABLED
+        value: 'false'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mandyal-travels-db
+          property: connectionString
+      - key: DIRECT_DATABASE_URL
+        fromDatabase:
+          name: mandyal-travels-db
+          property: connectionString
+      - key: BOOKING_TOKEN_SECRET
+        generateValue: true
+      - key: MFA_ENCRYPTION_KEY
+        generateValue: true
+      - key: PARTNER_ADMIN_KEY
+        generateValue: true
+      - key: NOTIFICATION_WORKER_SECRET
+        generateValue: true
+      - key: AUTOPILOT_WORKER_SECRET
+        generateValue: true
+      - key: INTEGRATION_OUTBOX_WORKER_SECRET
+        generateValue: true
+
+databases:
+  - name: mandyal-travels-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: '18'
+    databaseName: mandyal_travels
+    user: mandyal_travels_app
+    ipAllowList: []
