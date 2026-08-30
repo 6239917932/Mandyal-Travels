@@ -5,6 +5,7 @@ import { correlationIdFromHeader } from '@/lib/api/correlation';
 
 const SESSION_COOKIE_NAME = 'mandyal_session';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const PARTNER_MUTATIONS_ENABLED = process.env.PARTNER_MUTATIONS_ENABLED === 'true';
 
 function forbiddenResponse(requestId: string) {
   const response = NextResponse.json(
@@ -19,10 +20,32 @@ function forbiddenResponse(requestId: string) {
   return response;
 }
 
+function partnerOperationsPausedResponse(requestId: string) {
+  return NextResponse.json(
+    {
+      error: {
+        code: 'PARTNER_OPERATIONS_PAUSED',
+        message:
+          'Partner onboarding and inventory changes are paused until contracts and payments are activated.',
+      },
+    },
+    { status: 503, headers: { 'x-request-id': requestId } },
+  );
+}
+
 export function proxy(request: NextRequest) {
   const requestId = correlationIdFromHeader(request.headers.get('x-request-id'));
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
+
+  if (
+    !SAFE_METHODS.has(request.method) &&
+    !PARTNER_MUTATIONS_ENABLED &&
+    (request.nextUrl.pathname.startsWith('/api/v1/partner/') ||
+      request.nextUrl.pathname === '/api/v1/partners/applications')
+  ) {
+    return partnerOperationsPausedResponse(requestId);
+  }
 
   if (SAFE_METHODS.has(request.method) || !request.cookies.has(SESSION_COOKIE_NAME)) {
     const response = NextResponse.next({ request: { headers: requestHeaders } });
