@@ -189,6 +189,31 @@
   max-width: 39rem;
 }
 
+.home-hero--photo {
+  background: #071d36;
+}
+
+.home-hero--photo::before,
+.home-hero--photo::after {
+  display: none;
+}
+
+.home-hero--photo__image {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-hero--photo__shade {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(7 29 54 / 20%), rgb(7 29 54 / 42%)),
+    linear-gradient(90deg, rgb(7 29 54 / 94%) 0%, rgb(7 29 54 / 78%) 48%, rgb(7 29 54 / 30%) 100%);
+  pointer-events: none;
+}
+
 .home-hero-slider__media {
   position: absolute;
   z-index: -3;
@@ -1559,6 +1584,16 @@
 
   .home-hero {
     min-height: 46rem;
+  }
+
+  .home-hero--photo__image {
+    object-position: 62% center;
+  }
+
+  .home-hero--photo__shade {
+    background:
+      linear-gradient(180deg, rgb(7 29 54 / 46%), rgb(7 29 54 / 80%)),
+      linear-gradient(90deg, rgb(7 29 54 / 90%), rgb(7 29 54 / 46%));
   }
 
   .home-hero--gallery {
