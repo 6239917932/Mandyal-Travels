@@ -25,15 +25,15 @@ export default function PartnersPage() {
       <PublicPageHero
         actions={
           <>
-            <Link className="home-link-button home-link-button--primary" href="/partners/apply">
-              Request partner onboarding
+            <Link className="home-link-button home-link-button--primary" href="/contact">
+              Contact us about future onboarding
             </Link>
             <Link className="home-link-button home-link-button--glass" href="/partner">
               Open partner operations
             </Link>
           </>
         }
-        description="Launch with hotel property management or car fleet management today. Flights and buses will be added only after their live supplier integrations are verified."
+        description="Preview our hotel and car management platform. New supplier onboarding will open only after contracts, compliance, and payment operations are activated."
         eyebrow="Hotel and car partner network"
         size="large"
         title="Run your hotel or car business from one platform."
@@ -43,7 +43,7 @@ export default function PartnersPage() {
         <div className="home-container">
           <div className="home-section__heading">
             <p className="home-section__eyebrow">Partner channels</p>
-            <h2 className="home-section__title">Tools ready for hotel and car owners.</h2>
+            <h2 className="home-section__title">Tools being prepared for hotel and car owners.</h2>
           </div>
           <div className="travel-options-grid">
             {partnerOptions.map((option, index) => (
