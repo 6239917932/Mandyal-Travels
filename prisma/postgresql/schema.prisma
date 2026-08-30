@@ -1982,3 +1982,19 @@ model DestinationContentEvent {
   @@index([destinationId, createdAt])
   @@index([createdAt])
 }
+
+model ContactInquiry {
+  id        String   @id @default(cuid())
+  reference String   @unique
+  name      String
+  email     String
+  phone     String   @default("")
+  category  String
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email, createdAt])
+}

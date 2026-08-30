@@ -346,7 +346,8 @@
   text-align: center;
 }
 
-.coming-soon-page__card h1 {
+.coming-soon-page__card h1,
+.coming-soon-page__card h2 {
   margin: 0;
   color: var(--color-brand-900);
   font-size: clamp(2rem, 6vw, 3.25rem);

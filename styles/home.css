@@ -615,6 +615,19 @@
   height: 1.4rem;
 }
 
+.home-booking-widget__tabs small {
+  position: absolute;
+  right: 0.45rem;
+  top: 0.4rem;
+  border-radius: 999px;
+  background: #e7eef4;
+  padding: 0.12rem 0.35rem;
+  color: #596f82;
+  font-size: 0.55rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .home-booking-widget__form {
   display: grid;
   gap: 0.75rem;
@@ -659,6 +672,31 @@
 
 .home-booking-widget__field input::placeholder {
   color: #8b9dad;
+}
+
+.home-booking-widget__coming-soon {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.home-booking-widget__coming-soon h2,
+.home-booking-widget__coming-soon p {
+  margin: 0;
+}
+
+.home-booking-widget__coming-soon p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.home-booking-widget__coming-soon a {
+  justify-self: center;
+  color: var(--color-brand-700);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
 }
 
 .home-booking-widget__submit {
@@ -1448,6 +1486,98 @@
   padding: clamp(4.5rem, 9vw, 7rem) 0 calc(var(--space-24) + clamp(4.5rem, 9vw, 7rem));
 }
 
+.contact-message-section {
+  background: #f2f7fa;
+  padding: clamp(3rem, 7vw, 5rem) 0;
+}
+
+.contact-inquiry {
+  border: 1px solid var(--color-border);
+  border-radius: 1.5rem;
+  background: #fff;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  box-shadow: 0 18px 48px rgb(16 35 61 / 8%);
+}
+
+.contact-inquiry__heading h2 {
+  margin: 0.55rem 0 0;
+  color: var(--color-brand-950);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.contact-inquiry__heading > p:last-child {
+  margin: 0.8rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+.contact-inquiry__grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.contact-inquiry label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--color-brand-950);
+  font-weight: 750;
+}
+
+.contact-inquiry input,
+.contact-inquiry select,
+.contact-inquiry textarea {
+  width: 100%;
+  border: 1px solid #c9d7e2;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.85rem 0.9rem;
+  color: var(--color-brand-950);
+  font: inherit;
+}
+
+.contact-inquiry input:focus,
+.contact-inquiry select:focus,
+.contact-inquiry textarea:focus {
+  border-color: #4d8fbe;
+  outline: 3px solid rgb(47 121 173 / 14%);
+}
+
+.contact-inquiry textarea {
+  resize: vertical;
+}
+
+.contact-inquiry__message {
+  grid-column: 1 / -1;
+}
+
+.contact-inquiry__submit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.25rem;
+}
+
+.contact-inquiry__submit small {
+  color: var(--color-text-secondary);
+}
+
+.contact-inquiry__status {
+  margin: 1rem 0 0;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+
+.contact-inquiry__status--success {
+  background: #e7f6ee;
+  color: #145a36;
+}
+
+.contact-inquiry__status--error {
+  background: #fff0f0;
+  color: var(--color-danger);
+}
+
 .contact-offices__grid {
   display: grid;
   gap: 1rem;
@@ -1585,8 +1715,16 @@
   }
 
   .home-presence__grid,
-  .contact-offices__grid {
+  .contact-inquiry__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .contact-offices__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contact-inquiry__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-contact-strip {

@@ -2,13 +2,18 @@
 
 import { useState, type ReactNode } from 'react';
 
-type BookingProduct = 'hotels' | 'flights' | 'buses' | 'cars';
+type BookingProduct = 'hotels' | 'cars' | 'flights' | 'buses';
 
-const PRODUCTS: ReadonlyArray<{ href: string; label: string; value: BookingProduct }> = [
-  { href: '/hotels', label: 'Hotels', value: 'hotels' },
-  { href: '/flights', label: 'Flights', value: 'flights' },
-  { href: '/buses', label: 'Buses', value: 'buses' },
-  { href: '/cars', label: 'Cars', value: 'cars' },
+const PRODUCTS: ReadonlyArray<{
+  available: boolean;
+  href: string;
+  label: string;
+  value: BookingProduct;
+}> = [
+  { available: true, href: '/hotels', label: 'Hotels', value: 'hotels' },
+  { available: true, href: '/cars', label: 'Cars', value: 'cars' },
+  { available: false, href: '/flights', label: 'Flights', value: 'flights' },
+  { available: false, href: '/buses', label: 'Buses', value: 'buses' },
 ];
 
 function ProductIcon({ product }: { product: BookingProduct }) {
@@ -69,92 +74,83 @@ export function HomeBookingWidget() {
           >
             <ProductIcon product={product.value} />
             <span>{product.label}</span>
+            {!product.available ? <small>Coming soon</small> : null}
           </button>
         ))}
       </div>
 
-      <form
-        action={active.href}
-        aria-labelledby={`home-product-${activeProduct}`}
-        className="home-booking-widget__form"
-        id="home-booking-panel"
-        key={activeProduct}
-        role="tabpanel"
-      >
-        {activeProduct === 'hotels' ? (
-          <>
-            <Field
-              label="Where are you going?"
-              name="destination"
-              placeholder="City, area, or hotel"
-            />
-            <Field label="Check-in" name="checkInDate" type="date" />
-            <Field label="Check-out" name="checkOutDate" type="date" />
-            <label className="home-booking-widget__field">
-              <span>Guests</span>
-              <select defaultValue="2" name="adults">
-                <option value="1">1 guest</option>
-                <option value="2">2 guests</option>
-                <option value="3">3 guests</option>
-                <option value="4">4 guests</option>
-              </select>
-            </label>
-            <input name="children" type="hidden" value="0" />
-            <input name="rooms" type="hidden" value="1" />
-          </>
-        ) : null}
+      {active.available ? (
+        <form
+          action={active.href}
+          aria-labelledby={`home-product-${activeProduct}`}
+          className="home-booking-widget__form"
+          id="home-booking-panel"
+          key={activeProduct}
+          role="tabpanel"
+        >
+          {activeProduct === 'hotels' ? (
+            <>
+              <Field
+                label="Where are you going?"
+                name="destination"
+                placeholder="City, area, or hotel"
+              />
+              <Field label="Check-in" name="checkInDate" type="date" />
+              <Field label="Check-out" name="checkOutDate" type="date" />
+              <label className="home-booking-widget__field">
+                <span>Guests</span>
+                <select defaultValue="2" name="adults">
+                  <option value="1">1 guest</option>
+                  <option value="2">2 guests</option>
+                  <option value="3">3 guests</option>
+                  <option value="4">4 guests</option>
+                </select>
+              </label>
+              <input name="children" type="hidden" value="0" />
+              <input name="rooms" type="hidden" value="1" />
+            </>
+          ) : null}
 
-        {activeProduct === 'flights' ? (
-          <>
-            <input name="tripType" type="hidden" value="return" />
-            <Field label="From" name="origin" placeholder="DEL" />
-            <Field label="To" name="destination" placeholder="BOM" />
-            <Field label="Departure" name="departureDate" type="date" />
-            <Field label="Return" name="returnDate" type="date" />
-            <input name="adults" type="hidden" value="1" />
-            <input name="cabinClass" type="hidden" value="economy" />
-          </>
-        ) : null}
+          {activeProduct === 'cars' ? (
+            <>
+              <Field label="Pickup" name="pickupLocation" placeholder="Mandi" />
+              <Field label="Drop-off" name="dropoffLocation" placeholder="Manali" />
+              <Field label="Pickup date" name="pickupDate" type="date" />
+              <Field label="Drop-off date" name="dropoffDate" type="date" />
+              <input name="pickupTime" type="hidden" value="10:00" />
+              <input name="dropoffTime" type="hidden" value="10:00" />
+              <input name="drivers" type="hidden" value="1" />
+              <input name="rentalMode" type="hidden" value="self-drive" />
+            </>
+          ) : null}
 
-        {activeProduct === 'buses' ? (
-          <>
-            <Field label="From" name="origin" placeholder="Mandi" />
-            <Field label="To" name="destination" placeholder="Delhi" />
-            <Field label="Travel date" name="travelDate" type="date" />
-            <label className="home-booking-widget__field">
-              <span>Passengers</span>
-              <select defaultValue="1" name="passengers">
-                <option value="1">1 passenger</option>
-                <option value="2">2 passengers</option>
-                <option value="3">3 passengers</option>
-                <option value="4">4 passengers</option>
-              </select>
-            </label>
-          </>
-        ) : null}
-
-        {activeProduct === 'cars' ? (
-          <>
-            <Field label="Pickup" name="pickupLocation" placeholder="Mandi" />
-            <Field label="Drop-off" name="dropoffLocation" placeholder="Manali" />
-            <Field label="Pickup date" name="pickupDate" type="date" />
-            <Field label="Drop-off date" name="dropoffDate" type="date" />
-            <input name="pickupTime" type="hidden" value="10:00" />
-            <input name="dropoffTime" type="hidden" value="10:00" />
-            <input name="drivers" type="hidden" value="1" />
-            <input name="rentalMode" type="hidden" value="self-drive" />
-          </>
-        ) : null}
-
-        <button className="home-booking-widget__submit" type="submit">
-          Search {active.label.toLowerCase()}
-          <span aria-hidden="true">→</span>
-        </button>
-      </form>
+          <button className="home-booking-widget__submit" type="submit">
+            Search {active.label.toLowerCase()}
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+      ) : (
+        <div
+          aria-labelledby={`home-product-${activeProduct}`}
+          className="home-booking-widget__coming-soon"
+          id="home-booking-panel"
+          key={activeProduct}
+          role="tabpanel"
+        >
+          <div>
+            <strong>{active.label} are coming soon</strong>
+            <p>
+              We will activate live search only after a verified supplier API is connected and
+              tested. No demonstration fare will be presented as live inventory.
+            </p>
+          </div>
+          <a href="/contact">Ask to be notified</a>
+        </div>
+      )}
 
       <div className="home-booking-widget__benefits" aria-label="Booking benefits">
         <span>Clear prices</span>
-        <span>Connected bookings</span>
+        <span>Owner-managed inventory</span>
         <span>Human support</span>
       </div>
     </div>
