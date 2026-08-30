@@ -6,7 +6,7 @@ services:
     region: singapore
     branch: main
     autoDeployTrigger: commit
-    buildCommand: npm ci && npm run build -- --webpack
+    buildCommand: npm ci --include=dev && npm run build -- --webpack
     startCommand: node scripts/start-render.mjs
     healthCheckPath: /api/v1/health
     envVars:
