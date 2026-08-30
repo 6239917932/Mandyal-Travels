@@ -5,6 +5,7 @@
 @import '../styles/home.css';
 @import '../styles/hotel.css';
 @import '../styles/legal.css';
+@import '../styles/advisories.css';
 
 * {
   box-sizing: border-box;

@@ -816,6 +816,39 @@ CREATE TABLE "AutomationJobRun" (
 );
 
 -- CreateTable
+CREATE TABLE "ServiceAdvisory" (
+    "id" TEXT NOT NULL,
+    "publicReference" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "severity" TEXT NOT NULL DEFAULT 'INFO',
+    "surface" TEXT NOT NULL DEFAULT 'ALL',
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "startsAt" TIMESTAMP(3),
+    "endsAt" TIMESTAMP(3),
+    "resolvedAt" TIMESTAMP(3),
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ServiceAdvisory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ServiceAdvisoryEvent" (
+    "id" TEXT NOT NULL,
+    "advisoryId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "snapshotJson" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ServiceAdvisoryEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "HotelbedsContentProperty" (
     "id" TEXT NOT NULL,
     "providerHotelCode" INTEGER NOT NULL,
@@ -2004,6 +2037,24 @@ CREATE INDEX "AutomationJobRun_jobKey_startedAt_idx" ON "AutomationJobRun"("jobK
 CREATE INDEX "AutomationJobRun_status_startedAt_idx" ON "AutomationJobRun"("status", "startedAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ServiceAdvisory_publicReference_key" ON "ServiceAdvisory"("publicReference");
+
+-- CreateIndex
+CREATE INDEX "ServiceAdvisory_status_startsAt_endsAt_idx" ON "ServiceAdvisory"("status", "startsAt", "endsAt");
+
+-- CreateIndex
+CREATE INDEX "ServiceAdvisory_createdAt_idx" ON "ServiceAdvisory"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "ServiceAdvisoryEvent_advisoryId_createdAt_idx" ON "ServiceAdvisoryEvent"("advisoryId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ServiceAdvisoryEvent_actorUserId_createdAt_idx" ON "ServiceAdvisoryEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ServiceAdvisoryEvent_action_createdAt_idx" ON "ServiceAdvisoryEvent"("action", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "HotelbedsContentProperty_active_fetchedAt_idx" ON "HotelbedsContentProperty"("active", "fetchedAt");
 
 -- CreateIndex
@@ -2635,6 +2686,15 @@ ALTER TABLE "CustomerTrip" ADD CONSTRAINT "CustomerTrip_businessTravelRequestId_
 
 -- AddForeignKey
 ALTER TABLE "UserSession" ADD CONSTRAINT "UserSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ServiceAdvisory" ADD CONSTRAINT "ServiceAdvisory_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ServiceAdvisoryEvent" ADD CONSTRAINT "ServiceAdvisoryEvent_advisoryId_fkey" FOREIGN KEY ("advisoryId") REFERENCES "ServiceAdvisory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ServiceAdvisoryEvent" ADD CONSTRAINT "ServiceAdvisoryEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HotelQuote" ADD CONSTRAINT "HotelQuote_availabilityLockId_fkey" FOREIGN KEY ("availabilityLockId") REFERENCES "AvailabilityLock"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
