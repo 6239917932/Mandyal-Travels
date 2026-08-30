@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 import { MandyalLogo } from '@/components/brand/MandyalLogo';
+import { FooterNewsletterForm } from '@/components/footer/FooterNewsletterForm';
+import { PaymentMarks, SecureWebsiteMark } from '@/components/footer/PaymentMarks';
 import { siteConfig } from '@/config/site';
 
 export function SiteFooter() {
@@ -9,7 +11,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer__inner">
-        <div>
+        <div className="site-footer__brand-column">
           <Link aria-label="Mandyal Travels home" className="site-footer__logo" href="/">
             <MandyalLogo appearance="inverse" eager showTagline />
           </Link>
@@ -20,10 +22,20 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <p className="site-footer__heading">Explore</p>
-          <nav aria-label="Footer navigation" className="site-footer__links">
+          <p className="site-footer__heading">Company</p>
+          <nav aria-label="Company information" className="site-footer__links">
+            <Link href="/#why-mandyal">About us</Link>
+            <Link href="/contact">Contact us and office locations</Link>
+            <Link href="/business">Business travel</Link>
+            <Link href="/partners">Hotel and car partners</Link>
+          </nav>
+        </div>
+
+        <div>
+          <p className="site-footer__heading">Travel services</p>
+          <nav aria-label="Travel services" className="site-footer__links">
             {siteConfig.footerNavigation.map((item) => (
-              <Link href={item.href} key={item.href}>
+              <Link href={item.href} key={`${item.href}-${item.label}`}>
                 {item.label}
               </Link>
             ))}
@@ -31,44 +43,50 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <p className="site-footer__heading">Legal</p>
-          <nav aria-label="Legal navigation" className="site-footer__links">
+          <p className="site-footer__heading">Partners and policies</p>
+          <nav aria-label="Partner and legal navigation" className="site-footer__links">
+            <Link href="/partners/apply">Partner registration</Link>
+            <Link href="/login?returnTo=/partner">Partner login</Link>
+            <Link href="/register?account=business">Register your business</Link>
             <Link href="/legal/privacy">Privacy</Link>
             <Link href="/legal/terms">Terms</Link>
             <Link href="/legal/cancellation-refunds">Cancellation &amp; refunds</Link>
-            <Link href="/legal/cookies">Cookie notice</Link>
           </nav>
         </div>
 
-        <div>
-          <p className="site-footer__heading">Need help?</p>
-          <div className="site-footer__contacts">
+        <div className="site-footer__updates">
+          <p className="site-footer__heading">Stay informed</p>
+          <FooterNewsletterForm />
+          <div className="site-footer__contacts" aria-label="Customer support">
             <a href={`tel:${siteConfig.supportPhone.href}`}>{siteConfig.supportPhone.display}</a>
             <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
-            <Link href="/contact">Contact us and office locations</Link>
+            <a href="https://wa.me/918069377940" rel="noreferrer" target="_blank">
+              Chat on WhatsApp
+            </a>
           </div>
         </div>
       </div>
 
       <div className="site-footer__trust" aria-label="Payment and website security information">
-        <div>
-          <strong>Secure website</strong>
-          <span>Encrypted connections · Protected account access · Human support</span>
+        <div className="site-footer__trust-inner">
+          <SecureWebsiteMark />
+          <div>
+            <p>Payment methods</p>
+            <PaymentMarks />
+          </div>
+          <small>
+            Available methods appear at checkout and depend on the active payment provider. Never
+            share card details or one-time codes with support staff.
+          </small>
         </div>
-        <div className="site-footer__payments" aria-label="Supported payment methods">
-          <span>Visa</span>
-          <span>Mastercard</span>
-          <span>RuPay</span>
-          <span>UPI</span>
-          <span>PayPal</span>
-        </div>
-        <small>
-          Payment options are shown at checkout and depend on the active payment provider.
-        </small>
       </div>
 
       <div className="site-footer__bottom">
         <p>© {currentYear} Mandyal Travels. All rights reserved.</p>
+        <nav aria-label="Footer policy shortcuts">
+          <Link href="/legal/cookies">Cookie notice</Link>
+          <Link href="/legal">Policy center</Link>
+        </nav>
       </div>
     </footer>
   );
