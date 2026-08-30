@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 
 import { BusOfferCard } from '@/components/bus/BusOfferCard';
 import { BusSearchForm } from '@/components/bus/BusSearchForm';
@@ -34,16 +35,11 @@ export default async function BusesPage({
   const unfilteredSearchQuery = busSearchCriteriaToQuery(criteria);
   return (
     <div className="bus-page">
-      <section className="bus-page__hero">
-        <div className="bus-page__container">
-          <p className="hotel-page__eyebrow">Buses</p>
-          <h1>Travel comfortably by road.</h1>
-          <p>
-            Compare trusted operators, boarding points, seat availability, amenities, and
-            cancellation terms.
-          </p>
-        </div>
-      </section>
+      <PublicPageHero
+        description="Compare trusted operators, boarding points, seat availability, amenities, and cancellation terms."
+        eyebrow="Buses"
+        title="Travel comfortably by road."
+      />
       <section className="bus-page__content">
         <div className="bus-page__container">
           <BusSearchForm criteria={criteria} />

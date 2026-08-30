@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { FlightOfferCard } from '@/components/flight/FlightOfferCard';
 import { FlightResultControls } from '@/components/flight/FlightResultControls';
 import { FlightSearchForm } from '@/components/flight/FlightSearchForm';
@@ -55,16 +56,11 @@ export default async function FlightsPage({
       : `${criteria.origin} → ${criteria.destination}`;
   return (
     <div className="flight-page">
-      <section className="flight-page__hero">
-        <div className="flight-page__container">
-          <p className="hotel-page__eyebrow">Flights</p>
-          <h1>Find your next flight.</h1>
-          <p>
-            Compare normalized offers with clear baggage, fare rules, timings, and supplier
-            provenance.
-          </p>
-        </div>
-      </section>
+      <PublicPageHero
+        description="Compare normalized offers with clear baggage, fare rules, timings, and supplier provenance."
+        eyebrow="Flights"
+        title="Find your next flight."
+      />
       <section className="flight-page__content">
         <div className="flight-page__container">
           <FlightSearchForm criteria={criteria} />
