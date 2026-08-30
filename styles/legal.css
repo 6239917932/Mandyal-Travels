@@ -15,7 +15,7 @@
 .legal-document-header h1,
 .legal-content h2 {
   margin: 0.45rem 0 1rem;
-  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  font-size: clamp(2.3rem, 4.5vw, 3.75rem);
   line-height: 1.02;
   letter-spacing: -0.045em;
 }

@@ -15,6 +15,14 @@ html {
   background: var(--color-surface-muted);
 }
 
+/* Book Antiqua has a generous desktop footprint. Keep mobile text at the
+   browser default while using a slightly tighter, consistent desktop scale. */
+@media (min-width: 960px) {
+  html {
+    font-size: 93.75%;
+  }
+}
+
 body {
   min-height: 100vh;
   margin: 0;
