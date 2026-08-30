@@ -42,9 +42,9 @@ test('platform features use safe defaults until an audited override exists', () 
   assert.deepEqual(
     resolvePlatformFeatureState('PARTNER_APPLICATIONS', { enabled: false, version: 3 }),
     {
-      defaultEnabled: true,
+      defaultEnabled: false,
       description:
-        'Controls new supplier application entry and submission. Existing access remains.',
+        'Controls new supplier application entry and submission. Disabled until contracts and payments are activated.',
       enabled: false,
       key: 'PARTNER_APPLICATIONS',
       label: 'New partner applications',

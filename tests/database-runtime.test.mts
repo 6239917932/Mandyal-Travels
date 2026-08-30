@@ -28,6 +28,14 @@ test('production PostgreSQL URLs require a complete TLS connection contract', ()
     () => validatePostgreSqlRuntimeUrl('postgresql://db.example', false),
     /DATABASE_URL_INCOMPLETE/,
   );
+  assert.equal(
+    validatePostgreSqlRuntimeUrl('postgresql://app@dpg-example-a/mandyal', true, true).hostname,
+    'dpg-example-a',
+  );
+  assert.throws(
+    () => validatePostgreSqlRuntimeUrl('postgresql://app@db.example/mandyal', true, true),
+    /DATABASE_URL_TLS_REQUIRED/,
+  );
 });
 
 test('database pool controls use bounded deterministic values', () => {
