@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
@@ -16,6 +16,17 @@ import { publicCheckoutIntent } from '@/services/promotionRedemptionRules';
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'FORBIDDEN_ORIGIN',
+          message: 'Payment checkout must originate from the Mandyal Travels portal.',
+        },
+      },
+      { status: 403 },
+    );
+  }
   const body = await readJsonObject(request);
   const quoteId = typeof body?.quoteId === 'string' ? body.quoteId : '';
   const promotionCode = typeof body?.promotionCode === 'string' ? body.promotionCode : undefined;

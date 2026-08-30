@@ -86,6 +86,11 @@ test('checkout responses expose one stable public shape', () => {
   assert.doesNotMatch(JSON.stringify(publicIntent), /promotionRedemption|providerRef/);
 });
 
+test('hosted checkout creation rejects cross-origin browser mutations', () => {
+  assert.match(checkout, /isSameOriginMutation\(request\)/);
+  assert.match(checkout, /FORBIDDEN_ORIGIN/);
+});
+
 test('redemption remains inside booking and trip persistence transactions', () => {
   assert.match(checkout, /prisma\.\$transaction[\s\S]*reserveStoredPromotion/);
   assert.match(trips, /prisma\.\$transaction[\s\S]*redeemPromotion/);
