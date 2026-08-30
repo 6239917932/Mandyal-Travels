@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
@@ -21,7 +22,16 @@ const businessOptions = [
 export default function BusinessTravelPage() {
   return (
     <div className="home-page">
-      <section className="home-hero home-hero--interior">
+      <section className="home-hero home-hero--interior home-hero--photo">
+        <Image
+          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
+          className="home-hero--photo__image"
+          fill
+          priority
+          sizes="100vw"
+          src="/home/mandyal-travel-hero-v2.png"
+        />
+        <div aria-hidden="true" className="home-hero--photo__shade" />
         <div className="home-container">
           <p className="home-hero__eyebrow">Mandyal Travels for Business</p>
           <h1 className="home-hero__title">Travel management built around your organization.</h1>
