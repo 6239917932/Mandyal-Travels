@@ -6,8 +6,9 @@ export const PLATFORM_FEATURES = [
     label: 'Guided trip planner',
   },
   {
-    defaultEnabled: true,
-    description: 'Controls new supplier application entry and submission. Existing access remains.',
+    defaultEnabled: false,
+    description:
+      'Controls new supplier application entry and submission. Disabled until contracts and payments are activated.',
     key: 'PARTNER_APPLICATIONS',
     label: 'New partner applications',
   },
