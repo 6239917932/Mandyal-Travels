@@ -23,9 +23,9 @@ export const mockHotels: Hotel[] = [
     id: 'hotel-himalayan-view-retreat',
     images: [
       {
-        alt: 'Mountain resort with a view of the Himalayan valley',
+        alt: 'Comfortable mountain hotel room prepared for arriving guests',
         isPrimary: true,
-        url: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1600&q=80',
+        url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1600&q=80',
       },
       {
         alt: 'Comfortable hotel room with mountain-view windows',

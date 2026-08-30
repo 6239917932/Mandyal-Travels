@@ -72,7 +72,7 @@ test('location markers preserve result order and remain inside the padded plot',
   );
 });
 
-test('hotel results use the accessible local explorer without external map or source labels', async () => {
+test('hotel results use a compact accessible result navigator without a fake map', async () => {
   const [page, explorer, plot, card] = await Promise.all([
     readFile(new URL('../app/hotels/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../components/hotel/HotelResultsExplorer.tsx', import.meta.url), 'utf8'),
@@ -86,9 +86,10 @@ test('hotel results use the accessible local explorer without external map or so
   );
   assert.match(page, /<HotelResultCard/);
   assert.match(explorer, /aria-label="Available hotel results"/);
-  assert.match(plot, /Relative positions from verified property coordinates/);
-  assert.match(plot, /aria-pressed=/);
-  assert.match(plot, /Hotels shown in location overview/);
+  assert.match(plot, /Jump to a stay/);
+  assert.match(plot, /Available hotel result shortcuts/);
+  assert.match(plot, /aria-current=/);
+  assert.doesNotMatch(plot, /location__plot|aria-pressed|not a navigation map/);
   assert.match(card, /preload=\{eagerImage\}/);
   assert.match(card, /loading=\{eagerImage \? undefined : 'lazy'\}/);
   assert.doesNotMatch(explorer, /HotelSearchResult|inventory|supplier|externalPropertyId/);

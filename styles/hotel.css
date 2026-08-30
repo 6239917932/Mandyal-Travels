@@ -158,62 +158,6 @@
   line-height: 1.5;
 }
 
-.hotel-results-location__plot {
-  position: relative;
-  min-height: 17rem;
-  margin-top: var(--space-4);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-brand-50);
-  background-image:
-    linear-gradient(
-      color-mix(in srgb, var(--color-brand-300) 35%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-brand-300) 35%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 2.5rem 2.5rem;
-}
-
-.hotel-results-location__north {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  color: var(--color-brand-800);
-  font-size: 0.75rem;
-  font-weight: 900;
-}
-
-.hotel-results-location__marker {
-  position: absolute;
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  transform: translate(-50%, -50%);
-  place-items: center;
-  border: 2px solid var(--color-white);
-  border-radius: 999px;
-  background: var(--color-brand-700);
-  color: var(--color-white);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 900;
-  box-shadow: var(--shadow-md);
-  cursor: pointer;
-}
-
-.hotel-results-location__marker[aria-pressed='true'] {
-  width: 2.5rem;
-  height: 2.5rem;
-  background: var(--color-accent-500);
-  color: var(--color-brand-950);
-}
-
-.hotel-results-location__marker:focus-visible,
 .hotel-results-location__list button:focus-visible {
   outline: 3px solid var(--color-accent-500);
   outline-offset: 3px;
@@ -223,7 +167,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin: var(--space-4) 0 0;
+  margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -394,10 +338,6 @@
 @media (max-width: 479px) {
   .hotel-results-location {
     padding: var(--space-4);
-  }
-
-  .hotel-results-location__plot {
-    min-height: 14rem;
   }
 }
 .hotel-search-form {
