@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { HomeHeroSlider } from '@/components/home/HomeHeroSlider';
+import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
+import { HomeTravelGallery } from '@/components/home/HomeTravelGallery';
 import { siteConfig } from '@/config/site';
 
 type TravelOption = {
@@ -88,21 +89,34 @@ function MountainLine() {
 export default function Home() {
   return (
     <div className="home-page">
-      <section
-        aria-label="Bir Billing and Himalayan travel gallery"
-        className="home-hero home-hero--gallery"
-      >
-        <HomeHeroSlider />
+      <section aria-labelledby="home-search-title" className="home-search-hero">
+        <Image
+          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
+          className="home-search-hero__image"
+          fill
+          priority
+          sizes="100vw"
+          src="/home/mandyal-travel-hero-v2.png"
+        />
+        <div className="home-search-hero__shade" />
+        <div className="home-container home-search-hero__content">
+          <div className="home-search-hero__copy">
+            <p>Travel, thoughtfully connected</p>
+            <h1 id="home-search-title">One search. Your whole journey.</h1>
+            <span>Stays and transport, planned with clarity from the very first step.</span>
+          </div>
+          <HomeBookingWidget />
+        </div>
       </section>
 
       <section aria-labelledby="home-intro-title" className="home-intro">
         <div className="home-container home-intro__grid">
           <div className="home-intro__heading">
             <p className="home-section__eyebrow">Rooted in Mandi, Himachal Pradesh</p>
-            <h1 className="home-intro__title" id="home-intro-title">
+            <h2 className="home-intro__title" id="home-intro-title">
               Journeys shaped by the mountains.
               <span> Built for everywhere.</span>
-            </h1>
+            </h2>
           </div>
 
           <div className="home-intro__details">
@@ -176,27 +190,7 @@ export default function Home() {
             <MountainLine />
           </div>
 
-          <article className="home-experience">
-            <div className="home-experience__image">
-              <Image
-                alt="Paragliders above the Himalayan foothills near Bir Billing at sunrise"
-                fill
-                sizes="(max-width: 900px) 100vw, 50vw"
-                src="/brand/bir-billing-paragliding-v1.png"
-              />
-            </div>
-            <div className="home-experience__content">
-              <span>Himachal inspiration</span>
-              <h3>From Mandi&apos;s valleys to Bir Billing&apos;s open skies.</h3>
-              <p>
-                Discover stays by the locality travellers know—not only the district recorded on a
-                form. Search Bir Billing, Matroo, Suja, Mandi, or a property by name.
-              </p>
-              <Link href="/hotels?destination=Bir%20Billing">
-                Explore stays around Bir Billing <ArrowIcon />
-              </Link>
-            </div>
-          </article>
+          <HomeTravelGallery />
         </div>
       </section>
 
