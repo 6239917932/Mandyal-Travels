@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { CarOfferCard } from '@/components/car/CarOfferCard';
 import { CarResultControls } from '@/components/car/CarResultControls';
 import { CarSearchForm } from '@/components/car/CarSearchForm';
@@ -35,16 +36,11 @@ export default async function CarsPage({
   const unfilteredSearchQuery = carSearchCriteriaToQuery(criteria);
   return (
     <div className="car-page">
-      <section className="car-page__hero">
-        <div className="car-page__container">
-          <p className="hotel-page__eyebrow">Car rentals</p>
-          <h1>Your journey, your schedule.</h1>
-          <p>
-            Compare trusted rental partners, vehicle features, mileage, fuel, and cancellation
-            terms.
-          </p>
-        </div>
-      </section>
+      <PublicPageHero
+        description="Compare trusted rental partners, vehicle features, mileage, fuel, and cancellation terms."
+        eyebrow="Car rentals"
+        title="Your journey, your schedule."
+      />
       <section className="car-page__content">
         <div className="car-page__container">
           <CarSearchForm criteria={criteria} />

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { Card } from '@/components/ui/Card';
 
 export const metadata: Metadata = { title: 'Supply partners' };
@@ -32,33 +32,22 @@ const partnerOptions = [
 export default function PartnersPage() {
   return (
     <div className="home-page">
-      <section className="home-hero home-hero--interior home-hero--photo">
-        <Image
-          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
-          className="home-hero--photo__image"
-          fill
-          priority
-          sizes="100vw"
-          src="/home/mandyal-travel-hero-v2.png"
-        />
-        <div aria-hidden="true" className="home-hero--photo__shade" />
-        <div className="home-container">
-          <p className="home-hero__eyebrow">Mandyal Travels partner network</p>
-          <h1 className="home-hero__title">Connect your travel inventory to more customers.</h1>
-          <p className="home-hero__description">
-            A shared partner platform for onboarding, inventory, reservations, operations,
-            documents, reporting, and settlement visibility.
-          </p>
-          <div className="home-hero__actions">
+      <PublicPageHero
+        actions={
+          <>
             <Link className="home-link-button home-link-button--primary" href="/partners/apply">
               Request partner onboarding
             </Link>
             <Link className="home-link-button home-link-button--glass" href="/partner">
               Open partner operations
             </Link>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+        description="A shared partner platform for onboarding, inventory, reservations, operations, documents, reporting, and settlement visibility."
+        eyebrow="Mandyal Travels partner network"
+        size="large"
+        title="Connect your travel inventory to more customers."
+      />
 
       <section className="home-section">
         <div className="home-container">
