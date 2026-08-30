@@ -150,6 +150,11 @@ export default async function AdminSupportPage({ searchParams }: AdminSupportPag
         </Card>
       </div>
 
+      <p className="booking-confirmation__note">
+        Public channels: <Link href="/admin/contact-inquiries">contact inquiries</Link> ·{' '}
+        <Link href="/admin/newsletter-subscriptions">mailing-list subscriptions</Link>
+      </p>
+
       <form className="business-report__filters" method="get">
         <div className="ui-field">
           <label className="ui-field__label" htmlFor="support-type">

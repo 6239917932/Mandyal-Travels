@@ -1998,3 +1998,15 @@ model ContactInquiry {
   @@index([status, createdAt])
   @@index([email, createdAt])
 }
+
+model NewsletterSubscription {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  status    String   @default("ACTIVE")
+  source    String   @default("FOOTER")
+  consentAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, consentAt])
+}

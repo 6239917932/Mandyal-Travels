@@ -1704,6 +1704,19 @@ CREATE TABLE "ContactInquiry" (
     CONSTRAINT "ContactInquiry_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "NewsletterSubscription" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "source" TEXT NOT NULL DEFAULT 'FOOTER',
+    "consentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "NewsletterSubscription_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -2486,6 +2499,12 @@ CREATE INDEX "ContactInquiry_status_createdAt_idx" ON "ContactInquiry"("status",
 
 -- CreateIndex
 CREATE INDEX "ContactInquiry_email_createdAt_idx" ON "ContactInquiry"("email", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NewsletterSubscription_email_key" ON "NewsletterSubscription"("email");
+
+-- CreateIndex
+CREATE INDEX "NewsletterSubscription_status_consentAt_idx" ON "NewsletterSubscription"("status", "consentAt");
 
 -- AddForeignKey
 ALTER TABLE "UserAccessEvent" ADD CONSTRAINT "UserAccessEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
