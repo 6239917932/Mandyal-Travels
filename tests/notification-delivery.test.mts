@@ -63,4 +63,12 @@ test('notification retry decisions dead-letter at the configured attempt limit',
 
 test('notification email text removes markup', () => {
   assert.equal(htmlToNotificationText('<style>x</style><p>Hello <b>Divya</b></p>'), 'Hello Divya');
+  assert.equal(
+    htmlToNotificationText('<script>sendSecret()</script><p>Safe</p><style>hidden</style>'),
+    'Safe',
+  );
+  assert.equal(
+    htmlToNotificationText('Use 2 < 3 when explaining the fare'),
+    'Use 2 < 3 when explaining the fare',
+  );
 });
