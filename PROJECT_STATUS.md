@@ -1,6 +1,9 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 28 August 2026
+Last reviewed: 31 August 2026
+
+The current launch-gate register is maintained in
+[`docs/PRODUCTION_READINESS_SNAPSHOT_2026-08-31.md`](docs/PRODUCTION_READINESS_SNAPSHOT_2026-08-31.md).
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -416,7 +419,7 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 491 regression tests, formatting verification, Prisma
+The current travel-domain milestone passes 560 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
 internal worker routes, clean-database verification of all 82 SQLite migrations with foreign-key
 integrity enabled, a synchronized 100-table PostgreSQL-native baseline, and the portable deployment
