@@ -53,6 +53,7 @@ export function SiteFooter() {
             <Link href="/legal/privacy">Privacy</Link>
             <Link href="/legal/terms">Terms</Link>
             <Link href="/legal/cancellation-refunds">Cancellation &amp; refunds</Link>
+            <Link href="/pricing">How pricing works</Link>
           </nav>
         </div>
 

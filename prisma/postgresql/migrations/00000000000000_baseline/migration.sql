@@ -146,7 +146,7 @@ CREATE TABLE "SupplyPartner" (
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
     "contactEmail" TEXT,
     "contactPhone" TEXT,
-    "commissionBasisPoints" INTEGER NOT NULL DEFAULT 1000,
+    "commissionBasisPoints" INTEGER NOT NULL DEFAULT 2000,
     "settlementDelayDays" INTEGER NOT NULL DEFAULT 2,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -1012,6 +1012,34 @@ CREATE TABLE "Booking" (
 );
 
 -- CreateTable
+CREATE TABLE "MarketplaceTaxSnapshot" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "ruleVersion" TEXT NOT NULL,
+    "supplyType" TEXT NOT NULL DEFAULT 'HOTEL_ACCOMMODATION',
+    "vendorGstRegistered" BOOLEAN NOT NULL,
+    "vendorBaseAmount" INTEGER NOT NULL,
+    "customerTaxableAmount" INTEGER NOT NULL,
+    "serviceGstAmount" INTEGER NOT NULL,
+    "customerTotalAmount" INTEGER NOT NULL,
+    "commissionGrossAmount" INTEGER NOT NULL,
+    "commissionTaxableAmount" INTEGER NOT NULL,
+    "commissionGstAmount" INTEGER NOT NULL,
+    "gstTcsAmount" INTEGER NOT NULL DEFAULT 0,
+    "incomeTaxTdsAmount" INTEGER NOT NULL DEFAULT 0,
+    "gatewayFeeAmount" INTEGER NOT NULL DEFAULT 0,
+    "gatewayFeeGstAmount" INTEGER NOT NULL DEFAULT 0,
+    "vendorSettlementAmount" INTEGER NOT NULL,
+    "platformContributionAmount" INTEGER NOT NULL,
+    "ecoGstLiabilityAmount" INTEGER NOT NULL DEFAULT 0,
+    "calculationJson" TEXT NOT NULL DEFAULT '{}',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MarketplaceTaxSnapshot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PartnerVehicleMaintenance" (
     "id" TEXT NOT NULL,
     "vehicleId" TEXT NOT NULL,
@@ -1689,6 +1717,25 @@ CREATE TABLE "DestinationContentEvent" (
 );
 
 -- CreateTable
+CREATE TABLE "PartnerTaxProfile" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "gstRegistrationStatus" TEXT NOT NULL DEFAULT 'PENDING',
+    "gstin" TEXT NOT NULL DEFAULT '',
+    "placeOfSupplyStateCode" TEXT NOT NULL DEFAULT '',
+    "section9FiveApplicable" BOOLEAN NOT NULL DEFAULT false,
+    "section194OExempt" BOOLEAN NOT NULL DEFAULT false,
+    "reviewStatus" TEXT NOT NULL DEFAULT 'PENDING_REVIEW',
+    "effectiveFrom" TIMESTAMP(3),
+    "reviewedAt" TIMESTAMP(3),
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PartnerTaxProfile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "ContactInquiry" (
     "id" TEXT NOT NULL,
     "reference" TEXT NOT NULL,
@@ -2162,6 +2209,15 @@ CREATE UNIQUE INDEX "Booking_businessTravelRequestId_key" ON "Booking"("business
 CREATE INDEX "Booking_hotelSlug_operationalStatus_createdAt_idx" ON "Booking"("hotelSlug", "operationalStatus", "createdAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "MarketplaceTaxSnapshot_bookingId_key" ON "MarketplaceTaxSnapshot"("bookingId");
+
+-- CreateIndex
+CREATE INDEX "MarketplaceTaxSnapshot_partnerId_createdAt_idx" ON "MarketplaceTaxSnapshot"("partnerId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "MarketplaceTaxSnapshot_ruleVersion_createdAt_idx" ON "MarketplaceTaxSnapshot"("ruleVersion", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "PartnerVehicleMaintenance_vehicleId_startDate_endDate_idx" ON "PartnerVehicleMaintenance"("vehicleId", "startDate", "endDate");
 
 -- CreateIndex
@@ -2492,6 +2548,12 @@ CREATE INDEX "DestinationContentEvent_destinationId_createdAt_idx" ON "Destinati
 CREATE INDEX "DestinationContentEvent_createdAt_idx" ON "DestinationContentEvent"("createdAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PartnerTaxProfile_partnerId_key" ON "PartnerTaxProfile"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "PartnerTaxProfile_reviewStatus_gstRegistrationStatus_update_idx" ON "PartnerTaxProfile"("reviewStatus", "gstRegistrationStatus", "updatedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ContactInquiry_reference_key" ON "ContactInquiry"("reference");
 
 -- CreateIndex
@@ -2762,6 +2824,12 @@ ALTER TABLE "Booking" ADD CONSTRAINT "Booking_availabilityLockId_fkey" FOREIGN K
 ALTER TABLE "Booking" ADD CONSTRAINT "Booking_businessTravelRequestId_fkey" FOREIGN KEY ("businessTravelRequestId") REFERENCES "BusinessTravelRequest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MarketplaceTaxSnapshot" ADD CONSTRAINT "MarketplaceTaxSnapshot_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MarketplaceTaxSnapshot" ADD CONSTRAINT "MarketplaceTaxSnapshot_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PartnerVehicleMaintenance" ADD CONSTRAINT "PartnerVehicleMaintenance_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "PartnerVehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -2931,3 +2999,6 @@ ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_de
 
 -- AddForeignKey
 ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerTaxProfile" ADD CONSTRAINT "PartnerTaxProfile_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;

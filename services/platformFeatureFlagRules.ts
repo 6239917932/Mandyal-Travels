@@ -12,6 +12,27 @@ export const PLATFORM_FEATURES = [
     key: 'PARTNER_APPLICATIONS',
     label: 'New partner applications',
   },
+  {
+    defaultEnabled: false,
+    description:
+      'Controls publication of approved partner-managed inventory. Enable only after contracts, tax profiles, and listing review are complete.',
+    key: 'PUBLIC_PARTNER_LISTINGS',
+    label: 'Public partner listings',
+  },
+  {
+    defaultEnabled: false,
+    description:
+      'Controls creation of hosted live-payment checkout intents. Enable only after GST and Cashfree production readiness are approved.',
+    key: 'LIVE_MARKETPLACE_PAYMENTS',
+    label: 'Live marketplace payments',
+  },
+  {
+    defaultEnabled: false,
+    description:
+      'Controls customer-facing direct car inventory. Keep disabled until transport classification and licensing are approved.',
+    key: 'CAR_MARKETPLACE',
+    label: 'Direct car marketplace',
+  },
 ] as const;
 
 export type PlatformFeatureKey = (typeof PLATFORM_FEATURES)[number]['key'];

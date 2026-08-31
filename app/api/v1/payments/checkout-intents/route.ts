@@ -12,6 +12,7 @@ import {
   reserveStoredPromotion,
 } from '@/services/promotionRedemptionService';
 import { publicCheckoutIntent } from '@/services/promotionRedemptionRules';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
@@ -25,6 +26,18 @@ export async function POST(request: Request) {
         },
       },
       { status: 403 },
+    );
+  }
+  if (!(await isPlatformFeatureEnabled('LIVE_MARKETPLACE_PAYMENTS'))) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'LIVE_PAYMENTS_NOT_APPROVED',
+          message:
+            'Online payment is not open yet. Mandyal Travels is completing payment-provider and tax readiness review.',
+        },
+      },
+      { status: 503 },
     );
   }
   const body = await readJsonObject(request);
