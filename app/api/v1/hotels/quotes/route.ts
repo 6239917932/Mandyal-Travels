@@ -1,4 +1,5 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse, HotelQuoteRequest } from '@/types/commerce';
 
@@ -26,6 +27,22 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return errorResponse('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels portal.', 403);
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'HOTEL_QUOTE',
+    identifier: getRequestRateLimitIdentifier(request, 'public'),
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: { code: 'RATE_LIMITED', message: 'Too many hotel quote requests.' } },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
+
   const body = await readJsonObject(request);
   if (!body) {
     return errorResponse('INVALID_JSON', 'The request body must contain valid JSON.', 400);
