@@ -144,7 +144,9 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
           required
           type="password"
         />
-        {isRegister ? <small>Use at least 10 characters.</small> : null}
+        {isRegister ? (
+          <small>Use at least 10 characters and avoid commonly used passwords.</small>
+        ) : null}
       </label>
 
       {!isRegister ? (
