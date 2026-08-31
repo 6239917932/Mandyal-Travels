@@ -90,6 +90,22 @@ export default function ContactPage() {
 
           <div className="contact-guidance">
             <div>
+              <p className="home-section__eyebrow">Registered business identity</p>
+              <h2>{siteConfig.legalName}</h2>
+              <address>
+                {siteConfig.registeredOffice.lines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </address>
+            </div>
+            <p>
+              This is the legal company name and registered-office address used for business and
+              payment-provider verification. Mandyal Travels is the customer-facing brand.
+            </p>
+          </div>
+
+          <div className="contact-guidance">
+            <div>
               <p className="home-section__eyebrow">Already booked?</p>
               <h2>Get to the right help faster.</h2>
               <p>

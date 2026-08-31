@@ -12,6 +12,7 @@ export interface OfficeLocation {
 export const siteConfig = {
   description:
     'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
+  legalName: 'Mandyal Travels Services Private Limited',
   name: 'Mandyal Travels',
   navigation: [
     { href: '/', label: 'Home' },
@@ -38,11 +39,18 @@ export const siteConfig = {
       type: 'Corporate office',
     },
     {
-      locality: 'Joginder Nagar, District Mandi',
-      region: 'Himachal Pradesh, India',
+      locality: 'Village Suja, P.O. Matroo, Tehsil Joginder Nagar',
+      region: 'District Mandi, Himachal Pradesh 175032, India',
       type: 'Registered office',
     },
   ] satisfies OfficeLocation[],
+  registeredOffice: {
+    lines: [
+      'C/O Kewal Singh',
+      'Village Suja, P.O. Matroo, Tehsil Joginder Nagar',
+      'District Mandi, Himachal Pradesh 175032, India',
+    ],
+  },
   supportPhone: {
     display: '+91 80693 77940',
     href: '+918069377940',
