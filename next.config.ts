@@ -46,7 +46,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       ...noIndexHeaderSources.map((source) => ({
-        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
         source,
       })),
       {

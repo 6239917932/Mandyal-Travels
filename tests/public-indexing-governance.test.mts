@@ -53,6 +53,7 @@ test('sensitive responses receive a no-index header without suppressing public l
     const rule: { headers: Array<{ key: string; value: string }>; source: string } | undefined =
       headers.find((candidate) => candidate.source === source);
     assert.deepEqual(rule?.headers, [
+      { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
       { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
     ]);
   }
