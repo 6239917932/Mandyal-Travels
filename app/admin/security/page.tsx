@@ -167,6 +167,7 @@ export default async function AdminSecurityPage({ searchParams }: PageProps) {
             <option value="ALL">All actions</option>
             <option value="AI_TRIP_PLAN">AI trip planning</option>
             <option value="LOGIN">Login</option>
+            <option value="MFA_MUTATION">MFA changes</option>
             <option value="REGISTER">Registration</option>
             <option value="PASSWORD_CHANGE">Password change</option>
             <option value="PASSWORD_RESET_REQUEST">Password reset request</option>
