@@ -6,7 +6,8 @@ import {
   legacyBookingAccessCookieName,
 } from '@/lib/bookingAccess';
 import { getCurrentUser } from '@/lib/auth/session';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { isValidEmail, isValidName, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
@@ -63,6 +64,23 @@ function errorResponse(code: string, message: string, status: number): Response 
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return errorResponse('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels portal.', 403);
+  }
+
+  const rateLimit = await consumeRateLimit({
+    action: 'HOTEL_BOOKING_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, 'public'),
+    limit: 8,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: { code: 'RATE_LIMITED', message: 'Too many booking attempts.' } },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
+
   const idempotencyKey = request.headers.get('Idempotency-Key');
   if (!idempotencyKey || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
     return errorResponse('IDEMPOTENCY_KEY_INVALID', 'A valid booking retry key is required.', 400);
