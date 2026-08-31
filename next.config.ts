@@ -43,6 +43,7 @@ export const noIndexHeaderSources = [
 
 const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT_MODE === 'standalone' ? 'standalone' : undefined,
+  poweredByHeader: false,
   async headers() {
     return [
       ...noIndexHeaderSources.map((source) => ({
