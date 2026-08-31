@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import {
   clearRateLimit,
@@ -20,6 +20,13 @@ const PASSWORD_CHANGE_ATTEMPT_LIMIT = 5;
 const PASSWORD_CHANGE_WINDOW_MS = 15 * 60 * 1000;
 
 export async function PATCH(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   try {
     const user = await getCurrentUser();
     if (!user) {
