@@ -84,6 +84,10 @@ test('submission rechecks eligibility transactionally and maps concurrent writes
   assert.match(route, /readJsonObject\(request, 2_048\)/);
   assert.match(route, /isSameOriginMutation\(request\)/);
   assert.match(route, /FORBIDDEN_ORIGIN/);
+  assert.match(route, /action: 'HOTEL_REVIEW_CREATE'/);
+  assert.match(route, /getRequestRateLimitIdentifier\(request, user\.id\)/);
+  assert.match(route, /limit: 5/);
+  assert.match(route, /Retry-After/);
   assert.match(route, /error\.code === 'NO_ELIGIBLE_STAY' \? 409 : 400/);
   assert.match(route, /data: \{ status: 'PENDING' \}/);
   assert.doesNotMatch(route, /data: review/);
