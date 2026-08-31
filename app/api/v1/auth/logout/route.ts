@@ -24,5 +24,7 @@ export async function POST() {
   } catch (error) {
     console.error('Session deletion failed during sign-out.', error);
   }
-  return NextResponse.redirect(new URL('/', resolvePublicPortalOrigin()), 303);
+  const response = NextResponse.redirect(new URL('/', resolvePublicPortalOrigin()), 303);
+  response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');
+  return response;
 }
