@@ -13,13 +13,14 @@
 
 html {
   background: var(--color-surface-muted);
+  /* Keep the portal's shared type scale compact across public and authenticated workspaces. */
+  font-size: 90%;
 }
 
-/* Book Antiqua has a generous desktop footprint. Keep mobile text at the
-   browser default while using a slightly tighter, consistent desktop scale. */
+/* Preserve the existing compact desktop ratio after the requested 10% reduction. */
 @media (min-width: 960px) {
   html {
-    font-size: 93.75%;
+    font-size: 84.375%;
   }
 }
 
