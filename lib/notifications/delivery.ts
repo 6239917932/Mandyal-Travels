@@ -78,12 +78,39 @@ export function renderNotificationTemplate(
 }
 
 export function htmlToNotificationText(value: string): string {
-  return value
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  let text = '';
+  let index = 0;
+  let suppressedTag: 'script' | 'style' | null = null;
+
+  while (index < value.length) {
+    if (value[index] !== '<') {
+      if (!suppressedTag) text += value[index];
+      index += 1;
+      continue;
+    }
+
+    const tagEnd = value.indexOf('>', index + 1);
+    if (tagEnd === -1) {
+      if (!suppressedTag) text += value.slice(index);
+      break;
+    }
+
+    const tag = value.slice(index + 1, tagEnd).trim();
+    const closingName = tag.match(/^\/\s*([A-Za-z][A-Za-z0-9:-]*)/)?.[1]?.toLowerCase();
+    const openingName = tag.match(/^([A-Za-z][A-Za-z0-9:-]*)/)?.[1]?.toLowerCase();
+
+    if (suppressedTag) {
+      if (closingName === suppressedTag) suppressedTag = null;
+    } else if ((openingName === 'script' || openingName === 'style') && !tag.endsWith('/')) {
+      suppressedTag = openingName;
+      text += ' ';
+    } else {
+      text += ' ';
+    }
+    index = tagEnd + 1;
+  }
+
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 export function sanitizeDeliveryError(value: unknown): string {
