@@ -68,7 +68,7 @@ export function MfaSecurityManager() {
   }
 
   return (
-    <section className="ui-card ui-card--padded">
+    <section className="ui-card ui-card--padded" id="two-step-verification">
       <h2>Two-step verification</h2>
       <p>
         {state?.enabled

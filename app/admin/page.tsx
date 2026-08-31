@@ -39,6 +39,7 @@ export default async function AdminPage() {
 
   const now = new Date();
   const [
+    administratorMfa,
     userCount,
     organizationCount,
     activeSessionCount,
@@ -57,6 +58,10 @@ export default async function AdminPage() {
     recentHotelBookings,
     recentTrips,
   ] = await Promise.all([
+    prisma.userMfaCredential.findUnique({
+      select: { enabledAt: true },
+      where: { userId: administrator.id },
+    }),
     prisma.user.count(),
     prisma.organization.count(),
     prisma.userSession.count({ where: { expiresAt: { gt: now } } }),
@@ -241,6 +246,22 @@ export default async function AdminPage() {
           <span>Public administrator registration is disabled.</span>
         </div>
       </header>
+
+      {!administratorMfa?.enabledAt ? (
+        <Card className="admin-metric admin-metric--attention">
+          <strong>Protect this administrator account with two-step verification</strong>
+          <p>
+            Your password is active, but an authenticator has not been enrolled. Add one before live
+            payments or supplier access are enabled.
+          </p>
+          <Link
+            className="ui-button ui-button--primary"
+            href="/account/settings#two-step-verification"
+          >
+            Set up two-step verification
+          </Link>
+        </Card>
+      ) : null}
 
       <nav aria-label="Operations console sections" className="admin-section-nav">
         <a href="#overview">Overview</a>
