@@ -1,6 +1,6 @@
 import { after } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { isValidEmail, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
@@ -12,6 +12,13 @@ const GENERIC_MESSAGE =
   'If an account uses that email address, a password reset link will be sent shortly.';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   const body = await readJsonObject(request);
   const email = normalizeEmail(typeof body?.email === 'string' ? body.email : '');
   const rateLimit = await consumeRateLimit({
