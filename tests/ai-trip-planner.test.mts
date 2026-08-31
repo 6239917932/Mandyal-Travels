@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { RuleBasedTripPlannerService } from '../services/aiTripPlannerService.ts';
@@ -63,4 +64,16 @@ test('traveller counts and location bounds are enforced', () => {
     () => service.plan({ ...input, destination: ' ' }, '2026-08-15'),
     /origin and destination/,
   );
+});
+
+test('public trip planning is origin protected, rate limited, and operator visible', () => {
+  const route = readFileSync('app/api/v1/ai/trip-plans/route.ts', 'utf8');
+  const securityPage = readFileSync('app/admin/security/page.tsx', 'utf8');
+
+  assert.match(route, /isSameOriginMutation\(request\)/);
+  assert.match(route, /action: 'AI_TRIP_PLAN'/);
+  assert.match(route, /limit: 12/);
+  assert.match(route, /windowMs: 10 \* 60 \* 1000/);
+  assert.match(route, /'Retry-After'/);
+  assert.match(securityPage, /value="AI_TRIP_PLAN"/);
 });
