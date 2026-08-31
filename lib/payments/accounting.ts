@@ -6,6 +6,17 @@ export interface PaymentAllocationDraft {
   amount: number;
 }
 
+type MarketplaceCaptureBreakdown = {
+  commissionGrossAmount: number;
+  commissionGstAmount: number;
+  commissionTaxableAmount: number;
+  customerTotalAmount: number;
+  ecoGstLiabilityAmount: number;
+  gstTcsAmount: number;
+  incomeTaxTdsAmount: number;
+  vendorSettlementAmount: number;
+};
+
 export interface JournalPostingDraft {
   accountCode: string;
   amount: number;
@@ -92,6 +103,103 @@ export function createCaptureAccounting(input: {
             amount: input.taxAmount,
             description: 'Taxes and fees held for remittance',
             direction: 'CREDIT' as const,
+          },
+        ]
+      : []),
+  ];
+  assertBalancedJournal(postings);
+  return { allocations, postings };
+}
+
+export function createMarketplaceCaptureAccounting(input: {
+  breakdown: MarketplaceCaptureBreakdown;
+  partnerId: string;
+}): { allocations: PaymentAllocationDraft[]; postings: JournalPostingDraft[] } {
+  const { breakdown } = input;
+  Object.entries(breakdown).forEach(([field, value]) => assertMoney(value, field));
+  const governmentPayable =
+    breakdown.ecoGstLiabilityAmount + breakdown.gstTcsAmount + breakdown.incomeTaxTdsAmount;
+  if (
+    breakdown.vendorSettlementAmount + breakdown.commissionGrossAmount + governmentPayable !==
+    breakdown.customerTotalAmount
+  ) {
+    throw new Error('Marketplace allocations do not equal the customer payment.');
+  }
+  if (
+    breakdown.commissionTaxableAmount + breakdown.commissionGstAmount !==
+    breakdown.commissionGrossAmount
+  ) {
+    throw new Error('Commission taxable value and GST do not equal gross commission.');
+  }
+
+  const allocations: PaymentAllocationDraft[] = [
+    {
+      allocationKey: 'supplier-payable',
+      allocationType: 'SUPPLIER_PAYABLE',
+      amount: breakdown.vendorSettlementAmount,
+    },
+    {
+      allocationKey: 'platform-commission',
+      allocationType: 'PLATFORM_COMMISSION',
+      amount: breakdown.commissionGrossAmount,
+    },
+    { allocationKey: 'tax-payable', allocationType: 'TAX_PAYABLE', amount: governmentPayable },
+  ];
+  const postings: JournalPostingDraft[] = [
+    {
+      accountCode: 'PAYMENT_PROVIDER_CLEARING',
+      amount: breakdown.customerTotalAmount,
+      description: 'Captured marketplace funds receivable from payment provider',
+      direction: 'DEBIT',
+    },
+    {
+      accountCode: 'SUPPLIER_PAYABLE',
+      amount: breakdown.vendorSettlementAmount,
+      description: 'Net amount payable to supplying partner after statutory withholding',
+      direction: 'CREDIT',
+      partnerId: input.partnerId,
+    },
+    {
+      accountCode: 'PLATFORM_REVENUE',
+      amount: breakdown.commissionTaxableAmount,
+      description: 'Marketplace commission excluding GST',
+      direction: 'CREDIT',
+    },
+    {
+      accountCode: 'COMMISSION_GST_PAYABLE',
+      amount: breakdown.commissionGstAmount,
+      description: 'GST included in marketplace commission',
+      direction: 'CREDIT',
+    },
+    ...(breakdown.ecoGstLiabilityAmount
+      ? [
+          {
+            accountCode: 'ECO_GST_PAYABLE',
+            amount: breakdown.ecoGstLiabilityAmount,
+            description: 'Section 9(5) accommodation GST payable by platform',
+            direction: 'CREDIT' as const,
+          },
+        ]
+      : []),
+    ...(breakdown.gstTcsAmount
+      ? [
+          {
+            accountCode: 'GST_TCS_PAYABLE',
+            amount: breakdown.gstTcsAmount,
+            description: 'GST tax collected at source for partner credit',
+            direction: 'CREDIT' as const,
+            partnerId: input.partnerId,
+          },
+        ]
+      : []),
+    ...(breakdown.incomeTaxTdsAmount
+      ? [
+          {
+            accountCode: 'SECTION_194O_TDS_PAYABLE',
+            amount: breakdown.incomeTaxTdsAmount,
+            description: 'Income-tax withholding for partner credit',
+            direction: 'CREDIT' as const,
+            partnerId: input.partnerId,
           },
         ]
       : []),

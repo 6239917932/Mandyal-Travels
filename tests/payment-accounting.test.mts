@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   assertBalancedJournal,
   createCaptureAccounting,
+  createMarketplaceCaptureAccounting,
   createRefundPostings,
   prorateCaptureAllocations,
 } from '../lib/payments/accounting.ts';
@@ -29,6 +30,35 @@ test('capture accounting allocates the exact captured amount and balances', () =
     },
   );
   assert.doesNotThrow(() => assertBalancedJournal(result.postings));
+});
+
+test('marketplace capture separates supplier, commission GST, TCS and TDS exactly', () => {
+  const result = createMarketplaceCaptureAccounting({
+    breakdown: {
+      commissionGrossAmount: 250,
+      commissionGstAmount: 38,
+      commissionTaxableAmount: 212,
+      customerTotalAmount: 1_400,
+      ecoGstLiabilityAmount: 0,
+      gstTcsAmount: 6,
+      incomeTaxTdsAmount: 1,
+      vendorSettlementAmount: 1_143,
+    },
+    partnerId: 'partner-1',
+  });
+  assert.equal(
+    result.allocations.reduce((sum, item) => sum + item.amount, 0),
+    1_400,
+  );
+  assert.doesNotThrow(() => assertBalancedJournal(result.postings));
+  assert.equal(
+    result.postings.find((item) => item.accountCode === 'PLATFORM_REVENUE')?.amount,
+    212,
+  );
+  assert.equal(
+    result.postings.find((item) => item.accountCode === 'COMMISSION_GST_PAYABLE')?.amount,
+    38,
+  );
 });
 
 test('capture accounting rejects invalid money and commission inputs', () => {

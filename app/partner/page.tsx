@@ -99,6 +99,9 @@ export default async function PartnerWorkspacePage() {
             <Link className="ui-button ui-button--secondary" href="/partner/compliance">
               Compliance evidence
             </Link>
+            <Link className="ui-button ui-button--secondary" href="/partner/tax">
+              Tax and settlement tracker
+            </Link>
             <form action="/api/v1/auth/logout" method="post">
               <button className="admin-hero__signout" type="submit">
                 Sign out

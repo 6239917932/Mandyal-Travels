@@ -211,7 +211,7 @@ model SupplyPartner {
   status                String                      @default("ACTIVE")
   contactEmail          String?
   contactPhone          String?
-  commissionBasisPoints Int                         @default(1000)
+  commissionBasisPoints Int                         @default(2000)
   settlementDelayDays   Int                         @default(2)
   createdAt             DateTime                    @default(now())
   updatedAt             DateTime                    @updatedAt
@@ -232,6 +232,8 @@ model SupplyPartner {
   payoutAccounts        PartnerPayoutAccount[]
   payoutInstructions    PartnerPayoutInstruction[]
   flightConnections     FlightSupplierConnection[]
+  taxProfile            PartnerTaxProfile?
+  taxSnapshots          MarketplaceTaxSnapshot[]
 
   @@index([status, createdAt])
 }
@@ -1213,8 +1215,39 @@ model Booking {
   integrationEvents       IntegrationOutboxEvent[]
   settlementLine          PartnerSettlementLine?
   promotionRedemption     PromotionRedemption?
+  taxSnapshot             MarketplaceTaxSnapshot?
 
   @@index([hotelSlug, operationalStatus, createdAt])
+}
+
+model MarketplaceTaxSnapshot {
+  id                         String        @id @default(cuid())
+  bookingId                  String        @unique
+  partnerId                  String
+  ruleVersion               String
+  supplyType                String        @default("HOTEL_ACCOMMODATION")
+  vendorGstRegistered       Boolean
+  vendorBaseAmount          Int
+  customerTaxableAmount     Int
+  serviceGstAmount          Int
+  customerTotalAmount       Int
+  commissionGrossAmount     Int
+  commissionTaxableAmount   Int
+  commissionGstAmount       Int
+  gstTcsAmount              Int           @default(0)
+  incomeTaxTdsAmount        Int           @default(0)
+  gatewayFeeAmount          Int           @default(0)
+  gatewayFeeGstAmount       Int           @default(0)
+  vendorSettlementAmount    Int
+  platformContributionAmount Int
+  ecoGstLiabilityAmount     Int           @default(0)
+  calculationJson           String        @default("{}")
+  createdAt                 DateTime      @default(now())
+  booking                   Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  partner                   SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  @@index([partnerId, createdAt])
+  @@index([ruleVersion, createdAt])
 }
 
 model PartnerVehicleMaintenance {
@@ -1981,6 +2014,25 @@ model DestinationContentEvent {
 
   @@index([destinationId, createdAt])
   @@index([createdAt])
+}
+
+model PartnerTaxProfile {
+  id                     String        @id @default(cuid())
+  partnerId              String        @unique
+  gstRegistrationStatus  String        @default("PENDING")
+  gstin                   String        @default("")
+  placeOfSupplyStateCode String        @default("")
+  section9FiveApplicable Boolean       @default(false)
+  section194OExempt      Boolean       @default(false)
+  reviewStatus           String        @default("PENDING_REVIEW")
+  effectiveFrom          DateTime?
+  reviewedAt             DateTime?
+  version                Int           @default(1)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  partner                SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([reviewStatus, gstRegistrationStatus, updatedAt])
 }
 
 model ContactInquiry {
