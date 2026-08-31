@@ -173,6 +173,9 @@ export default async function AdminSecurityPage({ searchParams }: PageProps) {
             <option value="PASSWORD_RESET_REQUEST">Password reset request</option>
             <option value="PASSWORD_RESET_CONFIRM">Password reset confirmation</option>
             <option value="CUSTOMER_SUPPORT_CREATE">Customer support creation</option>
+            <option value="HOTEL_DISCOVERY">Hotel discovery</option>
+            <option value="HOTEL_QUOTE">Hotel quote creation</option>
+            <option value="PROMOTION_VALIDATE">Promotion validation</option>
             <option value="ANALYTICS_EVENT">Analytics event</option>
           </select>
         </label>
