@@ -1,6 +1,6 @@
 Contact: mailto:contact@mandyaltravels.com
 Expires: 2027-08-31T23:59:59.000Z
 Preferred-Languages: en, hi
-Canonical: https://mandyaltravels.com/.well-known/security.txt
-Policy: https://mandyaltravels.com/legal/safety-grievances
+Canonical: https://www.mandyaltravels.com/.well-known/security.txt
+Policy: https://www.mandyaltravels.com/legal/safety-grievances
 
