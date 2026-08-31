@@ -6,12 +6,14 @@ import { BackNavigation } from '@/components/layout/BackNavigation';
 import { ServiceAdvisoryBanner } from '@/components/layout/ServiceAdvisoryBanner';
 import { BookingProvider } from '@/context/BookingContext';
 import { getCurrentUser } from '@/lib/auth/session';
+import { PUBLIC_SHARE_IMAGE, PUBLIC_SITE_ORIGIN } from '@/lib/seo/siteMetadata';
 import { getVisibleServiceAdvisories } from '@/services/serviceAdvisoryService';
 
 import './globals.css';
 
 export const metadata: Metadata = {
   applicationName: 'Mandyal Travels',
+  authors: [{ name: 'Mandyal Travels Services Private Limited', url: PUBLIC_SITE_ORIGIN }],
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -43,12 +45,24 @@ export const metadata: Metadata = {
     ],
     shortcut: '/brand/mandyal-symbol.svg',
   },
+  metadataBase: new URL(PUBLIC_SITE_ORIGIN),
   openGraph: {
     description:
       'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
+    images: [
+      {
+        alt: 'Mandyal Travels in Himachal Pradesh',
+        height: 875,
+        url: PUBLIC_SHARE_IMAGE,
+        width: 1798,
+      },
+    ],
+    locale: 'en_IN',
+    siteName: 'Mandyal Travels',
     title: 'Mandyal Travels',
     type: 'website',
   },
+  publisher: 'Mandyal Travels Services Private Limited',
   keywords: [
     'Mandyal Travels',
     'Mandi Himachal Pradesh travel',
@@ -57,8 +71,15 @@ export const metadata: Metadata = {
     'India travel booking',
   ],
   title: {
-    default: 'Mandyal Travels',
+    default: 'Mandyal Travels | Himachal Hotels, Cars and Trip Planning',
     template: '%s | Mandyal Travels',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    description:
+      'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
+    images: [PUBLIC_SHARE_IMAGE],
+    title: 'Mandyal Travels',
   },
 };
 

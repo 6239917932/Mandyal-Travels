@@ -11,6 +11,7 @@ import {
   buildPublicSitemapRecords,
   ROBOTS_DISALLOWED_PATHS,
 } from '../lib/seo/publicIndexing.ts';
+import { createPublicMetadata, PUBLIC_SITE_ORIGIN } from '../lib/seo/siteMetadata.ts';
 
 const protectedPrefixes = [
   '/account',
@@ -20,6 +21,7 @@ const protectedPrefixes = [
   '/partner$',
   '/partner/',
   '/manage-booking',
+  '/partners/apply',
   '/flights/booking',
   '/buses/booking',
   '/cars/booking',
@@ -80,11 +82,38 @@ test('public sitemap includes normalized public records only', () => {
   assert.ok(paths.includes('/destinations/shimla'));
   assert.ok(paths.includes('/legal/privacy'));
   assert.ok(paths.includes('/legal/terms'));
+  assert.ok(paths.includes('/about'));
+  assert.ok(paths.includes('/contact'));
+  assert.ok(paths.includes('/pricing'));
+  assert.ok(!paths.includes('/flights'));
+  assert.ok(!paths.includes('/buses'));
+  assert.ok(!paths.includes('/partners/apply'));
   assert.ok(paths.every((path) => !path.includes('..')));
   assert.ok(paths.every((path) => !protectedPrefixes.some((prefix) => path.startsWith(prefix))));
   assert.equal(
     records.find((record) => record.path === '/destinations/shimla')?.lastModified,
     updatedAt,
+  );
+});
+
+test('public metadata emits canonical, share, and crawler directives', () => {
+  const metadata = createPublicMetadata({
+    description: 'A public description suitable for search results.',
+    path: '/about',
+    title: 'About our company',
+  });
+
+  assert.equal(PUBLIC_SITE_ORIGIN, 'https://www.mandyaltravels.com');
+  assert.equal(metadata.alternates?.canonical, '/about');
+  assert.equal(
+    metadata.robots && typeof metadata.robots === 'object' ? metadata.robots.index : undefined,
+    true,
+  );
+  assert.equal(metadata.openGraph?.url, '/about');
+  assert.equal(metadata.openGraph?.siteName, 'Mandyal Travels');
+  assert.equal(
+    metadata.twitter && 'card' in metadata.twitter ? metadata.twitter.card : undefined,
+    'summary_large_image',
   );
 });
 

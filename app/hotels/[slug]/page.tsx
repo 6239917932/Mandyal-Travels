@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -8,6 +9,7 @@ import { HotelReviewForm } from '@/components/hotel/HotelReviewForm';
 import { HotelLocationMap } from '@/components/hotel/HotelLocationMap';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 import { hotelService } from '@/services/hotelService';
 import { hotelReviewService } from '@/services/hotelReviewService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
@@ -17,6 +19,18 @@ interface HotelDetailsPageProps {
     slug: string;
   }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export async function generateMetadata({ params }: HotelDetailsPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const hotel = await hotelService.getHotelBySlug(slug);
+  if (!hotel) return { robots: { index: false }, title: 'Hotel not found' };
+  const locality = hotel.location.address.locality ?? hotel.location.address.city;
+  return createPublicMetadata({
+    description: `View rooms, amenities, location and booking policies for ${hotel.name} in ${locality} through Mandyal Travels.`,
+    path: `/hotels/${hotel.slug}`,
+    title: `${hotel.name} in ${locality}`,
+  });
 }
 
 function formatCurrency(amount: number, currency: string): string {

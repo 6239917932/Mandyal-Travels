@@ -1,10 +1,15 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { Card } from '@/components/ui/Card';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = { title: 'Business travel' };
+export const metadata = createPublicMetadata({
+  description:
+    'Mandyal Travels business travel tools for travel agencies, corporate teams, policies, booking records and support.',
+  path: '/business',
+  title: 'Business Travel Management',
+});
 
 const businessOptions = [
   {

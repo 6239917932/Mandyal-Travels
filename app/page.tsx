@@ -3,7 +3,19 @@ import Link from 'next/link';
 
 import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
 import { HomeTravelGallery } from '@/components/home/HomeTravelGallery';
+import { OrganizationStructuredData } from '@/components/seo/OrganizationStructuredData';
 import { siteConfig } from '@/config/site';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
+
+const description =
+  'Mandyal Travels Services Private Limited offers hotel discovery, car rentals and trip planning from Mandi and Kangra, Himachal Pradesh.';
+
+export const metadata = createPublicMetadata({
+  absoluteTitle: true,
+  description,
+  path: '/',
+  title: 'Mandyal Travels | Himachal Hotels, Cars and Trip Planning',
+});
 
 const trustPoints = [
   {
@@ -55,6 +67,7 @@ function MountainLine() {
 export default function Home() {
   return (
     <div className="home-page">
+      <OrganizationStructuredData />
       <section aria-labelledby="home-search-title" className="home-search-hero">
         <Image
           alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"

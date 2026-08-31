@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { CarOfferCard } from '@/components/car/CarOfferCard';
@@ -11,7 +10,14 @@ import {
   carSearchCriteriaToQuery,
   createCarResultControls,
 } from '@/utils/carResultControls';
-export const metadata: Metadata = { title: 'Car rentals' };
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
+
+export const metadata = createPublicMetadata({
+  description:
+    'Compare verified self-drive and chauffeur car rental options, vehicle details and policies with Mandyal Travels.',
+  path: '/cars',
+  title: 'Car Rentals in Himachal Pradesh',
+});
 
 export default async function CarsPage({
   searchParams,

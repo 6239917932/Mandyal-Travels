@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { prisma } from '@/lib/prisma';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 import { parseDestinationContentList } from '@/services/destinationContentService';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -14,10 +15,11 @@ async function publishedDestination(slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const destination = await publishedDestination((await params).slug);
   if (!destination) return { title: 'Destination not found' };
-  return {
+  return createPublicMetadata({
     description: destination.summary,
+    path: `/destinations/${destination.slug}`,
     title: `${destination.name} travel guide`,
-  };
+  });
 }
 
 export default async function DestinationGuidePage({ params }: Props) {

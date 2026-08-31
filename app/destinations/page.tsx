@@ -1,13 +1,15 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 
 import { prisma } from '@/lib/prisma';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = {
-  description: 'Published Mandyal Travels destination guides with practical planning context.',
-  title: 'Destination guides',
-};
+export const metadata = createPublicMetadata({
+  description:
+    'Explore reviewed Himachal Pradesh destination guides and practical travel-planning information from Mandyal Travels.',
+  path: '/destinations',
+  title: 'Himachal Pradesh Destination Guides',
+});
 
 export default async function DestinationsPage() {
   const destinations = await prisma.destinationContent.findMany({
