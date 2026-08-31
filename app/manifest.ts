@@ -31,6 +31,32 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'any',
     scope: '/',
     short_name: 'Mandyal',
+    shortcuts: [
+      {
+        description: 'Search available stays by destination and date.',
+        name: 'Find a hotel',
+        short_name: 'Hotels',
+        url: '/hotels',
+      },
+      {
+        description: 'Search self-drive and chauffeur car options.',
+        name: 'Find a car',
+        short_name: 'Cars',
+        url: '/cars',
+      },
+      {
+        description: 'Create an editable, explainable journey plan.',
+        name: 'Plan a trip',
+        short_name: 'Trip planner',
+        url: '/trip-planner',
+      },
+      {
+        description: 'Open an existing booking with its reference.',
+        name: 'Manage a booking',
+        short_name: 'Manage booking',
+        url: '/manage-booking',
+      },
+    ],
     start_url: '/',
     theme_color: '#0c3157',
   };
