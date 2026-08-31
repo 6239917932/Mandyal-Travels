@@ -20,23 +20,24 @@ export const ROBOTS_DISALLOWED_PATHS = [
   '/manage-booking',
   '/partner$',
   '/partner/',
+  '/partners/apply',
   '/register',
   '/reset-password',
 ] as const;
 
 export const PUBLIC_STATIC_SITEMAP_ENTRIES = [
   { changeFrequency: 'daily', path: '/', priority: 1 },
+  { changeFrequency: 'monthly', path: '/about', priority: 0.8 },
   { changeFrequency: 'daily', path: '/hotels', priority: 0.9 },
-  { changeFrequency: 'daily', path: '/flights', priority: 0.9 },
-  { changeFrequency: 'daily', path: '/buses', priority: 0.8 },
   { changeFrequency: 'daily', path: '/cars', priority: 0.8 },
   { changeFrequency: 'weekly', path: '/trip-planner', priority: 0.8 },
   { changeFrequency: 'weekly', path: '/destinations', priority: 0.8 },
   { changeFrequency: 'daily', path: '/offers', priority: 0.7 },
   { changeFrequency: 'monthly', path: '/business', priority: 0.6 },
   { changeFrequency: 'monthly', path: '/partners', priority: 0.6 },
-  { changeFrequency: 'monthly', path: '/partners/apply', priority: 0.5 },
   { changeFrequency: 'monthly', path: '/legal', priority: 0.4 },
+  { changeFrequency: 'monthly', path: '/contact', priority: 0.6 },
+  { changeFrequency: 'monthly', path: '/pricing', priority: 0.5 },
 ] as const;
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

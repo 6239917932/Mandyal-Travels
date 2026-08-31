@@ -1,13 +1,14 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = {
-  title: 'How marketplace pricing works',
+export const metadata = createPublicMetadata({
   description:
-    'How Mandyal Travels displays supplier prices, taxes, commission, payment processing, settlements, and refunds.',
-};
+    'How Mandyal Travels displays supplier prices, taxes, commission, payment processing, settlements and refunds.',
+  path: '/pricing',
+  title: 'How Marketplace Pricing Works',
+});
 
 export default function MarketplacePricingPage() {
   return (

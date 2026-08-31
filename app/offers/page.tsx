@@ -1,13 +1,18 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { getCustomerOfferCatalogue } from '@/services/customerOfferCatalogueService';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
 import styles from './page.module.css';
 
-export const metadata: Metadata = { title: 'Offers and deals' };
+export const metadata = createPublicMetadata({
+  description:
+    'Review current governed hotel and car offers from Mandyal Travels, subject to final booking eligibility and availability.',
+  path: '/offers',
+  title: 'Travel Offers and Deals',
+});
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-IN', {

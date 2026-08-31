@@ -37,6 +37,7 @@ export const noIndexHeaderSources = [
   '/login',
   '/manage-booking/:path*',
   '/partner/:path*',
+  '/partners/apply',
   '/register',
   '/reset-password',
 ] as const;

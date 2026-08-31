@@ -26,7 +26,7 @@ export function SiteFooter() {
         <div>
           <p className="site-footer__heading">Company</p>
           <nav aria-label="Company information" className="site-footer__links">
-            <Link href="/#why-mandyal">About us</Link>
+            <Link href="/about">About us</Link>
             <Link href="/contact">Contact us and office locations</Link>
             <Link href="/business">Business travel</Link>
             <Link href="/partners">Hotel and car partners</Link>

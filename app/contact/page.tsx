@@ -1,14 +1,15 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { ContactInquiryForm } from '@/components/contact/ContactInquiryForm';
 import { siteConfig } from '@/config/site';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = {
-  title: 'Contact us',
+export const metadata = createPublicMetadata({
   description:
-    'Contact Mandyal Travels for booking help, hotel onboarding, car onboarding, or general support.',
-};
+    'Contact Mandyal Travels in Himachal Pradesh for travel support, company information and future hotel or car partner onboarding.',
+  path: '/contact',
+  title: 'Contact Us',
+});
 
 function ContactArrow() {
   return (

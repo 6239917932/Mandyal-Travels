@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 
 import { HotelDiscoveryExplanation } from '@/components/hotel/HotelDiscoveryExplanation';
@@ -11,10 +10,14 @@ import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
 import { createHotelResultsLocationMarkers } from '@/utils/hotelResultsLocation';
 import Link from 'next/link';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = {
-  title: 'Hotels',
-};
+export const metadata = createPublicMetadata({
+  description:
+    'Search verified hotel stays with transparent room information, rates and policies through Mandyal Travels.',
+  path: '/hotels',
+  title: 'Hotels in Himachal Pradesh',
+});
 
 interface HotelsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

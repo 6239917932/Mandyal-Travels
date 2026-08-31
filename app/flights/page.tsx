@@ -4,6 +4,7 @@ import { MarketplaceComingSoon } from '@/components/common/MarketplaceComingSoon
 
 export const metadata: Metadata = {
   description: 'Mandyal Travels live flight search is coming after supplier API verification.',
+  robots: { follow: true, index: false },
   title: 'Flights coming soon',
 };
 

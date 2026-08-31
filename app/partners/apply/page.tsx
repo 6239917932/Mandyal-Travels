@@ -10,7 +10,10 @@ import { prisma } from '@/lib/prisma';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
 
-export const metadata: Metadata = { title: 'Partner onboarding' };
+export const metadata: Metadata = {
+  robots: { follow: false, index: false },
+  title: 'Partner onboarding',
+};
 
 export default async function PartnerApplicationPage() {
   if (!(await isPlatformFeatureEnabled('PARTNER_APPLICATIONS'))) {

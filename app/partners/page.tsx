@@ -1,10 +1,15 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { Card } from '@/components/ui/Card';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = { title: 'Supply partners' };
+export const metadata = createPublicMetadata({
+  description:
+    'Learn about future Mandyal Travels hotel and car partner onboarding, operations, compliance and settlement tools.',
+  path: '/partners',
+  title: 'Hotel and Car Partners',
+});
 
 const partnerOptions = [
   {

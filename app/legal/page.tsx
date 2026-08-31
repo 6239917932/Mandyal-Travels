@@ -1,13 +1,14 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { siteConfig } from '@/config/site';
 import { POLICY_DOCUMENTS } from '@/lib/legal/policies';
+import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
-export const metadata: Metadata = {
-  title: 'Legal and policy center',
+export const metadata = createPublicMetadata({
   description:
-    'Versioned notices for privacy, platform use, supplier responsibility, safety, cancellations, refunds, and browser storage.',
-};
+    'Review Mandyal Travels privacy, platform, supplier, safety, cancellation, refund and browser-storage notices.',
+  path: '/legal',
+  title: 'Legal and Policy Center',
+});
 
 export default function LegalPage() {
   return (
