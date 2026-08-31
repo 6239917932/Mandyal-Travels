@@ -2,6 +2,7 @@ type SearchValue = string | string[] | undefined;
 
 const ACTIONS = new Set([
   'ALL',
+  'AI_TRIP_PLAN',
   'ANALYTICS_EVENT',
   'CUSTOMER_SUPPORT_CREATE',
   'LOGIN',

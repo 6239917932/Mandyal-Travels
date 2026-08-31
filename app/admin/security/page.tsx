@@ -165,6 +165,7 @@ export default async function AdminSecurityPage({ searchParams }: PageProps) {
           <span className="ui-field__label">Protected action</span>
           <select className="ui-input" defaultValue={filters.action} name="action">
             <option value="ALL">All actions</option>
+            <option value="AI_TRIP_PLAN">AI trip planning</option>
             <option value="LOGIN">Login</option>
             <option value="REGISTER">Registration</option>
             <option value="PASSWORD_CHANGE">Password change</option>
