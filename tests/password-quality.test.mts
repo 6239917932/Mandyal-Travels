@@ -25,6 +25,7 @@ test('all new-password paths use quality screening without weakening password-ch
   const registration = readFileSync('app/api/v1/auth/register/route.ts', 'utf8');
   const reset = readFileSync('app/api/v1/auth/password-reset/confirm/route.ts', 'utf8');
   const change = readFileSync('app/api/v1/account/password/route.ts', 'utf8');
+  assert.match(change, /Clear-Site-Data/);
 
   assert.match(registration, /isAcceptableNewPassword\(password\)/);
   assert.match(reset, /isAcceptableNewPassword\(newPassword\)/);
