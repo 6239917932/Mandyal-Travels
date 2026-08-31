@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { verifyPassword } from '@/lib/auth/password';
 import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import {
@@ -17,6 +17,13 @@ const LOGIN_ATTEMPT_LIMIT = 8;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   const body = await readJsonObject(request);
   if (!body) {
     return NextResponse.json({ error: 'Enter a valid sign-in request.' }, { status: 400 });
