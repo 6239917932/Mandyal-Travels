@@ -29,10 +29,11 @@ function addCanonicalAliases(origins: Set<string>, canonicalOrigin?: string) {
 }
 
 export function isTrustedPortalMutation(request: Request, canonicalOrigin?: string): boolean {
-  if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite === 'cross-site') return false;
 
   const origin = request.headers.get('origin');
-  if (!origin) return true;
+  if (!origin) return fetchSite === 'same-origin' || fetchSite === 'same-site';
 
   let protocol: string;
   try {
