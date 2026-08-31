@@ -8,9 +8,12 @@ test('public security disclosure publishes a monitored contact and canonical URL
   assert.match(disclosure, /^Contact: mailto:contact@mandyaltravels\.com$/m);
   assert.match(
     disclosure,
-    /^Canonical: https:\/\/mandyaltravels\.com\/\.well-known\/security\.txt$/m,
+    /^Canonical: https:\/\/www\.mandyaltravels\.com\/\.well-known\/security\.txt$/m,
   );
-  assert.match(disclosure, /^Policy: https:\/\/mandyaltravels\.com\/legal\/safety-grievances$/m);
+  assert.match(
+    disclosure,
+    /^Policy: https:\/\/www\.mandyaltravels\.com\/legal\/safety-grievances$/m,
+  );
   assert.match(disclosure, /^Expires: 2027-08-31T23:59:59\.000Z$/m);
 });
 
