@@ -9,7 +9,12 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { createSession } from '@/lib/auth/session';
-import { isValidEmail, isValidName, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
+import {
+  isAcceptableNewPassword,
+  isValidEmail,
+  isValidName,
+  normalizeEmail,
+} from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
@@ -61,11 +66,12 @@ export async function POST(request: Request) {
     !isValidName(firstName) ||
     !isValidName(lastName) ||
     !isValidEmail(email) ||
-    !isValidPassword(password)
+    !isAcceptableNewPassword(password)
   ) {
     return NextResponse.json(
       {
-        error: 'Enter a valid name, email address, and password between 10 and 128 characters.',
+        error:
+          'Enter a valid name, email address, and an uncommon password between 10 and 128 characters.',
       },
       { status: 400 },
     );

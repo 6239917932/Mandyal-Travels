@@ -65,7 +65,7 @@ export function ResetPasswordForm() {
           required
           type="password"
         />
-        <small>Use between 10 and 128 characters.</small>
+        <small>Use between 10 and 128 characters and avoid commonly used passwords.</small>
       </label>
       <label className="ui-field">
         <span className="ui-field__label">Confirm new password</span>

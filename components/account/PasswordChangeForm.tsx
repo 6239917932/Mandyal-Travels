@@ -82,7 +82,7 @@ export function PasswordChangeForm() {
               type="password"
             />
           </div>
-          <small>Use between 10 and 128 characters.</small>
+          <small>Use between 10 and 128 characters and avoid commonly used passwords.</small>
           <Button isLoading={isSubmitting} type="submit" variant="secondary">
             Update password
           </Button>

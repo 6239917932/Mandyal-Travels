@@ -9,7 +9,7 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth/session';
-import { isValidPassword } from '@/lib/auth/validation';
+import { isAcceptableNewPassword, isValidPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -41,9 +41,12 @@ export async function PATCH(request: Request) {
     const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
     const confirmPassword = typeof body.confirmPassword === 'string' ? body.confirmPassword : '';
-    if (!isValidPassword(currentPassword) || !isValidPassword(newPassword)) {
+    if (!isValidPassword(currentPassword) || !isAcceptableNewPassword(newPassword)) {
       return NextResponse.json(
-        { error: 'Passwords must contain between 10 and 128 characters.' },
+        {
+          error:
+            'Passwords must contain between 10 and 128 characters, and the new password must not be commonly used.',
+        },
         { status: 400 },
       );
     }

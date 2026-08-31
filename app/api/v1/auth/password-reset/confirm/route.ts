@@ -7,7 +7,7 @@ import {
   consumeRateLimit,
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
-import { isValidPassword } from '@/lib/auth/validation';
+import { isAcceptableNewPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -47,9 +47,12 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  if (!tokenHash || !isValidPassword(newPassword) || newPassword !== confirmPassword) {
+  if (!tokenHash || !isAcceptableNewPassword(newPassword) || newPassword !== confirmPassword) {
     return Response.json(
-      { error: 'Enter a valid reset link and matching password between 10 and 128 characters.' },
+      {
+        error:
+          'Enter a valid reset link and a matching, uncommon password between 10 and 128 characters.',
+      },
       { status: 400 },
     );
   }
