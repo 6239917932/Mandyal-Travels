@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
@@ -38,6 +39,23 @@ export async function POST(request: Request) {
         },
       },
       { status: 503 },
+    );
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'PAYMENT_CHECKOUT_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, 'public'),
+    limit: 6,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many payment checkout attempts. Please wait and try again.',
+        },
+      },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
     );
   }
   const body = await readJsonObject(request);
