@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 
 import { HotelDiscoveryExplanation } from '@/components/hotel/HotelDiscoveryExplanation';
 import { HotelResultCard } from '@/components/hotel/HotelResultCard';
@@ -65,16 +66,11 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
 
   return (
     <div className="hotel-page">
-      <section className="hotel-page__hero">
-        <div className="hotel-page__container">
-          <p className="hotel-page__eyebrow">Hotel stays</p>
-          <h1>Find a stay that feels right.</h1>
-          <p>
-            Discover verified hotels with transparent rates, room choices, and policies you can
-            understand before booking.
-          </p>
-        </div>
-      </section>
+      <PublicPageHero
+        description="Discover verified hotels with transparent rates, room choices, and policies you can understand before booking."
+        eyebrow="Hotel stays"
+        title="Find a stay that feels right."
+      />
 
       <section className="hotel-page__content">
         <div className="hotel-page__container">

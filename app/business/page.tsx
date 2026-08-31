@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { Card } from '@/components/ui/Card';
 
 export const metadata: Metadata = { title: 'Business travel' };
@@ -21,15 +22,9 @@ const businessOptions = [
 export default function BusinessTravelPage() {
   return (
     <div className="home-page">
-      <section className="home-hero home-hero--interior">
-        <div className="home-container">
-          <p className="home-hero__eyebrow">Mandyal Travels for Business</p>
-          <h1 className="home-hero__title">Travel management built around your organization.</h1>
-          <p className="home-hero__description">
-            One connected platform for travel agents, corporate teams, travellers, bookings,
-            policies, invoices, and support.
-          </p>
-          <div className="home-hero__actions">
+      <PublicPageHero
+        actions={
+          <>
             <Link
               className="home-link-button home-link-button--primary"
               href="/register?account=agent"
@@ -45,9 +40,13 @@ export default function BusinessTravelPage() {
             <Link className="home-link-button home-link-button--glass" href="/login">
               Sign in
             </Link>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+        description="One connected platform for travel agents, corporate teams, travellers, bookings, policies, invoices, and support."
+        eyebrow="Mandyal Travels for Business"
+        size="large"
+        title="Travel management built around your organization."
+      />
 
       <section className="home-section">
         <div className="home-container">

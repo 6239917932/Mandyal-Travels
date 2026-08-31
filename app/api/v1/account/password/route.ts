@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import {
   clearRateLimit,
@@ -9,7 +9,7 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth/session';
-import { isValidPassword } from '@/lib/auth/validation';
+import { isAcceptableNewPassword, isValidPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -20,6 +20,13 @@ const PASSWORD_CHANGE_ATTEMPT_LIMIT = 5;
 const PASSWORD_CHANGE_WINDOW_MS = 15 * 60 * 1000;
 
 export async function PATCH(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -34,9 +41,12 @@ export async function PATCH(request: Request) {
     const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
     const confirmPassword = typeof body.confirmPassword === 'string' ? body.confirmPassword : '';
-    if (!isValidPassword(currentPassword) || !isValidPassword(newPassword)) {
+    if (!isValidPassword(currentPassword) || !isAcceptableNewPassword(newPassword)) {
       return NextResponse.json(
-        { error: 'Passwords must contain between 10 and 128 characters.' },
+        {
+          error:
+            'Passwords must contain between 10 and 128 characters, and the new password must not be commonly used.',
+        },
         { status: 400 },
       );
     }
@@ -87,7 +97,9 @@ export async function PATCH(request: Request) {
     ]);
     (await cookies()).delete(SESSION_COOKIE_NAME);
 
-    return NextResponse.json({ data: { passwordChanged: true } });
+    const response = NextResponse.json({ data: { passwordChanged: true } });
+    response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');
+    return response;
   } catch (error) {
     console.error('Password update failed.', error);
     return NextResponse.json(

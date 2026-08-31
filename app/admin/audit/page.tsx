@@ -168,6 +168,21 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const advisoryWhere = enabled('PLATFORM')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { reason: { contains: filters.query } },
+                { advisory: { is: { publicReference: { contains: filters.query } } } },
+                { advisory: { is: { title: { contains: filters.query } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
   const contentWhere = enabled('CONTENT')
     ? {
         ...(createdAt ? { createdAt } : {}),
@@ -261,6 +276,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     privacyEvents,
     platformCount,
     platformEvents,
+    advisoryCount,
+    advisoryEvents,
     contentCount,
     contentEvents,
     commercialCount,
@@ -326,6 +343,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: platformWhere,
+    }),
+    prisma.serviceAdvisoryEvent.count({ where: advisoryWhere }),
+    prisma.serviceAdvisoryEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        advisory: { select: { publicReference: true, status: true, title: true, version: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: advisoryWhere,
     }),
     prisma.destinationContentEvent.count({ where: contentWhere }),
     prisma.destinationContentEvent.findMany({
@@ -453,6 +480,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `platform-${event.id}`,
       subject: `Feature flag · version ${event.version}`,
     })),
+    ...advisoryEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: event.advisory.publicReference,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'PLATFORM' as const,
+      id: `service-advisory-${event.id}`,
+      subject: `${event.advisory.title} · ${event.advisory.status} · version ${event.advisory.version}`,
+    })),
     ...contentEvents.map((event) => ({
       action: event.action,
       actor: actorLabel(event.actor),
@@ -513,6 +550,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     userAccessCount +
     privacyCount +
     platformCount +
+    advisoryCount +
     contentCount +
     commercialCount +
     financeCount +

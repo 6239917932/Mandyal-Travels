@@ -51,8 +51,9 @@ export default async function LegalPolicyPage({ params }: LegalPolicyPageProps) 
 
       <section className="legal-document-body">
         <div className="legal-draft-notice" role="note">
-          This notice is an operational draft pending final legal or commercial approval. It
-          explains current platform handling but is not legal advice.
+          This is an operational draft for transparency and implementation review. It is not a final
+          contract or legal advice and must be approved by qualified Indian counsel before
+          commercial bookings or partner listings are enabled.
         </div>
         {document.sections.map((section) => (
           <section className="legal-policy-section" key={section.heading}>

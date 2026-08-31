@@ -3,8 +3,10 @@ import type { Metadata, Viewport } from 'next';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { BackNavigation } from '@/components/layout/BackNavigation';
+import { ServiceAdvisoryBanner } from '@/components/layout/ServiceAdvisoryBanner';
 import { BookingProvider } from '@/context/BookingContext';
 import { getCurrentUser } from '@/lib/auth/session';
+import { getVisibleServiceAdvisories } from '@/services/serviceAdvisoryService';
 
 import './globals.css';
 
@@ -70,7 +72,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getCurrentUser();
+  const [user, advisories] = await Promise.all([
+    getCurrentUser(),
+    getVisibleServiceAdvisories(new Date()),
+  ]);
 
   return (
     <html lang="en">
@@ -81,6 +86,7 @@ export default async function RootLayout({
         <BookingProvider>
           <SiteHeader user={user ? { firstName: user.firstName, role: user.role } : null} />
           <BackNavigation />
+          <ServiceAdvisoryBanner advisories={advisories} />
           <main id="main-content" tabIndex={-1}>
             {children}
           </main>

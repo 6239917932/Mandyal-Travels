@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { calculatePromotion, type PromotionProduct } from '@/constants/promotionRules';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { resolvePromotionRule } from '@/services/promotionService';
 
 const PRODUCT_TYPES = new Set<PromotionProduct>(['FLIGHT', 'HOTEL', 'BUS', 'CAR']);
@@ -11,6 +12,25 @@ function isPromotionProduct(value: string): value is PromotionProduct {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: { code: 'FORBIDDEN_ORIGIN', message: 'Use the Mandyal Travels portal.' } },
+      { status: 403 },
+    );
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'PROMOTION_VALIDATE',
+    identifier: getRequestRateLimitIdentifier(request, 'public'),
+    limit: 60,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: { code: 'RATE_LIMITED', message: 'Too many promotion requests.' } },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
+
   const body = await readJsonObject(request);
   if (!body) {
     return NextResponse.json(

@@ -180,13 +180,6 @@ export function ManageBookingLookup() {
   return (
     <div className="booking-page manage-booking">
       <div className="booking-page__container">
-        <p className="hotel-page__eyebrow">Your trip</p>
-        <h1>Manage your booking</h1>
-        <p className="booking-page__intro">
-          Enter the booking reference from your confirmation. Access is available from the browser
-          used to book or while signed in to the matching customer account.
-        </p>
-
         <div className="manage-booking__grid">
           <Card>
             <form className="booking-page__guest-form" onSubmit={findBooking}>

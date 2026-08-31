@@ -1,5 +1,5 @@
 import { Prisma } from '@/generated/prisma/client';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { hashPasswordResetToken } from '@/lib/auth/passwordReset';
 import {
@@ -7,7 +7,7 @@ import {
   consumeRateLimit,
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
-import { isValidPassword } from '@/lib/auth/validation';
+import { isAcceptableNewPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -18,6 +18,13 @@ const CONFIRM_LIMIT = 8;
 const CONFIRM_WINDOW_MS = 30 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   const body = await readJsonObject(request);
   const token = typeof body?.token === 'string' ? body.token : '';
   const tokenHash = hashPasswordResetToken(token);
@@ -40,9 +47,12 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  if (!tokenHash || !isValidPassword(newPassword) || newPassword !== confirmPassword) {
+  if (!tokenHash || !isAcceptableNewPassword(newPassword) || newPassword !== confirmPassword) {
     return Response.json(
-      { error: 'Enter a valid reset link and matching password between 10 and 128 characters.' },
+      {
+        error:
+          'Enter a valid reset link and a matching, uncommon password between 10 and 128 characters.',
+      },
       { status: 400 },
     );
   }

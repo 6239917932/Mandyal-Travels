@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 
 import { prisma } from '@/lib/prisma';
 
@@ -16,16 +17,11 @@ export default async function DestinationsPage() {
   });
   return (
     <main className="destination-index">
-      <header className="destination-index__hero">
-        <div>
-          <p className="home-section__eyebrow">Reviewed travel inspiration</p>
-          <h1>Destination guides</h1>
-          <p>
-            Explore human-reviewed destination context, then confirm current availability, timing,
-            and prices through the live travel search journeys.
-          </p>
-        </div>
-      </header>
+      <PublicPageHero
+        description="Explore human-reviewed destination context, then confirm current availability, timing, and prices through the live travel search journeys."
+        eyebrow="Reviewed travel inspiration"
+        title="Destination guides"
+      />
       <section aria-label="Published destination guides" className="destination-index__grid">
         {destinations.map((destination) => (
           <article className="destination-card" key={destination.slug}>

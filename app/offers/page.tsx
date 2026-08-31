@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Card } from '@/components/ui/Card';
+import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { getCustomerOfferCatalogue } from '@/services/customerOfferCatalogueService';
 
 import styles from './page.module.css';
@@ -21,16 +22,11 @@ export default async function OffersPage() {
 
   return (
     <div className={`home-page ${styles.page}`}>
-      <section className="home-hero home-hero--interior">
-        <div className="home-container">
-          <p className="home-hero__eyebrow">Offers and promotions</p>
-          <h1 className="home-hero__title">Find governed offers for your next journey.</h1>
-          <p className="home-section__note">
-            Only promotions currently available under Mandyal Travels campaign controls appear here.
-            Eligibility and final pricing are always rechecked during booking.
-          </p>
-        </div>
-      </section>
+      <PublicPageHero
+        description="Only promotions currently available under Mandyal Travels campaign controls appear here. Eligibility and final pricing are always rechecked during booking."
+        eyebrow="Offers and promotions"
+        title="Find governed offers for your next journey."
+      />
 
       <section className="home-section">
         <div className="home-container">

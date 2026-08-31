@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { ContactInquiryForm } from '@/components/contact/ContactInquiryForm';
 import { siteConfig } from '@/config/site';
 
 export const metadata: Metadata = {
   title: 'Contact us',
   description:
-    'Contact Mandyal Travels for booking support and find our office presence in Bir, Joginder Nagar, and Chandigarh.',
+    'Contact Mandyal Travels for booking help, hotel onboarding, car onboarding, or general support.',
 };
 
 function ContactArrow() {
@@ -53,6 +54,12 @@ export default function ContactPage() {
         </div>
       </section>
 
+      <section aria-label="Message Mandyal Travels" className="contact-message-section">
+        <div className="home-container">
+          <ContactInquiryForm />
+        </div>
+      </section>
+
       <section aria-labelledby="contact-offices-title" className="contact-offices">
         <div className="home-container">
           <div className="home-section__heading home-section__heading--row">
@@ -79,6 +86,22 @@ export default function ContactPage() {
                 </address>
               </article>
             ))}
+          </div>
+
+          <div className="contact-guidance">
+            <div>
+              <p className="home-section__eyebrow">Registered business identity</p>
+              <h2>{siteConfig.legalName}</h2>
+              <address>
+                {siteConfig.registeredOffice.lines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </address>
+            </div>
+            <p>
+              This is the legal company name and registered-office address used for business and
+              payment-provider verification. Mandyal Travels is the customer-facing brand.
+            </p>
           </div>
 
           <div className="contact-guidance">

@@ -146,9 +146,14 @@ export default async function AdminSupportPage({ searchParams }: AdminSupportPag
         <Card>
           <span>Current result</span>
           <strong>{selectedTotal}</strong>
-          <small>Matching {filters.type.toLowerCase()} cases</small>
+          <Link href="/admin/contact-inquiries">Open public message inbox</Link>
         </Card>
       </div>
+
+      <p className="booking-confirmation__note">
+        Public channels: <Link href="/admin/contact-inquiries">contact inquiries</Link> ·{' '}
+        <Link href="/admin/newsletter-subscriptions">mailing-list subscriptions</Link>
+      </p>
 
       <form className="business-report__filters" method="get">
         <div className="ui-field">

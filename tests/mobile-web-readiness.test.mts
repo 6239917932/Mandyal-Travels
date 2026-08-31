@@ -37,3 +37,17 @@ test('mobile install readiness does not register an offline service worker', () 
   assert.throws(() => statSync('public/service-worker.js'));
   assert.throws(() => statSync('public/sw.js'));
 });
+
+test('installed mobile experience exposes only safe customer shortcuts', () => {
+  const shortcuts = manifest().shortcuts ?? [];
+
+  assert.deepEqual(
+    shortcuts.map((shortcut) => shortcut.url),
+    ['/hotels', '/cars', '/trip-planner', '/manage-booking'],
+  );
+  assert.ok(shortcuts.every((shortcut) => shortcut.name && shortcut.short_name));
+  assert.ok(shortcuts.every((shortcut) => shortcut.url.startsWith('/')));
+  assert.ok(shortcuts.every((shortcut) => !shortcut.url.startsWith('/admin')));
+  assert.ok(shortcuts.every((shortcut) => !shortcut.url.startsWith('/partner')));
+  assert.ok(shortcuts.every((shortcut) => !['/flights', '/buses'].includes(shortcut.url)));
+});

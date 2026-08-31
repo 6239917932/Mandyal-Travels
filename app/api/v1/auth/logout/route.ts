@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 
 import { deleteCurrentSession, getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
 } from '@/services/accountSecurityService';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const currentSession = await getCurrentSession();
     await deleteCurrentSession();
@@ -23,5 +24,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Session deletion failed during sign-out.', error);
   }
-  return NextResponse.redirect(new URL('/', request.url), 303);
+  const response = NextResponse.redirect(new URL('/', resolvePublicPortalOrigin()), 303);
+  response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');
+  return response;
 }

@@ -5,6 +5,7 @@
 @import '../styles/home.css';
 @import '../styles/hotel.css';
 @import '../styles/legal.css';
+@import '../styles/advisories.css';
 
 * {
   box-sizing: border-box;
@@ -12,6 +13,15 @@
 
 html {
   background: var(--color-surface-muted);
+  /* Keep the portal's shared type scale compact across public and authenticated workspaces. */
+  font-size: 90%;
+}
+
+/* Preserve the existing compact desktop ratio after the requested 10% reduction. */
+@media (min-width: 960px) {
+  html {
+    font-size: 84.375%;
+  }
 }
 
 body {

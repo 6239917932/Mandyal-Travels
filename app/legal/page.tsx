@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { siteConfig } from '@/config/site';
 import { POLICY_DOCUMENTS } from '@/lib/legal/policies';
 
 export const metadata: Metadata = {
   title: 'Legal and policy center',
   description:
-    'Versioned operating notices for privacy, platform use, cancellations, refunds, and browser storage.',
+    'Versioned notices for privacy, platform use, supplier responsibility, safety, cancellations, refunds, and browser storage.',
 };
 
 export default function LegalPage() {
@@ -16,11 +17,16 @@ export default function LegalPage() {
         <h1>Legal and policy center</h1>
         <p>
           Review the versioned operating notices that support Mandyal Travels accounts, bookings,
-          communications, and supplier services.
+          communications, independent supplier services, safety, complaints, and refunds.
+        </p>
+        <p>
+          Website operator: <strong>{siteConfig.legalName}</strong>. Registered office:{' '}
+          {siteConfig.registeredOffice.lines.join(', ')}.
         </p>
         <div className="legal-draft-notice" role="note">
-          These operational drafts are published for product transparency and remain subject to
-          final legal and commercial approval. They are not legal advice.
+          These operational drafts are published for transparency and implementation review. They
+          are not final contracts and must be approved by qualified Indian counsel before commercial
+          bookings or partner listings are enabled.
         </div>
       </section>
 

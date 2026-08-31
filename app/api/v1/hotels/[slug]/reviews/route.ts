@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { hotelService } from '@/services/hotelService';
 import { HotelReviewRuleError, hotelReviewService } from '@/services/hotelReviewService';
 
@@ -34,6 +35,23 @@ export async function POST(request: Request, context: ReviewRouteContext): Promi
     return Response.json(
       { error: { code: 'AUTH_REQUIRED', message: 'Sign in to review a completed stay.' } },
       { status: 401 },
+    );
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'HOTEL_REVIEW_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, user.id),
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many review attempts. Please wait before trying again.',
+        },
+      },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
     );
   }
   const { slug } = await context.params;

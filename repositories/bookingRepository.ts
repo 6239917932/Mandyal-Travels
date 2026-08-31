@@ -2,7 +2,11 @@ import type { HotelBookingRecord } from '@/types/commerce';
 import type { Prisma } from '@/generated/prisma/client';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
-import { createCaptureAccounting } from '@/lib/payments/accounting';
+import { calculateMarketplaceHotelTax } from '@/lib/finance/marketplaceTax';
+import {
+  createCaptureAccounting,
+  createMarketplaceCaptureAccounting,
+} from '@/lib/payments/accounting';
 import type { ConfirmedPaymentContext } from '@/services/paymentConfirmationService';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import { redeemPromotion } from '@/services/promotionRedemptionService';
@@ -388,21 +392,75 @@ export class PrismaBookingRepository implements BookingRepository {
 
       const property = await transaction.partnerProperty.findUnique({
         select: {
-          partner: { select: { commissionBasisPoints: true, id: true } },
+          listingSource: true,
+          partner: { include: { taxProfile: true } },
         },
         where: { hotelSlug: booking.hotelSlug },
       });
-      const taxComponents = await transaction.priceComponent.aggregate({
-        _sum: { amount: true },
-        where: { quoteId: booking.quoteId, type: 'tax-and-fee' },
-      });
+      const [taxComponents, taxableComponents, quoteDetails] = await Promise.all([
+        transaction.priceComponent.aggregate({
+          _sum: { amount: true },
+          where: { quoteId: booking.quoteId, type: 'tax-and-fee' },
+        }),
+        transaction.priceComponent.aggregate({
+          _sum: { amount: true },
+          where: { quoteId: booking.quoteId, type: 'room-charge' },
+        }),
+        transaction.hotelQuote.findUnique({
+          select: { nights: true, rooms: true },
+          where: { id: booking.quoteId },
+        }),
+      ]);
       const taxAmount = Math.min(booking.paymentAmount, taxComponents._sum.amount ?? 0);
-      const accounting = createCaptureAccounting({
-        amount: booking.paymentAmount,
-        commissionBasisPoints: property?.partner.commissionBasisPoints ?? 1000,
-        partnerId: property?.partner.id,
-        taxAmount,
-      });
+      const customerTaxableAmount = taxableComponents._sum.amount ?? 0;
+      let taxBreakdown: ReturnType<typeof calculateMarketplaceHotelTax> | undefined;
+      if (property?.listingSource === 'MANAGED') {
+        const profile = property.partner.taxProfile;
+        if (
+          property.partner.commissionBasisPoints !== 2_000 ||
+          profile?.reviewStatus !== 'VERIFIED' ||
+          !['REGISTERED', 'UNREGISTERED'].includes(profile.gstRegistrationStatus) ||
+          !quoteDetails ||
+          customerTaxableAmount < 1
+        ) {
+          throw new Error('MARKETPLACE_TAX_PROFILE_NOT_READY');
+        }
+        if (customerTaxableAmount + taxAmount !== booking.paymentAmount) {
+          throw new Error('MARKETPLACE_PRICE_SNAPSHOT_MISMATCH');
+        }
+        const serviceUnits = quoteDetails.nights * quoteDetails.rooms;
+        const vendorBaseAmount = Math.round(customerTaxableAmount * 0.8);
+        const vendorNightlyBaseAmount = Math.round(
+          (customerTaxableAmount / Math.max(1, serviceUnits)) * 0.8,
+        );
+        taxBreakdown = calculateMarketplaceHotelTax({
+          profile: {
+            gstRegistrationStatus: profile.gstRegistrationStatus as 'REGISTERED' | 'UNREGISTERED',
+            section194OExempt: profile.section194OExempt,
+            section9FiveApplicable: profile.section9FiveApplicable,
+          },
+          vendorBaseAmount,
+          vendorNightlyBaseAmount,
+        });
+        if (
+          taxBreakdown.customerTaxableAmount !== customerTaxableAmount ||
+          taxBreakdown.hotelGstAmount !== taxAmount ||
+          taxBreakdown.customerTotalAmount !== booking.paymentAmount
+        ) {
+          throw new Error('MARKETPLACE_PRICE_SNAPSHOT_MISMATCH');
+        }
+      }
+      const accounting = taxBreakdown
+        ? createMarketplaceCaptureAccounting({
+            breakdown: taxBreakdown,
+            partnerId: property!.partner.id,
+          })
+        : createCaptureAccounting({
+            amount: booking.paymentAmount,
+            commissionBasisPoints: property?.partner.commissionBasisPoints ?? 1_000,
+            partnerId: property?.partner.id,
+            taxAmount,
+          });
 
       const createdBooking = await transaction.booking.create({
         data: {
@@ -443,6 +501,37 @@ export class PrismaBookingRepository implements BookingRepository {
 
       const paymentId = createdBooking.payment?.id;
       if (!paymentId) throw new Error('Captured booking payment was not created.');
+      if (taxBreakdown && property) {
+        await transaction.marketplaceTaxSnapshot.create({
+          data: {
+            bookingId: booking.id,
+            calculationJson: JSON.stringify({
+              commissionBasisPoints: 2_000,
+              hotelGstBasisPoints: taxBreakdown.hotelGstBasisPoints,
+              section194OExempt: property.partner.taxProfile?.section194OExempt ?? false,
+              section9FiveApplicable: property.partner.taxProfile?.section9FiveApplicable ?? false,
+            }),
+            commissionGrossAmount: taxBreakdown.commissionGrossAmount,
+            commissionGstAmount: taxBreakdown.commissionGstAmount,
+            commissionTaxableAmount: taxBreakdown.commissionTaxableAmount,
+            customerTaxableAmount: taxBreakdown.customerTaxableAmount,
+            customerTotalAmount: taxBreakdown.customerTotalAmount,
+            ecoGstLiabilityAmount: taxBreakdown.ecoGstLiabilityAmount,
+            gatewayFeeAmount: taxBreakdown.gatewayFeeAmount,
+            gatewayFeeGstAmount: taxBreakdown.gatewayFeeGstAmount,
+            gstTcsAmount: taxBreakdown.gstTcsAmount,
+            incomeTaxTdsAmount: taxBreakdown.incomeTaxTdsAmount,
+            partnerId: property.partner.id,
+            platformContributionAmount: taxBreakdown.platformContributionAmount,
+            ruleVersion: taxBreakdown.ruleVersion,
+            serviceGstAmount: taxBreakdown.hotelGstAmount,
+            vendorBaseAmount: taxBreakdown.vendorBaseAmount,
+            vendorGstRegistered:
+              property.partner.taxProfile?.gstRegistrationStatus === 'REGISTERED',
+            vendorSettlementAmount: taxBreakdown.vendorSettlementAmount,
+          },
+        });
+      }
       await redeemPromotion(transaction, {
         authorizedAt: paymentContext.capturedAt,
         bookingId: booking.id,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
@@ -12,10 +13,51 @@ import {
   reserveStoredPromotion,
 } from '@/services/promotionRedemptionService';
 import { publicCheckoutIntent } from '@/services/promotionRedemptionRules';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 const KEY_PATTERN = /^payment-[0-9a-f-]{36}$/i;
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'FORBIDDEN_ORIGIN',
+          message: 'Payment checkout must originate from the Mandyal Travels portal.',
+        },
+      },
+      { status: 403 },
+    );
+  }
+  if (!(await isPlatformFeatureEnabled('LIVE_MARKETPLACE_PAYMENTS'))) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'LIVE_PAYMENTS_NOT_APPROVED',
+          message:
+            'Online payment is not open yet. Mandyal Travels is completing payment-provider and tax readiness review.',
+        },
+      },
+      { status: 503 },
+    );
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'PAYMENT_CHECKOUT_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, 'public'),
+    limit: 6,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many payment checkout attempts. Please wait and try again.',
+        },
+      },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
   const body = await readJsonObject(request);
   const quoteId = typeof body?.quoteId === 'string' ? body.quoteId : '';
   const promotionCode = typeof body?.promotionCode === 'string' ? body.promotionCode : undefined;

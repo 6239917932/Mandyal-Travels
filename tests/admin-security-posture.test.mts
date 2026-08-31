@@ -21,6 +21,8 @@ test('security posture filters accept only supported actions and states', () => 
     normalizeAdminSecurityFilters({ action: 'cashfree', page: '-2', state: 'unknown' }),
     { action: 'ALL', page: 1, state: 'ALL' },
   );
+  assert.equal(normalizeAdminSecurityFilters({ action: 'ai_trip_plan' }).action, 'AI_TRIP_PLAN');
+  assert.equal(normalizeAdminSecurityFilters({ action: 'mfa_mutation' }).action, 'MFA_MUTATION');
 });
 
 test('rate-limit posture distinguishes active and expired blocks without identifiers', () => {

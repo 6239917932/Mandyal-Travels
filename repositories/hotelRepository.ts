@@ -2,6 +2,8 @@ import { mockHotels } from '@/constants/hotelData';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { prisma } from '@/lib/prisma';
+import { calculateMarketplaceHotelNight } from '@/lib/finance/marketplaceTax';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import type { Hotel } from '@/types/hotel';
 
 export interface HotelRepository {
@@ -14,29 +16,60 @@ export class InMemoryHotelRepository implements HotelRepository {
   constructor(private readonly fixtureInventoryEnabled = isFixtureInventoryEnabled()) {}
 
   async findAll(): Promise<Hotel[]> {
-    const managedPropertiesResult = await Promise.allSettled([
-      prisma.partnerProperty.findMany({
-        include: {
-          partner: { select: { name: true, status: true } },
-          rooms: {
-            include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
-            orderBy: { createdAt: 'asc' },
-            where: { status: 'ACTIVE' },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        where: {
-          listingSource: 'MANAGED',
-          publicationStatus: 'PUBLISHED',
-          status: 'ACTIVE',
-        },
-      }),
-    ]);
+    const managedListingsEnabled = await isPlatformFeatureEnabled('PUBLIC_PARTNER_LISTINGS');
+    const managedPropertiesResult = managedListingsEnabled
+      ? await Promise.allSettled([
+          prisma.partnerProperty.findMany({
+            include: {
+              partner: { include: { taxProfile: true } },
+              rooms: {
+                include: {
+                  ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } },
+                },
+                orderBy: { createdAt: 'asc' },
+                where: { status: 'ACTIVE' },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            where: {
+              listingSource: 'MANAGED',
+              publicationStatus: 'PUBLISHED',
+              status: 'ACTIVE',
+            },
+          }),
+        ])
+      : [];
     const managedProperties =
       managedPropertiesResult[0]?.status === 'fulfilled' ? managedPropertiesResult[0].value : [];
     const partnerHotels = managedProperties
-      .filter((property) => property.partner.status === 'ACTIVE' && property.rooms.length > 0)
+      .filter(
+        (property) =>
+          property.partner.status === 'ACTIVE' &&
+          property.partner.commissionBasisPoints === 2_000 &&
+          property.partner.taxProfile?.reviewStatus === 'VERIFIED' &&
+          ['REGISTERED', 'UNREGISTERED'].includes(
+            property.partner.taxProfile.gstRegistrationStatus,
+          ) &&
+          property.rooms.length > 0,
+      )
       .map((property): Hotel => {
+        const taxProfile = property.partner.taxProfile;
+        if (
+          !taxProfile ||
+          !['REGISTERED', 'UNREGISTERED'].includes(taxProfile.gstRegistrationStatus)
+        ) {
+          throw new Error('Verified marketplace tax profile is required.');
+        }
+        const publicNight = (vendorNightlyBaseAmount: number) =>
+          calculateMarketplaceHotelNight({
+            profile: {
+              gstRegistrationStatus: taxProfile.gstRegistrationStatus as
+                'REGISTERED' | 'UNREGISTERED',
+              section194OExempt: taxProfile.section194OExempt,
+              section9FiveApplicable: taxProfile.section9FiveApplicable,
+            },
+            vendorNightlyBaseAmount,
+          });
         const parseList = (value: string) => {
           try {
             const parsed: unknown = JSON.parse(value);
@@ -152,21 +185,24 @@ export class InMemoryHotelRepository implements HotelRepository {
                     taxesAndFees: room.taxesAndFees,
                   },
                 ]
-            ).map((ratePlan) => ({
-              cancellationPolicy: {
-                description: ratePlan.cancellationDescription,
-                freeCancellationUntilHoursBeforeCheckIn: ratePlan.freeCancellationHours,
-                refundable: ratePlan.refundable,
-              },
-              id: ratePlan.ratePlanId,
-              mealPlan: ratePlan.mealPlan as
-                'room-only' | 'breakfast-included' | 'half-board' | 'full-board',
-              maximumStayNights: ratePlan.maximumStayNights,
-              minimumStayNights: ratePlan.minimumStayNights,
-              name: ratePlan.name,
-              nightlyRate: { amount: ratePlan.nightlyRate, currency: 'INR' },
-              taxesAndFees: { amount: ratePlan.taxesAndFees, currency: 'INR' },
-            })),
+            ).map((ratePlan) => {
+              const pricing = publicNight(ratePlan.nightlyRate);
+              return {
+                cancellationPolicy: {
+                  description: ratePlan.cancellationDescription,
+                  freeCancellationUntilHoursBeforeCheckIn: ratePlan.freeCancellationHours,
+                  refundable: ratePlan.refundable,
+                },
+                id: ratePlan.ratePlanId,
+                mealPlan: ratePlan.mealPlan as
+                  'room-only' | 'breakfast-included' | 'half-board' | 'full-board',
+                maximumStayNights: ratePlan.maximumStayNights,
+                minimumStayNights: ratePlan.minimumStayNights,
+                name: ratePlan.name,
+                nightlyRate: { amount: pricing.customerTaxableAmount, currency: 'INR' },
+                taxesAndFees: { amount: pricing.hotelGstAmount, currency: 'INR' },
+              };
+            }),
             roomTypeId: room.roomTypeId,
           })),
           slug: property.hotelSlug,

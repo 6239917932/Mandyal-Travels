@@ -2,12 +2,17 @@ type SearchValue = string | string[] | undefined;
 
 const ACTIONS = new Set([
   'ALL',
+  'AI_TRIP_PLAN',
   'ANALYTICS_EVENT',
   'CUSTOMER_SUPPORT_CREATE',
+  'HOTEL_DISCOVERY',
+  'HOTEL_QUOTE',
   'LOGIN',
+  'MFA_MUTATION',
   'PASSWORD_CHANGE',
   'PASSWORD_RESET_CONFIRM',
   'PASSWORD_RESET_REQUEST',
+  'PROMOTION_VALIDATE',
   'REGISTER',
 ]);
 const STATES = new Set(['ALL', 'ACTIVE_BLOCK', 'EXPIRED_BLOCK', 'OBSERVED']);

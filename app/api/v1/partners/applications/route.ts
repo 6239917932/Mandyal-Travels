@@ -1,4 +1,5 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { getCurrentUser } from '@/lib/auth/session';
 import {
   PartnerOperationsError,
@@ -12,11 +13,32 @@ function failure(code: string, message: string, status: number) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return failure('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels portal.', 403);
+  }
   if (!(await isPlatformFeatureEnabled('PARTNER_APPLICATIONS'))) {
     return failure('FEATURE_PAUSED', 'New partner applications are temporarily paused.', 503);
   }
   const user = await getCurrentUser();
   if (!user) return failure('AUTH_REQUIRED', 'Sign in before requesting supplier access.', 401);
+  const rateLimit = await consumeRateLimit({
+    action: 'PARTNER_APPLICATION_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, user.id),
+    limit: 3,
+    windowMs: 24 * 60 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message:
+            'Too many supplier applications were attempted. Please wait before trying again.',
+        },
+      } satisfies ApiErrorResponse,
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
   const body = await readJsonObject(request);
   if (!body) return failure('INVALID_JSON', 'Enter valid onboarding details.', 400);
   const required = [

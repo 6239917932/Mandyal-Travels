@@ -1,42 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { HomeHeroSlider } from '@/components/home/HomeHeroSlider';
+import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
+import { HomeTravelGallery } from '@/components/home/HomeTravelGallery';
 import { siteConfig } from '@/config/site';
-
-type TravelOption = {
-  description: string;
-  href: string;
-  label: string;
-  status: string;
-};
-
-const travelOptions: readonly TravelOption[] = [
-  {
-    description: 'Verified stays, locality-aware discovery, room choices, and clear policies.',
-    href: '/hotels',
-    label: 'Hotels',
-    status: 'Search and book',
-  },
-  {
-    description: 'Compare routes, schedules, fares, and passenger-ready flight options.',
-    href: '/flights',
-    label: 'Flights',
-    status: 'Explore flights',
-  },
-  {
-    description: 'Find intercity journeys with schedules, seat selection, and trip details.',
-    href: '/buses',
-    label: 'Buses',
-    status: 'Explore buses',
-  },
-  {
-    description: 'Plan flexible road travel with self-drive and chauffeur-ready choices.',
-    href: '/cars',
-    label: 'Cars',
-    status: 'Explore cars',
-  },
-] as const;
 
 const trustPoints = [
   {
@@ -88,27 +55,44 @@ function MountainLine() {
 export default function Home() {
   return (
     <div className="home-page">
-      <section
-        aria-label="Bir Billing and Himalayan travel gallery"
-        className="home-hero home-hero--gallery"
-      >
-        <HomeHeroSlider />
+      <section aria-labelledby="home-search-title" className="home-search-hero">
+        <Image
+          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
+          className="home-search-hero__image"
+          fill
+          priority
+          sizes="100vw"
+          src="/home/mandyal-travel-hero-v2.png"
+        />
+        <div className="home-search-hero__shade" />
+        <div className="home-container home-search-hero__content">
+          <div className="home-search-hero__copy">
+            <p>Hotels and cars, thoughtfully connected</p>
+            <h1 id="home-search-title">Stay, drive, and grow with us.</h1>
+            <span>
+              Hotel and car services are launching first. Flights and buses will follow after live
+              supplier integrations are verified.
+            </span>
+          </div>
+          <HomeBookingWidget />
+        </div>
       </section>
 
       <section aria-labelledby="home-intro-title" className="home-intro">
         <div className="home-container home-intro__grid">
           <div className="home-intro__heading">
             <p className="home-section__eyebrow">Rooted in Mandi, Himachal Pradesh</p>
-            <h1 className="home-intro__title" id="home-intro-title">
+            <h2 className="home-intro__title" id="home-intro-title">
               Journeys shaped by the mountains.
               <span> Built for everywhere.</span>
-            </h1>
+            </h2>
           </div>
 
           <div className="home-intro__details">
             <p>
               Mandyal Travels brings the grounded hospitality of our Himalayan home to a modern,
-              connected way of planning stays, flights, buses, and cars.
+              connected platform for booking stays and cars—and for local owners to manage their
+              inventory and reach more customers.
             </p>
 
             <div className="home-intro__actions">
@@ -129,32 +113,44 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="travel-options-title" className="home-travel" id="travel-options">
+      <section aria-labelledby="supplier-launch-title" className="home-travel" id="supplier-launch">
         <div className="home-container">
           <div className="home-section__heading home-section__heading--row">
             <div>
-              <p className="home-section__eyebrow">One platform, many ways to go</p>
-              <h2 className="home-section__title" id="travel-options-title">
-                Start with the journey you need today.
+              <p className="home-section__eyebrow">Now onboarding in Himachal Pradesh</p>
+              <h2 className="home-section__title" id="supplier-launch-title">
+                Put your hotel or car business online.
               </h2>
             </div>
             <p className="home-section__description">
-              Search, compare, and manage the important parts of your trip in one dependable place.
+              Start with property and fleet management today. Customer discovery and bookings can
+              grow as verified local inventory joins the platform.
             </p>
           </div>
 
-          <div className="travel-options-grid">
-            {travelOptions.map((option, index) => (
-              <Link className="travel-option" href={option.href} key={option.label}>
-                <span className="travel-option__number">0{index + 1}</span>
-                <span className="travel-option__status">{option.status}</span>
-                <h3>{option.label}</h3>
-                <p>{option.description}</p>
-                <span className="travel-option__arrow" aria-hidden="true">
-                  <ArrowIcon />
-                </span>
-              </Link>
-            ))}
+          <div className="travel-options-grid travel-options-grid--launch">
+            <Link className="travel-option" href="/partners">
+              <span className="travel-option__number">01</span>
+              <span className="travel-option__status">Hotel PMS</span>
+              <h3>List and manage your hotel</h3>
+              <p>
+                Control properties, rooms, rates, availability, reservations, and stay operations.
+              </p>
+              <span className="travel-option__arrow" aria-hidden="true">
+                <ArrowIcon />
+              </span>
+            </Link>
+            <Link className="travel-option" href="/partners">
+              <span className="travel-option__number">02</span>
+              <span className="travel-option__status">Car fleet</span>
+              <h3>List and manage your cars</h3>
+              <p>
+                Control vehicles, rates, availability, maintenance, compliance, and reservations.
+              </p>
+              <span className="travel-option__arrow" aria-hidden="true">
+                <ArrowIcon />
+              </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -176,27 +172,7 @@ export default function Home() {
             <MountainLine />
           </div>
 
-          <article className="home-experience">
-            <div className="home-experience__image">
-              <Image
-                alt="Paragliders above the Himalayan foothills near Bir Billing at sunrise"
-                fill
-                sizes="(max-width: 900px) 100vw, 50vw"
-                src="/brand/bir-billing-paragliding-v1.png"
-              />
-            </div>
-            <div className="home-experience__content">
-              <span>Himachal inspiration</span>
-              <h3>From Mandi&apos;s valleys to Bir Billing&apos;s open skies.</h3>
-              <p>
-                Discover stays by the locality travellers know—not only the district recorded on a
-                form. Search Bir Billing, Matroo, Suja, Mandi, or a property by name.
-              </p>
-              <Link href="/hotels?destination=Bir%20Billing">
-                Explore stays around Bir Billing <ArrowIcon />
-              </Link>
-            </div>
-          </article>
+          <HomeTravelGallery />
         </div>
       </section>
 
@@ -270,8 +246,8 @@ export default function Home() {
               <Link className="home-link-button home-link-button--primary" href="/hotels">
                 Search hotels
               </Link>
-              <Link className="home-link-button home-link-button--outline" href="/trip-planner">
-                Build a trip plan
+              <Link className="home-link-button home-link-button--outline" href="/partners">
+                List your hotel or car
               </Link>
             </div>
           </div>

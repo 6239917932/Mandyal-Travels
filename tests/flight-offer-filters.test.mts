@@ -134,11 +134,9 @@ test('flight filters and sorting operate on normalized offers', () => {
   );
 });
 
-test('flight results keep error, source-empty, and filter-empty states distinct', () => {
+test('public flight marketplace is clearly unavailable until its live API is verified', () => {
   const page = readFileSync('app/flights/page.tsx', 'utf8');
-  assert.match(page, /\{!error \? \(/);
-  assert.match(page, /availableOffers\.length > 0/);
-  assert.match(page, /No flights match the active filters\./);
-  assert.match(page, /Clear filters/);
-  assert.match(page, /No verified flights are available for this search\./);
+  assert.match(page, /MarketplaceComingSoon/);
+  assert.match(page, /product="Flights"/);
+  assert.doesNotMatch(page, /flightService|availableOffers/);
 });

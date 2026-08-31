@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import {
@@ -9,7 +9,12 @@ import {
   getRequestRateLimitIdentifier,
 } from '@/lib/auth/rateLimit';
 import { createSession } from '@/lib/auth/session';
-import { isValidEmail, isValidName, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
+import {
+  isAcceptableNewPassword,
+  isValidEmail,
+  isValidName,
+  normalizeEmail,
+} from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
@@ -22,6 +27,13 @@ const REGISTRATION_ATTEMPT_LIMIT = 5;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   const body = await readJsonObject(request);
   if (!body) {
     return NextResponse.json({ error: 'Enter valid account details.' }, { status: 400 });
@@ -54,11 +66,12 @@ export async function POST(request: Request) {
     !isValidName(firstName) ||
     !isValidName(lastName) ||
     !isValidEmail(email) ||
-    !isValidPassword(password)
+    !isAcceptableNewPassword(password)
   ) {
     return NextResponse.json(
       {
-        error: 'Enter a valid name, email address, and password between 10 and 128 characters.',
+        error:
+          'Enter a valid name, email address, and an uncommon password between 10 and 128 characters.',
       },
       { status: 400 },
     );
