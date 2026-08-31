@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import nextConfig, { noIndexHeaderSources } from '../next.config.ts';
+
+test('production responses do not advertise the application framework', () => {
+  assert.equal(nextConfig.poweredByHeader, false);
+});
 import {
   absolutePublicUrl,
   buildPublicSitemapRecords,
