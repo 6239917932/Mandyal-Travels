@@ -97,7 +97,9 @@ export async function PATCH(request: Request) {
     ]);
     (await cookies()).delete(SESSION_COOKIE_NAME);
 
-    return NextResponse.json({ data: { passwordChanged: true } });
+    const response = NextResponse.json({ data: { passwordChanged: true } });
+    response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');
+    return response;
   } catch (error) {
     console.error('Password update failed.', error);
     return NextResponse.json(
