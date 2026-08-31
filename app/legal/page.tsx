@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { siteConfig } from '@/config/site';
 import { POLICY_DOCUMENTS } from '@/lib/legal/policies';
 
 export const metadata: Metadata = {
@@ -17,6 +18,10 @@ export default function LegalPage() {
         <p>
           Review the versioned operating notices that support Mandyal Travels accounts, bookings,
           communications, independent supplier services, safety, complaints, and refunds.
+        </p>
+        <p>
+          Website operator: <strong>{siteConfig.legalName}</strong>. Registered office:{' '}
+          {siteConfig.registeredOffice.lines.join(', ')}.
         </p>
         <div className="legal-draft-notice" role="note">
           These operational drafts are published for transparency and implementation review. They

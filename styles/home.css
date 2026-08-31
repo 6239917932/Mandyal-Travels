@@ -1665,6 +1665,17 @@
   line-height: 1.7;
 }
 
+.contact-guidance address {
+  margin-top: 1rem;
+  color: var(--color-text-secondary);
+  font-style: normal;
+  line-height: 1.65;
+}
+
+.contact-guidance address span {
+  display: block;
+}
+
 .contact-guidance__actions {
   display: flex;
   flex-wrap: wrap;

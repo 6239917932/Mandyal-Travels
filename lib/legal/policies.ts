@@ -29,7 +29,7 @@ export interface PolicyDocument {
 export const PRIVACY_CONSENT_VERSION = 'privacy-v3.0-pending-legal-approval';
 
 const commonContact =
-  'Contact Mandyal Travels at contact@mandyaltravels.com or +91 80693 77940. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.';
+  'Contact Mandyal Travels Services Private Limited at contact@mandyaltravels.com or +91 80693 77940. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.';
 
 const policyDocuments: Record<PolicyKind, PolicyDocument> = {
   privacy: {
@@ -45,7 +45,7 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Who this notice covers',
         paragraphs: [
           'This notice covers visitors, account holders, travellers, hotel and vehicle partners, partner staff, drivers, and people who contact Mandyal Travels. A listed supplier may separately control personal data that it collects to deliver accommodation or transport; its own privacy notice should explain that processing.',
-          'Mandyal Travels acts as the data fiduciary for personal data processed for its accounts, marketplace, booking-facilitation, security, support, and compliance functions. The identity and contact details required for the final public notice must be completed and legally reviewed before commercial launch.',
+          'Mandyal Travels Services Private Limited operates this website and acts as the data fiduciary for personal data processed for its accounts, marketplace, booking-facilitation, security, support, and compliance functions. Its registered-office and contact details are published in the Legal Centre and Contact page.',
         ],
       },
       {
@@ -163,7 +163,7 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Complaints, governing law, and changes',
         paragraphs: [
           commonContact,
-          'These terms are governed by the laws of India. Nothing restricts a consumer from approaching a consumer commission, regulator, court, or other forum available under applicable law. The final terms must identify the legal entity, complete principal address, grievance officer, and any proposed contractual venue before approval.',
+          'These terms are governed by the laws of India. Nothing restricts a consumer from approaching a consumer commission, regulator, court, or other forum available under applicable law. The website operator is Mandyal Travels Services Private Limited; its registered-office and contact details are published in the Legal Centre and Contact page. A named grievance officer and any proposed contractual venue must be completed before final approval.',
           'Material changes apply prospectively and should be versioned and communicated. Confirmed bookings remain governed by the terms accepted at confirmation unless a lawful change is agreed or required.',
         ],
       },

@@ -17,7 +17,9 @@ export function SiteFooter() {
           </Link>
           <p className="site-footer__description">{siteConfig.description}</p>
           <p className="site-footer__origin">
-            Registered office: Joginder Nagar · Corporate office: Bir, Himachal Pradesh, India.
+            Legal business name: {siteConfig.legalName}.
+            <br />
+            Registered office: {siteConfig.registeredOffice.lines.join(', ')}.
           </p>
         </div>
 
@@ -82,7 +84,9 @@ export function SiteFooter() {
       </div>
 
       <div className="site-footer__bottom">
-        <p>© {currentYear} Mandyal Travels. All rights reserved.</p>
+        <p>
+          © {currentYear} {siteConfig.legalName}. All rights reserved.
+        </p>
         <nav aria-label="Footer policy shortcuts">
           <Link href="/legal/cookies">Cookie notice</Link>
           <Link href="/legal">Policy center</Link>
