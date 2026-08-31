@@ -54,6 +54,25 @@ if (migration.error) {
 }
 if (migration.status !== 0) process.exit(migration.status ?? 1);
 
+const administratorProvisioning = spawnSync(
+  process.execPath,
+  ['scripts/enforce-sole-platform-admin.mjs'],
+  {
+    env: environment,
+    stdio: 'inherit',
+  },
+);
+if (administratorProvisioning.error) {
+  console.error(
+    'Unable to verify the sole platform administrator.',
+    administratorProvisioning.error,
+  );
+  process.exit(1);
+}
+if (administratorProvisioning.status !== 0) {
+  process.exit(administratorProvisioning.status ?? 1);
+}
+
 const portal = spawn(npmCommand, ['start'], {
   env: environment,
   stdio: 'inherit',

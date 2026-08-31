@@ -164,17 +164,18 @@ test('account quick-history actions consume the same bounded document projection
   );
 
   const accountPage = readFileSync('app/account/page.tsx', 'utf8');
+  const accountSettingsPage = readFileSync('app/account/settings/page.tsx', 'utf8');
   assert.match(accountPage, /customerTravelHistoryDocument\(/);
   assert.match(accountPage, /getCustomerTravelHistoryDashboardTransport\(/);
   assert.doesNotMatch(accountPage, /tripFilter|\{ userId: user\.id \}, \{ email: user\.email \}/);
   assert.doesNotMatch(accountPage, /getTripDocumentAction|JSON\.parse|details\.documentQuery/);
   assert.doesNotMatch(accountPage, /\$\{details\.documentQuery\}/);
-  assert.match(accountPage, /AccountProfileForm/);
-  assert.match(accountPage, /PrivacyRequestManager/);
-  assert.match(accountPage, /SessionManager/);
+  assert.match(accountSettingsPage, /AccountProfileForm/);
+  assert.match(accountSettingsPage, /PrivacyRequestManager/);
+  assert.match(accountSettingsPage, /SessionManager/);
   assert.match(accountPage, /href: '\/account\/notifications'/);
   assert.match(accountPage, /href: '\/account\/benefits'/);
-  assert.match(accountPage, /benefits-readiness\s+records/);
+  assert.match(accountPage, /label: 'Rewards status'/);
 });
 
 test('account dashboard transport ownership permits email fallback only for unclaimed rows', () => {

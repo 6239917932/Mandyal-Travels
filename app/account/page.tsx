@@ -2,12 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { AccountProfileForm } from '@/components/account/AccountProfileForm';
-import { NotificationPreferences } from '@/components/account/NotificationPreferences';
-import { MfaSecurityManager } from '@/components/account/MfaSecurityManager';
-import { PasswordChangeForm } from '@/components/account/PasswordChangeForm';
-import { PrivacyRequestManager } from '@/components/account/PrivacyRequestManager';
-import { SessionManager } from '@/components/account/SessionManager';
 import { BusinessTravelRequestForm } from '@/components/business/BusinessTravelRequestForm';
 import { BusinessRequestCheckoutLink } from '@/components/business/BusinessRequestCheckoutLink';
 import { getCurrentSession } from '@/lib/auth/session';
@@ -20,40 +14,61 @@ export const metadata: Metadata = { title: 'My account' };
 const RECENT_ITEM_LIMIT = 20;
 
 const customerQuickActions = [
-  { description: 'Find and reserve your next stay.', href: '/hotels', label: 'Hotels' },
-  { description: 'Compare fares and book a flight.', href: '/flights', label: 'Flights' },
-  { description: 'Choose routes, operators, and seats.', href: '/buses', label: 'Buses' },
-  { description: 'Reserve self-drive and chauffeur cars.', href: '/cars', label: 'Cars' },
+  { description: 'Find a stay for your next journey.', href: '/hotels', label: 'Book a hotel' },
+  { description: 'Find self-drive and chauffeur options.', href: '/cars', label: 'Find a car' },
   {
-    description: 'Open, amend, or cancel an existing stay.',
+    description: 'Open an existing booking with its reference.',
     href: '/manage-booking',
     label: 'Manage booking',
   },
-  { description: 'View current travel discounts.', href: '/offers', label: 'Offers' },
   {
-    description: 'Review account-linked delivery history and communication preferences.',
+    description: 'Ask our team about a booking or your account.',
+    href: '/account/support',
+    label: 'Get help',
+  },
+] as const;
+
+const customerAccountActions = [
+  {
+    description:
+      'Update your name, password, two-step verification, sessions, and privacy choices.',
+    href: '/account/settings',
+    label: 'Profile and security',
+  },
+  {
+    description: 'Choose how Mandyal Travels may contact you.',
     href: '/account/notifications',
-    label: 'Notifications',
+    label: 'Communication preferences',
   },
   {
-    description: 'Review consent evidence recorded for your account.',
+    description: 'Review the permissions recorded for your account.',
     href: '/account/consents',
-    label: 'Consent history',
+    label: 'Privacy choices',
   },
   {
-    description: 'Review recorded benefits data and program readiness.',
+    description: 'Check the status of future rewards and referral benefits.',
     href: '/account/benefits',
-    label: 'Benefits readiness',
+    label: 'Rewards status',
   },
   {
-    description: 'Manage reusable traveler details for faster checkout.',
+    description: 'Save passenger details for a faster checkout.',
     href: '/account/travelers',
     label: 'Saved travelers',
   },
   {
-    description: 'Create and track a booking or account support case.',
-    href: '/account/support',
-    label: 'Customer support',
+    description: 'View payment records linked to your bookings.',
+    href: '/account/payments',
+    label: 'Payments',
+  },
+  {
+    description: 'Open invoices, vouchers, and travel documents.',
+    href: '/account/documents',
+    label: 'Travel documents',
+  },
+  {
+    description: 'Review current travel discounts and announcements.',
+    href: '/offers',
+    label: 'Offers',
   },
 ] as const;
 
@@ -89,9 +104,6 @@ export default async function AccountPage() {
     hotelTripCount,
     confirmedHotelTripCount,
     hotelTripValue,
-    activeSessions,
-    securityEvents,
-    privacyRequests,
   ] = await Promise.all([
     getCustomerTravelHistoryDashboardTransport({
       sessionEmail: user.email,
@@ -114,21 +126,6 @@ export default async function AccountPage() {
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
       where: { currency: 'INR', guest: { is: { email: user.email } } },
-    }),
-    prisma.userSession.findMany({
-      orderBy: { lastSeenAt: 'desc' },
-      select: { createdAt: true, expiresAt: true, id: true, lastSeenAt: true },
-      where: { expiresAt: { gt: new Date() }, userId: user.id },
-    }),
-    prisma.accountSecurityEvent.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: RECENT_ITEM_LIMIT,
-      where: { userId: user.id },
-    }),
-    prisma.dataPrivacyRequest.findMany({
-      orderBy: { requestedAt: 'desc' },
-      take: 20,
-      where: { userId: user.id },
     }),
   ]);
 
@@ -189,23 +186,33 @@ export default async function AccountPage() {
     : [[], 0];
 
   return (
-    <section className="account-page">
-      <div className="auth-page__intro">
+    <section className="account-page customer-account-page">
+      <div className="auth-page__intro customer-account-page__intro">
         <p className="hotel-page__eyebrow">
-          {user.role === 'BUSINESS_ADMIN' ? 'Personal travel profile' : 'Customer workspace'}
+          {user.role === 'PLATFORM_ADMIN'
+            ? 'Platform administration'
+            : user.role === 'BUSINESS_ADMIN'
+              ? 'Personal travel profile'
+              : 'My Mandyal account'}
         </p>
         <h1>Welcome back, {user.firstName}.</h1>
         <p>
-          Your {user.role === 'BUSINESS_ADMIN' ? 'business' : 'customer'} account is active and
-          protected by a secure browser session.
+          {user.role === 'PLATFORM_ADMIN'
+            ? 'Use the secure administration workspace to manage the platform.'
+            : 'Plan a journey, check a booking, or update your account from one place.'}
         </p>
+        {user.role === 'PLATFORM_ADMIN' ? (
+          <Link className="ui-button" href="/admin">
+            Open administration workspace
+          </Link>
+        ) : null}
       </div>
 
       {user.role === 'CUSTOMER' ? (
         <section className="customer-dashboard" aria-labelledby="customer-actions-heading">
           <div className="account-trips__heading">
-            <p className="hotel-page__eyebrow">Plan and manage</p>
-            <h2 id="customer-actions-heading">What would you like to do?</h2>
+            <p className="hotel-page__eyebrow">Quick actions</p>
+            <h2 id="customer-actions-heading">How can we help today?</h2>
           </div>
           <div className="customer-dashboard__actions">
             {customerQuickActions.map((action) => (
@@ -215,10 +222,35 @@ export default async function AccountPage() {
               </Link>
             ))}
           </div>
+          <p className="customer-dashboard__availability" role="status">
+            Hotels and cars are available first. Flights and buses are coming soon while live
+            supplier connections are completed.
+          </p>
         </section>
       ) : null}
 
-      <div className="account-card ui-card ui-card--padded">
+      <section className="customer-account-overview" aria-labelledby="travel-summary-heading">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">At a glance</p>
+          <h2 id="travel-summary-heading">Your travel summary</h2>
+        </div>
+        <dl className="customer-account-summary ui-card">
+          <div>
+            <dt>Total bookings</dt>
+            <dd>{totalTrips}</dd>
+          </div>
+          <div>
+            <dt>Confirmed journeys</dt>
+            <dd>{confirmedTrips}</dd>
+          </div>
+          <div>
+            <dt>Booked value</dt>
+            <dd>{formatCurrency(bookedValue, 'INR')}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <div className="account-card customer-account-card ui-card ui-card--padded">
         <div>
           <span>Name</span>
           <strong>
@@ -231,7 +263,13 @@ export default async function AccountPage() {
         </div>
         <div>
           <span>Account type</span>
-          <strong>{user.role === 'BUSINESS_ADMIN' ? 'Business administrator' : 'Customer'}</strong>
+          <strong>
+            {user.role === 'PLATFORM_ADMIN'
+              ? 'Platform administrator'
+              : user.role === 'BUSINESS_ADMIN'
+                ? 'Business administrator'
+                : 'Customer'}
+          </strong>
         </div>
         {organizationMembership ? (
           <div>
@@ -239,87 +277,37 @@ export default async function AccountPage() {
             <strong>{organizationMembership.organization.name}</strong>
           </div>
         ) : null}
-        <form action="/api/v1/auth/logout" method="post">
-          <button className="ui-button ui-button--secondary" type="submit">
-            Sign out
-          </button>
-        </form>
+        <div className="customer-account-card__actions">
+          <Link className="ui-button ui-button--secondary" href="/account/settings">
+            Account settings
+          </Link>
+          <form action="/api/v1/auth/logout" method="post">
+            <button className="ui-button ui-button--secondary" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
-      <AccountProfileForm email={user.email} firstName={user.firstName} lastName={user.lastName} />
-
-      <section className="account-trips" aria-labelledby="account-data-heading">
-        <div className="account-trips__heading">
-          <p className="hotel-page__eyebrow">Data and privacy</p>
-          <h2 id="account-data-heading">Download my data</h2>
-          <p>
-            Export your profile, preferences, bookings, company requests, customer support, security
-            activity, customer-friendly notification and consent history, and benefits-readiness
-            records as JSON.
-          </p>
-        </div>
-        <div className="account-trips__empty ui-card ui-card--padded">
-          <strong>Private account archive</strong>
-          <p>The archive never includes your password, session tokens, or payment-card details.</p>
-          <a className="ui-button ui-button--secondary" href="/api/v1/account/export">
-            Download account data
-          </a>
-        </div>
-      </section>
-
-      <PasswordChangeForm />
-      <MfaSecurityManager />
-      <PrivacyRequestManager
-        initialRequests={privacyRequests.map((request) => ({
-          dueAt: request.dueAt.toISOString(),
-          id: request.id,
-          requestType: request.requestType,
-          requestedAt: request.requestedAt.toISOString(),
-          resolutionNote: request.resolutionNote,
-          status: request.status,
-        }))}
-      />
-
-      <SessionManager
-        sessions={activeSessions.map((session) => ({
-          createdAt: session.createdAt.toISOString(),
-          expiresAt: session.expiresAt.toISOString(),
-          id: session.id,
-          isCurrent: session.id === currentSession.id,
-          lastSeenAt: session.lastSeenAt.toISOString(),
-        }))}
-      />
-
-      <section className="account-trips" aria-labelledby="security-activity-heading">
-        <div className="account-trips__heading">
-          <p className="hotel-page__eyebrow">Account protection</p>
-          <h2 id="security-activity-heading">Recent security activity</h2>
-          <p>Sign-ins and important account changes are recorded without passwords or tokens.</p>
-        </div>
-        {securityEvents.length > 0 ? (
-          <div className="account-trips__list">
-            {securityEvents.map((event) => (
-              <article className="account-trip ui-card ui-card--padded" key={event.id}>
-                <div className="account-trip__topline">
-                  <strong>{event.action.replaceAll('_', ' ')}</strong>
-                  <time dateTime={event.createdAt.toISOString()}>
-                    {new Intl.DateTimeFormat('en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    }).format(event.createdAt)}
-                  </time>
-                </div>
-                <p>{event.summary}</p>
-              </article>
+      {user.role === 'CUSTOMER' ? (
+        <section
+          className="customer-dashboard customer-dashboard--secondary"
+          aria-labelledby="account-tools-heading"
+        >
+          <div className="account-trips__heading">
+            <p className="hotel-page__eyebrow">Account</p>
+            <h2 id="account-tools-heading">Details and preferences</h2>
+          </div>
+          <div className="customer-dashboard__actions customer-dashboard__actions--secondary">
+            {customerAccountActions.map((action) => (
+              <Link className="customer-dashboard__action" href={action.href} key={action.href}>
+                <strong>{action.label}</strong>
+                <span>{action.description}</span>
+              </Link>
             ))}
           </div>
-        ) : (
-          <div className="account-trips__empty ui-card ui-card--padded">
-            <strong>No security activity recorded yet.</strong>
-            <p>New sign-ins and material account changes will appear here.</p>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
       {organizationMembership ? (
         <section
@@ -443,39 +431,6 @@ export default async function AccountPage() {
           )}
         </section>
       ) : null}
-
-      <section className="account-trips" aria-labelledby="travel-summary-heading">
-        <div className="account-trips__heading">
-          <p className="hotel-page__eyebrow">Account reporting</p>
-          <h2 id="travel-summary-heading">Travel summary</h2>
-        </div>
-        <div className="account-trip ui-card ui-card--padded">
-          <dl>
-            <div>
-              <dt>Total bookings</dt>
-              <dd>{totalTrips}</dd>
-            </div>
-            <div>
-              <dt>Confirmed journeys</dt>
-              <dd>{confirmedTrips}</dd>
-            </div>
-            <div>
-              <dt>Booked value</dt>
-              <dd>{formatCurrency(bookedValue, 'INR')}</dd>
-            </div>
-          </dl>
-          <p>Summary values are calculated from bookings connected to this customer account.</p>
-        </div>
-      </section>
-
-      <NotificationPreferences
-        initialPreferences={{
-          bookingEmail: user.bookingEmailEnabled,
-          marketingEmail: user.marketingConsentAt !== null,
-          smsAlerts: user.smsAlertsEnabled,
-          whatsappAlerts: user.whatsappAlertsEnabled,
-        }}
-      />
 
       <div className="account-trips" id="my-trips">
         <div className="account-trips__heading">
