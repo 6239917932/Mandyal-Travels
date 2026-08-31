@@ -22,6 +22,8 @@ services:
         value: 'false'
       - key: PARTNER_MUTATIONS_ENABLED
         value: 'false'
+      - key: SOLE_PLATFORM_ADMIN_EMAIL
+        sync: false
       - key: DATABASE_TRUST_RENDER_PRIVATE_NETWORK
         value: 'true'
       - key: RENDER_REPAIR_REDUNDANT_BASELINE

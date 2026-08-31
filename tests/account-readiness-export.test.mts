@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-test('account readiness navigation exposes notifications and governed benefits', async () => {
+test('account navigation exposes customer-friendly preferences and benefits links', async () => {
   const page = await readFile(new URL('../app/account/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /href: '\/account\/notifications'/);
   assert.match(page, /href: '\/account\/consents'/);
-  assert.match(page, /label: 'Consent history'/);
+  assert.match(page, /label: 'Privacy choices'/);
   assert.match(page, /href: '\/account\/benefits'/);
+  assert.match(page, /label: 'Rewards status'/);
 });
 
 test('account export scopes readiness records to the authenticated user', async () => {
@@ -60,11 +61,10 @@ test('account export has a snapshot-consistent absolute record cap', async () =>
   assert.match(route, /take: MAX_EXPORT_RECORDS \+ 1/);
 });
 
-test('account export description discloses all customer archive categories', async () => {
-  const page = await readFile(new URL('../app/account/page.tsx', import.meta.url), 'utf8');
+test('account export remains available from the protected settings page', async () => {
+  const page = await readFile(new URL('../app/account/settings/page.tsx', import.meta.url), 'utf8');
 
-  assert.match(page, /security activity/);
-  assert.match(page, /customer-friendly notification and consent history/);
-  assert.match(page, /consent history/);
-  assert.match(page, /benefits-readiness\s+records/);
+  assert.match(page, /Download account data/);
+  assert.match(page, /href="\/api\/v1\/account\/export"/);
+  assert.match(page, /password, session tokens, and payment-card details are never included/i);
 });
