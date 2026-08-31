@@ -16,6 +16,8 @@ services:
         value: production
       - key: DEPLOYMENT_ENVIRONMENT
         value: production
+      - key: PUBLIC_APP_ORIGIN
+        value: https://www.mandyaltravels.com
       - key: FIXTURE_INVENTORY_ENABLED
         value: 'false'
       - key: ALLOW_DEMO_TRANSPORT_CHECKOUT

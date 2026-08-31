@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { isTrustedPortalMutation } from '../lib/api/portalOrigin.ts';
+import { readFile } from 'node:fs/promises';
 
 test('portal mutations accept the public host when a reverse proxy uses an internal request URL', () => {
   const request = new Request('https://mandyal-travels.onrender.com/api/v1/auth/logout', {
@@ -42,4 +43,15 @@ test('portal mutations continue to reject cross-site and unrelated origins', () 
 
   assert.equal(isTrustedPortalMutation(crossSite, 'https://www.mandyaltravels.com'), false);
   assert.equal(isTrustedPortalMutation(mismatched, 'https://www.mandyaltravels.com'), false);
+});
+
+test('production pins portal mutations and logout redirects to the public custom domain', async () => {
+  const [render, logout] = await Promise.all([
+    readFile(new URL('../render.yaml', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/v1/auth/logout/route.ts', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(render, /key: PUBLIC_APP_ORIGIN\s+value: https:\/\/www\.mandyaltravels\.com/);
+  assert.match(logout, /resolvePublicPortalOrigin\(\)/);
+  assert.doesNotMatch(logout, /new URL\('\/', request\.url\)/);
 });
