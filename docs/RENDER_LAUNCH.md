@@ -2,9 +2,10 @@
 
 `render.yaml` provisions the first public PMS launch candidate as one Next.js web service and one
 managed PostgreSQL database in Singapore. It deliberately keeps fixture inventory, demonstration
-transport checkout, payment processing, Amadeus, and Hotelbeds disabled. Hotel and car partners can
-still apply through the portal; live money movement must remain unavailable until Cashfree approves
-the merchant account and the payment integration is separately certified.
+transport checkout, payment processing, Amadeus, and Hotelbeds disabled. Supplier application
+persistence and all partner mutations remain paused for the public review; live money movement must
+remain unavailable until Cashfree approves the merchant account and the payment integration is
+separately certified.
 
 The initial Blueprint uses Render's free web and PostgreSQL plans solely to complete deployment and
 functional acceptance. Free web services can sleep when idle, and free PostgreSQL expires after 30
