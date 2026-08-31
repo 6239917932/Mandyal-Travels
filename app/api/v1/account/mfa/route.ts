@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import {
   createRecoveryCodes,
   createTotpSecret,
@@ -13,6 +14,44 @@ import {
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { hashRecoveryCodes, verifyUserSecondFactor } from '@/services/mfaService';
+
+const MFA_MUTATION_LIMIT = 10;
+const MFA_MUTATION_WINDOW_MS = 10 * 60 * 1000;
+
+async function authorizeMfaMutation(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return {
+      response: NextResponse.json(
+        { error: 'This request must originate from the Mandyal Travels portal.' },
+        { status: 403 },
+      ),
+      session: null,
+    };
+  }
+  const session = await getCurrentSession();
+  if (!session) {
+    return {
+      response: NextResponse.json({ error: 'Sign in required.' }, { status: 401 }),
+      session: null,
+    };
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'MFA_MUTATION',
+    identifier: getRequestRateLimitIdentifier(request, session.user.id),
+    limit: MFA_MUTATION_LIMIT,
+    windowMs: MFA_MUTATION_WINDOW_MS,
+  });
+  if (!rateLimit.allowed) {
+    return {
+      response: NextResponse.json(
+        { error: 'Too many security changes were attempted. Please wait before trying again.' },
+        { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+      ),
+      session: null,
+    };
+  }
+  return { response: null, session };
+}
 
 export async function GET() {
   const session = await getCurrentSession();
@@ -30,8 +69,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getCurrentSession();
-  if (!session) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
+  const authorization = await authorizeMfaMutation(request);
+  if (authorization.response) return authorization.response;
+  const { session } = authorization;
   try {
     const current = await prisma.userMfaCredential.findUnique({
       where: { userId: session.user.id },
@@ -61,8 +101,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const session = await getCurrentSession();
-  if (!session) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
+  const authorization = await authorizeMfaMutation(request);
+  if (authorization.response) return authorization.response;
+  const { session } = authorization;
   const body = await readJsonObject(request);
   const code = typeof body?.code === 'string' ? body.code.trim() : '';
   const credential = await prisma.userMfaCredential.findUnique({
@@ -89,8 +130,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getCurrentSession();
-  if (!session) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
+  const authorization = await authorizeMfaMutation(request);
+  if (authorization.response) return authorization.response;
+  const { session } = authorization;
   const body = await readJsonObject(request);
   const code = typeof body?.code === 'string' ? body.code : '';
   if (!(await verifyUserSecondFactor(session.user.id, code))) {
