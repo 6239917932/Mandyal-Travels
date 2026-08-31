@@ -18,14 +18,10 @@ export async function GET() {
         prisma.booking.findFirst({ select: { id: true } }),
         prisma.businessTravelRequest.findFirst({ select: { id: true } }),
         prisma.integrationOutboxEvent.count({ where: { status: 'DEAD_LETTER' } }),
-        prisma.integrationOutboxEvent.count({
-          where: { status: { in: ['PENDING', 'PROCESSING'] } },
-        }),
       ]),
       syncEnabled ? getHotelbedsContentReadiness() : Promise.resolve(undefined),
     ]);
     const deadLetterCount = databaseResult[4];
-    const pendingCount = databaseResult[5];
     const hotelbeds = hotelbedsContentDeploymentReadiness({
       configuration: inspectHotelbedsConfiguration(process.env),
       ...(hotelbedsContent ? { content: hotelbedsContent } : {}),
@@ -39,22 +35,14 @@ export async function GET() {
         severity: 'warning',
       });
     }
+    const dependencyStatus =
+      unavailable || deadLetterCount || hotelbeds.status === 'attention' ? 'attention' : 'ready';
     return Response.json(
       {
         data: {
           checkedAt,
           database: 'ready',
-          integrations: {
-            deadLetterCount,
-            hotelbedsContent: hotelbeds,
-            pendingCount,
-            status:
-              unavailable || deadLetterCount
-                ? 'attention'
-                : hotelbeds.status === 'attention'
-                  ? 'attention'
-                  : 'ready',
-          },
+          dependencies: dependencyStatus,
           schema: 'ready',
           status: unavailable ? 'unavailable' : 'ready',
         },
