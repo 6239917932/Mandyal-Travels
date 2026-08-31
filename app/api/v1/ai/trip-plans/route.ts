@@ -1,13 +1,42 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { aiTripPlannerService } from '@/services/aiTripPlannerService';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import type { TripPlannerInput } from '@/types/ai';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      {
+        error: {
+          code: 'FORBIDDEN_ORIGIN',
+          message: 'This request must originate from the Mandyal Travels portal.',
+        },
+      },
+      { status: 403 },
+    );
+  }
   if (!(await isPlatformFeatureEnabled('AI_TRIP_PLANNER'))) {
     return Response.json(
       { error: { code: 'FEATURE_PAUSED', message: 'Guided trip planning is temporarily paused.' } },
       { status: 503 },
+    );
+  }
+  const rateLimit = await consumeRateLimit({
+    action: 'AI_TRIP_PLAN',
+    identifier: getRequestRateLimitIdentifier(request, 'trip-planner'),
+    limit: 12,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many trip plans were requested. Please wait before trying again.',
+        },
+      },
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
     );
   }
   const body = await readJsonObject(request, 8 * 1024);
