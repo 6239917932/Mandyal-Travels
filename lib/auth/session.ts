@@ -2,13 +2,13 @@ import { createHash, randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 
 import { prisma } from '@/lib/prisma';
+import { sessionAbsoluteExpiry, sessionDurationMsForRole } from '@/lib/auth/sessionPolicy';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
 } from '@/services/accountSecurityService';
 
 export const SESSION_COOKIE_NAME = 'mandyal_session';
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 const MAX_ACTIVE_SESSIONS_PER_USER = 10;
 
@@ -25,16 +25,16 @@ function hashToken(token: string) {
 
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString('base64url');
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   const tokenHash = hashToken(token);
 
-  await prisma.$transaction(
+  const expiresAt = await prisma.$transaction(
     async (transaction) => {
       const user = await transaction.user.findUnique({
-        select: { accessStatus: true },
+        select: { accessStatus: true, role: true },
         where: { id: userId },
       });
       if (!user || user.accessStatus !== 'ACTIVE') throw new AccountAccessDeniedError();
+      const expiresAt = new Date(Date.now() + sessionDurationMsForRole(user.role));
       await transaction.userSession.deleteMany({
         where: { expiresAt: { lte: new Date() }, userId },
       });
@@ -59,6 +59,7 @@ export async function createSession(userId: string) {
           where: { id: { in: excessSessions.map((session) => session.id) } },
         });
       }
+      return expiresAt;
     },
     { isolationLevel: 'Serializable' },
   );
@@ -117,7 +118,8 @@ export async function getCurrentSession() {
   }
 
   const now = new Date();
-  if (session.expiresAt <= now) {
+  const roleExpiry = sessionAbsoluteExpiry(session.user.role, session.createdAt);
+  if (session.expiresAt <= now || roleExpiry <= now) {
     await prisma.userSession.deleteMany({ where: { id: session.id } });
     return null;
   }
