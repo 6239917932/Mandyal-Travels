@@ -1,5 +1,5 @@
 import { Prisma } from '@/generated/prisma/client';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { hashPasswordResetToken } from '@/lib/auth/passwordReset';
 import {
@@ -18,6 +18,13 @@ const CONFIRM_LIMIT = 8;
 const CONFIRM_WINDOW_MS = 30 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
+
   const body = await readJsonObject(request);
   const token = typeof body?.token === 'string' ? body.token : '';
   const tokenHash = hashPasswordResetToken(token);
