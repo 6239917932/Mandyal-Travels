@@ -24,9 +24,25 @@ const retentionCount = Math.max(
 const timestamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
 const backupPath = path.join(backupDirectory, `mandyal-${timestamp}.db`);
 
+const requiredTables = ['User', 'Booking', '_prisma_migrations'];
+
 await mkdir(backupDirectory, { recursive: true });
 const database = new Database(databasePath, { readonly: true, fileMustExist: true });
 try {
+  const integrity = database.pragma('integrity_check', { simple: true });
+  if (integrity !== 'ok') throw new Error(`Source database integrity check returned: ${integrity}`);
+
+  const tableRows = database
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+    .all();
+  const tableNames = new Set(tableRows.map((row) => row.name));
+  for (const requiredTable of requiredTables) {
+    if (!tableNames.has(requiredTable))
+      throw new Error(
+        `Source database is missing required table ${requiredTable}; no backup was created.`,
+      );
+  }
+
   await database.backup(backupPath);
 } finally {
   database.close();

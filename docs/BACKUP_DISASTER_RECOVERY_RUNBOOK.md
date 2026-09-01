@@ -11,6 +11,10 @@ The repository includes bounded SQLite backup and isolated restore-verification 
 
 The verifier checks the SHA-256 sidecar before copying the backup into an isolated operating-system temporary directory. It then runs SQLite integrity and foreign-key checks and confirms the core migration, user, and booking tables. The temporary restored database is removed after verification; the source backup is never mutated.
 
+The backup command performs the same source-integrity and core-table preflight before writing an
+artifact. An empty, uninitialized, corrupt, or wrong-path database is rejected and must never be
+reported as a successful backup.
+
 To verify a specific backup, set `BACKUP_VERIFY_PATH` to its project-relative or absolute path. `DATABASE_BACKUP_DIRECTORY` selects the backup directory and `DATABASE_BACKUP_RETENTION` controls the bounded local retention count.
 
 ## Production recovery contract
