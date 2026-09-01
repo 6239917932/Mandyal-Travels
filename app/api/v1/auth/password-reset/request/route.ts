@@ -1,9 +1,11 @@
 import { after } from 'next/server';
 
-import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { isValidEmail, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { sendPasswordResetEmail } from '@/services/passwordResetService';
 
 const REQUEST_LIMIT = 5;
@@ -12,7 +14,7 @@ const GENERIC_MESSAGE =
   'If an account uses that email address, a password reset link will be sent shortly.';
 
 export async function POST(request: Request): Promise<Response> {
-  if (!isSameOriginMutation(request)) {
+  if (!isTrustedPortalMutation(request, resolvePublicPortalOrigin())) {
     return Response.json(
       { error: 'This request must originate from the Mandyal Travels portal.' },
       { status: 403 },

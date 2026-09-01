@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import {
@@ -18,6 +19,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -27,7 +29,7 @@ const REGISTRATION_ATTEMPT_LIMIT = 5;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
-  if (!isSameOriginMutation(request)) {
+  if (!isTrustedPortalMutation(request, resolvePublicPortalOrigin())) {
     return NextResponse.json(
       { error: 'This request must originate from the Mandyal Travels portal.' },
       { status: 403 },

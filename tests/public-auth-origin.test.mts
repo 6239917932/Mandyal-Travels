@@ -12,10 +12,14 @@ const routes = [
 test('public account access mutations require the portal origin before processing input', () => {
   for (const path of routes) {
     const source = readFileSync(path, 'utf8');
-    const originGuard = source.indexOf('isSameOriginMutation(request)');
+    const originGuard = source.indexOf(
+      'isTrustedPortalMutation(request, resolvePublicPortalOrigin())',
+    );
     const bodyRead = source.indexOf('readJsonObject(request)');
 
     assert.notEqual(originGuard, -1, `${path} must verify the portal origin`);
+    assert.match(source, /from '@\/lib\/api\/portalOrigin'/);
+    assert.match(source, /from '@\/lib\/url\/publicOrigin'/);
     assert.notEqual(bodyRead, -1, `${path} must read a bounded JSON object`);
     assert.ok(originGuard < bodyRead, `${path} must reject untrusted origins before reading input`);
   }

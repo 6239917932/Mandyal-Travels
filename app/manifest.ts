@@ -9,18 +9,18 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     icons: [
       {
-        src: '/brand/mandyal-app-icon-192.png',
+        src: '/brand/mandyal-signature-app-icon-v2-192.png',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: '/brand/mandyal-app-icon-512.png',
+        src: '/brand/mandyal-signature-app-icon-v2-512.png',
         sizes: '512x512',
         type: 'image/png',
       },
       {
         purpose: 'maskable',
-        src: '/brand/mandyal-maskable-icon-512.png',
+        src: '/brand/mandyal-signature-maskable-v2-512.png',
         sizes: '512x512',
         type: 'image/png',
       },
