@@ -17,6 +17,10 @@ test('mobile web manifest provides install-safe branded metadata', () => {
   assert.ok(value.icons?.some((icon) => icon.sizes === '192x192'));
   assert.ok(value.icons?.some((icon) => icon.sizes === '512x512'));
   assert.ok(value.icons?.some((icon) => icon.purpose === 'maskable'));
+  assert.ok(
+    value.icons?.every((icon) => icon.src.includes('mandyal-signature')),
+    'installed app icons should use the approved Mandyal Travels signature artwork',
+  );
 });
 
 test('all declared mobile web icons exist and contain image data', () => {
@@ -28,7 +32,7 @@ test('all declared mobile web icons exist and contain image data', () => {
   }
 
   assert.ok(
-    statSync('public/brand/mandyal-apple-touch-icon.png').size > 1_000,
+    statSync('public/brand/mandyal-signature-apple-touch-v2.png').size > 1_000,
     'Apple touch icon should contain a rendered icon',
   );
 });

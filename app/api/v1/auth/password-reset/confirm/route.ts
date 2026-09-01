@@ -1,5 +1,6 @@
 import { Prisma } from '@/generated/prisma/client';
-import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { readJsonObject } from '@/lib/api/request';
 import { hashPassword } from '@/lib/auth/password';
 import { hashPasswordResetToken } from '@/lib/auth/passwordReset';
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/lib/auth/rateLimit';
 import { isAcceptableNewPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -18,7 +20,7 @@ const CONFIRM_LIMIT = 8;
 const CONFIRM_WINDOW_MS = 30 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
-  if (!isSameOriginMutation(request)) {
+  if (!isTrustedPortalMutation(request, resolvePublicPortalOrigin())) {
     return Response.json(
       { error: 'This request must originate from the Mandyal Travels portal.' },
       { status: 403 },
