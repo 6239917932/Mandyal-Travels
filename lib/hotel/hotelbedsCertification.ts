@@ -42,6 +42,38 @@ export interface HotelbedsRateReference {
   rateType: HotelbedsRateType;
 }
 
+export interface HotelbedsPromotionDisclosure {
+  code?: string;
+  name: string;
+}
+
+export interface HotelbedsCancellationDisclosure {
+  amount: string;
+  from: string;
+}
+
+export interface HotelbedsRateDisclosure {
+  boardCode?: string;
+  boardName?: string;
+  cancellationPolicies: HotelbedsCancellationDisclosure[];
+  hotelCategory?: string;
+  hotelCode?: number;
+  hotelName?: string;
+  packaging: boolean;
+  promotions: HotelbedsPromotionDisclosure[];
+  rateComments?: string;
+  rateCommentsId?: string;
+  rateKey: string;
+  rateType: HotelbedsRateType;
+  roomCode?: string;
+  roomName?: string;
+}
+
+export interface HotelbedsRateDisclosureReadiness {
+  missing: string[];
+  readyForPreBookingDisplay: boolean;
+}
+
 export type HotelbedsCertificationStage =
   'awaiting_availability' | 'availability_complete' | 'checkrate_required' | 'booking_ready';
 
@@ -169,6 +201,40 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function boundedText(value: unknown, maximum = 2_000): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized && normalized.length <= maximum ? normalized : undefined;
+}
+
+function optionalHotelCode(value: unknown): number | undefined {
+  return Number.isSafeInteger(value) && Number(value) > 0 ? Number(value) : undefined;
+}
+
+function extractPromotions(value: unknown): HotelbedsPromotionDisclosure[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 50).flatMap((promotion) => {
+    if (!isRecord(promotion)) return [];
+    const name = boundedText(promotion.name, 500);
+    if (!name) return [];
+    const code = boundedText(promotion.code, 100);
+    return [{ ...(code ? { code } : {}), name }];
+  });
+}
+
+function extractCancellationPolicies(value: unknown): HotelbedsCancellationDisclosure[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 50).flatMap((policy) => {
+    if (!isRecord(policy)) return [];
+    const amount = boundedText(policy.amount, 100);
+    const from = boundedText(policy.from, 100);
+    if (!amount || !/^\d+(?:\.\d+)?$/.test(amount) || !from || !Number.isFinite(Date.parse(from))) {
+      return [];
+    }
+    return [{ amount, from }];
+  });
+}
+
 export function extractHotelbedsRates(payload: unknown): HotelbedsRateReference[] {
   if (!isRecord(payload) || !isRecord(payload.hotels) || !Array.isArray(payload.hotels.hotels)) {
     return [];
@@ -186,6 +252,64 @@ export function extractHotelbedsRates(payload: unknown): HotelbedsRateReference[
     }
   }
   return result;
+}
+
+export function extractHotelbedsRateDisclosures(payload: unknown): HotelbedsRateDisclosure[] {
+  if (!isRecord(payload) || !isRecord(payload.hotels) || !Array.isArray(payload.hotels.hotels)) {
+    return [];
+  }
+  const result: HotelbedsRateDisclosure[] = [];
+  for (const hotel of payload.hotels.hotels) {
+    if (!isRecord(hotel) || !Array.isArray(hotel.rooms)) continue;
+    const hotelCode = optionalHotelCode(hotel.code);
+    const hotelName = boundedText(hotel.name, 500);
+    const hotelCategory =
+      boundedText(hotel.categoryName, 200) ?? boundedText(hotel.categoryCode, 100);
+    for (const room of hotel.rooms) {
+      if (!isRecord(room) || !Array.isArray(room.rates)) continue;
+      const roomCode = boundedText(room.code, 200);
+      const roomName = boundedText(room.name, 500);
+      for (const rate of room.rates) {
+        if (!isRecord(rate)) continue;
+        const rateKey = boundedText(rate.rateKey, RATE_KEY_MAX_LENGTH);
+        const rateType = hotelbedsRateType(rate.rateType);
+        if (!rateKey || !rateType) continue;
+        const boardCode = boundedText(rate.boardCode, 100);
+        const boardName = boundedText(rate.boardName, 500);
+        const rateComments = boundedText(rate.rateComments, 5_000);
+        const rateCommentsId = boundedText(rate.rateCommentsId, 500);
+        result.push({
+          ...(boardCode ? { boardCode } : {}),
+          ...(boardName ? { boardName } : {}),
+          cancellationPolicies: extractCancellationPolicies(rate.cancellationPolicies),
+          ...(hotelCategory ? { hotelCategory } : {}),
+          ...(hotelCode ? { hotelCode } : {}),
+          ...(hotelName ? { hotelName } : {}),
+          packaging: rate.packaging === true,
+          promotions: extractPromotions(rate.promotions),
+          ...(rateComments ? { rateComments } : {}),
+          ...(rateCommentsId ? { rateCommentsId } : {}),
+          rateKey,
+          rateType,
+          ...(roomCode ? { roomCode } : {}),
+          ...(roomName ? { roomName } : {}),
+        });
+      }
+    }
+  }
+  return result;
+}
+
+export function inspectHotelbedsRateDisclosure(
+  rate: HotelbedsRateDisclosure,
+): HotelbedsRateDisclosureReadiness {
+  const missing: string[] = [];
+  if (!rate.hotelName) missing.push('hotel name');
+  if (!rate.roomName && !rate.roomCode) missing.push('room type');
+  if (!rate.boardName && !rate.boardCode) missing.push('board type');
+  if (rate.rateCommentsId && !rate.rateComments) missing.push('resolved rate comments');
+  if (rate.packaging) missing.push('standalone-sale eligibility for opaque/package rate');
+  return { missing, readyForPreBookingDisplay: missing.length === 0 };
 }
 
 export function createHotelbedsCertificationState(): HotelbedsCertificationState {

@@ -162,6 +162,14 @@ export default async function AdminHotelbedsReadinessPage() {
             <li>Requests use signed server-only headers and request gzip-compressed responses.</li>
             <li>Unknown response fields are ignored so additive provider changes remain safe.</li>
             <li>
+              Promotions, destination-time cancellation policies, room and board details, and rate
+              comment references are preserved for mandatory pre-booking review.
+            </li>
+            <li>
+              Rates with unresolved comments or opaque/package restrictions fail the display
+              readiness check and cannot be treated as certification-ready.
+            </li>
+            <li>
               Static hotel content is stored only by a bounded scheduled batch; customer searches
               never call the Content API in real time.
             </li>

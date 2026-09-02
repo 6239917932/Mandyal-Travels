@@ -6,12 +6,14 @@ import {
   buildHotelbedsAvailabilityRequest,
   buildHotelbedsCheckRateRequest,
   createHotelbedsCertificationState,
+  extractHotelbedsRateDisclosures,
   extractHotelbedsRates,
   HOTELBEDS_BOOKING_TIMEOUT_MS,
   recordHotelbedsAvailability,
   recordHotelbedsCheckRate,
   selectHotelbedsRate,
   shouldRequestHotelbedsCheckRate,
+  inspectHotelbedsRateDisclosure,
 } from '../lib/hotel/hotelbedsCertification.ts';
 import { HotelbedsEvaluationAdapter } from '../repositories/hotelbedsEvaluationAdapter.ts';
 
@@ -122,6 +124,85 @@ test('rate parser tolerates unknown additive fields and ignores malformed rates'
       { rateKey: 'b', rateType: 'RECHECK' },
     ],
   );
+});
+
+test('rate disclosures preserve mandatory pre-booking information without trusting malformed fields', () => {
+  const [rate] = extractHotelbedsRateDisclosures({
+    hotels: {
+      hotels: [
+        {
+          categoryName: '4 STARS',
+          code: 1067,
+          name: 'Evaluation Hotel',
+          rooms: [
+            {
+              code: 'DBT.SU',
+              name: 'Double or Twin Superior',
+              rates: [
+                {
+                  boardCode: 'HB',
+                  boardName: 'Half board',
+                  cancellationPolicies: [
+                    { amount: '50.01', from: '2026-09-19T23:59:00+05:30' },
+                    { amount: 5, from: 'invalid' },
+                  ],
+                  futureField: true,
+                  packaging: false,
+                  promotions: [
+                    { code: '073', name: 'Non-refundable rate. No amendments permitted' },
+                  ],
+                  rateComments: 'Local destination rules apply.',
+                  rateCommentsId: '102|166598|0',
+                  rateKey: 'rate-key',
+                  rateType: 'BOOKABLE',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  assert.deepEqual(rate, {
+    boardCode: 'HB',
+    boardName: 'Half board',
+    cancellationPolicies: [{ amount: '50.01', from: '2026-09-19T23:59:00+05:30' }],
+    hotelCategory: '4 STARS',
+    hotelCode: 1067,
+    hotelName: 'Evaluation Hotel',
+    packaging: false,
+    promotions: [{ code: '073', name: 'Non-refundable rate. No amendments permitted' }],
+    rateComments: 'Local destination rules apply.',
+    rateCommentsId: '102|166598|0',
+    rateKey: 'rate-key',
+    rateType: 'BOOKABLE',
+    roomCode: 'DBT.SU',
+    roomName: 'Double or Twin Superior',
+  });
+  assert.deepEqual(inspectHotelbedsRateDisclosure(rate), {
+    missing: [],
+    readyForPreBookingDisplay: true,
+  });
+});
+
+test('rate disclosures fail readiness for unresolved comments and opaque standalone rates', () => {
+  const readiness = inspectHotelbedsRateDisclosure({
+    cancellationPolicies: [],
+    packaging: true,
+    promotions: [],
+    rateCommentsId: '102|166598|0',
+    rateKey: 'opaque-rate',
+    rateType: 'RECHECK',
+  });
+  assert.equal(readiness.readyForPreBookingDisplay, false);
+  assert.deepEqual(readiness.missing, [
+    'hotel name',
+    'room type',
+    'board type',
+    'resolved rate comments',
+    'standalone-sale eligibility for opaque/package rate',
+  ]);
 });
 
 test('evaluation adapter signs gzip Availability and CheckRate requests without booking', async () => {
