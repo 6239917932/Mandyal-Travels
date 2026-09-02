@@ -13,6 +13,10 @@ made automatically.
 - CheckRate only when the chosen rate has `rateType=RECHECK`.
 - Up to 10 rate keys in one CheckRate request.
 - Unknown additive response fields are ignored safely.
+- Availability and CheckRate evidence preserves promotion names, cancellation amounts and
+  destination-local effective timestamps, room and board details, and rate-comment references.
+- A rate with an unresolved `rateCommentsId` fails pre-booking display readiness. Package/opaque
+  rates also fail until their combined-product eligibility is explicitly approved.
 - A booking workflow cannot become ready until the required CheckRate has completed.
 - The future booking transport must use a timeout of at least 60 seconds; the local contract reserves
   65 seconds.
@@ -54,6 +58,17 @@ made automatically.
 6. An approved evaluation run of the Content API initial load, differential refresh, and freshness
    monitoring with retained scheduler evidence.
 7. A supervised certification booking with no customer traffic and no live payment.
+
+## Safe evaluation sequence now
+
+1. Keep `HOTELBEDS_ENVIRONMENT=evaluation`; never commit or display the API key or secret.
+2. Run `npm run supplier:verify:hotelbeds` to make only the signed status request.
+3. Obtain HBX-approved test hotels and dates before capturing Availability evidence.
+4. Confirm every candidate rate passes the pre-booking disclosure inspection. A
+   `rateCommentsId` must be resolved through approved Content API evidence or CheckRate before it
+   can pass.
+5. Do not enable public results, Booking, cancellation, voucher fulfilment, payment, or production
+   credentials through this evaluation connector.
 
 ## Certification request outline
 
