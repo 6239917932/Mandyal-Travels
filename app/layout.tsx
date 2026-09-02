@@ -27,7 +27,7 @@ export const metadata: Metadata = {
       {
         sizes: '180x180',
         type: 'image/png',
-        url: '/brand/mandyal-signature-apple-touch-v2.png',
+        url: '/brand/mandyal-signature-apple-touch-v3.png',
       },
     ],
     icon: [
@@ -35,12 +35,12 @@ export const metadata: Metadata = {
       {
         sizes: '192x192',
         type: 'image/png',
-        url: '/brand/mandyal-signature-app-icon-v2-192.png',
+        url: '/brand/mandyal-signature-app-icon-v3-192.png',
       },
       {
         sizes: '512x512',
         type: 'image/png',
-        url: '/brand/mandyal-signature-app-icon-v2-512.png',
+        url: '/brand/mandyal-signature-app-icon-v3-512.png',
       },
     ],
     shortcut: '/brand/mandyal-symbol.svg',

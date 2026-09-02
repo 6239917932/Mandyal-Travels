@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const GALLERY = [
   ['bir-billing-01.jpg', 'Terraced fields around Bir'],
@@ -20,25 +23,107 @@ const GALLERY = [
 ] as const;
 
 export function HomeTravelGallery() {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [interactionPaused, setInteractionPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+
+  const moveTo = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
+    const rail = railRef.current;
+    const items = rail?.querySelectorAll<HTMLElement>('[data-gallery-item]');
+    const item = items?.item(index);
+    if (!rail || !item || !items) return;
+
+    rail.scrollTo({
+      behavior,
+      left: item.offsetLeft - rail.offsetLeft,
+    });
+    setActiveIndex(index);
+  }, []);
+
+  useEffect(() => {
+    if (
+      userPaused ||
+      interactionPaused ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return;
+
+    const interval = window.setInterval(() => {
+      setActiveIndex((current) => {
+        const next = (current + 1) % GALLERY.length;
+        const rail = railRef.current;
+        const item = rail?.querySelectorAll<HTMLElement>('[data-gallery-item]').item(next);
+        if (rail && item)
+          rail.scrollTo({ behavior: 'smooth', left: item.offsetLeft - rail.offsetLeft });
+        return next;
+      });
+    }, 4_500);
+
+    return () => window.clearInterval(interval);
+  }, [interactionPaused, userPaused]);
+
   return (
-    <section aria-labelledby="home-gallery-title" className="home-gallery">
+    <section
+      aria-labelledby="home-gallery-title"
+      aria-roledescription="carousel"
+      className="home-gallery"
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setInteractionPaused(false);
+      }}
+      onFocusCapture={() => setInteractionPaused(true)}
+      onPointerEnter={() => setInteractionPaused(true)}
+      onPointerLeave={() => setInteractionPaused(false)}
+    >
       <div className="home-gallery__heading">
         <div>
-          <p className="home-section__eyebrow">Himachal through our lens</p>
+          <p className="home-section__eyebrow">Bir Billing paragliding</p>
           <h2 id="home-gallery-title">
-            From Mandi&apos;s valleys to Bir Billing&apos;s open skies.
+            From Billing&apos;s mountain launch site to Bir&apos;s landing fields.
           </h2>
         </div>
-        <p>Browse the places and experiences that inspire the journeys we help travellers build.</p>
+        <p>
+          Explore the ridges, open skies, tandem flights, and paragliding landscapes that make Bir
+          Billing one of Himachal Pradesh&apos;s signature adventure destinations.
+        </p>
+        <div aria-label="Gallery controls" className="home-gallery__controls">
+          <button
+            aria-label="Show previous Bir Billing photograph"
+            onClick={() => moveTo((activeIndex - 1 + GALLERY.length) % GALLERY.length)}
+            type="button"
+          >
+            ←
+          </button>
+          <span aria-live="polite">
+            {String(activeIndex + 1).padStart(2, '0')} / {String(GALLERY.length).padStart(2, '0')}
+          </span>
+          <button
+            aria-label={userPaused ? 'Start automatic gallery' : 'Pause automatic gallery'}
+            onClick={() => setUserPaused((paused) => !paused)}
+            type="button"
+          >
+            {userPaused ? 'Play' : 'Pause'}
+          </button>
+          <button
+            aria-label="Show next Bir Billing photograph"
+            onClick={() => moveTo((activeIndex + 1) % GALLERY.length)}
+            type="button"
+          >
+            →
+          </button>
+        </div>
       </div>
 
-      <div className="home-gallery__rail">
+      <div aria-live="off" className="home-gallery__rail" ref={railRef}>
         {GALLERY.map(([src, label], index) => (
           <figure
+            aria-label={`${index + 1} of ${GALLERY.length}: ${label}`}
             className={
               index % 5 === 0 ? 'home-gallery__item home-gallery__item--wide' : 'home-gallery__item'
             }
+            data-gallery-item
             key={src}
+            role="group"
           >
             <Image
               alt={label}

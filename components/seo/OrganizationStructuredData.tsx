@@ -32,7 +32,7 @@ const structuredData = {
       foundingDate: '2026-06-17',
       image: `${PUBLIC_SITE_ORIGIN}/home/mandyal-travel-hero-v2.png`,
       legalName: siteConfig.legalName,
-      logo: `${PUBLIC_SITE_ORIGIN}/brand/mandyal-signature-app-icon-v2-512.png`,
+      logo: `${PUBLIC_SITE_ORIGIN}/brand/mandyal-travels-signature.png`,
       name: siteConfig.name,
       alternateName: siteConfig.legalName,
       slogan: siteConfig.tagline,

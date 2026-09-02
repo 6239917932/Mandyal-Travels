@@ -22,7 +22,12 @@ test('homepage moves every supplied Bir Billing photograph into the travel galle
   }
 
   assert.equal(gallery.match(/\['bir-billing-/g)?.length, galleryImages.length);
-  assert.match(gallery, /From Mandi&apos;s valleys to Bir Billing&apos;s open skies/);
+  assert.match(gallery, /Bir Billing paragliding/);
+  assert.match(gallery, /From Billing&apos;s mountain launch site to Bir&apos;s landing fields/);
+  assert.match(gallery, /window\.setInterval/);
+  assert.match(gallery, /prefers-reduced-motion: reduce/);
+  assert.match(gallery, /Pause automatic gallery/);
+  assert.match(gallery, /Show next Bir Billing photograph/);
 });
 
 test('homepage hero provides a focused hotel-and-car-first booking widget', async () => {
