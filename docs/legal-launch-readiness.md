@@ -1,7 +1,7 @@
 # Legal launch readiness
 
 The public policy center contains operational drafts, not approved legal instruments. Partner
-applications and public supplier writes remain disabled for the Cashfree review launch. Do not
+applications and public supplier writes remain disabled during payment and legal readiness. Do not
 enable commercial hotel or vehicle listings, booking, or payment until the decisions and evidence
 below are complete.
 
@@ -51,7 +51,8 @@ below are complete.
   deductions, and no-show terms before payment.
 - Ensure supplier settlement remains on hold while a linked refund or material dispute is open.
 - Test original-method refunds, provider failures, duplicate payment, supplier cancellation,
-  chargeback, and reconciliation paths with Cashfree before live processing.
+  chargeback, and reconciliation paths with PayU before live processing. Separately approve PayU
+  Split & Transfer before any automated supplier payout.
 
 ## Privacy and cookies
 

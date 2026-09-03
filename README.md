@@ -53,7 +53,8 @@ and release checklist.
   recipient correlation, presence-only provider/error evidence, and conditional retry controls
 - Human-governed administrator finance operations with exact payment/refund totals, independent
   bounded registers, private provider correlation, captured-payment mutation guards, and retry-safe
-  refund review controls; no live payment provider is activated
+  refund review controls; PayU collection is implemented but remains feature-gated pending final
+  production configuration and reconciliation acceptance
 - Governed promotion operations with authoritative stored campaign states, bounded search and
   pagination, version-safe reason-required activation, append-only history, and transactional
   reservation, redemption, expiry release, and full-refund reversal for usage-capped campaigns
@@ -91,7 +92,8 @@ possible data loss, choose **No** and have the warning reviewed before continuin
 
 ## Important
 
-- Payment functions are demonstrations until a real payment gateway is connected.
+- PayU hosted collection remains disabled until production secrets, callbacks, reconciliation,
+  refunds, and the separate supplier-payout path pass controlled acceptance testing.
 - Do not commit a real `.env` file or credentials.
 - Use `.env.example` only as the configuration guide.
 - Before a production deployment, replace both example secrets with independent random values of at

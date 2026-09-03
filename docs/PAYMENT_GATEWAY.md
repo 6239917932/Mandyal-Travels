@@ -1,8 +1,24 @@
-# Payment gateway activation
+# PayU payment gateway activation
 
-The portal now exposes idempotent hosted-checkout intent creation against a provider-neutral HTTPS contract. Amount and currency always come from an unexpired server-side hotel quote; card or bank credentials never pass through Mandyal Travels. A production release is blocked unless live gateway mode, endpoint, API key, webhook secret, trusted `PUBLIC_APP_ORIGIN`, and `PAYMENT_PROVIDER_ALLOWED_HOSTS` are configured.
+PayU is the primary collection gateway. The portal creates an idempotent, fixed-amount PayU Payment
+Link using OAuth client credentials and redirects the customer to PayU-hosted checkout. Amount and
+INR currency always come from an unexpired server-side hotel quote; the customer cannot choose or
+partially pay the amount, and card or bank credentials never pass through Mandyal Travels.
 
-`PUBLIC_APP_ORIGIN` must be the canonical HTTPS portal origin, for example `https://www.mandyaltravels.com`, with no path. It is the only origin used for hosted-checkout return URLs; incoming `Host` headers are never trusted. `PAYMENT_PROVIDER_ALLOWED_HOSTS` is a comma-separated list of contracted API and hosted-checkout domains. Keep it as narrow as possible and include every legitimate checkout or refund subdomain used by the provider.
+The PayU return handler does not trust a browser success redirect. It calls PayU's server-side
+`verify_payment` command and requires the exact transaction ID, captured state, amount, and INR
+currency before marking an intent captured. The booking page polls only the local bounded intent
+status and cannot confirm a booking until that verification is stored.
+
+`PUBLIC_APP_ORIGIN` must be the canonical HTTPS portal origin, for example
+`https://mandyaltravels.com`, with no path. It is the only origin used for PayU return URLs; incoming
+`Host` headers are never trusted. `PAYMENT_PROVIDER_ALLOWED_HOSTS` must narrowly include the PayU
+OAuth, Payment Links, command, and hosted-link domains used by the selected environment.
+
+Production configuration requires `PAYMENT_PROVIDER_ID=payu`, live mode, PayU Client ID/Secret,
+MID, merchant key/salt, and the three explicit HTTPS endpoints. Keep all values in deployment
+secrets. Never paste them into support email, screenshots, source control, pull requests, or browser
+code.
 
 Provider onboarding must approve the merchant entity, permitted payment methods, settlement bank account, webhook IP/signature scheme, capture/refund semantics, dispute handling, reconciliation files, data residency, PCI scope, and sandbox/production credentials. Use hosted checkout or tokenized provider elements only. Never add raw PAN, CVV, UPI PIN, or bank credentials to this repository, logs, database, or support tools.
 
@@ -24,8 +40,19 @@ Supplier payout destinations are provider-tokenized. Mandyal Travels stores the 
 
 The finance console shows payment environment and reconciliation state, balanced journals and postings, supplier allocations, governed payout batches, and the compatibility ledger used by older reports.
 
-## Webhooks and refunds
+## Webhooks, refunds, and payouts
 
-Providers sign `timestamp.raw-body` with HMAC-SHA256 and send the digest in `x-payment-signature` plus the Unix timestamp in `x-payment-timestamp`. Use a random webhook secret of at least 32 characters. Payloads are size-bounded, replay-window checked, field-bounded, and idempotently recorded before intent status changes.
+Configure the PayU payment webhook as
+`https://mandyaltravels.com/api/v1/payments/webhooks/payu`. PayU form callbacks must pass reverse-hash
+validation using the server-only merchant salt and are then independently reconciled through
+`verify_payment`. Payloads are size-bounded and idempotent evidence is retained without card data.
 
-Refund approval atomically claims a pending or provider-failed request for processing before contacting the configured provider-neutral refund endpoint. Only a provider-completed response records an approval and reversing journal; failures remain explicitly retryable with the same idempotency key. Provider credentials and final certification remain deployment responsibilities.
+PayU refunds are asynchronous and are deliberately not connected to automatic approval yet. The
+existing finance workflow must keep refund requests pending until initiation, status polling,
+original-method completion, and reconciliation are implemented and accepted. Do not mark a refund
+complete merely because PayU accepted the request.
+
+PayU Split & Transfer is a separate product and is not activated by this collection adapter. Keep
+all supplier payouts disabled until PayU approves the application, every supplier is onboarded as a
+sub-account, and split/refund/reversal/reconciliation testing is complete. Cashfree remains only a
+backup candidate while its merchant review is pending.
