@@ -121,6 +121,7 @@ test('deployment readiness fails closed only when content sync is explicitly req
     configured: true,
     enabled: true,
     environment: 'production' as const,
+    mutualTlsConfigured: true,
     productionBlocked: false,
   };
   assert.deepEqual(hotelbedsContentDeploymentReadiness({ configuration, syncEnabled: false }), {

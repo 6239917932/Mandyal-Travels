@@ -42,11 +42,13 @@ export default async function AdminHotelbedsReadinessPage() {
   const contentSyncEnabled = process.env.HOTELBEDS_CONTENT_SYNC_ENABLED === 'true';
   const nextStep = !posture.configured
     ? 'Store the evaluation API key and secret in the server secret store.'
-    : !posture.enabled
-      ? 'Enable the connector only in a controlled evaluation environment.'
-      : posture.productionBlocked
-        ? 'Evaluation credentials are blocked from production as intended.'
-        : 'Run the explicit status verification command; no automatic request is made here.';
+    : !posture.mutualTlsConfigured
+      ? 'Create and associate an HBX client certificate, then store its certificate and private key securely.'
+      : !posture.enabled
+        ? 'Enable the connector only in a controlled evaluation environment.'
+        : posture.productionBlocked
+          ? 'Evaluation credentials are blocked from production as intended.'
+          : 'Run the explicit status verification command; no automatic request is made here.';
 
   return (
     <section className="account-page business-report admin-workspace">
@@ -83,6 +85,10 @@ export default async function AdminHotelbedsReadinessPage() {
           <strong>{posture.environment}</strong>
         </Card>
         <Card>
+          <span>Mutual TLS</span>
+          <strong>{posture.mutualTlsConfigured ? 'Configured' : 'Missing'}</strong>
+        </Card>
+        <Card>
           <span>Customer booking</span>
           <strong>Blocked</strong>
         </Card>
@@ -115,6 +121,10 @@ export default async function AdminHotelbedsReadinessPage() {
               Production requires HBX commercial approval, certification, and live credentials.
             </li>
             <li>API keys and signature secrets remain server-only and are never displayed here.</li>
+            <li>
+              HBX client certificates and private keys remain in server secrets and are never
+              displayed or sent to the browser.
+            </li>
           </ul>
         </Card>
       </section>
@@ -139,8 +149,8 @@ export default async function AdminHotelbedsReadinessPage() {
           </Card>
           <Card>
             <span>Booking and cancel</span>
-            <strong>Not wired</strong>
-            <p>Chargeable operations remain blocked pending certification approval.</p>
+            <strong>Guarded transport</strong>
+            <p>mTLS contracts exist, but no UI or automatic call can create or cancel a booking.</p>
           </Card>
           <Card>
             <span>Content cache</span>
@@ -160,6 +170,10 @@ export default async function AdminHotelbedsReadinessPage() {
             <li>All requested occupancies are grouped into the same availability request.</li>
             <li>Children require explicit ages; invalid dates and malformed values fail closed.</li>
             <li>Requests use signed server-only headers and request gzip-compressed responses.</li>
+            <li>
+              Booking operations use HBX mTLS hosts and fail closed without a certificate and
+              private key.
+            </li>
             <li>Unknown response fields are ignored so additive provider changes remain safe.</li>
             <li>
               Promotions, destination-time cancellation policies, room and board details, and rate
