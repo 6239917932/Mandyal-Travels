@@ -4,11 +4,14 @@ import test from 'node:test';
 import {
   assertHotelbedsBookingReady,
   buildHotelbedsAvailabilityRequest,
+  buildHotelbedsBookingRequest,
   buildHotelbedsCheckRateRequest,
   createHotelbedsCertificationState,
   extractHotelbedsRateDisclosures,
   extractHotelbedsRates,
   HOTELBEDS_BOOKING_TIMEOUT_MS,
+  hotelbedsBookingPath,
+  hotelbedsCancellationPath,
   recordHotelbedsAvailability,
   recordHotelbedsCheckRate,
   selectHotelbedsRate,
@@ -232,8 +235,8 @@ test('evaluation adapter signs gzip Availability and CheckRate requests without 
   assert.deepEqual(
     requests.map((request) => request.url),
     [
-      'https://api.test.hotelbeds.com/hotel-api/1.0/hotels',
-      'https://api.test.hotelbeds.com/hotel-api/1.0/checkrates',
+      'https://api-mtls.test.hotelbeds.com/hotel-api/1.0/hotels',
+      'https://api-mtls.test.hotelbeds.com/hotel-api/1.0/checkrates',
     ],
   );
   for (const request of requests) {
@@ -243,4 +246,101 @@ test('evaluation adapter signs gzip Availability and CheckRate requests without 
     assert.equal(JSON.stringify(request).includes('secret'), false);
     assert.ok(request.body);
   }
+});
+
+test('booking request preserves room passengers and requires child ages', () => {
+  assert.deepEqual(
+    buildHotelbedsBookingRequest({
+      clientReference: 'MT-TEST-1',
+      holder: { name: 'Booking', surname: 'Test' },
+      remark: 'Certification booking only.',
+      rooms: [
+        {
+          rateKey: 'rate-key',
+          paxes: [
+            { name: 'Adult', roomId: 1, surname: 'One', type: 'AD' },
+            { age: 7, name: 'Child', roomId: 1, surname: 'One', type: 'CH' },
+          ],
+        },
+      ],
+      tolerance: 2,
+    }),
+    {
+      clientReference: 'MT-TEST-1',
+      holder: { name: 'Booking', surname: 'Test' },
+      remark: 'Certification booking only.',
+      rooms: [
+        {
+          rateKey: 'rate-key',
+          paxes: [
+            { name: 'Adult', roomId: 1, surname: 'One', type: 'AD' },
+            { age: 7, name: 'Child', roomId: 1, surname: 'One', type: 'CH' },
+          ],
+        },
+      ],
+      tolerance: 2,
+    },
+  );
+  assert.throws(
+    () =>
+      buildHotelbedsBookingRequest({
+        clientReference: 'MT-TEST-2',
+        holder: { name: 'Booking', surname: 'Test' },
+        rooms: [
+          {
+            rateKey: 'rate-key',
+            paxes: [{ name: 'Child', roomId: 1, surname: 'One', type: 'CH' }],
+          },
+        ],
+      }),
+    /child 1 age/,
+  );
+});
+
+test('booking detail and cancellation paths are bounded and encoded safely', () => {
+  assert.equal(hotelbedsBookingPath('1-123456'), '/hotel-api/1.0/bookings/1-123456');
+  assert.equal(
+    hotelbedsCancellationPath('1-123456', 'SIMULATION'),
+    '/hotel-api/1.0/bookings/1-123456?cancellationFlag=SIMULATION',
+  );
+  assert.throws(() => hotelbedsBookingPath('../secret'), /invalid format/);
+});
+
+test('booking, detail, and cancellation use only guarded mTLS endpoints', async () => {
+  const requests: Array<{ method: string | undefined; url: string }> = [];
+  const providerFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push({ method: init?.method, url: String(input) });
+    return Response.json({ booking: { reference: '1-123456' } });
+  }) as typeof fetch;
+  const adapter = new HotelbedsEvaluationAdapter(
+    { apiKey: 'key', environment: 'evaluation', secret: 'secret' },
+    providerFetch,
+    () => 1_724_841_000_000,
+  );
+  await adapter.createBooking({
+    clientReference: 'MT-TEST-3',
+    holder: { name: 'Booking', surname: 'Test' },
+    rooms: [
+      {
+        rateKey: 'rate-key',
+        paxes: [{ name: 'Adult', roomId: 1, surname: 'One', type: 'AD' }],
+      },
+    ],
+  });
+  await adapter.getBooking('1-123456');
+  await adapter.cancelBooking('1-123456', 'SIMULATION');
+  assert.deepEqual(requests, [
+    {
+      method: 'POST',
+      url: 'https://api-mtls.test.hotelbeds.com/hotel-api/1.0/bookings',
+    },
+    {
+      method: 'GET',
+      url: 'https://api-mtls.test.hotelbeds.com/hotel-api/1.0/bookings/1-123456',
+    },
+    {
+      method: 'DELETE',
+      url: 'https://api-mtls.test.hotelbeds.com/hotel-api/1.0/bookings/1-123456?cancellationFlag=SIMULATION',
+    },
+  ]);
 });

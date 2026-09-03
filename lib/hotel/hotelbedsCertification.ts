@@ -35,6 +35,46 @@ export interface HotelbedsCheckRateRequest {
   rooms: Array<{ rateKey: string }>;
 }
 
+export type HotelbedsPaxType = 'AD' | 'CH';
+
+export interface HotelbedsBookingPaxInput {
+  age?: number;
+  name: string;
+  roomId: number;
+  surname: string;
+  type: HotelbedsPaxType;
+}
+
+export interface HotelbedsBookingInput {
+  clientReference: string;
+  holder: { name: string; surname: string };
+  remark?: string;
+  rooms: ReadonlyArray<{
+    paxes: readonly HotelbedsBookingPaxInput[];
+    rateKey: string;
+  }>;
+  tolerance?: number;
+}
+
+export interface HotelbedsBookingRequest {
+  clientReference: string;
+  holder: { name: string; surname: string };
+  remark?: string;
+  rooms: Array<{
+    paxes: Array<{
+      age?: number;
+      name: string;
+      roomId: number;
+      surname: string;
+      type: HotelbedsPaxType;
+    }>;
+    rateKey: string;
+  }>;
+  tolerance?: number;
+}
+
+export type HotelbedsCancellationFlag = 'SIMULATION' | 'CANCELLATION';
+
 export type HotelbedsRateType = 'BOOKABLE' | 'RECHECK';
 
 export interface HotelbedsRateReference {
@@ -205,6 +245,103 @@ function boundedText(value: unknown, maximum = 2_000): string | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim();
   return normalized && normalized.length <= maximum ? normalized : undefined;
+}
+
+function requiredText(value: string, label: string, maximum: number): string {
+  const normalized = value.trim();
+  if (!normalized || normalized.length > maximum) {
+    throw new Error(`${label} must contain 1 to ${maximum} characters.`);
+  }
+  return normalized;
+}
+
+export function buildHotelbedsBookingRequest(
+  input: HotelbedsBookingInput,
+): HotelbedsBookingRequest {
+  if (input.rooms.length === 0 || input.rooms.length > 9) {
+    throw new Error('Hotelbeds booking must contain 1 to 9 rooms.');
+  }
+  const clientReference = requiredText(input.clientReference, 'Hotelbeds client reference', 100);
+  const holder = {
+    name: requiredText(input.holder.name, 'Hotelbeds holder name', 100),
+    surname: requiredText(input.holder.surname, 'Hotelbeds holder surname', 100),
+  };
+  const rooms = input.rooms.map((room, roomIndex) => {
+    const rateKey = requiredText(
+      room.rateKey,
+      `Hotelbeds room ${roomIndex + 1} rate key`,
+      RATE_KEY_MAX_LENGTH,
+    );
+    if (room.paxes.length === 0 || room.paxes.length > 99) {
+      throw new Error(`Hotelbeds room ${roomIndex + 1} must contain 1 to 99 passengers.`);
+    }
+    return {
+      paxes: room.paxes.map((pax, paxIndex) => {
+        requireInteger(
+          pax.roomId,
+          `Hotelbeds room ${roomIndex + 1} passenger ${paxIndex + 1} roomId`,
+          1,
+          9,
+        );
+        if (pax.type !== 'AD' && pax.type !== 'CH') {
+          throw new Error('Hotelbeds passenger type must be AD or CH.');
+        }
+        if (pax.type === 'CH') {
+          requireInteger(
+            pax.age ?? Number.NaN,
+            `Hotelbeds room ${roomIndex + 1} child ${paxIndex + 1} age`,
+            0,
+            17,
+          );
+        } else if (pax.age !== undefined) {
+          throw new Error('Hotelbeds adult passengers must not include a child age.');
+        }
+        return {
+          ...(pax.type === 'CH' ? { age: pax.age } : {}),
+          name: requiredText(pax.name, 'Hotelbeds passenger name', 100),
+          roomId: pax.roomId,
+          surname: requiredText(pax.surname, 'Hotelbeds passenger surname', 100),
+          type: pax.type,
+        };
+      }),
+      rateKey,
+    };
+  });
+  if (
+    input.tolerance !== undefined &&
+    (!Number.isFinite(input.tolerance) || input.tolerance < 0 || input.tolerance > 100)
+  ) {
+    throw new Error('Hotelbeds booking tolerance must be from 0 to 100.');
+  }
+  const remark =
+    input.remark === undefined
+      ? undefined
+      : requiredText(input.remark, 'Hotelbeds booking remark', 2_000);
+  return {
+    clientReference,
+    holder,
+    ...(remark ? { remark } : {}),
+    rooms,
+    ...(input.tolerance !== undefined ? { tolerance: input.tolerance } : {}),
+  };
+}
+
+export function hotelbedsBookingPath(reference: string): string {
+  const normalized = requiredText(reference, 'Hotelbeds booking reference', 100);
+  if (!/^[A-Za-z0-9-]+$/.test(normalized)) {
+    throw new Error('Hotelbeds booking reference has an invalid format.');
+  }
+  return `/hotel-api/1.0/bookings/${encodeURIComponent(normalized)}`;
+}
+
+export function hotelbedsCancellationPath(
+  reference: string,
+  flag: HotelbedsCancellationFlag,
+): string {
+  if (flag !== 'SIMULATION' && flag !== 'CANCELLATION') {
+    throw new Error('Hotelbeds cancellation flag is invalid.');
+  }
+  return `${hotelbedsBookingPath(reference)}?cancellationFlag=${flag}`;
 }
 
 function optionalHotelCode(value: unknown): number | undefined {

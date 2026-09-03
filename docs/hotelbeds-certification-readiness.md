@@ -7,6 +7,9 @@ made automatically.
 ## Implemented contract
 
 - Signed, server-only requests with gzip response negotiation.
+- Booking operations use HBX's mandatory mTLS hosts and fail closed unless a base64-encoded client
+  certificate and private key are configured together. API-key and signature authentication remain
+  required in addition to mTLS.
 - One Availability request per booking workflow.
 - Up to 2,000 unique hotel codes in one Availability call.
 - Every room/occupancy included in the same call, with explicit child ages.
@@ -20,6 +23,9 @@ made automatically.
 - A booking workflow cannot become ready until the required CheckRate has completed.
 - The future booking transport must use a timeout of at least 60 seconds; the local contract reserves
   65 seconds.
+- Bounded Booking, Booking Detail, simulated cancellation, and confirmed cancellation transport
+  contracts are implemented only in the isolated provider adapter. They are not connected to a
+  customer route, payment, or automatic worker.
 - A governed Content API cache stores bounded, hashed hotel payloads without publishing them.
 - Initial content loads use pages of at most 1,000 hotels; later runs use daily differential dates.
 - Content synchronization is separately disabled by default, authenticated, lease-protected,
@@ -38,8 +44,9 @@ made automatically.
 
 ## Deliberately blocked
 
-- Booking and cancellation endpoints are not wired. Hotelbeds test/live reservations may have real
-  commercial consequences and require an explicit, reviewed certification run.
+- Booking and cancellation are not wired to public or administrator UI routes. Hotelbeds test/live
+  reservations may have real commercial consequences and require an explicit, supervised
+  certification run. Cancellation must be simulated and reviewed before confirmation.
 - Customer search cannot invoke this adapter.
 - Production credentials cannot be enabled in a production runtime until the provider environment is
   explicitly set to production.
@@ -52,23 +59,40 @@ made automatically.
 
 1. HBX commercial approval and certification contact confirmation.
 2. A provider-issued certification URL, test user, and permitted test hotel/rate fixtures.
-3. Agreed commercial exclusions and a reliable administrator-only HBX inventory filter.
-4. Reviewed Availability and CheckRate evidence from the evaluation account.
-5. Approved booking, cancellation, rate-comment, cancellation-policy, and voucher fixtures.
-6. An approved evaluation run of the Content API initial load, differential refresh, and freshness
+3. An HBX client certificate associated with the evaluation API key; the private key must remain in
+   the deployment secret store and must never be sent to HBX.
+4. Agreed commercial exclusions and a reliable administrator-only HBX inventory filter.
+5. Reviewed Availability and CheckRate evidence from the evaluation account.
+6. Approved booking, cancellation, rate-comment, cancellation-policy, and voucher fixtures.
+7. An approved evaluation run of the Content API initial load, differential refresh, and freshness
    monitoring with retained scheduler evidence.
-7. A supervised certification booking with no customer traffic and no live payment.
+8. A supervised certification booking with no customer traffic and no live payment.
 
 ## Safe evaluation sequence now
 
 1. Keep `HOTELBEDS_ENVIRONMENT=evaluation`; never commit or display the API key or secret.
-2. Run `npm run supplier:verify:hotelbeds` to make only the signed status request.
-3. Obtain HBX-approved test hotels and dates before capturing Availability evidence.
-4. Confirm every candidate rate passes the pre-booking disclosure inspection. A
+2. Generate the private key and CSR outside source control. Create the certificate under **My API
+   Certificates**, associate it with the evaluation API key, and store the base64-encoded certificate
+   and private key only in deployment secrets. HBX must receive the CSR/public certificate, never the
+   private key.
+3. Run `npm run supplier:verify:hotelbeds` to make only the signed status request.
+4. Obtain HBX-approved test hotels and dates before capturing Availability evidence.
+5. Confirm every candidate rate passes the pre-booking disclosure inspection. A
    `rateCommentsId` must be resolved through approved Content API evidence or CheckRate before it
    can pass.
-5. Do not enable public results, Booking, cancellation, voucher fulfilment, payment, or production
+6. Do not enable public results, Booking, cancellation, voucher fulfilment, payment, or production
    credentials through this evaluation connector.
+
+## mTLS deployment secrets
+
+- `HOTELBEDS_MTLS_CERT_BASE64`: base64-encoded HBX-issued client certificate PEM.
+- `HOTELBEDS_MTLS_KEY_BASE64`: base64-encoded private-key PEM. This is the highest-sensitivity
+  credential and must be independently backed up and rotated before expiry.
+- `HOTELBEDS_MTLS_CA_BASE64`: optional base64-encoded CA PEM when HBX supplies a dedicated chain.
+
+Associate the certificate only after the mTLS deployment has been tested: HBX warns that an API key
+associated with a certificate loses access to non-mTLS endpoints after the provider's transition
+window. Keep two valid certificates during rotation where the HBX account permits it.
 
 ## Certification request outline
 

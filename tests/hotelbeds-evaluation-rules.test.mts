@@ -6,6 +6,7 @@ import test from 'node:test';
 import {
   createHotelbedsSignature,
   hotelbedsApiOrigin,
+  hotelbedsMutualTlsOrigin,
   inspectHotelbedsConfiguration,
   readHotelbedsConfiguration,
 } from '../lib/hotel/hotelbedsRules.ts';
@@ -22,6 +23,7 @@ test('Hotelbeds connector is disabled by default and never treats placeholders a
       configured: false,
       enabled: false,
       environment: 'evaluation',
+      mutualTlsConfigured: false,
       productionBlocked: false,
     },
   );
@@ -54,6 +56,8 @@ test('Hotelbeds evaluation access fails closed in production', () => {
 test('Hotelbeds endpoints are fixed and signatures follow the documented digest contract', () => {
   assert.equal(hotelbedsApiOrigin('evaluation'), 'https://api.test.hotelbeds.com');
   assert.equal(hotelbedsApiOrigin('production'), 'https://api.hotelbeds.com');
+  assert.equal(hotelbedsMutualTlsOrigin('evaluation'), 'https://api-mtls.test.hotelbeds.com');
+  assert.equal(hotelbedsMutualTlsOrigin('production'), 'https://api-mtls.hotelbeds.com');
   const expected = createHash('sha256').update('keysecret1724841000').digest('hex');
   assert.equal(
     createHotelbedsSignature({ apiKey: 'key', secret: 'secret' }, 1_724_841_000),
@@ -104,11 +108,29 @@ test('Hotelbeds readiness is administrator-only and cannot activate customer inv
   ]);
   assert.match(page, /getPlatformAdmin/);
   assert.match(page, /Customer booking[\s\S]*Blocked/);
+  assert.match(page, /Mutual TLS[\s\S]*mutualTlsConfigured/);
   assert.match(page, /never mixed into public hotel results/);
   assert.doesNotMatch(page, /HOTELBEDS_SECRET/);
   assert.match(adapter, /\/hotel-api\/1\.0\/status/);
   assert.match(adapter, /\/hotel-api\/1\.0\/hotels/);
   assert.match(adapter, /\/hotel-api\/1\.0\/checkrates/);
-  assert.doesNotMatch(adapter, /\/bookings|\/bookings\/|\/cancellations/);
+  assert.match(adapter, /Hotelbeds booking operations require an associated mTLS certificate/);
   assert.match(script, /No availability search, booking, cancellation, payment/);
+});
+
+test('Hotelbeds mTLS secrets require a certificate and key pair', () => {
+  const certificate = Buffer.from(
+    '-----BEGIN CERTIFICATE-----\nvalue\n-----END CERTIFICATE-----',
+  ).toString('base64');
+  assert.throws(
+    () =>
+      readHotelbedsConfiguration({
+        HOTELBEDS_API_KEY: 'valid-api-key',
+        HOTELBEDS_ENABLED: 'true',
+        HOTELBEDS_ENVIRONMENT: 'evaluation',
+        HOTELBEDS_MTLS_CERT_BASE64: certificate,
+        HOTELBEDS_SECRET: 'valid-secret',
+      }),
+    /both a client certificate and private key/,
+  );
 });
