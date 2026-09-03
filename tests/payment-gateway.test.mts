@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import {
   isSafeHostedCheckoutUrl,
   isCheckoutQuotePayable,
@@ -8,6 +8,13 @@ import {
   paymentIntentExpiry,
   verifyPaymentWebhook,
 } from '../lib/payments/gateway.ts';
+import {
+  parsePayuAmount,
+  parsePayuVerifiedTransaction,
+  payuCommandHash,
+  payuTransactionId,
+  verifyPayuResponseHash,
+} from '../lib/payments/payu.ts';
 
 test('hosted payment URLs require remote HTTPS origins', () => {
   const hosts = ['checkout.example.com'];
@@ -63,4 +70,88 @@ test('refund accounting waits for a completed provider status', () => {
   assert.equal(isCompletedProviderRefundStatus('SUCCEEDED'), true);
   assert.equal(isCompletedProviderRefundStatus('pending'), false);
   assert.equal(isCompletedProviderRefundStatus(undefined), false);
+});
+
+test('PayU references are deterministic, bounded, and contain no booking identifier', () => {
+  const reference = payuTransactionId('payment-550e8400-e29b-41d4-a716-446655440000');
+  assert.match(reference, /^MT[0-9a-f]{30}$/);
+  assert.equal(reference, payuTransactionId('payment-550e8400-e29b-41d4-a716-446655440000'));
+  assert.equal(reference.includes('550e8400'), false);
+});
+
+test('PayU command and reverse-response hashes follow the documented SHA-512 order', () => {
+  const key = 'merchant-key';
+  const salt = 'merchant-salt';
+  const transactionId = 'MT123456789012345678901234567890';
+  assert.equal(
+    payuCommandHash({ command: 'verify_payment', key, salt, variable: transactionId }),
+    createHash('sha512').update(`${key}|verify_payment|${transactionId}|${salt}`).digest('hex'),
+  );
+  const fields = {
+    amount: '100.00',
+    email: 'guest@example.com',
+    firstname: 'Guest',
+    key,
+    productinfo: 'Hotel booking',
+    status: 'success',
+    txnid: transactionId,
+    udf1: 'quote-1',
+    udf2: '',
+    udf3: '',
+    udf4: '',
+    udf5: '',
+  };
+  const hash = createHash('sha512')
+    .update(
+      [
+        salt,
+        'success',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'quote-1',
+        'guest@example.com',
+        'Guest',
+        'Hotel booking',
+        '100.00',
+        transactionId,
+        key,
+      ].join('|'),
+    )
+    .digest('hex');
+  assert.equal(verifyPayuResponseHash({ ...fields, hash }, salt), true);
+  assert.equal(verifyPayuResponseHash({ ...fields, amount: '101.00', hash }, salt), false);
+});
+
+test('PayU verification accepts only exact whole-INR captured transactions', () => {
+  const transactionId = 'MT123456789012345678901234567890';
+  assert.equal(parsePayuAmount('100.00'), 100);
+  assert.equal(parsePayuAmount('100.50'), null);
+  assert.deepEqual(
+    parsePayuVerifiedTransaction(transactionId, {
+      status: 1,
+      transaction_details: {
+        [transactionId]: {
+          amt: '100.00',
+          mihpayid: '403993715521937565',
+          status: 'success',
+          unmappedstatus: 'captured',
+        },
+      },
+    }),
+    {
+      amount: 100,
+      captured: true,
+      failed: false,
+      payuPaymentId: '403993715521937565',
+      status: 'captured',
+      transactionId,
+    },
+  );
 });

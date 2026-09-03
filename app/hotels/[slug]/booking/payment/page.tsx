@@ -170,7 +170,8 @@ export default function PaymentPage() {
   );
 
   useEffect(() => {
-    const returned = new URLSearchParams(window.location.search).get('paymentReturn') === '1';
+    const search = new URLSearchParams(window.location.search);
+    const returned = search.get('paymentReturn') === '1';
     if (!bookingDraft?.guest || !returned || paymentReturnHandled.current) return;
     paymentReturnHandled.current = true;
     const intentId = window.sessionStorage.getItem(
@@ -186,7 +187,44 @@ export default function PaymentPage() {
     const confirmedPromotionCode = window.sessionStorage.getItem(
       `mandyal-payment-promotion-${bookingDraft.quoteId}`,
     );
-    window.setTimeout(() => void finalizeBooking(intentId, confirmedPromotionCode ?? undefined), 0);
+    let cancelled = false;
+    const verifyCapture = async () => {
+      setIsProcessing(true);
+      for (let attempt = 0; attempt < 10 && !cancelled; attempt += 1) {
+        try {
+          const response = await fetch(
+            `/api/v1/payments/checkout-intents/${encodeURIComponent(intentId)}`,
+            { cache: 'no-store' },
+          );
+          const result = await readJsonResponse<{
+            data?: { status?: string };
+            error?: { message?: string };
+          }>(response);
+          if (result?.data?.status === 'CAPTURED') {
+            await finalizeBooking(intentId, confirmedPromotionCode ?? undefined);
+            return;
+          }
+          if (result?.data?.status === 'FAILED') {
+            setPaymentError('PayU did not complete the payment. No booking was created.');
+            setIsProcessing(false);
+            return;
+          }
+        } catch {
+          // A short PayU callback delay is retried below; booking confirmation remains blocked.
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 1_500));
+      }
+      if (!cancelled) {
+        setPaymentError(
+          'PayU is still confirming this payment. Do not pay again; check your booking shortly.',
+        );
+        setIsProcessing(false);
+      }
+    };
+    void verifyCapture();
+    return () => {
+      cancelled = true;
+    };
   }, [bookingDraft?.guest, bookingDraft?.quoteId, finalizeBooking]);
 
   if (!bookingDraft || !bookingDraft.guest) {

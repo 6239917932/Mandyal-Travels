@@ -18,7 +18,7 @@ credits.
 - For an approved unregistered accommodation supplier classified under Section 9(5), the platform
   records the accommodation GST liability and settles the supplier base less any applicable
   Section 194-O TDS.
-- Gateway fees are recorded as an internal estimate until the signed Cashfree schedule is configured.
+- Gateway fees are recorded as an internal estimate until the signed PayU schedule is configured.
   They are absorbed by the commission and are not added as an undisclosed customer surcharge.
 
 ## Immutable booking evidence
@@ -40,7 +40,8 @@ The following controls remain independent and fail closed:
    Section 194-O exemption evidence.
 2. Obtain the signed versioned supplier agreement and approve the listing.
 3. Confirm Mandyal Travels' GST registration and the reviewed tax treatment.
-4. Configure the signed Cashfree commercial fee schedule and production credentials.
+4. Configure the signed PayU commercial fee schedule and production collection credentials.
+   Activate PayU Split & Transfer separately only after PayU approves the marketplace payout model.
 5. Enable public partner listings through the audited platform feature control.
 6. Enable live marketplace payments through its separate audited feature control.
 

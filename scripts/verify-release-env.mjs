@@ -70,11 +70,8 @@ if (process.env.PAYMENT_GATEWAY_MODE !== 'live')
   failures.push('PAYMENT_GATEWAY_MODE must be live.');
 for (const name of [
   'PUBLIC_APP_ORIGIN',
-  'PAYMENT_GATEWAY_ENDPOINT',
-  'PAYMENT_GATEWAY_API_KEY',
   'PAYMENT_PROVIDER_ID',
   'PAYMENT_PROVIDER_ALLOWED_HOSTS',
-  'PAYMENT_WEBHOOK_SECRET',
   'PAYOUT_PROVIDER_ID',
   'PAYOUT_PROVIDER_ENDPOINT',
   'PAYOUT_PROVIDER_API_KEY',
@@ -98,16 +95,46 @@ try {
 } catch {
   failures.push('PUBLIC_APP_ORIGIN must contain a valid absolute HTTPS origin.');
 }
-const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
-if (webhookSecret.length < 32)
-  failures.push('PAYMENT_WEBHOOK_SECRET must contain at least 32 characters.');
-if (/replace|example|change-me/i.test(webhookSecret))
-  failures.push('PAYMENT_WEBHOOK_SECRET still contains a placeholder value.');
-const paymentApiKey = process.env.PAYMENT_GATEWAY_API_KEY ?? '';
-if (paymentApiKey.length < 16)
-  failures.push('PAYMENT_GATEWAY_API_KEY must contain at least 16 characters.');
-if (/replace|example|change-me/i.test(paymentApiKey))
-  failures.push('PAYMENT_GATEWAY_API_KEY still contains a placeholder value.');
+if (process.env.PAYMENT_PROVIDER_ID === 'payu') {
+  for (const name of [
+    'PAYU_CLIENT_ID',
+    'PAYU_CLIENT_SECRET',
+    'PAYU_MERCHANT_ID',
+    'PAYU_MERCHANT_KEY',
+    'PAYU_MERCHANT_SALT',
+    'PAYU_OAUTH_ENDPOINT',
+    'PAYU_PAYMENT_LINK_ENDPOINT',
+    'PAYU_COMMAND_ENDPOINT',
+  ]) {
+    const value = process.env[name] ?? '';
+    if (!value.trim()) failures.push(`${name} is required for PayU live collection.`);
+    if (/replace|example|change-me/i.test(value))
+      failures.push(`${name} still contains a placeholder value.`);
+  }
+  if ((process.env.PAYU_CLIENT_SECRET ?? '').length < 16)
+    failures.push('PAYU_CLIENT_SECRET must contain at least 16 characters.');
+  if ((process.env.PAYU_MERCHANT_SALT ?? '').length < 8)
+    failures.push('PAYU_MERCHANT_SALT must contain at least 8 characters.');
+} else {
+  for (const name of [
+    'PAYMENT_GATEWAY_ENDPOINT',
+    'PAYMENT_GATEWAY_API_KEY',
+    'PAYMENT_WEBHOOK_SECRET',
+  ]) {
+    if (!(process.env[name] ?? '').trim())
+      failures.push(`${name} is required for production money movement.`);
+  }
+  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET ?? '';
+  if (webhookSecret.length < 32)
+    failures.push('PAYMENT_WEBHOOK_SECRET must contain at least 32 characters.');
+  if (/replace|example|change-me/i.test(webhookSecret))
+    failures.push('PAYMENT_WEBHOOK_SECRET still contains a placeholder value.');
+  const paymentApiKey = process.env.PAYMENT_GATEWAY_API_KEY ?? '';
+  if (paymentApiKey.length < 16)
+    failures.push('PAYMENT_GATEWAY_API_KEY must contain at least 16 characters.');
+  if (/replace|example|change-me/i.test(paymentApiKey))
+    failures.push('PAYMENT_GATEWAY_API_KEY still contains a placeholder value.');
+}
 for (const name of ['PAYMENT_PROVIDER_ID', 'PAYOUT_PROVIDER_ID']) {
   const value = process.env[name] ?? '';
   if (!/^[a-z0-9][a-z0-9_-]{0,49}$/.test(value) || /configured|example|replace/i.test(value)) {
@@ -132,6 +159,9 @@ for (const name of ['INTEGRATION_OUTBOX_ENDPOINT', 'INTEGRATION_OUTBOX_ALLOWED_H
 for (const [endpointName, hostsName] of [
   ['PAYMENT_GATEWAY_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
   ['PAYMENT_GATEWAY_REFUND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['PAYU_OAUTH_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['PAYU_PAYMENT_LINK_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
+  ['PAYU_COMMAND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
   ['PAYOUT_PROVIDER_ENDPOINT', 'PAYOUT_PROVIDER_ALLOWED_HOSTS'],
   ['MEDIA_SIGNING_ENDPOINT', 'MEDIA_PROVIDER_ALLOWED_HOSTS'],
   ['EMAIL_PROVIDER_ENDPOINT', 'EMAIL_PROVIDER_ALLOWED_HOSTS'],

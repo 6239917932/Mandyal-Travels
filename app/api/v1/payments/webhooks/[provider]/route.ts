@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { readTextBody } from '@/lib/api/request';
 import { paymentPayloadHash, verifyPaymentWebhook } from '@/lib/payments/gateway';
+import { verifyPayuResponseHash } from '@/lib/payments/payu';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
+import { reconcilePayuCheckout } from '@/services/payuPaymentReconciliationService';
 
 type Context = { params: Promise<{ provider: string }> };
 type ProviderEvent = {
@@ -25,19 +27,47 @@ function isBoundedProviderValue(value: unknown, maximumLength: number): value is
 }
 
 export async function POST(request: Request, context: Context) {
-  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
-  if (!secret || secret.length < 32)
-    return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
+  const { provider } = await context.params;
+  if (!PROVIDER_PATTERN.test(provider))
+    return NextResponse.json({ error: { code: 'WEBHOOK_PROVIDER_INVALID' } }, { status: 400 });
   const payload = await readTextBody(request);
   if (payload === null)
     return NextResponse.json({ error: { code: 'WEBHOOK_PAYLOAD_TOO_LARGE' } }, { status: 413 });
+  if (provider === 'payu') {
+    const contentType = request.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().startsWith('application/x-www-form-urlencoded')) {
+      return NextResponse.json(
+        { error: { code: 'WEBHOOK_CONTENT_TYPE_INVALID' } },
+        { status: 415 },
+      );
+    }
+    const fields = Object.fromEntries(new URLSearchParams(payload).entries());
+    const key = process.env.PAYU_MERCHANT_KEY?.trim() ?? '';
+    const salt = process.env.PAYU_MERCHANT_SALT?.trim() ?? '';
+    if (!key || !salt)
+      return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
+    if (fields.key !== key || !verifyPayuResponseHash(fields, salt)) {
+      return NextResponse.json({ error: { code: 'WEBHOOK_SIGNATURE_INVALID' } }, { status: 401 });
+    }
+    try {
+      const result = await reconcilePayuCheckout(fields.txnid ?? '');
+      if (!result)
+        return NextResponse.json({ error: { code: 'WEBHOOK_PAYMENT_UNKNOWN' } }, { status: 400 });
+      return NextResponse.json({ data: { accepted: true, state: result.state } });
+    } catch {
+      return NextResponse.json(
+        { error: { code: 'WEBHOOK_RECONCILIATION_FAILED' } },
+        { status: 503 },
+      );
+    }
+  }
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+  if (!secret || secret.length < 32)
+    return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
   const signature = request.headers.get('x-payment-signature') ?? '';
   const timestamp = request.headers.get('x-payment-timestamp') ?? '';
   if (!verifyPaymentWebhook({ payload, signature, timestamp, secret }))
     return NextResponse.json({ error: { code: 'WEBHOOK_SIGNATURE_INVALID' } }, { status: 401 });
-  const { provider } = await context.params;
-  if (!PROVIDER_PATTERN.test(provider))
-    return NextResponse.json({ error: { code: 'WEBHOOK_PROVIDER_INVALID' } }, { status: 400 });
   let parsed: ProviderEvent;
   try {
     parsed = JSON.parse(payload) as ProviderEvent;

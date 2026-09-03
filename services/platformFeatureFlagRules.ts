@@ -22,7 +22,7 @@ export const PLATFORM_FEATURES = [
   {
     defaultEnabled: false,
     description:
-      'Controls creation of hosted live-payment checkout intents. Enable only after GST and Cashfree production readiness are approved.',
+      'Controls creation of PayU hosted live-payment checkout intents. Enable only after PayU callback, webhook, reconciliation, refund, GST, and payout readiness are approved.',
     key: 'LIVE_MARKETPLACE_PAYMENTS',
     label: 'Live marketplace payments',
   },
