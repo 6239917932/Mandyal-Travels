@@ -10,6 +10,8 @@ import {
   ADMIN_SETTLEMENT_STATUSES,
   privateSettlementReference,
 } from '@/services/adminSettlementWorkbenchService';
+import { maskedPayoutDestination } from '@/services/partnerPayoutRules';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 export const metadata: Metadata = { title: 'Settlement statements' };
 type SearchValue = string | string[] | undefined;
@@ -43,7 +45,25 @@ export default async function PartnerSettlementsPage({ searchParams }: Props) {
     partnerId: access.partnerId,
     ...(status === 'ALL' ? {} : { status }),
   };
-  const matchingCount = await prisma.partnerSettlement.count({ where });
+  const [matchingCount, payoutAccounts, payoutOnboardingEnabled] = await Promise.all([
+    prisma.partnerSettlement.count({ where }),
+    prisma.partnerPayoutAccount.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        accountLast4: true,
+        bankName: true,
+        createdAt: true,
+        id: true,
+        isDefault: true,
+        routingCodeMasked: true,
+        status: true,
+        verifiedAt: true,
+      },
+      take: 10,
+      where: { partnerId: access.partnerId },
+    }),
+    isPlatformFeatureEnabled('PARTNER_PAYOUT_ONBOARDING'),
+  ]);
   const pageCount = Math.max(1, Math.ceil(matchingCount / ADMIN_SETTLEMENT_PAGE_SIZE));
   const page = Math.min(requestedPage, pageCount);
   const settlements = await prisma.partnerSettlement.findMany({
@@ -66,6 +86,56 @@ export default async function PartnerSettlementsPage({ searchParams }: Props) {
         <Link className="ui-button ui-button--secondary" href="/partner">
           Partner workspace
         </Link>
+      </div>
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Payout destination</p>
+          <h2>Where approved settlements will be paid</h2>
+          <p>
+            Mandyal Travels stores only masked destination details and the payout provider’s token.
+            Never send bank account numbers, UPI credentials, PINs, or OTPs through this portal.
+          </p>
+        </div>
+        <div className="supplier-admin__grid">
+          {payoutAccounts.map((account) => {
+            const masked = maskedPayoutDestination(account);
+            return (
+              <Card key={account.id}>
+                <span className="admin-status-badge">{account.status.replaceAll('_', ' ')}</span>
+                <h3>{masked.bankName}</h3>
+                <p>
+                  Account {masked.account}
+                  {masked.routingCodeMasked ? (
+                    <>
+                      <br />
+                      Routing {masked.routingCodeMasked}
+                    </>
+                  ) : null}
+                </p>
+                <small>
+                  {account.isDefault
+                    ? 'Current verified payout destination'
+                    : account.status === 'REJECTED'
+                      ? 'This destination was not approved. Contact Mandyal Travels support.'
+                      : 'Awaiting provider and administrator verification'}
+                </small>
+              </Card>
+            );
+          })}
+          {payoutAccounts.length === 0 ? (
+            <Card>
+              <span className="admin-status-badge">
+                {payoutOnboardingEnabled ? 'Provider setup required' : 'Not yet available'}
+              </span>
+              <h3>No payout destination linked</h3>
+              <p>
+                {payoutOnboardingEnabled
+                  ? 'Complete the approved provider-hosted verification flow when Mandyal Travels sends it to your authorized account contact.'
+                  : 'Payout linking will open only after the marketplace and payout provider are approved.'}
+              </p>
+            </Card>
+          ) : null}
+        </div>
       </div>
       <form className="business-report__filters" method="get">
         <label className="ui-field">

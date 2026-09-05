@@ -262,7 +262,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 108-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 109-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -344,6 +344,12 @@ calculation, rejects inactive suppliers, and records draft, approval, and paid t
 append-only history. Version-checked updates prevent stale or duplicate finance actions, payment
 references are masked in portal views, and administrator and supplier statement screens are bounded
 and paginated. The workflow remains provider-neutral and does not release money automatically.
+
+Supplier payout destinations now have a bounded administrator workbench and a masked supplier view.
+Only provider-tokenized references and final-four display data are stored; import and review remain
+disabled behind a dedicated feature gate. Administrator verification or rejection requires a reason
+and exact record version, replacing a default destination is atomic, and every import, decision, and
+supersession is append-only audited. No raw bank account, UPI credential, PIN, or OTP is collected.
 
 Seasonal pricing is rate-plan-specific: room-only, breakfast, and other plans retain independent
 daily prices across search and booking quotes, while availability and stay restrictions remain
@@ -436,9 +442,9 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 560 regression tests, formatting verification, Prisma
+The current travel-domain milestone passes 595 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
-internal worker routes, clean-database verification of all 82 SQLite migrations with foreign-key
-integrity enabled, a synchronized 108-table PostgreSQL-native baseline, and the portable deployment
+internal worker routes, clean-database verification of all 91 SQLite migrations with foreign-key
+integrity enabled, a synchronized 109-table PostgreSQL-native baseline, and the portable deployment
 contract. Provider integration work must preserve those checks and add provider-specific automated
 tests before going live.
