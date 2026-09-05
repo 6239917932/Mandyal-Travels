@@ -25,9 +25,66 @@ export async function PATCH(
   const { partnerId, propertyId } = await context.params;
   const property = await prisma.partnerProperty.findFirst({
     include: { rooms: { where: { status: 'ACTIVE' } } },
-    where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    where: { id: propertyId, listingSource: 'MANAGED', partnerId },
   });
   if (!property) return failure('PROPERTY_NOT_FOUND', 'The supplier property was not found.', 404);
+  if (action === 'RESTORE') {
+    const normalizedReason = reviewNote.trim().replace(/\s+/g, ' ').slice(0, 500);
+    if (normalizedReason.length < 10)
+      return failure(
+        'REVIEW_NOTE_REQUIRED',
+        'Enter a restore reason of at least 10 characters.',
+        400,
+      );
+    if (property.status !== 'ARCHIVED' && property.publicationStatus !== 'ARCHIVED')
+      return failure('PROPERTY_NOT_ARCHIVED', 'Only an archived property can be restored.', 409);
+    const expectedUpdatedAt = new Date(String(body?.expectedUpdatedAt ?? ''));
+    if (
+      Number.isNaN(expectedUpdatedAt.getTime()) ||
+      expectedUpdatedAt.toISOString() !== body?.expectedUpdatedAt
+    )
+      return failure('INVALID_VERSION', 'Refresh the supplier record before restoring.', 409);
+    try {
+      const data = await prisma.$transaction(async (transaction) => {
+        const result = await transaction.partnerProperty.updateMany({
+          data: {
+            approvalNote: normalizedReason,
+            approvalStatus: 'PENDING_REVIEW',
+            publicationStatus: 'DRAFT',
+            reviewedAt: new Date(),
+            reviewedByUserId: admin.id,
+            status: 'ACTIVE',
+            submittedAt: null,
+          },
+          where: { id: property.id, updatedAt: expectedUpdatedAt },
+        });
+        if (result.count !== 1) throw new Error('STALE_RESTORE');
+        await transaction.partnerAuditLog.create({
+          data: {
+            action: 'PROPERTY_RESTORED',
+            actorUserId: admin.id,
+            entityId: property.id,
+            entityType: 'PROPERTY',
+            metadataJson: JSON.stringify({ reviewNoteLength: normalizedReason.length }),
+            partnerId,
+            summary: `${property.displayName} was restored to private draft review by a platform administrator.`,
+          },
+        });
+        return transaction.partnerProperty.findUniqueOrThrow({ where: { id: property.id } });
+      });
+      return Response.json({ data });
+    } catch (error) {
+      return error instanceof Error && error.message === 'STALE_RESTORE'
+        ? failure(
+            'LISTING_CHANGED',
+            'This property changed while it was being restored. Refresh and review the latest version.',
+            409,
+          )
+        : failure('PROPERTY_RESTORE_FAILED', 'The property could not be restored.', 500);
+    }
+  }
+  if (property.status === 'ARCHIVED' || property.publicationStatus === 'ARCHIVED')
+    return failure('PROPERTY_ARCHIVED', 'Restore this property before making other changes.', 409);
   if (action === 'UPDATE_LISTING') {
     try {
       const data = await partnerOperationsService.adminUpdatePropertyListing(

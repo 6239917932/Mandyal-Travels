@@ -378,6 +378,9 @@ existing published inventory as approved. Platform administrators can also corre
 customer-facing property and vehicle profile from the supplier record. Every administrator edit is
 protected from stale overwrites, re-runs listing risk rules, creates an audit event in the same
 transaction, and returns the listing to draft/pending review before it can be public again.
+Administrator archive is reversible without deleting historical records. A reason and exact record
+version are required to restore a property or vehicle, and restoration always produces an audit
+event and a private draft/pending-review state rather than republishing the listing.
 
 Direct bus-operator inventory now participates in customer search alongside the bounded fixture
 adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,

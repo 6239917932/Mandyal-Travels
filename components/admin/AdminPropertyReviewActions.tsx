@@ -8,9 +8,13 @@ import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 export function AdminPropertyReviewActions({
+  archived,
+  expectedUpdatedAt,
   partnerId,
   propertyId,
 }: {
+  archived: boolean;
+  expectedUpdatedAt: string;
   partnerId: string;
   propertyId: string;
 }) {
@@ -19,12 +23,12 @@ export function AdminPropertyReviewActions({
   const [error, setError] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
 
-  async function review(action: 'APPROVE' | 'REJECT' | 'PAUSE' | 'ARCHIVE') {
+  async function review(action: 'APPROVE' | 'REJECT' | 'PAUSE' | 'ARCHIVE' | 'RESTORE') {
     setError(undefined);
     setIsSaving(true);
     try {
       const response = await fetch(`/api/v1/admin/partners/${partnerId}/properties/${propertyId}`, {
-        body: JSON.stringify({ action, reviewNote }),
+        body: JSON.stringify({ action, expectedUpdatedAt, reviewNote }),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
@@ -59,18 +63,26 @@ export function AdminPropertyReviewActions({
       </label>
       {error ? <p className="ui-field__error">{error}</p> : null}
       <div className="manage-booking__document-actions">
-        <Button disabled={isSaving} onClick={() => void review('APPROVE')}>
-          Approve and publish
-        </Button>
-        <Button disabled={isSaving} onClick={() => void review('REJECT')} variant="secondary">
-          Return for corrections
-        </Button>
-        <Button disabled={isSaving} onClick={() => void review('PAUSE')} variant="secondary">
-          Pause
-        </Button>
-        <Button disabled={isSaving} onClick={() => void review('ARCHIVE')} variant="secondary">
-          Archive
-        </Button>
+        {archived ? (
+          <Button disabled={isSaving} onClick={() => void review('RESTORE')} variant="secondary">
+            Restore to draft review
+          </Button>
+        ) : (
+          <>
+            <Button disabled={isSaving} onClick={() => void review('APPROVE')}>
+              Approve and publish
+            </Button>
+            <Button disabled={isSaving} onClick={() => void review('REJECT')} variant="secondary">
+              Return for corrections
+            </Button>
+            <Button disabled={isSaving} onClick={() => void review('PAUSE')} variant="secondary">
+              Pause
+            </Button>
+            <Button disabled={isSaving} onClick={() => void review('ARCHIVE')} variant="secondary">
+              Archive
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

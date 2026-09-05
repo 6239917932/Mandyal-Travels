@@ -7,9 +7,13 @@ import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 export function AdminVehicleReviewActions({
+  archived,
+  expectedUpdatedAt,
   partnerId,
   vehicleId,
 }: {
+  archived: boolean;
+  expectedUpdatedAt: string;
   partnerId: string;
   vehicleId: string;
 }) {
@@ -17,12 +21,12 @@ export function AdminVehicleReviewActions({
   const [reviewNote, setReviewNote] = useState('');
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  async function review(action: 'APPROVE' | 'REJECT' | 'PAUSE' | 'ARCHIVE') {
+  async function review(action: 'APPROVE' | 'REJECT' | 'PAUSE' | 'ARCHIVE' | 'RESTORE') {
     setBusy(true);
     setError(undefined);
     try {
       const response = await fetch(`/api/v1/admin/partners/${partnerId}/vehicles/${vehicleId}`, {
-        body: JSON.stringify({ action, reviewNote }),
+        body: JSON.stringify({ action, expectedUpdatedAt, reviewNote }),
         headers: { 'Content-Type': 'application/json' },
         method: 'PATCH',
       });
@@ -51,18 +55,26 @@ export function AdminVehicleReviewActions({
       </label>
       {error ? <p className="ui-field__error">{error}</p> : null}
       <div className="manage-booking__document-actions">
-        <Button disabled={busy} onClick={() => void review('APPROVE')}>
-          Approve and publish
-        </Button>
-        <Button disabled={busy} onClick={() => void review('REJECT')} variant="secondary">
-          Return for corrections
-        </Button>
-        <Button disabled={busy} onClick={() => void review('PAUSE')} variant="secondary">
-          Pause
-        </Button>
-        <Button disabled={busy} onClick={() => void review('ARCHIVE')} variant="secondary">
-          Archive
-        </Button>
+        {archived ? (
+          <Button disabled={busy} onClick={() => void review('RESTORE')} variant="secondary">
+            Restore to draft review
+          </Button>
+        ) : (
+          <>
+            <Button disabled={busy} onClick={() => void review('APPROVE')}>
+              Approve and publish
+            </Button>
+            <Button disabled={busy} onClick={() => void review('REJECT')} variant="secondary">
+              Return for corrections
+            </Button>
+            <Button disabled={busy} onClick={() => void review('PAUSE')} variant="secondary">
+              Pause
+            </Button>
+            <Button disabled={busy} onClick={() => void review('ARCHIVE')} variant="secondary">
+              Archive
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

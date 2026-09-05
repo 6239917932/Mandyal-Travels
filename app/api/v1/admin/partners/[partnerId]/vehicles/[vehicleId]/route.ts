@@ -25,6 +25,66 @@ export async function PATCH(
   const { partnerId, vehicleId } = await context.params;
   const vehicle = await prisma.partnerVehicle.findFirst({ where: { id: vehicleId, partnerId } });
   if (!vehicle) return failure('VEHICLE_NOT_FOUND', 'The supplier vehicle was not found.', 404);
+  if (body.action === 'RESTORE') {
+    const normalizedReason = String(body.reviewNote ?? '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 500);
+    if (normalizedReason.length < 10)
+      return failure(
+        'REVIEW_NOTE_REQUIRED',
+        'Enter a restore reason of at least 10 characters.',
+        400,
+      );
+    if (vehicle.status !== 'ARCHIVED' && vehicle.publicationStatus !== 'ARCHIVED')
+      return failure('VEHICLE_NOT_ARCHIVED', 'Only an archived vehicle can be restored.', 409);
+    const expectedUpdatedAt = new Date(String(body.expectedUpdatedAt ?? ''));
+    if (
+      Number.isNaN(expectedUpdatedAt.getTime()) ||
+      expectedUpdatedAt.toISOString() !== body.expectedUpdatedAt
+    )
+      return failure('INVALID_VERSION', 'Refresh the supplier record before restoring.', 409);
+    try {
+      const data = await prisma.$transaction(async (transaction) => {
+        const result = await transaction.partnerVehicle.updateMany({
+          data: {
+            approvalNote: normalizedReason,
+            approvalStatus: 'PENDING_REVIEW',
+            publicationStatus: 'DRAFT',
+            reviewedAt: new Date(),
+            reviewedByUserId: admin.id,
+            status: 'ACTIVE',
+            submittedAt: null,
+          },
+          where: { id: vehicle.id, updatedAt: expectedUpdatedAt },
+        });
+        if (result.count !== 1) throw new Error('STALE_RESTORE');
+        await transaction.partnerAuditLog.create({
+          data: {
+            action: 'VEHICLE_RESTORED',
+            actorUserId: admin.id,
+            entityId: vehicle.id,
+            entityType: 'VEHICLE',
+            metadataJson: JSON.stringify({ reviewNoteLength: normalizedReason.length }),
+            partnerId,
+            summary: `${vehicle.vehicleName} was restored to private draft review by a platform administrator.`,
+          },
+        });
+        return transaction.partnerVehicle.findUniqueOrThrow({ where: { id: vehicle.id } });
+      });
+      return Response.json({ data });
+    } catch (error) {
+      return error instanceof Error && error.message === 'STALE_RESTORE'
+        ? failure(
+            'LISTING_CHANGED',
+            'This vehicle changed while it was being restored. Refresh and review the latest version.',
+            409,
+          )
+        : failure('VEHICLE_RESTORE_FAILED', 'The vehicle could not be restored.', 500);
+    }
+  }
+  if (vehicle.status === 'ARCHIVED' || vehicle.publicationStatus === 'ARCHIVED')
+    return failure('VEHICLE_ARCHIVED', 'Restore this vehicle before making other changes.', 409);
   if (body.action === 'UPDATE_LISTING') {
     try {
       const data = await partnerOperationsService.adminUpdateVehicleListing(

@@ -132,7 +132,9 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                   {property.rooms.length} room {property.rooms.length === 1 ? 'type' : 'types'}
                 </small>
                 {property.approvalNote ? <p>{property.approvalNote}</p> : null}
-                {property.listingSource === 'MANAGED' ? (
+                {property.listingSource === 'MANAGED' &&
+                property.status !== 'ARCHIVED' &&
+                property.publicationStatus !== 'ARCHIVED' ? (
                   <AdminPropertyListingEditor
                     partnerId={partner.id}
                     propertyId={property.id}
@@ -170,7 +172,14 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                     }}
                   />
                 ) : null}
-                <AdminPropertyReviewActions partnerId={partner.id} propertyId={property.id} />
+                <AdminPropertyReviewActions
+                  archived={
+                    property.status === 'ARCHIVED' || property.publicationStatus === 'ARCHIVED'
+                  }
+                  expectedUpdatedAt={property.updatedAt.toISOString()}
+                  partnerId={partner.id}
+                  propertyId={property.id}
+                />
               </Card>
             ))}
           </div>
@@ -192,28 +201,35 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                 </small>
               </p>
               {vehicle.approvalNote ? <p>{vehicle.approvalNote}</p> : null}
-              <AdminVehicleListingEditor
+              {vehicle.status !== 'ARCHIVED' && vehicle.publicationStatus !== 'ARCHIVED' ? (
+                <AdminVehicleListingEditor
+                  partnerId={partner.id}
+                  vehicleId={vehicle.id}
+                  values={{
+                    bags: vehicle.bags,
+                    cancellationPolicy: vehicle.cancellationPolicy,
+                    category: vehicle.category,
+                    dropoffLocation: vehicle.dropoffLocation,
+                    features: readStringList(vehicle.featuresJson).join(', '),
+                    fuelPolicy: vehicle.fuelPolicy,
+                    mileagePolicy: vehicle.mileagePolicy,
+                    pickupLocation: vehicle.pickupLocation,
+                    pricePerDay: vehicle.pricePerDay,
+                    registrationNumber: vehicle.registrationNumber ?? '',
+                    seats: vehicle.seats,
+                    totalUnits: vehicle.totalUnits,
+                    transmission: vehicle.transmission,
+                    updatedAt: vehicle.updatedAt.toISOString(),
+                    vehicleName: vehicle.vehicleName,
+                  }}
+                />
+              ) : null}
+              <AdminVehicleReviewActions
+                archived={vehicle.status === 'ARCHIVED' || vehicle.publicationStatus === 'ARCHIVED'}
+                expectedUpdatedAt={vehicle.updatedAt.toISOString()}
                 partnerId={partner.id}
                 vehicleId={vehicle.id}
-                values={{
-                  bags: vehicle.bags,
-                  cancellationPolicy: vehicle.cancellationPolicy,
-                  category: vehicle.category,
-                  dropoffLocation: vehicle.dropoffLocation,
-                  features: readStringList(vehicle.featuresJson).join(', '),
-                  fuelPolicy: vehicle.fuelPolicy,
-                  mileagePolicy: vehicle.mileagePolicy,
-                  pickupLocation: vehicle.pickupLocation,
-                  pricePerDay: vehicle.pricePerDay,
-                  registrationNumber: vehicle.registrationNumber ?? '',
-                  seats: vehicle.seats,
-                  totalUnits: vehicle.totalUnits,
-                  transmission: vehicle.transmission,
-                  updatedAt: vehicle.updatedAt.toISOString(),
-                  vehicleName: vehicle.vehicleName,
-                }}
               />
-              <AdminVehicleReviewActions partnerId={partner.id} vehicleId={vehicle.id} />
             </Card>
           ))}
           {partner.vehicles.length === 0 ? <p>No vehicles have been submitted.</p> : null}
