@@ -83,8 +83,8 @@ export default function Home() {
             <p>Hotels and cars, thoughtfully connected</p>
             <h1 id="home-search-title">Stay, drive, and grow with us.</h1>
             <span>
-              Hotel and car services are launching first. Flights and buses will follow after live
-              supplier integrations are verified.
+              Rooted in Himachal, we promise clear choices, dependable service, and human support—
+              so every journey feels cared for from the first search to your safe return home.
             </span>
           </div>
           <HomeBookingWidget />
