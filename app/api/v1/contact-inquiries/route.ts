@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject, isSameOriginMutation } from '@/lib/api/request';
+import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { prisma } from '@/lib/prisma';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   normalizePublicContactInquiry,
   PUBLIC_CONTACT_BODY_LIMIT_BYTES,
@@ -21,7 +23,7 @@ function createReference(): string {
 }
 
 export async function POST(request: Request) {
-  if (!isSameOriginMutation(request)) {
+  if (!isTrustedPortalMutation(request, resolvePublicPortalOrigin())) {
     return errorResponse(
       'FORBIDDEN_ORIGIN',
       'This request must originate from the Mandyal Travels portal.',

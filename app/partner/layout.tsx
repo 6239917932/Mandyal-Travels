@@ -13,7 +13,7 @@ export default async function PartnerLayout({ children }: PartnerLayoutProps) {
   if (!user) redirect('/login?returnTo=/partner');
 
   const access = await getPartnerAccess();
-  if (!access?.partnerId || !access.userId) redirect('/partners');
+  if (!access?.partnerId || !access.userId) redirect('/partners/apply');
 
   return children;
 }

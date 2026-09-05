@@ -51,7 +51,9 @@ test('contact page offers a persisted, protected public message flow', async () 
   assert.match(contact, /<ContactInquiryForm/);
   assert.match(form, /<form/);
   assert.match(form, /fetch\('\/api\/v1\/contact-inquiries'/);
-  assert.match(route, /isSameOriginMutation\(request\)/);
+  assert.match(route, /isTrustedPortalMutation\(request, resolvePublicPortalOrigin\(\)\)/);
+  assert.match(route, /from '@\/lib\/api\/portalOrigin'/);
+  assert.match(route, /from '@\/lib\/url\/publicOrigin'/);
   assert.match(route, /PUBLIC_CONTACT_CREATE/);
   assert.match(route, /prisma\.contactInquiry\.create/);
   assert.doesNotMatch(contact, /<main\b/i);

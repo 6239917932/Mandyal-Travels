@@ -31,7 +31,7 @@ export default async function PartnerWorkspacePage() {
   if (!user) redirect('/login?returnTo=/partner');
 
   const access = await getPartnerAccess();
-  if (!access?.partnerId || !access.userId) redirect('/partners');
+  if (!access?.partnerId || !access.userId) redirect('/partners/apply');
   if (access.partnerType === 'BUS') redirect('/partner/bus-operations');
   if (access.partnerType === 'FLIGHT') redirect('/partner/flights');
 
