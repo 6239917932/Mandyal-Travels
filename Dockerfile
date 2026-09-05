@@ -4,6 +4,13 @@ FROM node:22-bookworm-slim AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Prisma's native engine requires OpenSSL at build and runtime. Installing it
+# in the shared base keeps migration and application behavior deterministic on
+# slim images instead of relying on Prisma's legacy fallback.
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 FROM base AS dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
