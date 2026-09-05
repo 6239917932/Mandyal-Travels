@@ -69,7 +69,9 @@ async function payuAccessToken(): Promise<string> {
 
 async function createPayuPaymentLink(input: {
   amount: number;
+  callbackPath?: string;
   currency: string;
+  description?: string;
   idempotencyKey: string;
   reference: string;
   returnUrl: string;
@@ -79,7 +81,7 @@ async function createPayuPaymentLink(input: {
   }
   const providerRef = payuTransactionId(input.idempotencyKey);
   const returnOrigin = new URL(input.returnUrl).origin;
-  const callback = new URL('/api/v1/payments/payu/return', returnOrigin);
+  const callback = new URL(input.callbackPath ?? '/api/v1/payments/payu/return', returnOrigin);
   callback.searchParams.set('txnid', providerRef);
   const token = await payuAccessToken();
   const { allowedHosts, endpoint } = paymentProviderConfiguration(
@@ -95,7 +97,9 @@ async function createPayuPaymentLink(input: {
     },
     body: JSON.stringify({
       currency: input.currency,
-      description: `Mandyal Travels hotel booking ${input.reference.slice(0, 80)}`,
+      description:
+        input.description?.trim().slice(0, 120) ??
+        `Mandyal Travels hotel booking ${input.reference.slice(0, 80)}`,
       failureURL: `${callback.toString()}&outcome=failed`,
       invoiceNumber: providerRef,
       isAmountFilledByCustomer: false,
@@ -157,7 +161,9 @@ export async function verifyPayuTransaction(
 
 export async function createHostedPaymentIntent(input: {
   amount: number;
+  callbackPath?: string;
   currency: string;
+  description?: string;
   idempotencyKey: string;
   reference: string;
   returnUrl: string;

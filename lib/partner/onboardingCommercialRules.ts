@@ -45,6 +45,8 @@ export function onboardingCanAdvance(input: {
   return (
     input.agreementAccepted &&
     input.phoneOtpVerified &&
-    (input.paymentStatus === 'PAID' || input.paymentStatus === 'WAIVED')
+    (input.paymentStatus === 'CAPTURED' ||
+      input.paymentStatus === 'PAID' ||
+      input.paymentStatus === 'WAIVED')
   );
 }

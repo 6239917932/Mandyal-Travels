@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { PartnerApplicationForm } from '@/components/partner/PartnerApplicationForm';
+import { PartnerOnboardingCheckout } from '@/components/partner/PartnerOnboardingCheckout';
 import { FeatureUnavailable } from '@/components/common/FeatureUnavailable';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
@@ -36,6 +37,31 @@ export default async function PartnerApplicationPage() {
     include: { partner: true },
     where: { userId: user.id },
   });
+  const paidOnboardingEnabled = await isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING');
+  const enrollment = paidOnboardingEnabled
+    ? await prisma.partnerOnboardingOrder.findFirst({
+        include: {
+          agreementAcceptance: {
+            include: { agreementVersion: true, phoneVerification: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        where: { status: { in: ['CAPTURED', 'WAIVED'] }, userId: user.id },
+      })
+    : null;
+  const agreement = enrollment?.agreementAcceptance?.agreementVersion;
+  const phone = enrollment?.agreementAcceptance?.phoneVerification;
+  const enrollmentComplete = Boolean(
+    enrollment?.completedAt &&
+    enrollment.agreementAcceptance &&
+    enrollment.agreementAcceptance.contentHash === agreement?.contentHash &&
+    agreement?.status === 'APPROVED' &&
+    agreement.effectiveAt &&
+    agreement.effectiveAt <= new Date() &&
+    phone?.status === 'VERIFIED' &&
+    phone.verifiedAt &&
+    phone.expiresAt > new Date(),
+  );
 
   if (membership) redirect('/partner');
   const kycSummary =
@@ -76,7 +102,24 @@ export default async function PartnerApplicationPage() {
           </small>
         </Card>
       </div>
-      {application?.status === 'PENDING' ? (
+      {paidOnboardingEnabled && !enrollment ? (
+        <PartnerOnboardingCheckout />
+      ) : paidOnboardingEnabled && !enrollmentComplete ? (
+        <Card className="partner-application__status">
+          <span className="business-request__status business-request__status--pending">
+            Payment recorded
+          </span>
+          <h2>Phone verification and agreement are next.</h2>
+          <p>
+            Your payment or launch waiver is recorded. Application entry remains locked until a
+            current phone OTP is verified and the approved supplier agreement is accepted.
+          </p>
+          <small>
+            Mandyal Travels will enable this step only after the OTP provider and final
+            counsel-approved agreement are configured. Payment alone never activates a supplier.
+          </small>
+        </Card>
+      ) : application?.status === 'PENDING' ? (
         <Card className="partner-application__status">
           <span className="business-request__status business-request__status--pending">
             Verification pending

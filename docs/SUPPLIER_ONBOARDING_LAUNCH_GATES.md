@@ -21,6 +21,15 @@ Status: implementation and legal review checklist. This is not legal advice or a
 6. Admin removal is a recoverable archive with a reason and audit trail. Existing bookings, payment, complaint, tax, and settlement records are preserved.
 7. Supplier bank/UPI details must be captured by the approved payout provider. Mandyal stores only provider references and masked display data.
 
+## Implemented enrollment controls
+
+- The enrollment order stores an immutable price/version snapshot in paise, while the PayU boundary converts the charge to whole INR and converts verified INR back to paise for comparison.
+- Browser redirects and signed PayU webhooks both use server-side `verify_payment`; browser-provided success text never marks an order captured.
+- Full-waiver coupons are created by a platform administrator, bounded by a start/end time and optional usage cap, and cannot be consumed repeatedly by the same supplier account.
+- Agreement acceptance stores the exact approved content hash and hashed request evidence. It requires a current provider-backed phone-verification record and a captured or waived enrollment order.
+- Supplier application submission and administrator approval independently re-check the completed enrollment when `PAID_PARTNER_ONBOARDING` is enabled.
+- `PAID_PARTNER_ONBOARDING` remains disabled by default. The UI and data model being present do not authorize production enrollment.
+
 ## Legal and compliance review
 
 - Consumer disclosures and marketplace conduct: Consumer Protection (E-Commerce) Rules, 2020 and related Department of Consumer Affairs rules: https://consumeraffairs.nic.in/acts-and-rules/consumer-protection/consumer-protection

@@ -5,6 +5,7 @@ import {
   partnerOperationsService,
 } from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 type Context = { params: Promise<{ applicationId: string }> };
 const failure = (code: string, message: string, status: number) =>
@@ -25,6 +26,8 @@ export async function PATCH(request: Request, { params }: Context) {
     return Response.json({
       data: await partnerOperationsService.reviewApplication({
         applicationId,
+        commercialGateRequired:
+          action === 'APPROVE' && (await isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING')),
         decision: action,
         reviewerUserId: admin.id,
         reviewNote,

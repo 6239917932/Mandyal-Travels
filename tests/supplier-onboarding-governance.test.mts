@@ -155,3 +155,52 @@ test('admin vehicle mutation is authenticated, same-origin, audited and recovera
   assert.match(route, /evaluateVehicleReview/);
   assert.match(route, /riskSignal\.count/);
 });
+
+test('paid enrollment is persistent, fixed-price and reconciled server-side', async () => {
+  const [checkout, enrollment, callback, webhook] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/partners/onboarding/checkout/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../services/partnerEnrollmentService.ts', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../app/api/v1/partners/onboarding/payu/return/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(
+      new URL('../app/api/v1/payments/webhooks/[provider]/route.ts', import.meta.url),
+      'utf8',
+    ),
+  ]);
+  assert.match(checkout, /isSameOriginMutation/);
+  assert.match(checkout, /PAID_PARTNER_ONBOARDING/);
+  assert.match(enrollment, /quote\.dueNow \/ 100/);
+  assert.match(enrollment, /verified\.amount \* 100 === order\.dueNowAmount/);
+  assert.match(enrollment, /status: \{ in: \['CAPTURED', 'WAIVED'\] \}/);
+  assert.match(callback, /reconcilePartnerOnboardingPayment/);
+  assert.doesNotMatch(callback, /searchParams\.get\('outcome'\)/);
+  assert.match(webhook, /verifyPayuResponseHash/);
+  assert.match(webhook, /reconcilePartnerOnboardingPayment/);
+});
+
+test('agreement evidence and launch coupons are bounded and attributable', async () => {
+  const [acceptance, coupons, schema] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/partners/onboarding/agreements/accept/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(
+      new URL('../app/api/v1/admin/partners/onboarding/coupons/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../prisma/schema.prisma', import.meta.url), 'utf8'),
+  ]);
+  assert.match(acceptance, /explicitAcceptance !== true/);
+  assert.match(acceptance, /phoneVerificationRef/);
+  assert.match(coupons, /getPlatformAdmin/);
+  assert.match(coupons, /isSameOriginMutation/);
+  assert.match(coupons, /createdByUserId: admin\.id/);
+  assert.match(schema, /model PartnerAgreementAcceptance/);
+  assert.match(schema, /model PartnerOnboardingOrder/);
+  assert.match(schema, /idempotencyKey\s+String\s+@unique/);
+});
