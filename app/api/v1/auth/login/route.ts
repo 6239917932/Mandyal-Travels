@@ -3,7 +3,13 @@ import { NextResponse } from 'next/server';
 import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
 import { readJsonObject } from '@/lib/api/request';
 import { verifyPassword } from '@/lib/auth/password';
-import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
+import {
+  canUseLoginAudience,
+  getLoginAudienceDestination,
+  isReturnToAllowedForAudience,
+  normalizeLoginAudience,
+} from '@/lib/auth/loginAudience';
+import { getSafeReturnTo } from '@/lib/auth/redirect';
 import {
   clearRateLimit,
   consumeRateLimit,
@@ -32,7 +38,11 @@ export async function POST(request: Request) {
   }
   const email = normalizeEmail(typeof body.email === 'string' ? body.email : '');
   const password = typeof body.password === 'string' ? body.password : '';
+  const loginAudience = normalizeLoginAudience(body.loginAudience);
   const returnTo = getSafeReturnTo(body.returnTo);
+  if (!loginAudience) {
+    return NextResponse.json({ error: 'Choose a valid sign-in portal.' }, { status: 400 });
+  }
   try {
     const rateLimitIdentifier = getRequestRateLimitIdentifier(request, email || 'unknown');
     const rateLimit = await consumeRateLimit({
@@ -74,16 +84,37 @@ export async function POST(request: Request) {
       }
     }
 
+    const [organizationMembership, partnerMembership, partnerApplication] = await Promise.all([
+      prisma.organizationMember.findFirst({
+        select: { organization: { select: { type: true } } },
+        where: { userId: user.id },
+      }),
+      prisma.supplyPartnerMember.findUnique({ select: { id: true }, where: { userId: user.id } }),
+      prisma.partnerApplication.findFirst({
+        select: { id: true },
+        where: { applicantUserId: user.id },
+      }),
+    ]);
+    const audienceContext = {
+      hasPartnerApplication: Boolean(partnerApplication),
+      hasPartnerMembership: Boolean(partnerMembership),
+      organizationType: organizationMembership?.organization.type ?? null,
+      role: user.role,
+    };
+    if (!canUseLoginAudience(loginAudience, audienceContext)) {
+      return NextResponse.json(
+        { error: 'This account does not have access to the selected portal.' },
+        { status: 403 },
+      );
+    }
+
     await clearRateLimit('LOGIN', rateLimitIdentifier);
     await createSession(user.id);
-    const agencyMembership =
-      user.role === 'BUSINESS_ADMIN'
-        ? await prisma.organizationMember.findFirst({
-            where: { userId: user.id, organization: { type: 'TRAVEL_AGENCY' } },
-          })
-        : null;
+    const defaultDestination = getLoginAudienceDestination(loginAudience, audienceContext);
     return NextResponse.json({
-      redirectTo: returnTo ?? (agencyMembership ? '/agent' : getAccountHomePath(user.role)),
+      redirectTo: isReturnToAllowedForAudience(loginAudience, returnTo)
+        ? returnTo
+        : defaultDestination,
       user: { email: user.email, firstName: user.firstName },
     });
   } catch (error) {
