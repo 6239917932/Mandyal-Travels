@@ -148,6 +148,7 @@ CREATE TABLE "SupplyPartner" (
     "contactPhone" TEXT,
     "commissionBasisPoints" INTEGER NOT NULL DEFAULT 2000,
     "settlementDelayDays" INTEGER NOT NULL DEFAULT 2,
+    "payoutDestinationVersion" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -1674,6 +1675,10 @@ CREATE TABLE "PartnerPayoutAccount" (
     "routingCodeMasked" TEXT NOT NULL DEFAULT '',
     "status" TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION',
     "isDefault" BOOLEAN NOT NULL DEFAULT false,
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "reviewReason" TEXT NOT NULL DEFAULT '',
+    "reviewedByUserId" TEXT,
+    "reviewedAt" TIMESTAMP(3),
     "verifiedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -1860,6 +1865,21 @@ CREATE TABLE "DestinationContentEvent" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "DestinationContentEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerPayoutAccountEvent" (
+    "id" TEXT NOT NULL,
+    "payoutAccountId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT NOT NULL,
+    "toStatus" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerPayoutAccountEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -2769,6 +2789,15 @@ CREATE INDEX "DestinationContentEvent_destinationId_createdAt_idx" ON "Destinati
 CREATE INDEX "DestinationContentEvent_createdAt_idx" ON "DestinationContentEvent"("createdAt");
 
 -- CreateIndex
+CREATE INDEX "PartnerPayoutAccountEvent_payoutAccountId_createdAt_idx" ON "PartnerPayoutAccountEvent"("payoutAccountId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerPayoutAccountEvent_actorUserId_createdAt_idx" ON "PartnerPayoutAccountEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerPayoutAccountEvent_payoutAccountId_version_key" ON "PartnerPayoutAccountEvent"("payoutAccountId", "version");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerTaxProfile_partnerId_key" ON "PartnerTaxProfile"("partnerId");
 
 -- CreateIndex
@@ -3213,6 +3242,9 @@ ALTER TABLE "PartnerSettlementLine" ADD CONSTRAINT "PartnerSettlementLine_bookin
 ALTER TABLE "PartnerPayoutAccount" ADD CONSTRAINT "PartnerPayoutAccount_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PartnerPayoutAccount" ADD CONSTRAINT "PartnerPayoutAccount_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PartnerPayoutInstruction" ADD CONSTRAINT "PartnerPayoutInstruction_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "PartnerPayoutBatch"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -3265,6 +3297,12 @@ ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_de
 
 -- AddForeignKey
 ALTER TABLE "DestinationContentEvent" ADD CONSTRAINT "DestinationContentEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerPayoutAccountEvent" ADD CONSTRAINT "PartnerPayoutAccountEvent_payoutAccountId_fkey" FOREIGN KEY ("payoutAccountId") REFERENCES "PartnerPayoutAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerPayoutAccountEvent" ADD CONSTRAINT "PartnerPayoutAccountEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerTaxProfile" ADD CONSTRAINT "PartnerTaxProfile_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -80,6 +80,8 @@ model User {
   createdPartnerAgreements    PartnerAgreementVersion[]       @relation("PartnerAgreementCreator")
   partnerAgreementEvents      PartnerAgreementVersionEvent[]  @relation("PartnerAgreementEventActor")
   updatedPartnerAgreementReleases PartnerAgreementRelease[]   @relation("PartnerAgreementReleaseUpdater")
+  reviewedPartnerPayoutAccounts PartnerPayoutAccount[]         @relation("PartnerPayoutAccountReviewer")
+  partnerPayoutAccountEvents    PartnerPayoutAccountEvent[]    @relation("PartnerPayoutAccountEventActor")
 
   @@index([role, accessStatus])
 }
@@ -221,6 +223,7 @@ model SupplyPartner {
   contactPhone          String?
   commissionBasisPoints Int                         @default(2000)
   settlementDelayDays   Int                         @default(2)
+  payoutDestinationVersion Int                      @default(0)
   createdAt             DateTime                    @default(now())
   updatedAt             DateTime                    @updatedAt
   members               SupplyPartnerMember[]
@@ -1980,10 +1983,16 @@ model PartnerPayoutAccount {
   routingCodeMasked      String                     @default("")
   status                 String                     @default("PENDING_VERIFICATION")
   isDefault              Boolean                    @default(false)
+  version                Int                        @default(1)
+  reviewReason           String                     @default("")
+  reviewedByUserId       String?
+  reviewedAt             DateTime?
   verifiedAt             DateTime?
   createdAt              DateTime                   @default(now())
   updatedAt              DateTime                   @updatedAt
   partner                SupplyPartner              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  reviewedBy             User?                      @relation("PartnerPayoutAccountReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  events                 PartnerPayoutAccountEvent[]
   payoutInstructions     PartnerPayoutInstruction[]
 
   @@index([partnerId, status, isDefault])
@@ -2191,6 +2200,24 @@ model DestinationContentEvent {
 
   @@index([destinationId, createdAt])
   @@index([createdAt])
+}
+
+model PartnerPayoutAccountEvent {
+  id              String               @id @default(cuid())
+  payoutAccountId String
+  actorUserId     String
+  action          String
+  fromStatus      String
+  toStatus        String
+  reason          String
+  version         Int
+  createdAt       DateTime             @default(now())
+  payoutAccount   PartnerPayoutAccount @relation(fields: [payoutAccountId], references: [id], onDelete: Cascade)
+  actor           User                 @relation("PartnerPayoutAccountEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([payoutAccountId, version])
+  @@index([payoutAccountId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model PartnerTaxProfile {
