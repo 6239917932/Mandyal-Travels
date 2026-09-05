@@ -232,13 +232,40 @@ test('archived listings have a version-safe, private and audited administrator r
     assert.match(route, /updateMany/);
     assert.match(route, /approvalStatus: 'PENDING_REVIEW'/);
     assert.match(route, /publicationStatus: 'DRAFT'/);
-    assert.match(route, /STALE_RESTORE/);
+    assert.match(route, /StaleReviewError/);
     assert.match(route, /partnerAuditLog\.create/);
   }
   assert.match(propertyRoute, /PROPERTY_RESTORED/);
   assert.match(vehicleRoute, /VEHICLE_RESTORED/);
   assert.match(page, /property\.status !== 'ARCHIVED'/);
   assert.match(page, /vehicle\.status !== 'ARCHIVED'/);
+});
+
+test('every administrator listing decision rejects stale records atomically', async () => {
+  const routes = await Promise.all([
+    readFile(
+      new URL(
+        '../app/api/v1/admin/partners/[partnerId]/properties/[propertyId]/route.ts',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        '../app/api/v1/admin/partners/[partnerId]/vehicles/[vehicleId]/route.ts',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ]);
+  for (const route of routes) {
+    assert.match(route, /expectedVersionText/);
+    assert.match(route, /updatedAt\.getTime\(\) !== expectedUpdatedAt\.getTime\(\)/);
+    assert.match(route, /where: \{ id: .*\.id, updatedAt: expectedUpdatedAt \}/);
+    assert.match(route, /if \(result\.count !== 1\) throw new StaleReviewError\(\)/);
+    assert.match(route, /LISTING_CHANGED/);
+    assert.match(route, /REVIEW_FAILED/);
+  }
 });
 
 test('paid enrollment is persistent, fixed-price and reconciled server-side', async () => {

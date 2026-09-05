@@ -12,6 +12,8 @@ import type { ApiErrorResponse } from '@/types/commerce';
 const failure = (code: string, message: string, status: number) =>
   Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 
+class StaleReviewError extends Error {}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ partnerId: string; vehicleId: string }> },
@@ -25,6 +27,19 @@ export async function PATCH(
   const { partnerId, vehicleId } = await context.params;
   const vehicle = await prisma.partnerVehicle.findFirst({ where: { id: vehicleId, partnerId } });
   if (!vehicle) return failure('VEHICLE_NOT_FOUND', 'The supplier vehicle was not found.', 404);
+  const expectedVersionText = String(body.expectedUpdatedAt ?? '');
+  const expectedUpdatedAt = new Date(expectedVersionText);
+  if (
+    Number.isNaN(expectedUpdatedAt.getTime()) ||
+    expectedUpdatedAt.toISOString() !== expectedVersionText
+  )
+    return failure('INVALID_VERSION', 'Refresh the supplier record before saving a decision.', 409);
+  if (vehicle.updatedAt.getTime() !== expectedUpdatedAt.getTime())
+    return failure(
+      'LISTING_CHANGED',
+      'This vehicle changed after the review was opened. Refresh and review the latest version.',
+      409,
+    );
   if (body.action === 'RESTORE') {
     const normalizedReason = String(body.reviewNote ?? '')
       .trim()
@@ -38,12 +53,6 @@ export async function PATCH(
       );
     if (vehicle.status !== 'ARCHIVED' && vehicle.publicationStatus !== 'ARCHIVED')
       return failure('VEHICLE_NOT_ARCHIVED', 'Only an archived vehicle can be restored.', 409);
-    const expectedUpdatedAt = new Date(String(body.expectedUpdatedAt ?? ''));
-    if (
-      Number.isNaN(expectedUpdatedAt.getTime()) ||
-      expectedUpdatedAt.toISOString() !== body.expectedUpdatedAt
-    )
-      return failure('INVALID_VERSION', 'Refresh the supplier record before restoring.', 409);
     try {
       const data = await prisma.$transaction(async (transaction) => {
         const result = await transaction.partnerVehicle.updateMany({
@@ -58,7 +67,7 @@ export async function PATCH(
           },
           where: { id: vehicle.id, updatedAt: expectedUpdatedAt },
         });
-        if (result.count !== 1) throw new Error('STALE_RESTORE');
+        if (result.count !== 1) throw new StaleReviewError();
         await transaction.partnerAuditLog.create({
           data: {
             action: 'VEHICLE_RESTORED',
@@ -74,7 +83,7 @@ export async function PATCH(
       });
       return Response.json({ data });
     } catch (error) {
-      return error instanceof Error && error.message === 'STALE_RESTORE'
+      return error instanceof StaleReviewError
         ? failure(
             'LISTING_CHANGED',
             'This vehicle changed while it was being restored. Refresh and review the latest version.',
@@ -133,30 +142,41 @@ export async function PATCH(
     reviewNote: String(body.reviewNote ?? ''),
   });
   if (!decision.valid) return failure(decision.code, decision.message, 409);
-  const data = await prisma.$transaction(async (transaction) => {
-    const updated = await transaction.partnerVehicle.update({
-      data: {
-        approvalNote: decision.reviewNote,
-        approvalStatus: decision.approvalStatus,
-        publicationStatus: decision.publicationStatus,
-        reviewedAt: new Date(),
-        reviewedByUserId: admin.id,
-        status: decision.status,
-      },
-      where: { id: vehicle.id },
+  try {
+    const data = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.partnerVehicle.updateMany({
+        data: {
+          approvalNote: decision.reviewNote,
+          approvalStatus: decision.approvalStatus,
+          publicationStatus: decision.publicationStatus,
+          reviewedAt: new Date(),
+          reviewedByUserId: admin.id,
+          status: decision.status,
+        },
+        where: { id: vehicle.id, updatedAt: expectedUpdatedAt },
+      });
+      if (result.count !== 1) throw new StaleReviewError();
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: `VEHICLE_${decision.action}`,
+          actorUserId: admin.id,
+          entityId: vehicle.id,
+          entityType: 'VEHICLE',
+          metadataJson: JSON.stringify({ reviewNoteLength: decision.reviewNote.length }),
+          partnerId,
+          summary: `${vehicle.vehicleName} was ${decision.action.toLowerCase()}d by a platform administrator.`,
+        },
+      });
+      return transaction.partnerVehicle.findUniqueOrThrow({ where: { id: vehicle.id } });
     });
-    await transaction.partnerAuditLog.create({
-      data: {
-        action: `VEHICLE_${decision.action}`,
-        actorUserId: admin.id,
-        entityId: vehicle.id,
-        entityType: 'VEHICLE',
-        metadataJson: JSON.stringify({ reviewNoteLength: decision.reviewNote.length }),
-        partnerId,
-        summary: `${vehicle.vehicleName} was ${decision.action.toLowerCase()}d by a platform administrator.`,
-      },
-    });
-    return updated;
-  });
-  return Response.json({ data });
+    return Response.json({ data });
+  } catch (error) {
+    return error instanceof StaleReviewError
+      ? failure(
+          'LISTING_CHANGED',
+          'This vehicle changed while the decision was being saved. Refresh and review the latest version.',
+          409,
+        )
+      : failure('VEHICLE_REVIEW_FAILED', 'The vehicle decision could not be saved.', 500);
+  }
 }
