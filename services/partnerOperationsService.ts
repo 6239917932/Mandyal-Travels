@@ -1654,6 +1654,190 @@ export const partnerOperationsService = {
     });
   },
 
+  async adminUpdatePropertyListing(
+    partnerId: string,
+    propertyId: string,
+    actorUserId: string,
+    input: {
+      amenities: string[];
+      checkInTime: string;
+      checkOutTime: string;
+      childrenAllowed: boolean;
+      city: string;
+      contactEmail: string;
+      contactPhone: string;
+      country: string;
+      description: string;
+      displayName: string;
+      district: string;
+      expectedUpdatedAt: string;
+      imageUrl: string;
+      imageUrls: string[];
+      landmarks: string[];
+      languages: string[];
+      latitude: number;
+      locality: string;
+      locationAliases: string[];
+      longitude: number;
+      minimumCheckInAge: number;
+      petsAllowed: boolean;
+      policies: string[];
+      postalCode: string;
+      propertyType: string;
+      smokingAllowed: boolean;
+      starRating: number;
+      state: string;
+      streetAddress: string;
+      tehsil: string;
+    },
+  ) {
+    const property = await prisma.partnerProperty.findFirst({
+      where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
+    });
+    if (!property)
+      throw new PartnerOperationsError('PROPERTY_NOT_FOUND', 'The managed property was not found.');
+    if (property.updatedAt.toISOString() !== input.expectedUpdatedAt)
+      throw new PartnerOperationsError(
+        'LISTING_CHANGED',
+        'This property changed after the editor was opened. Refresh and review the latest version before saving.',
+      );
+    if (
+      input.displayName.trim().length < 2 ||
+      input.description.trim().length < 30 ||
+      input.locality.trim().length < 2 ||
+      input.city.trim().length < 2 ||
+      input.district.trim().length < 2 ||
+      input.state.trim().length < 2 ||
+      input.country.trim().length < 2 ||
+      input.streetAddress.trim().length < 5
+    )
+      throw new PartnerOperationsError(
+        'INVALID_PROPERTY',
+        'Complete the property name, description, locality, district, city, state, country, and street address.',
+      );
+    if (
+      !['HOTEL', 'RESORT', 'HOMESTAY', 'GUEST_HOUSE', 'APARTMENT', 'HOSTEL'].includes(
+        input.propertyType,
+      )
+    )
+      throw new PartnerOperationsError('INVALID_PROPERTY_TYPE', 'Choose a valid property type.');
+    if (!Number.isInteger(input.starRating) || input.starRating < 1 || input.starRating > 5)
+      throw new PartnerOperationsError('INVALID_STAR_RATING', 'Star rating must be from 1 to 5.');
+    if (!/^\S+@\S+\.\S+$/.test(input.contactEmail.trim()) || input.contactPhone.trim().length < 7)
+      throw new PartnerOperationsError(
+        'INVALID_PROPERTY_CONTACT',
+        'Enter a valid guest-facing email and phone number.',
+      );
+    if (!/^\d{2}:\d{2}$/.test(input.checkInTime) || !/^\d{2}:\d{2}$/.test(input.checkOutTime))
+      throw new PartnerOperationsError(
+        'INVALID_PROPERTY_TIME',
+        'Enter valid check-in and check-out times.',
+      );
+    if (
+      !Number.isInteger(input.minimumCheckInAge) ||
+      input.minimumCheckInAge < 16 ||
+      input.minimumCheckInAge > 30
+    )
+      throw new PartnerOperationsError(
+        'INVALID_CHECK_IN_AGE',
+        'Minimum check-in age must be between 16 and 30.',
+      );
+    if (
+      !Number.isFinite(input.latitude) ||
+      input.latitude < -90 ||
+      input.latitude > 90 ||
+      !Number.isFinite(input.longitude) ||
+      input.longitude < -180 ||
+      input.longitude > 180
+    )
+      throw new PartnerOperationsError('INVALID_COORDINATES', 'Enter valid map coordinates.');
+    const imageUrl = validateImageUrl(input.imageUrl, property.imageUrl);
+    const imageUrls = normalizedList(input.imageUrls, 12).map((url) =>
+      validateImageUrl(url, property.imageUrl),
+    );
+    const data = {
+      amenitiesJson: JSON.stringify(normalizeHotelAmenityList(input.amenities).slice(0, 100)),
+      approvalNote: '',
+      approvalStatus: 'PENDING_REVIEW',
+      checkInTime: input.checkInTime,
+      checkOutTime: input.checkOutTime,
+      childrenAllowed: input.childrenAllowed,
+      city: normalizeText(input.city, 80),
+      contactEmail: normalizeText(input.contactEmail, 254).toLowerCase(),
+      contactPhone: normalizeText(input.contactPhone, 30),
+      country: normalizeText(input.country, 80),
+      description: normalizeText(input.description, 1500),
+      displayName: normalizeText(input.displayName, 140),
+      district: normalizeText(input.district, 80),
+      imageUrl,
+      imageUrlsJson: JSON.stringify(imageUrls),
+      landmarksJson: JSON.stringify(normalizedList(input.landmarks, 12)),
+      languagesJson: JSON.stringify(normalizedList(input.languages, 12)),
+      latitude: input.latitude,
+      locality: normalizeText(input.locality, 100),
+      locationAliasesJson: JSON.stringify(normalizedList(input.locationAliases, 20)),
+      longitude: input.longitude,
+      minimumCheckInAge: input.minimumCheckInAge,
+      petsAllowed: input.petsAllowed,
+      policiesJson: JSON.stringify(normalizedList(input.policies, 20)),
+      postalCode: normalizeText(input.postalCode, 20),
+      propertyType: input.propertyType,
+      publicationStatus: 'DRAFT',
+      reviewedAt: null,
+      reviewedByUserId: null,
+      smokingAllowed: input.smokingAllowed,
+      starRating: input.starRating,
+      state: normalizeText(input.state, 80),
+      streetAddress: normalizeText(input.streetAddress, 240),
+      submittedAt: null,
+      tehsil: normalizeText(input.tehsil, 80),
+    };
+    const findings = evaluatePropertyListingRisk({ ...property, ...data });
+    return prisma.$transaction(async (transaction) => {
+      const updatedResult = await transaction.partnerProperty.updateMany({
+        data,
+        where: { id: property.id, updatedAt: property.updatedAt },
+      });
+      if (updatedResult.count !== 1)
+        throw new PartnerOperationsError(
+          'LISTING_CHANGED',
+          'This property changed while it was being saved. Refresh and review the latest version.',
+        );
+      await transaction.riskSignal.deleteMany({
+        where: {
+          source: 'SUPPLIER_LISTING_RULES_V1',
+          status: 'OPEN',
+          subjectId: property.id,
+          subjectType: 'PARTNER_PROPERTY',
+        },
+      });
+      for (const finding of findings)
+        await transaction.riskSignal.create({
+          data: {
+            evidenceJson: JSON.stringify({ propertyId: property.id, rule: finding.code }),
+            severity: finding.severity,
+            signalType: finding.code,
+            source: 'SUPPLIER_LISTING_RULES_V1',
+            subjectId: property.id,
+            subjectType: 'PARTNER_PROPERTY',
+            summary: finding.summary,
+          },
+        });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'PROPERTY_LISTING_ADMIN_UPDATED',
+          actorUserId,
+          entityId: property.id,
+          entityType: 'PROPERTY',
+          metadataJson: JSON.stringify({ returnedToReview: true }),
+          partnerId,
+          summary: `${data.displayName} was edited by a platform administrator and returned to draft review.`,
+        },
+      });
+      return transaction.partnerProperty.findUniqueOrThrow({ where: { id: property.id } });
+    });
+  },
+
   async setHotelCalendar(input: {
     availableRooms: number;
     closedToArrival: boolean;
@@ -1929,6 +2113,167 @@ export const partnerOperationsService = {
         });
       }
       return vehicle;
+    });
+  },
+
+  async adminUpdateVehicleListing(
+    partnerId: string,
+    vehicleId: string,
+    actorUserId: string,
+    input: {
+      bags: number;
+      cancellationPolicy: string;
+      category: string;
+      dropoffLocation: string;
+      expectedUpdatedAt: string;
+      features: string[];
+      fuelPolicy: string;
+      mileagePolicy: string;
+      pickupLocation: string;
+      pricePerDay: number;
+      registrationNumber: string;
+      seats: number;
+      totalUnits: number;
+      transmission: string;
+      vehicleName: string;
+    },
+  ) {
+    const vehicle = await prisma.partnerVehicle.findFirst({
+      where: { id: vehicleId, partnerId, status: { not: 'ARCHIVED' } },
+    });
+    if (!vehicle)
+      throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
+    if (vehicle.updatedAt.toISOString() !== input.expectedUpdatedAt)
+      throw new PartnerOperationsError(
+        'LISTING_CHANGED',
+        'This vehicle changed after the editor was opened. Refresh and review the latest version before saving.',
+      );
+    if (
+      !['Automatic', 'Manual'].includes(input.transmission) ||
+      !Number.isInteger(input.seats) ||
+      input.seats < 1 ||
+      input.seats > 20 ||
+      !Number.isInteger(input.bags) ||
+      input.bags < 0 ||
+      input.bags > 20
+    )
+      throw new PartnerOperationsError(
+        'INVALID_VEHICLE',
+        'Enter a valid transmission, seat count, and baggage capacity.',
+      );
+    if (
+      [
+        input.vehicleName,
+        input.category,
+        input.pickupLocation,
+        input.dropoffLocation,
+        input.fuelPolicy,
+        input.mileagePolicy,
+        input.cancellationPolicy,
+      ].some((value) => value.trim().length < 2)
+    )
+      throw new PartnerOperationsError(
+        'INVALID_VEHICLE',
+        'Complete the vehicle, operating location, and rental policy details.',
+      );
+    if (
+      !Number.isInteger(input.pricePerDay) ||
+      input.pricePerDay < 100 ||
+      input.pricePerDay > 1_000_000
+    )
+      throw new PartnerOperationsError(
+        'INVALID_PRICE',
+        'Daily price must be between ₹100 and ₹10,00,000.',
+      );
+    if (!Number.isInteger(input.totalUnits) || input.totalUnits < 1 || input.totalUnits > 500)
+      throw new PartnerOperationsError(
+        'INVALID_FLEET_SIZE',
+        'Fleet units must be between 1 and 500.',
+      );
+    const registrationNumber = normalizeText(input.registrationNumber, 30).toUpperCase();
+    if (!registrationNumber)
+      throw new PartnerOperationsError(
+        'REGISTRATION_REQUIRED',
+        'Enter the vehicle registration number.',
+      );
+    const duplicate = await prisma.partnerVehicle.findFirst({
+      select: { id: true },
+      where: { id: { not: vehicle.id }, registrationNumber, status: { not: 'ARCHIVED' } },
+    });
+    const normalized = {
+      bags: input.bags,
+      cancellationPolicy: normalizeText(input.cancellationPolicy, 240),
+      category: normalizeText(input.category, 80),
+      dropoffLocation: normalizeText(input.dropoffLocation, 80),
+      featuresJson: JSON.stringify(normalizedList(input.features, 12)),
+      fuelPolicy: normalizeText(input.fuelPolicy, 120),
+      mileagePolicy: normalizeText(input.mileagePolicy, 120),
+      pickupLocation: normalizeText(input.pickupLocation, 80),
+      pricePerDay: input.pricePerDay,
+      registrationNumber,
+      seats: input.seats,
+      totalUnits: input.totalUnits,
+      transmission: input.transmission,
+      vehicleName: normalizeText(input.vehicleName, 120),
+    };
+    const findings = evaluateVehicleListingRisk({ ...input, registrationNumber });
+    if (duplicate)
+      findings.push({
+        code: 'VEHICLE_REGISTRATION_DUPLICATE',
+        severity: 'HIGH',
+        summary:
+          'This registration number already exists in another active or paused fleet record.',
+      });
+    return prisma.$transaction(async (transaction) => {
+      const updatedResult = await transaction.partnerVehicle.updateMany({
+        data: {
+          ...normalized,
+          approvalNote: '',
+          approvalStatus: 'PENDING_REVIEW',
+          publicationStatus: 'DRAFT',
+          reviewedAt: null,
+          reviewedByUserId: null,
+          submittedAt: null,
+        },
+        where: { id: vehicle.id, updatedAt: vehicle.updatedAt },
+      });
+      if (updatedResult.count !== 1)
+        throw new PartnerOperationsError(
+          'LISTING_CHANGED',
+          'This vehicle changed while it was being saved. Refresh and review the latest version.',
+        );
+      await transaction.riskSignal.deleteMany({
+        where: {
+          source: 'SUPPLIER_LISTING_RULES_V1',
+          status: 'OPEN',
+          subjectId: vehicle.id,
+          subjectType: 'PARTNER_VEHICLE',
+        },
+      });
+      for (const finding of findings)
+        await transaction.riskSignal.create({
+          data: {
+            evidenceJson: JSON.stringify({ rule: finding.code, vehicleId: vehicle.id }),
+            severity: finding.severity,
+            signalType: finding.code,
+            source: 'SUPPLIER_LISTING_RULES_V1',
+            subjectId: vehicle.id,
+            subjectType: 'PARTNER_VEHICLE',
+            summary: finding.summary,
+          },
+        });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'VEHICLE_LISTING_ADMIN_UPDATED',
+          actorUserId,
+          entityId: vehicle.id,
+          entityType: 'VEHICLE',
+          metadataJson: JSON.stringify({ returnedToReview: true }),
+          partnerId,
+          summary: `${normalized.vehicleName} was edited by a platform administrator and returned to draft review.`,
+        },
+      });
+      return transaction.partnerVehicle.findUniqueOrThrow({ where: { id: vehicle.id } });
     });
   },
 

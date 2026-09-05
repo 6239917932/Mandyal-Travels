@@ -2,6 +2,10 @@ import { getPlatformAdmin } from '@/lib/adminAuth';
 import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { evaluatePropertyReview } from '@/lib/hotel/propertyApproval';
+import {
+  PartnerOperationsError,
+  partnerOperationsService,
+} from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 const failure = (code: string, message: string, status: number) =>
@@ -24,6 +28,52 @@ export async function PATCH(
     where: { id: propertyId, listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
   });
   if (!property) return failure('PROPERTY_NOT_FOUND', 'The supplier property was not found.', 404);
+  if (action === 'UPDATE_LISTING') {
+    try {
+      const data = await partnerOperationsService.adminUpdatePropertyListing(
+        partnerId,
+        propertyId,
+        admin.id,
+        {
+          amenities: String(body?.amenities ?? '').split(','),
+          checkInTime: String(body?.checkInTime ?? ''),
+          checkOutTime: String(body?.checkOutTime ?? ''),
+          childrenAllowed: body?.childrenAllowed === true,
+          city: String(body?.city ?? ''),
+          contactEmail: String(body?.contactEmail ?? ''),
+          contactPhone: String(body?.contactPhone ?? ''),
+          country: String(body?.country ?? ''),
+          description: String(body?.description ?? ''),
+          displayName: String(body?.displayName ?? ''),
+          district: String(body?.district ?? ''),
+          expectedUpdatedAt: String(body?.expectedUpdatedAt ?? ''),
+          imageUrl: String(body?.imageUrl ?? ''),
+          imageUrls: String(body?.imageUrls ?? '').split('\n'),
+          landmarks: String(body?.landmarks ?? '').split('\n'),
+          languages: String(body?.languages ?? '').split(','),
+          latitude: Number(body?.latitude),
+          locality: String(body?.locality ?? ''),
+          locationAliases: String(body?.locationAliases ?? '').split(','),
+          longitude: Number(body?.longitude),
+          minimumCheckInAge: Number(body?.minimumCheckInAge),
+          petsAllowed: body?.petsAllowed === true,
+          policies: String(body?.policies ?? '').split('\n'),
+          postalCode: String(body?.postalCode ?? ''),
+          propertyType: String(body?.propertyType ?? ''),
+          smokingAllowed: body?.smokingAllowed === true,
+          starRating: Number(body?.starRating),
+          state: String(body?.state ?? ''),
+          streetAddress: String(body?.streetAddress ?? ''),
+          tehsil: String(body?.tehsil ?? ''),
+        },
+      );
+      return Response.json({ data });
+    } catch (error) {
+      return error instanceof PartnerOperationsError
+        ? failure(error.code, error.message, 409)
+        : failure('PROPERTY_UPDATE_FAILED', 'The listing changes could not be saved.', 500);
+    }
+  }
   if (action === 'PAUSE' || action === 'ARCHIVE') {
     const normalizedReason = reviewNote.trim().replace(/\s+/g, ' ').slice(0, 500);
     if (normalizedReason.length < 10)

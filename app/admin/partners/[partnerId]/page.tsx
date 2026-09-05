@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { AdminPartnerPropertyAssignment } from '@/components/admin/AdminPartnerPropertyAssignment';
+import { AdminPropertyListingEditor } from '@/components/admin/AdminPropertyListingEditor';
 import { AdminPropertyReviewActions } from '@/components/admin/AdminPropertyReviewActions';
 import { AdminPartnerKycReview } from '@/components/admin/AdminPartnerKycReview';
+import { AdminVehicleListingEditor } from '@/components/admin/AdminVehicleListingEditor';
 import { AdminVehicleReviewActions } from '@/components/admin/AdminVehicleReviewActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
@@ -14,6 +16,18 @@ import { hotelService } from '@/services/hotelService';
 
 export const metadata: Metadata = { title: 'Supplier record' };
 type Props = { params: Promise<{ partnerId: string }> };
+
+function readStringList(value: string) {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === 'string').slice(0, 100)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function AdminPartnerRecordPage({ params }: Props) {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners');
   const { partnerId } = await params;
@@ -118,6 +132,44 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                   {property.rooms.length} room {property.rooms.length === 1 ? 'type' : 'types'}
                 </small>
                 {property.approvalNote ? <p>{property.approvalNote}</p> : null}
+                {property.listingSource === 'MANAGED' ? (
+                  <AdminPropertyListingEditor
+                    partnerId={partner.id}
+                    propertyId={property.id}
+                    values={{
+                      amenities: readStringList(property.amenitiesJson).join(', '),
+                      checkInTime: property.checkInTime,
+                      checkOutTime: property.checkOutTime,
+                      childrenAllowed: property.childrenAllowed,
+                      city: property.city,
+                      contactEmail: property.contactEmail,
+                      contactPhone: property.contactPhone,
+                      country: property.country,
+                      description: property.description,
+                      displayName: property.displayName,
+                      district: property.district,
+                      imageUrl: property.imageUrl,
+                      imageUrls: readStringList(property.imageUrlsJson).join('\n'),
+                      landmarks: readStringList(property.landmarksJson).join('\n'),
+                      languages: readStringList(property.languagesJson).join(', '),
+                      latitude: property.latitude,
+                      locality: property.locality,
+                      locationAliases: readStringList(property.locationAliasesJson).join(', '),
+                      longitude: property.longitude,
+                      minimumCheckInAge: property.minimumCheckInAge,
+                      petsAllowed: property.petsAllowed,
+                      policies: readStringList(property.policiesJson).join('\n'),
+                      postalCode: property.postalCode,
+                      propertyType: property.propertyType,
+                      smokingAllowed: property.smokingAllowed,
+                      starRating: property.starRating,
+                      state: property.state,
+                      streetAddress: property.streetAddress,
+                      tehsil: property.tehsil,
+                      updatedAt: property.updatedAt.toISOString(),
+                    }}
+                  />
+                ) : null}
                 <AdminPropertyReviewActions partnerId={partner.id} propertyId={property.id} />
               </Card>
             ))}
@@ -140,6 +192,27 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                 </small>
               </p>
               {vehicle.approvalNote ? <p>{vehicle.approvalNote}</p> : null}
+              <AdminVehicleListingEditor
+                partnerId={partner.id}
+                vehicleId={vehicle.id}
+                values={{
+                  bags: vehicle.bags,
+                  cancellationPolicy: vehicle.cancellationPolicy,
+                  category: vehicle.category,
+                  dropoffLocation: vehicle.dropoffLocation,
+                  features: readStringList(vehicle.featuresJson).join(', '),
+                  fuelPolicy: vehicle.fuelPolicy,
+                  mileagePolicy: vehicle.mileagePolicy,
+                  pickupLocation: vehicle.pickupLocation,
+                  pricePerDay: vehicle.pricePerDay,
+                  registrationNumber: vehicle.registrationNumber ?? '',
+                  seats: vehicle.seats,
+                  totalUnits: vehicle.totalUnits,
+                  transmission: vehicle.transmission,
+                  updatedAt: vehicle.updatedAt.toISOString(),
+                  vehicleName: vehicle.vehicleName,
+                }}
+              />
               <AdminVehicleReviewActions partnerId={partner.id} vehicleId={vehicle.id} />
             </Card>
           ))}
