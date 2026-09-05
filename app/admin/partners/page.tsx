@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Supplier administration' };
 
 export default async function AdminPartnersPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners');
-  const [applications, partners, pendingProperties] = await Promise.all([
+  const [applications, partners, pendingProperties, pendingVehicles] = await Promise.all([
     prisma.partnerApplication.findMany({
       include: {
         applicant: { select: { email: true, firstName: true, lastName: true } },
@@ -36,6 +36,11 @@ export default async function AdminPartnersPage() {
         listingSource: 'MANAGED',
         status: 'ACTIVE',
       },
+    }),
+    prisma.partnerVehicle.findMany({
+      include: { partner: { select: { id: true, name: true } } },
+      orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
+      where: { approvalStatus: 'PENDING_REVIEW', status: { not: 'ARCHIVED' } },
     }),
   ]);
   return (
@@ -62,8 +67,8 @@ export default async function AdminPartnersPage() {
           <strong>{pendingProperties.length}</strong>
         </Card>
         <Card>
-          <span>Hotel suppliers</span>
-          <strong>{partners.filter((p) => p.type === 'HOTEL').length}</strong>
+          <span>Vehicle reviews</span>
+          <strong>{pendingVehicles.length}</strong>
         </Card>
         <Card>
           <span>Car suppliers</span>
@@ -130,6 +135,34 @@ export default async function AdminPartnersPage() {
           })}
           {applications.length === 0 ? (
             <Card>No supplier applications are awaiting verification.</Card>
+          ) : null}
+        </div>
+      </section>
+      <section>
+        <p className="hotel-page__eyebrow">Vehicle governance</p>
+        <h2>Vehicles awaiting review</h2>
+        <div className="supplier-admin__grid">
+          {pendingVehicles.map((vehicle) => (
+            <Card key={vehicle.id}>
+              <div className="booking-confirmation__reference">
+                <span>{vehicle.partner.name}</span>
+                <strong>{vehicle.vehicleName}</strong>
+              </div>
+              <p>
+                {vehicle.pickupLocation} to {vehicle.dropoffLocation} · {vehicle.totalUnits} units
+              </p>
+              <small>
+                {vehicle.registrationNumber
+                  ? `Registration ${vehicle.registrationNumber}`
+                  : 'Registration missing'}
+              </small>
+              <Link className="home-card__link" href={`/admin/partners/${vehicle.partner.id}`}>
+                Review vehicle and risk signals
+              </Link>
+            </Card>
+          ))}
+          {pendingVehicles.length === 0 ? (
+            <Card>No vehicle listings are awaiting review.</Card>
           ) : null}
         </div>
       </section>

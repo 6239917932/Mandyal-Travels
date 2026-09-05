@@ -491,6 +491,12 @@ CREATE TABLE "PartnerVehicle" (
     "currency" TEXT NOT NULL DEFAULT 'INR',
     "totalUnits" INTEGER NOT NULL DEFAULT 1,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "publicationStatus" TEXT NOT NULL DEFAULT 'DRAFT',
+    "approvalStatus" TEXT NOT NULL DEFAULT 'PENDING_REVIEW',
+    "approvalNote" TEXT NOT NULL DEFAULT '',
+    "submittedAt" TIMESTAMP(3),
+    "reviewedAt" TIMESTAMP(3),
+    "reviewedByUserId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -1963,7 +1969,10 @@ CREATE UNIQUE INDEX "PartnerVehicle_code_key" ON "PartnerVehicle"("code");
 CREATE INDEX "PartnerVehicle_partnerId_status_idx" ON "PartnerVehicle"("partnerId", "status");
 
 -- CreateIndex
-CREATE INDEX "PartnerVehicle_pickupLocation_dropoffLocation_status_idx" ON "PartnerVehicle"("pickupLocation", "dropoffLocation", "status");
+CREATE INDEX "PartnerVehicle_pickupLocation_dropoffLocation_status_public_idx" ON "PartnerVehicle"("pickupLocation", "dropoffLocation", "status", "publicationStatus");
+
+-- CreateIndex
+CREATE INDEX "PartnerVehicle_approvalStatus_submittedAt_idx" ON "PartnerVehicle"("approvalStatus", "submittedAt");
 
 -- CreateIndex
 CREATE INDEX "PartnerVehicleInventoryDay_vehicleId_serviceDate_idx" ON "PartnerVehicleInventoryDay"("vehicleId", "serviceDate");

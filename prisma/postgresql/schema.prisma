@@ -624,6 +624,12 @@ model PartnerVehicle {
   currency           String                       @default("INR")
   totalUnits         Int                          @default(1)
   status             String                       @default("ACTIVE")
+  publicationStatus  String                       @default("DRAFT")
+  approvalStatus     String                       @default("PENDING_REVIEW")
+  approvalNote       String                       @default("")
+  submittedAt        DateTime?
+  reviewedAt         DateTime?
+  reviewedByUserId   String?
   createdAt          DateTime                     @default(now())
   updatedAt          DateTime                     @updatedAt
   partner            SupplyPartner                @relation(fields: [partnerId], references: [id], onDelete: Cascade)
@@ -632,7 +638,8 @@ model PartnerVehicle {
   reservations       PartnerVehicleReservation[]
 
   @@index([partnerId, status])
-  @@index([pickupLocation, dropoffLocation, status])
+  @@index([pickupLocation, dropoffLocation, status, publicationStatus])
+  @@index([approvalStatus, submittedAt])
 }
 
 model PartnerVehicleInventoryDay {

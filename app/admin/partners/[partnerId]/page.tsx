@@ -5,6 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AdminPartnerPropertyAssignment } from '@/components/admin/AdminPartnerPropertyAssignment';
 import { AdminPropertyReviewActions } from '@/components/admin/AdminPropertyReviewActions';
 import { AdminPartnerKycReview } from '@/components/admin/AdminPartnerKycReview';
+import { AdminVehicleReviewActions } from '@/components/admin/AdminVehicleReviewActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
@@ -117,9 +118,7 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
                   {property.rooms.length} room {property.rooms.length === 1 ? 'type' : 'types'}
                 </small>
                 {property.approvalNote ? <p>{property.approvalNote}</p> : null}
-                {property.approvalStatus === 'PENDING_REVIEW' ? (
-                  <AdminPropertyReviewActions partnerId={partner.id} propertyId={property.id} />
-                ) : null}
+                <AdminPropertyReviewActions partnerId={partner.id} propertyId={property.id} />
               </Card>
             ))}
           </div>
@@ -129,13 +128,22 @@ export default async function AdminPartnerRecordPage({ params }: Props) {
           <p className="hotel-page__eyebrow">Fleet scope</p>
           <h2>Direct vehicle inventory</h2>
           {partner.vehicles.map((vehicle) => (
-            <p key={vehicle.id}>
-              <strong>{vehicle.vehicleName}</strong> · {vehicle.pickupLocation} to{' '}
-              {vehicle.dropoffLocation} · {vehicle.totalUnits} units ·{' '}
-              {vehicle._count.inventoryDays} daily controls
-            </p>
+            <Card key={vehicle.id}>
+              <p>
+                <strong>{vehicle.vehicleName}</strong> · {vehicle.pickupLocation} to{' '}
+                {vehicle.dropoffLocation} · {vehicle.totalUnits} units ·{' '}
+                {vehicle._count.inventoryDays} daily controls
+                <br />
+                <small>
+                  {vehicle.publicationStatus.toLowerCase()} ·{' '}
+                  {vehicle.approvalStatus.toLowerCase().replaceAll('_', ' ')}
+                </small>
+              </p>
+              {vehicle.approvalNote ? <p>{vehicle.approvalNote}</p> : null}
+              <AdminVehicleReviewActions partnerId={partner.id} vehicleId={vehicle.id} />
+            </Card>
           ))}
-          {partner.vehicles.length === 0 ? <p>No vehicles have been published.</p> : null}
+          {partner.vehicles.length === 0 ? <p>No vehicles have been submitted.</p> : null}
         </Card>
       )}
       <div className="partner-workspace__columns">

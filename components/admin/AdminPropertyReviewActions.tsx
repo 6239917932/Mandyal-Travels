@@ -19,7 +19,7 @@ export function AdminPropertyReviewActions({
   const [error, setError] = useState<string>();
   const [isSaving, setIsSaving] = useState(false);
 
-  async function review(action: 'APPROVE' | 'REJECT') {
+  async function review(action: 'APPROVE' | 'REJECT' | 'PAUSE' | 'ARCHIVE') {
     setError(undefined);
     setIsSaving(true);
     try {
@@ -64,6 +64,12 @@ export function AdminPropertyReviewActions({
         </Button>
         <Button disabled={isSaving} onClick={() => void review('REJECT')} variant="secondary">
           Return for corrections
+        </Button>
+        <Button disabled={isSaving} onClick={() => void review('PAUSE')} variant="secondary">
+          Pause
+        </Button>
+        <Button disabled={isSaving} onClick={() => void review('ARCHIVE')} variant="secondary">
+          Archive
         </Button>
       </div>
     </div>
