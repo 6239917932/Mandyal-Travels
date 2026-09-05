@@ -42,8 +42,11 @@ export default function BusinessTravelPage() {
             >
               Create a business account
             </Link>
-            <Link className="home-link-button home-link-button--glass" href="/login">
-              Sign in
+            <Link
+              className="home-link-button home-link-button--glass"
+              href="/login?portal=corporate"
+            >
+              Corporate sign in
             </Link>
           </>
         }
