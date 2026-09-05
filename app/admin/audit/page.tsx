@@ -230,6 +230,26 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
           : {}),
       }
     : { id: '__disabled__' };
+  const payoutWhere = enabled('FINANCE')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { action: { contains: filters.query } },
+                { fromStatus: { contains: filters.query } },
+                { reason: { contains: filters.query } },
+                { toStatus: { contains: filters.query } },
+                {
+                  payoutAccount: {
+                    is: { partner: { is: { name: { contains: filters.query } } } },
+                  },
+                },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
   const operationsWhere = enabled('OPERATIONS')
     ? {
         ...(createdAt ? { createdAt } : {}),
@@ -284,6 +304,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     commercialEvents,
     financeCount,
     financeEvents,
+    payoutCount,
+    payoutEvents,
     operationsCount,
     operationsEvents,
     searchProjectionCount,
@@ -389,6 +411,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       orderBy: { createdAt: 'desc' },
       take,
       where: financeWhere,
+    }),
+    prisma.partnerPayoutAccountEvent.count({ where: payoutWhere }),
+    prisma.partnerPayoutAccountEvent.findMany({
+      include: {
+        actor: { select: actorSelect },
+        payoutAccount: { select: { partner: { select: { name: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+      where: payoutWhere,
     }),
     prisma.integrationOutboxReviewEvent.count({ where: operationsWhere }),
     prisma.integrationOutboxReviewEvent.findMany({
@@ -520,6 +552,16 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       id: `finance-${event.id}`,
       subject: `${event.fromStatus} to ${event.toStatus} · ${event.settlement.periodStart}–${event.settlement.periodEnd} · version ${event.version}`,
     })),
+    ...payoutEvents.map((event) => ({
+      action: event.action,
+      actor: actorLabel(event.actor),
+      context: event.payoutAccount.partner.name,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'FINANCE' as const,
+      id: `payout-${event.id}`,
+      subject: `${event.fromStatus} to ${event.toStatus} · version ${event.version}`,
+    })),
     ...operationsEvents.map((event) => ({
       action: event.action,
       actor: actorLabel(event.actor),
@@ -554,6 +596,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     contentCount +
     commercialCount +
     financeCount +
+    payoutCount +
     operationsCount +
     searchProjectionCount;
   const availablePages = Math.max(1, Math.ceil(totalCount / ADMIN_AUDIT_PAGE_SIZE));

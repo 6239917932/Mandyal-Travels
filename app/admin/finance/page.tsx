@@ -3,7 +3,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Prisma } from '@/generated/prisma/client';
 
-import { AdminPaymentActions, AdminRefundActions } from '@/components/admin/AdminFinanceActions';
+import {
+  AdminPaymentActions,
+  AdminPayoutAccountActions,
+  AdminPayoutAccountImport,
+  AdminRefundActions,
+} from '@/components/admin/AdminFinanceActions';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
@@ -22,6 +27,8 @@ import {
   redactFinanceNarrative,
   refundReviewPosture,
 } from '@/services/adminFinanceWorkbenchService';
+import { maskedPayoutDestination } from '@/services/partnerPayoutRules';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 export const metadata: Metadata = { title: 'Finance operations' };
 
@@ -94,6 +101,9 @@ export default async function AdminFinancePage({ searchParams }: Props) {
     ledger,
     journals,
     payoutBatches,
+    payoutAccounts,
+    payoutOnboardingEnabled,
+    payoutPartners,
     supplierPayable,
   ] = await Promise.all([
     prisma.paymentTransaction.count({ where: paymentWhere }),
@@ -117,6 +127,21 @@ export default async function AdminFinancePage({ searchParams }: Props) {
       },
       orderBy: { createdAt: 'desc' },
       take: 25,
+    }),
+    prisma.partnerPayoutAccount.findMany({
+      include: {
+        events: { orderBy: { createdAt: 'desc' }, take: 5 },
+        partner: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    isPlatformFeatureEnabled('PARTNER_PAYOUT_ONBOARDING'),
+    prisma.supplyPartner.findMany({
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      select: { id: true, name: true },
+      take: 100,
+      where: { status: 'ACTIVE' },
     }),
     prisma.paymentAllocation.aggregate({
       _sum: { amount: true },
@@ -281,6 +306,98 @@ export default async function AdminFinancePage({ searchParams }: Props) {
           </p>
         </Card>
       ) : null}
+
+      <div className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Supplier destinations</p>
+          <h2>Provider-tokenized payout accounts</h2>
+          <p>
+            Review masked destinations imported from the approved payout provider. Raw bank and UPI
+            credentials must never be entered or stored in this portal.
+          </p>
+          <span className="admin-status-badge">
+            Provider linking {payoutOnboardingEnabled ? 'enabled' : 'disabled'}
+          </span>
+        </div>
+        {payoutOnboardingEnabled ? (
+          <Card className="ui-card--padded">
+            <h3>Import an approved provider destination</h3>
+            <p>
+              Enter only a provider-generated beneficiary token and masked display data. Never enter
+              a full account number, UPI credential, PIN, password, or OTP.
+            </p>
+            <AdminPayoutAccountImport partners={payoutPartners} />
+          </Card>
+        ) : null}
+        <Card className="business-report__table-card">
+          <div className="business-report__table-scroll">
+            <table className="business-report__table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Masked destination</th>
+                  <th>Status</th>
+                  <th>Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payoutAccounts.map((account) => {
+                  const masked = maskedPayoutDestination(account);
+                  return (
+                    <tr key={account.id}>
+                      <td>
+                        <strong>{account.partner.name}</strong>
+                        <span>Imported {date(account.createdAt)}</span>
+                      </td>
+                      <td>
+                        <strong>{masked.bankName}</strong>
+                        <span>{masked.account}</span>
+                        {masked.routingCodeMasked ? <span>{masked.routingCodeMasked}</span> : null}
+                      </td>
+                      <td>
+                        <strong>{account.status.replaceAll('_', ' ')}</strong>
+                        <span>{account.isDefault ? 'Current default' : 'Not default'}</span>
+                        <span>Version {account.version}</span>
+                      </td>
+                      <td>
+                        {account.status === 'PENDING_VERIFICATION' && payoutOnboardingEnabled ? (
+                          <AdminPayoutAccountActions
+                            accountId={account.id}
+                            version={account.version}
+                          />
+                        ) : (
+                          <span>
+                            {account.reviewReason ||
+                              (payoutOnboardingEnabled
+                                ? 'No pending review action.'
+                                : 'Review disabled until provider activation.')}
+                          </span>
+                        )}
+                        <details>
+                          <summary>Audit history ({account.events.length})</summary>
+                          {account.events.map((event) => (
+                            <span key={event.id}>
+                              {event.action.replaceAll('_', ' ')} · {date(event.createdAt)} ·
+                              version {event.version}
+                            </span>
+                          ))}
+                        </details>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {payoutAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>
+                      No provider-tokenized payout destinations have been imported.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
       <div className="account-trips">
         <div className="account-trips__heading">

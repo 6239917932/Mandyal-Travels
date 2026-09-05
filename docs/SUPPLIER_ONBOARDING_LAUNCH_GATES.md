@@ -36,6 +36,11 @@ Status: implementation and legal review checklist. This is not legal advice or a
   Releasing a new version atomically supersedes the previous release, and only the single current
   release can be accepted.
 - Supplier application submission and administrator approval independently re-check the completed enrollment when `PAID_PARTNER_ONBOARDING` is enabled.
+- Suppliers can review only masked payout-destination status from their settlement workspace. Import
+  and review of a provider-tokenized destination are disabled behind `PARTNER_PAYOUT_ONBOARDING`,
+  require an administrator session and same-origin request, and append version-safe decision events.
+  Replacing the default destination is atomic and audited; the portal never collects raw bank or UPI
+  credentials.
 - `PAID_PARTNER_ONBOARDING` remains disabled by default. The UI and data model being present do not authorize production enrollment.
 
 ## Legal and compliance review

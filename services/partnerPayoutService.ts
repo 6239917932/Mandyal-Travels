@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { prisma } from '@/lib/prisma';
+import type { PayoutAccountReviewAction } from '@/services/partnerPayoutRules';
 
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{2,199}$/;
 
@@ -18,10 +19,12 @@ export const partnerPayoutService = {
   async registerTokenizedAccount(input: {
     accountHolderName: string;
     accountLast4: string;
+    actorUserId: string;
     bankName: string;
     partnerId: string;
     provider: string;
     providerBeneficiaryRef: string;
+    reason: string;
     routingCodeMasked?: string;
   }) {
     const partner = await prisma.supplyPartner.findUnique({ where: { id: input.partnerId } });
@@ -38,43 +41,154 @@ export const partnerPayoutService = {
     }
     const accountHolderName = input.accountHolderName.trim().replace(/\s+/g, ' ').slice(0, 120);
     const bankName = input.bankName.trim().replace(/\s+/g, ' ').slice(0, 120);
-    if (accountHolderName.length < 2 || bankName.length < 2) {
+    const reason = input.reason.trim().replace(/\s+/g, ' ');
+    if (
+      accountHolderName.length < 2 ||
+      bankName.length < 2 ||
+      reason.length < 10 ||
+      reason.length > 500
+    ) {
       throw new PartnerPayoutError(
         'PAYOUT_ACCOUNT_INVALID',
-        'Account holder and bank are required.',
+        'Account holder, bank, and a 10-500 character import reason are required.',
       );
     }
-    return prisma.partnerPayoutAccount.create({
-      data: {
-        accountHolderName,
-        accountLast4: input.accountLast4,
-        bankName,
-        partnerId: input.partnerId,
-        provider: input.provider,
-        providerBeneficiaryRef: input.providerBeneficiaryRef,
-        routingCodeMasked: input.routingCodeMasked?.trim().slice(0, 40) ?? '',
-      },
+    return prisma.$transaction(async (transaction) => {
+      const account = await transaction.partnerPayoutAccount.create({
+        data: {
+          accountHolderName,
+          accountLast4: input.accountLast4,
+          bankName,
+          partnerId: input.partnerId,
+          provider: input.provider,
+          providerBeneficiaryRef: input.providerBeneficiaryRef,
+          routingCodeMasked: input.routingCodeMasked?.trim().slice(0, 40) ?? '',
+        },
+      });
+      await transaction.partnerPayoutAccountEvent.create({
+        data: {
+          action: 'IMPORTED_TOKENIZED_DESTINATION',
+          actorUserId: input.actorUserId,
+          fromStatus: 'NONE',
+          payoutAccountId: account.id,
+          reason,
+          toStatus: account.status,
+          version: account.version,
+        },
+      });
+      return account;
     });
   },
 
-  async reviewAccount(accountId: string, action: 'REJECT' | 'VERIFY') {
-    const account = await prisma.partnerPayoutAccount.findUnique({ where: { id: accountId } });
-    if (!account)
-      throw new PartnerPayoutError('PAYOUT_ACCOUNT_NOT_FOUND', 'Payout account was not found.');
+  async reviewAccount(input: {
+    accountId: string;
+    action: PayoutAccountReviewAction;
+    actorUserId: string;
+    expectedVersion: number;
+    reason: string;
+  }) {
     return prisma.$transaction(async (transaction) => {
-      if (action === 'VERIFY') {
-        await transaction.partnerPayoutAccount.updateMany({
-          data: { isDefault: false },
-          where: { partnerId: account.partnerId },
+      const account = await transaction.partnerPayoutAccount.findUnique({
+        where: { id: input.accountId },
+      });
+      if (!account)
+        throw new PartnerPayoutError('PAYOUT_ACCOUNT_NOT_FOUND', 'Payout account was not found.');
+      if (account.version !== input.expectedVersion)
+        throw new PartnerPayoutError(
+          'PAYOUT_ACCOUNT_CHANGED',
+          'This payout destination changed in another session. Refresh and review it again.',
+        );
+      if (account.status !== 'PENDING_VERIFICATION')
+        throw new PartnerPayoutError(
+          'PAYOUT_REVIEW_CLOSED',
+          'Only a pending payout destination can be reviewed.',
+        );
+      const nextStatus = input.action === 'VERIFY' ? 'VERIFIED' : 'REJECTED';
+      const reviewedAt = new Date();
+      if (input.action === 'VERIFY') {
+        const partner = await transaction.supplyPartner.findUnique({
+          select: { payoutDestinationVersion: true },
+          where: { id: account.partnerId },
         });
+        if (!partner) throw new PartnerPayoutError('PARTNER_NOT_FOUND', 'Supplier was not found.');
+        const partnerLock = await transaction.supplyPartner.updateMany({
+          data: { payoutDestinationVersion: { increment: 1 } },
+          where: {
+            id: account.partnerId,
+            payoutDestinationVersion: partner.payoutDestinationVersion,
+          },
+        });
+        if (partnerLock.count !== 1)
+          throw new PartnerPayoutError(
+            'PAYOUT_ACCOUNT_CHANGED',
+            'Another payout destination decision is in progress. Refresh and review again.',
+          );
+        const currentDefaults = await transaction.partnerPayoutAccount.findMany({
+          select: { id: true, status: true, version: true },
+          where: { id: { not: account.id }, isDefault: true, partnerId: account.partnerId },
+        });
+        for (const currentDefault of currentDefaults) {
+          const superseded = await transaction.partnerPayoutAccount.updateMany({
+            data: { isDefault: false, version: { increment: 1 } },
+            where: {
+              id: currentDefault.id,
+              isDefault: true,
+              version: currentDefault.version,
+            },
+          });
+          if (superseded.count !== 1)
+            throw new PartnerPayoutError(
+              'PAYOUT_ACCOUNT_CHANGED',
+              'The current default payout destination changed. Refresh and review again.',
+            );
+          await transaction.partnerPayoutAccountEvent.create({
+            data: {
+              action: 'SUPERSEDED_DEFAULT',
+              actorUserId: input.actorUserId,
+              fromStatus: currentDefault.status,
+              payoutAccountId: currentDefault.id,
+              reason: input.reason,
+              toStatus: currentDefault.status,
+              version: currentDefault.version + 1,
+            },
+          });
+        }
       }
-      return transaction.partnerPayoutAccount.update({
+      const result = await transaction.partnerPayoutAccount.updateMany({
         data: {
-          isDefault: action === 'VERIFY',
-          status: action === 'VERIFY' ? 'VERIFIED' : 'REJECTED',
-          verifiedAt: action === 'VERIFY' ? new Date() : null,
+          isDefault: input.action === 'VERIFY',
+          reviewReason: input.reason,
+          reviewedAt,
+          reviewedByUserId: input.actorUserId,
+          status: nextStatus,
+          verifiedAt: input.action === 'VERIFY' ? reviewedAt : null,
+          version: { increment: 1 },
         },
-        where: { id: accountId },
+        where: {
+          id: input.accountId,
+          status: 'PENDING_VERIFICATION',
+          version: input.expectedVersion,
+        },
+      });
+      if (result.count !== 1)
+        throw new PartnerPayoutError(
+          'PAYOUT_ACCOUNT_CHANGED',
+          'This payout destination changed in another session. Refresh and review it again.',
+        );
+      const nextVersion = input.expectedVersion + 1;
+      await transaction.partnerPayoutAccountEvent.create({
+        data: {
+          action: input.action === 'VERIFY' ? 'VERIFIED' : 'REJECTED',
+          actorUserId: input.actorUserId,
+          fromStatus: account.status,
+          payoutAccountId: input.accountId,
+          reason: input.reason,
+          toStatus: nextStatus,
+          version: nextVersion,
+        },
+      });
+      return transaction.partnerPayoutAccount.findUniqueOrThrow({
+        where: { id: input.accountId },
       });
     });
   },

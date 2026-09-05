@@ -7,7 +7,7 @@ SQLite remains the deterministic local-development and clean-migration verificat
 Release validation rejects `file:` database URLs and requires a PostgreSQL URL. This is an intentional deployment gate: the portal must not be launched against the local database accidentally.
 
 The repository also materializes a provider-neutral PostgreSQL contract from the canonical SQLite
-Prisma model. `prisma/postgresql/schema.prisma` and its 108-table native baseline are generated files
+Prisma model. `prisma/postgresql/schema.prisma` and its 109-table native baseline are generated files
 that are committed for review. `npm run db:verify:postgresql` regenerates the contract in memory,
 validates and generates its Prisma Client, and rejects schema or baseline drift without connecting to
 a database. This closes the schema-portability gap; it does not activate a production database.
