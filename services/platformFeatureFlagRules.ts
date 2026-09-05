@@ -6,9 +6,9 @@ export const PLATFORM_FEATURES = [
     label: 'Guided trip planner',
   },
   {
-    defaultEnabled: false,
+    defaultEnabled: true,
     description:
-      'Controls new supplier application entry and submission. Disabled until contracts and payments are activated.',
+      'Accepts supplier applications for administrator review while listings, payouts, and live payments remain separately gated.',
     key: 'PARTNER_APPLICATIONS',
     label: 'New partner applications',
   },

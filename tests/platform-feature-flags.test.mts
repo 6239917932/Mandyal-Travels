@@ -42,15 +42,16 @@ test('platform feature updates require a bounded reason and optimistic version',
 
 test('platform features use safe defaults until an audited override exists', () => {
   assert.equal(resolvePlatformFeatureState('AI_TRIP_PLANNER', undefined).enabled, true);
+  assert.equal(resolvePlatformFeatureState('PARTNER_APPLICATIONS', undefined).enabled, true);
   assert.equal(resolvePlatformFeatureState('PUBLIC_PARTNER_LISTINGS', undefined).enabled, false);
   assert.equal(resolvePlatformFeatureState('LIVE_MARKETPLACE_PAYMENTS', undefined).enabled, false);
   assert.equal(resolvePlatformFeatureState('CAR_MARKETPLACE', undefined).enabled, false);
   assert.deepEqual(
     resolvePlatformFeatureState('PARTNER_APPLICATIONS', { enabled: false, version: 3 }),
     {
-      defaultEnabled: false,
+      defaultEnabled: true,
       description:
-        'Controls new supplier application entry and submission. Disabled until contracts and payments are activated.',
+        'Accepts supplier applications for administrator review while listings, payouts, and live payments remain separately gated.',
       enabled: false,
       key: 'PARTNER_APPLICATIONS',
       label: 'New partner applications',

@@ -366,6 +366,40 @@
   margin: 0 auto;
   padding: var(--space-12) 0;
 }
+.auth-page--portal-hub {
+  width: min(100% - 2rem, 72rem);
+}
+.auth-portal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.auth-portal-card {
+  display: flex;
+  min-height: 16rem;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.auth-portal-card h2,
+.auth-portal-card p {
+  margin: 0;
+}
+.auth-portal-card > p:not(.hotel-page__eyebrow) {
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+.auth-portal-card .ui-button {
+  width: fit-content;
+  margin-top: auto;
+}
+.auth-portal-switch {
+  margin: var(--space-4) 0 0;
+  text-align: center;
+}
+.auth-portal-switch a {
+  color: var(--color-brand-700);
+  font-weight: 700;
+}
 
 .auth-page__intro {
   margin-bottom: var(--space-6);
@@ -411,6 +445,11 @@
 .auth-form__alternate a {
   color: var(--color-brand-700);
   font-weight: 700;
+}
+@media (max-width: 699px) {
+  .auth-portal-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .account-card {
   display: grid;
