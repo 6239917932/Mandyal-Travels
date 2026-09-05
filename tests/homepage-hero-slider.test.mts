@@ -43,8 +43,9 @@ test('homepage hero provides a focused hotel-and-car-first booking widget', asyn
   assert.match(page, /Stay, drive, and grow with us\./);
   assert.match(
     page,
-    /Flights and buses will follow after live\s+supplier integrations are verified/,
+    /Rooted in Himachal, we promise clear choices, dependable service, and human support—\s+so every journey feels cared for from the first search to your safe return home/,
   );
+  assert.doesNotMatch(page, /supplier integrations are verified/);
   assert.doesNotMatch(page, /<HomeHeroSlider \/>/);
   assert.match(page, /<h2 className="home-intro__title" id="home-intro-title">/);
 
