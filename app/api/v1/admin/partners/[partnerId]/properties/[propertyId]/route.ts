@@ -11,6 +11,8 @@ import type { ApiErrorResponse } from '@/types/commerce';
 const failure = (code: string, message: string, status: number) =>
   Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 
+class StaleReviewError extends Error {}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ partnerId: string; propertyId: string }> },
@@ -28,6 +30,19 @@ export async function PATCH(
     where: { id: propertyId, listingSource: 'MANAGED', partnerId },
   });
   if (!property) return failure('PROPERTY_NOT_FOUND', 'The supplier property was not found.', 404);
+  const expectedVersionText = String(body?.expectedUpdatedAt ?? '');
+  const expectedUpdatedAt = new Date(expectedVersionText);
+  if (
+    Number.isNaN(expectedUpdatedAt.getTime()) ||
+    expectedUpdatedAt.toISOString() !== expectedVersionText
+  )
+    return failure('INVALID_VERSION', 'Refresh the supplier record before saving a decision.', 409);
+  if (property.updatedAt.getTime() !== expectedUpdatedAt.getTime())
+    return failure(
+      'LISTING_CHANGED',
+      'This property changed after the review was opened. Refresh and review the latest version.',
+      409,
+    );
   if (action === 'RESTORE') {
     const normalizedReason = reviewNote.trim().replace(/\s+/g, ' ').slice(0, 500);
     if (normalizedReason.length < 10)
@@ -38,12 +53,6 @@ export async function PATCH(
       );
     if (property.status !== 'ARCHIVED' && property.publicationStatus !== 'ARCHIVED')
       return failure('PROPERTY_NOT_ARCHIVED', 'Only an archived property can be restored.', 409);
-    const expectedUpdatedAt = new Date(String(body?.expectedUpdatedAt ?? ''));
-    if (
-      Number.isNaN(expectedUpdatedAt.getTime()) ||
-      expectedUpdatedAt.toISOString() !== body?.expectedUpdatedAt
-    )
-      return failure('INVALID_VERSION', 'Refresh the supplier record before restoring.', 409);
     try {
       const data = await prisma.$transaction(async (transaction) => {
         const result = await transaction.partnerProperty.updateMany({
@@ -58,7 +67,7 @@ export async function PATCH(
           },
           where: { id: property.id, updatedAt: expectedUpdatedAt },
         });
-        if (result.count !== 1) throw new Error('STALE_RESTORE');
+        if (result.count !== 1) throw new StaleReviewError();
         await transaction.partnerAuditLog.create({
           data: {
             action: 'PROPERTY_RESTORED',
@@ -74,7 +83,7 @@ export async function PATCH(
       });
       return Response.json({ data });
     } catch (error) {
-      return error instanceof Error && error.message === 'STALE_RESTORE'
+      return error instanceof StaleReviewError
         ? failure(
             'LISTING_CHANGED',
             'This property changed while it was being restored. Refresh and review the latest version.',
@@ -135,31 +144,42 @@ export async function PATCH(
     const normalizedReason = reviewNote.trim().replace(/\s+/g, ' ').slice(0, 500);
     if (normalizedReason.length < 10)
       return failure('REVIEW_NOTE_REQUIRED', 'Enter a reason of at least 10 characters.', 400);
-    const data = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.partnerProperty.update({
-        data: {
-          approvalNote: normalizedReason,
-          publicationStatus: action === 'ARCHIVE' ? 'ARCHIVED' : 'PAUSED',
-          status: action === 'ARCHIVE' ? 'ARCHIVED' : property.status,
-          reviewedAt: new Date(),
-          reviewedByUserId: admin.id,
-        },
-        where: { id: property.id },
+    try {
+      const data = await prisma.$transaction(async (transaction) => {
+        const result = await transaction.partnerProperty.updateMany({
+          data: {
+            approvalNote: normalizedReason,
+            publicationStatus: action === 'ARCHIVE' ? 'ARCHIVED' : 'PAUSED',
+            status: action === 'ARCHIVE' ? 'ARCHIVED' : property.status,
+            reviewedAt: new Date(),
+            reviewedByUserId: admin.id,
+          },
+          where: { id: property.id, updatedAt: expectedUpdatedAt },
+        });
+        if (result.count !== 1) throw new StaleReviewError();
+        await transaction.partnerAuditLog.create({
+          data: {
+            action: `PROPERTY_${action}`,
+            actorUserId: admin.id,
+            entityId: property.id,
+            entityType: 'PROPERTY',
+            metadataJson: JSON.stringify({ reviewNoteLength: normalizedReason.length }),
+            partnerId,
+            summary: `${property.displayName} was ${action === 'ARCHIVE' ? 'archived' : 'paused'} by a platform administrator. Existing records were preserved.`,
+          },
+        });
+        return transaction.partnerProperty.findUniqueOrThrow({ where: { id: property.id } });
       });
-      await transaction.partnerAuditLog.create({
-        data: {
-          action: `PROPERTY_${action}`,
-          actorUserId: admin.id,
-          entityId: property.id,
-          entityType: 'PROPERTY',
-          metadataJson: JSON.stringify({ reviewNoteLength: normalizedReason.length }),
-          partnerId,
-          summary: `${property.displayName} was ${action === 'ARCHIVE' ? 'archived' : 'paused'} by a platform administrator. Existing records were preserved.`,
-        },
-      });
-      return updated;
-    });
-    return Response.json({ data });
+      return Response.json({ data });
+    } catch (error) {
+      return error instanceof StaleReviewError
+        ? failure(
+            'LISTING_CHANGED',
+            'This property changed while the decision was being saved. Refresh and review the latest version.',
+            409,
+          )
+        : failure('PROPERTY_REVIEW_FAILED', 'The property decision could not be saved.', 500);
+    }
   }
   if (action === 'APPROVE') {
     const openHighRiskSignals = await prisma.riskSignal.count({
@@ -190,29 +210,40 @@ export async function PATCH(
         : 409;
     return failure(decision.code, decision.message, status);
   }
-  const data = await prisma.$transaction(async (transaction) => {
-    const updated = await transaction.partnerProperty.update({
-      data: {
-        approvalNote: decision.reviewNote,
-        approvalStatus: decision.approvalStatus,
-        publicationStatus: decision.publicationStatus,
-        reviewedAt: new Date(),
-        reviewedByUserId: admin.id,
-      },
-      where: { id: property.id },
+  try {
+    const data = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.partnerProperty.updateMany({
+        data: {
+          approvalNote: decision.reviewNote,
+          approvalStatus: decision.approvalStatus,
+          publicationStatus: decision.publicationStatus,
+          reviewedAt: new Date(),
+          reviewedByUserId: admin.id,
+        },
+        where: { id: property.id, updatedAt: expectedUpdatedAt },
+      });
+      if (result.count !== 1) throw new StaleReviewError();
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: action === 'APPROVE' ? 'PROPERTY_APPROVED' : 'PROPERTY_REJECTED',
+          actorUserId: admin.id,
+          entityId: property.id,
+          entityType: 'PROPERTY',
+          metadataJson: JSON.stringify({ reviewNoteLength: decision.reviewNote.length }),
+          partnerId,
+          summary: `${property.displayName} was ${action === 'APPROVE' ? 'approved and published' : 'returned for corrections'}.`,
+        },
+      });
+      return transaction.partnerProperty.findUniqueOrThrow({ where: { id: property.id } });
     });
-    await transaction.partnerAuditLog.create({
-      data: {
-        action: action === 'APPROVE' ? 'PROPERTY_APPROVED' : 'PROPERTY_REJECTED',
-        actorUserId: admin.id,
-        entityId: property.id,
-        entityType: 'PROPERTY',
-        metadataJson: JSON.stringify({ reviewNoteLength: decision.reviewNote.length }),
-        partnerId,
-        summary: `${property.displayName} was ${action === 'APPROVE' ? 'approved and published' : 'returned for corrections'}.`,
-      },
-    });
-    return updated;
-  });
-  return Response.json({ data });
+    return Response.json({ data });
+  } catch (error) {
+    return error instanceof StaleReviewError
+      ? failure(
+          'LISTING_CHANGED',
+          'This property changed while the decision was being saved. Refresh and review the latest version.',
+          409,
+        )
+      : failure('PROPERTY_REVIEW_FAILED', 'The property decision could not be saved.', 500);
+  }
 }

@@ -381,6 +381,9 @@ transaction, and returns the listing to draft/pending review before it can be pu
 Administrator archive is reversible without deleting historical records. A reason and exact record
 version are required to restore a property or vehicle, and restoration always produces an audit
 event and a private draft/pending-review state rather than republishing the listing.
+All administrator approve, reject, pause, archive, and restore decisions require the exact listing
+version shown to the reviewer. The state change and audit event commit together, so a concurrent
+supplier or administrator update cannot be silently overwritten by a stale decision.
 
 Direct bus-operator inventory now participates in customer search alongside the bounded fixture
 adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
