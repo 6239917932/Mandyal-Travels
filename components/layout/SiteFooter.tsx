@@ -48,8 +48,9 @@ export function SiteFooter() {
           <p className="site-footer__heading">Partners and policies</p>
           <nav aria-label="Partner and legal navigation" className="site-footer__links">
             <Link href="/partners/apply">Partner registration</Link>
-            <Link href="/login?returnTo=/partner">Partner login</Link>
+            <Link href="/login?portal=partner&amp;returnTo=/partner">Partner login</Link>
             <Link href="/register?account=business">Register your business</Link>
+            <Link href="/login?portal=corporate">Corporate login</Link>
             <Link href="/legal/privacy">Privacy</Link>
             <Link href="/legal/terms">Terms</Link>
             <Link href="/legal/cancellation-refunds">Cancellation &amp; refunds</Link>
