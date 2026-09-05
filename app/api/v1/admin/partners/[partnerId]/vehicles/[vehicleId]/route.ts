@@ -3,6 +3,10 @@ import { readJsonObject, isSameOriginMutation } from '@/lib/api/request';
 import { vehicleComplianceState } from '@/lib/car/complianceRules';
 import { evaluateVehicleReview } from '@/lib/car/vehicleApproval';
 import { prisma } from '@/lib/prisma';
+import {
+  PartnerOperationsError,
+  partnerOperationsService,
+} from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 const failure = (code: string, message: string, status: number) =>
@@ -21,6 +25,37 @@ export async function PATCH(
   const { partnerId, vehicleId } = await context.params;
   const vehicle = await prisma.partnerVehicle.findFirst({ where: { id: vehicleId, partnerId } });
   if (!vehicle) return failure('VEHICLE_NOT_FOUND', 'The supplier vehicle was not found.', 404);
+  if (body.action === 'UPDATE_LISTING') {
+    try {
+      const data = await partnerOperationsService.adminUpdateVehicleListing(
+        partnerId,
+        vehicleId,
+        admin.id,
+        {
+          bags: Number(body.bags),
+          cancellationPolicy: String(body.cancellationPolicy ?? ''),
+          category: String(body.category ?? ''),
+          dropoffLocation: String(body.dropoffLocation ?? ''),
+          expectedUpdatedAt: String(body.expectedUpdatedAt ?? ''),
+          features: String(body.features ?? '').split(','),
+          fuelPolicy: String(body.fuelPolicy ?? ''),
+          mileagePolicy: String(body.mileagePolicy ?? ''),
+          pickupLocation: String(body.pickupLocation ?? ''),
+          pricePerDay: Number(body.pricePerDay),
+          registrationNumber: String(body.registrationNumber ?? ''),
+          seats: Number(body.seats),
+          totalUnits: Number(body.totalUnits),
+          transmission: String(body.transmission ?? ''),
+          vehicleName: String(body.vehicleName ?? ''),
+        },
+      );
+      return Response.json({ data });
+    } catch (error) {
+      return error instanceof PartnerOperationsError
+        ? failure(error.code, error.message, 409)
+        : failure('VEHICLE_UPDATE_FAILED', 'The listing changes could not be saved.', 500);
+    }
+  }
   const openHighRiskSignals = await prisma.riskSignal.count({
     where: {
       severity: 'HIGH',

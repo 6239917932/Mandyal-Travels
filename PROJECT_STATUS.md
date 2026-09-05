@@ -373,7 +373,11 @@ clearly states that fulfilment depends on availability.
 
 Supplier-created properties enter a platform review queue after an active room is added. Only an
 administrator-approved property can publish to hotel search; rejected listings remain private with
-correction guidance, while the additive migration preserves existing published inventory as approved.
+correction guidance and an attributable review trail, while the additive migration preserves
+existing published inventory as approved. Platform administrators can also correct the complete
+customer-facing property and vehicle profile from the supplier record. Every administrator edit is
+protected from stale overwrites, re-runs listing risk rules, creates an audit event in the same
+transaction, and returns the listing to draft/pending review before it can be public again.
 
 Direct bus-operator inventory now participates in customer search alongside the bounded fixture
 adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
