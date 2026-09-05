@@ -200,6 +200,47 @@ test('admin listing editors are stale-write protected, re-risked, audited, and r
   assert.match(service, /VEHICLE_LISTING_ADMIN_UPDATED/);
 });
 
+test('archived listings have a version-safe, private and audited administrator restore path', async () => {
+  const [page, propertyActions, vehicleActions, propertyRoute, vehicleRoute] = await Promise.all([
+    readFile(new URL('../app/admin/partners/[partnerId]/page.tsx', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../components/admin/AdminPropertyReviewActions.tsx', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../components/admin/AdminVehicleReviewActions.tsx', import.meta.url), 'utf8'),
+    readFile(
+      new URL(
+        '../app/api/v1/admin/partners/[partnerId]/properties/[propertyId]/route.ts',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+    readFile(
+      new URL(
+        '../app/api/v1/admin/partners/[partnerId]/vehicles/[vehicleId]/route.ts',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ]);
+  for (const actions of [propertyActions, vehicleActions]) {
+    assert.match(actions, /Restore to draft review/);
+    assert.match(actions, /expectedUpdatedAt/);
+  }
+  for (const route of [propertyRoute, vehicleRoute]) {
+    assert.match(route, /action === 'RESTORE'/);
+    assert.match(route, /updateMany/);
+    assert.match(route, /approvalStatus: 'PENDING_REVIEW'/);
+    assert.match(route, /publicationStatus: 'DRAFT'/);
+    assert.match(route, /STALE_RESTORE/);
+    assert.match(route, /partnerAuditLog\.create/);
+  }
+  assert.match(propertyRoute, /PROPERTY_RESTORED/);
+  assert.match(vehicleRoute, /VEHICLE_RESTORED/);
+  assert.match(page, /property\.status !== 'ARCHIVED'/);
+  assert.match(page, /vehicle\.status !== 'ARCHIVED'/);
+});
+
 test('paid enrollment is persistent, fixed-price and reconciled server-side', async () => {
   const [checkout, enrollment, callback, webhook] = await Promise.all([
     readFile(
