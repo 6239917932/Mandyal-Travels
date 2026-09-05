@@ -62,6 +62,15 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
   }
 
   const isRegister = mode === 'register';
+  const isPartnerAccess =
+    !isRegister && (returnTo === '/partner' || returnTo?.startsWith('/partner/'));
+  const alternateHref = isPartnerAccess
+    ? `/register?returnTo=${encodeURIComponent('/partners/apply')}`
+    : returnTo
+      ? `${isRegister ? '/login' : '/register'}?returnTo=${encodeURIComponent(returnTo)}`
+      : isRegister
+        ? '/login'
+        : '/register';
 
   return (
     <form className="auth-form ui-card ui-card--padded" onSubmit={handleSubmit}>
@@ -180,17 +189,17 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
       </button>
 
       <p className="auth-form__alternate">
-        {isRegister ? 'Already have an account?' : 'New to Mandyal Travels?'}{' '}
-        <Link
-          href={
-            returnTo
-              ? `${isRegister ? '/login' : '/register'}?returnTo=${encodeURIComponent(returnTo)}`
-              : isRegister
-                ? '/login'
-                : '/register'
-          }
-        >
-          {isRegister ? 'Sign in' : 'Create an account'}
+        {isRegister
+          ? 'Already have an account?'
+          : isPartnerAccess
+            ? 'Not an approved partner yet?'
+            : 'New to Mandyal Travels?'}{' '}
+        <Link href={alternateHref}>
+          {isRegister
+            ? 'Sign in'
+            : isPartnerAccess
+              ? 'Apply as a hotel or car partner'
+              : 'Create an account'}
         </Link>
       </p>
     </form>
