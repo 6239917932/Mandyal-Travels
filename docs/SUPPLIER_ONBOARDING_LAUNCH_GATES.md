@@ -1,5 +1,9 @@
 # Supplier onboarding launch gates
 
+The administrator enrollment workbench at `/admin/partners/onboarding` can create paused,
+bounded launch waivers, activate or pause them with version-safe audited reasons, and inspect a
+privacy-minimized enrollment ledger. This control surface does not remove any launch gate below.
+
 Status: implementation and legal review checklist. This is not legal advice or a signed supplier agreement.
 
 ## Commercial configuration

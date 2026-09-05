@@ -53,9 +53,14 @@ export default async function AdminPartnersPage() {
             Verify businesses, activate named accounts, and monitor hotel and car inventory access.
           </p>
         </div>
-        <Link className="ui-button ui-button--secondary" href="/admin">
-          Operations console
-        </Link>
+        <div className="admin-hero__actions">
+          <Link className="ui-button ui-button--secondary" href="/admin/partners/onboarding">
+            Enrollment operations
+          </Link>
+          <Link className="ui-button ui-button--secondary" href="/admin">
+            Operations console
+          </Link>
+        </div>
       </header>
       <div className="partner-bookings__summary">
         <Card>

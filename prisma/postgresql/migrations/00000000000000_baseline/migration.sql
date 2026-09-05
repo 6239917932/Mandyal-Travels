@@ -568,6 +568,21 @@ CREATE TABLE "PartnerOnboardingCoupon" (
 );
 
 -- CreateTable
+CREATE TABLE "PartnerOnboardingCouponEvent" (
+    "id" TEXT NOT NULL,
+    "couponId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromActive" BOOLEAN NOT NULL,
+    "toActive" BOOLEAN NOT NULL,
+    "reason" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerOnboardingCouponEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PartnerOnboardingOrder" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -2094,6 +2109,18 @@ CREATE UNIQUE INDEX "PartnerOnboardingCoupon_code_key" ON "PartnerOnboardingCoup
 CREATE INDEX "PartnerOnboardingCoupon_active_startsAt_endsAt_idx" ON "PartnerOnboardingCoupon"("active", "startsAt", "endsAt");
 
 -- CreateIndex
+CREATE INDEX "PartnerOnboardingCouponEvent_couponId_createdAt_idx" ON "PartnerOnboardingCouponEvent"("couponId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerOnboardingCouponEvent_actorUserId_createdAt_idx" ON "PartnerOnboardingCouponEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerOnboardingCouponEvent_createdAt_idx" ON "PartnerOnboardingCouponEvent"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerOnboardingCouponEvent_couponId_version_key" ON "PartnerOnboardingCouponEvent"("couponId", "version");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerOnboardingOrder_agreementAcceptanceId_key" ON "PartnerOnboardingOrder"("agreementAcceptanceId");
 
 -- CreateIndex
@@ -2854,6 +2881,12 @@ ALTER TABLE "PartnerAgreementAcceptance" ADD CONSTRAINT "PartnerAgreementAccepta
 
 -- AddForeignKey
 ALTER TABLE "PartnerOnboardingCoupon" ADD CONSTRAINT "PartnerOnboardingCoupon_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerOnboardingCouponEvent" ADD CONSTRAINT "PartnerOnboardingCouponEvent_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "PartnerOnboardingCoupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerOnboardingCouponEvent" ADD CONSTRAINT "PartnerOnboardingCouponEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerOnboardingOrder" ADD CONSTRAINT "PartnerOnboardingOrder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

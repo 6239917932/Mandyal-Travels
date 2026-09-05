@@ -316,3 +316,46 @@ test('agreement evidence and launch coupons are bounded and attributable', async
   assert.match(schema, /model PartnerOnboardingOrder/);
   assert.match(schema, /idempotencyKey\s+String\s+@unique/);
 });
+
+test('supplier enrollment workbench is private, minimized and release-gate aware', async () => {
+  const [page, manager] = await Promise.all([
+    readFile(new URL('../app/admin/partners/onboarding/page.tsx', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../components/admin/AdminPartnerOnboardingManager.tsx', import.meta.url),
+      'utf8',
+    ),
+  ]);
+  assert.match(page, /getPlatformAdmin/);
+  assert.match(page, /PAID_PARTNER_ONBOARDING/);
+  assert.match(page, /Production enrollment remains intentionally disabled/);
+  assert.match(page, /agreementAcceptance/);
+  assert.doesNotMatch(page, /providerRef/);
+  assert.doesNotMatch(page, /checkoutUrl/);
+  assert.doesNotMatch(page, /idempotencyKey/);
+  assert.doesNotMatch(page, /phoneVerification/);
+  assert.match(manager, /new Date\(endsAt\)\.toISOString\(\)/);
+  assert.match(manager, /new Date\(startsAt\)\.toISOString\(\)/);
+  assert.match(manager, /active: false/);
+});
+
+test('onboarding coupon lifecycle is stale-write protected and audited atomically', async () => {
+  const [route, schema] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/admin/partners/onboarding/coupons/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../prisma/schema.prisma', import.meta.url), 'utf8'),
+  ]);
+  assert.match(route, /export async function PATCH/);
+  assert.match(route, /isSameOriginMutation/);
+  assert.match(route, /getPlatformAdmin/);
+  assert.match(route, /expectedVersion/);
+  assert.match(route, /updateMany/);
+  assert.match(route, /partnerOnboardingCouponEvent\.create/);
+  assert.match(route, /prisma\.\$transaction/);
+  assert.match(route, /VERSION_CONFLICT/);
+  assert.match(route, /CREATED_PAUSED/);
+  assert.match(route, /NOT_ELIGIBLE/);
+  assert.match(schema, /model PartnerOnboardingCouponEvent/);
+  assert.match(schema, /@@unique\(\[couponId, version\]\)/);
+});
