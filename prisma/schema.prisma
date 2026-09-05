@@ -76,6 +76,7 @@ model User {
   partnerOnboardingOrders     PartnerOnboardingOrder[]
   partnerPhoneVerifications   PartnerPhoneVerification[]
   createdOnboardingCoupons    PartnerOnboardingCoupon[]       @relation("PartnerOnboardingCouponCreator")
+  onboardingCouponEvents      PartnerOnboardingCouponEvent[]  @relation("PartnerOnboardingCouponEventActor")
   createdPartnerAgreements    PartnerAgreementVersion[]       @relation("PartnerAgreementCreator")
 
   @@index([role, accessStatus])
@@ -715,8 +716,28 @@ model PartnerOnboardingCoupon {
   updatedAt       DateTime                 @updatedAt
   createdBy       User                     @relation("PartnerOnboardingCouponCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   orders          PartnerOnboardingOrder[]
+  events          PartnerOnboardingCouponEvent[]
 
   @@index([active, startsAt, endsAt])
+}
+
+model PartnerOnboardingCouponEvent {
+  id          String                    @id @default(cuid())
+  couponId    String
+  actorUserId String
+  action      String
+  fromActive  Boolean
+  toActive    Boolean
+  reason      String
+  version     Int
+  createdAt   DateTime                  @default(now())
+  coupon      PartnerOnboardingCoupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  actor       User                      @relation("PartnerOnboardingCouponEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([couponId, version])
+  @@index([couponId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
 }
 
 model PartnerOnboardingOrder {
