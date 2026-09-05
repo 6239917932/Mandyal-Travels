@@ -42,7 +42,10 @@ export default async function PartnerApplicationPage() {
     ? await prisma.partnerOnboardingOrder.findFirst({
         include: {
           agreementAcceptance: {
-            include: { agreementVersion: true, phoneVerification: true },
+            include: {
+              agreementVersion: { include: { release: true } },
+              phoneVerification: true,
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -56,6 +59,7 @@ export default async function PartnerApplicationPage() {
     enrollment.agreementAcceptance &&
     enrollment.agreementAcceptance.contentHash === agreement?.contentHash &&
     agreement?.status === 'APPROVED' &&
+    agreement.release?.key === 'SUPPLIER_ONBOARDING' &&
     agreement.effectiveAt &&
     agreement.effectiveAt <= new Date() &&
     phone?.status === 'VERIFIED' &&

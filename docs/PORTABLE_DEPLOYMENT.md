@@ -55,7 +55,7 @@ been backed up.
 ## Production promotion gate
 
 The portal still defaults locally to the SQLite Prisma client and SQLite migration history. A
-reviewed, synchronized PostgreSQL schema, PostgreSQL runtime adapter, and 106-table native baseline
+reviewed, synchronized PostgreSQL schema, PostgreSQL runtime adapter, and 108-table native baseline
 now exist, but a
 real production release remains blocked even though the web artifact is portable. Complete the
 reviewed steps in `docs/PRODUCTION_DATA_PLATFORM.md`: provision managed PostgreSQL, configure the

@@ -508,13 +508,46 @@ CREATE TABLE "PartnerAgreementVersion" (
     "id" TEXT NOT NULL,
     "version" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL DEFAULT '',
     "contentHash" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "governanceVersion" INTEGER NOT NULL DEFAULT 1,
     "effectiveAt" TIMESTAMP(3),
+    "approvedAt" TIMESTAMP(3),
+    "retiredAt" TIMESTAMP(3),
     "createdByUserId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PartnerAgreementVersion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerAgreementVersionEvent" (
+    "id" TEXT NOT NULL,
+    "agreementVersionId" TEXT NOT NULL,
+    "actorUserId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "fromStatus" TEXT,
+    "toStatus" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "legalApprovalReference" TEXT,
+    "version" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerAgreementVersionEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerAgreementRelease" (
+    "key" TEXT NOT NULL,
+    "agreementVersionId" TEXT NOT NULL,
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "updatedByUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PartnerAgreementRelease_pkey" PRIMARY KEY ("key")
 );
 
 -- CreateTable
@@ -2088,6 +2121,21 @@ CREATE UNIQUE INDEX "PartnerAgreementVersion_version_key" ON "PartnerAgreementVe
 CREATE INDEX "PartnerAgreementVersion_status_effectiveAt_idx" ON "PartnerAgreementVersion"("status", "effectiveAt");
 
 -- CreateIndex
+CREATE INDEX "PartnerAgreementVersionEvent_agreementVersionId_createdAt_idx" ON "PartnerAgreementVersionEvent"("agreementVersionId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PartnerAgreementVersionEvent_actorUserId_createdAt_idx" ON "PartnerAgreementVersionEvent"("actorUserId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerAgreementVersionEvent_agreementVersionId_version_key" ON "PartnerAgreementVersionEvent"("agreementVersionId", "version");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerAgreementRelease_agreementVersionId_key" ON "PartnerAgreementRelease"("agreementVersionId");
+
+-- CreateIndex
+CREATE INDEX "PartnerAgreementRelease_updatedByUserId_updatedAt_idx" ON "PartnerAgreementRelease"("updatedByUserId", "updatedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerPhoneVerification_providerRef_key" ON "PartnerPhoneVerification"("providerRef");
 
 -- CreateIndex
@@ -2866,6 +2914,18 @@ ALTER TABLE "PartnerVehicle" ADD CONSTRAINT "PartnerVehicle_partnerId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "PartnerAgreementVersion" ADD CONSTRAINT "PartnerAgreementVersion_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerAgreementVersionEvent" ADD CONSTRAINT "PartnerAgreementVersionEvent_agreementVersionId_fkey" FOREIGN KEY ("agreementVersionId") REFERENCES "PartnerAgreementVersion"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerAgreementVersionEvent" ADD CONSTRAINT "PartnerAgreementVersionEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerAgreementRelease" ADD CONSTRAINT "PartnerAgreementRelease_agreementVersionId_fkey" FOREIGN KEY ("agreementVersionId") REFERENCES "PartnerAgreementVersion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerAgreementRelease" ADD CONSTRAINT "PartnerAgreementRelease_updatedByUserId_fkey" FOREIGN KEY ("updatedByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerPhoneVerification" ADD CONSTRAINT "PartnerPhoneVerification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

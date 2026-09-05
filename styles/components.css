@@ -1219,6 +1219,15 @@
   grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
   margin: 1rem 0 2.5rem;
 }
+
+.agreement-governance__content {
+  margin-top: var(--space-3);
+  max-height: 24rem;
+  max-width: 42rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .partner-review__controls {
   display: grid;
   gap: 0.7rem;
