@@ -5,6 +5,7 @@ import { verifyPayuResponseHash } from '@/lib/payments/payu';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { reconcilePayuCheckout } from '@/services/payuPaymentReconciliationService';
+import { reconcilePartnerOnboardingPayment } from '@/services/partnerEnrollmentService';
 
 type Context = { params: Promise<{ provider: string }> };
 type ProviderEvent = {
@@ -50,10 +51,17 @@ export async function POST(request: Request, context: Context) {
       return NextResponse.json({ error: { code: 'WEBHOOK_SIGNATURE_INVALID' } }, { status: 401 });
     }
     try {
-      const result = await reconcilePayuCheckout(fields.txnid ?? '');
+      const result =
+        (await reconcilePayuCheckout(fields.txnid ?? '')) ??
+        (await reconcilePartnerOnboardingPayment(fields.txnid ?? ''));
       if (!result)
         return NextResponse.json({ error: { code: 'WEBHOOK_PAYMENT_UNKNOWN' } }, { status: 400 });
-      return NextResponse.json({ data: { accepted: true, state: result.state } });
+      return NextResponse.json({
+        data: {
+          accepted: true,
+          state: 'state' in result ? result.state : result.status,
+        },
+      });
     } catch {
       return NextResponse.json(
         { error: { code: 'WEBHOOK_RECONCILIATION_FAILED' } },

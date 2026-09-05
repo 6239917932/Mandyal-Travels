@@ -72,6 +72,11 @@ model User {
   busSeatHolds                PartnerBusSeatHold[]
   createdServiceAdvisories    ServiceAdvisory[]              @relation("ServiceAdvisoryCreator")
   serviceAdvisoryEvents       ServiceAdvisoryEvent[]         @relation("ServiceAdvisoryEventActor")
+  partnerAgreementAcceptances PartnerAgreementAcceptance[]
+  partnerOnboardingOrders     PartnerOnboardingOrder[]
+  partnerPhoneVerifications   PartnerPhoneVerification[]
+  createdOnboardingCoupons    PartnerOnboardingCoupon[]       @relation("PartnerOnboardingCouponCreator")
+  createdPartnerAgreements    PartnerAgreementVersion[]       @relation("PartnerAgreementCreator")
 
   @@index([role, accessStatus])
 }
@@ -640,6 +645,110 @@ model PartnerVehicle {
   @@index([partnerId, status])
   @@index([pickupLocation, dropoffLocation, status, publicationStatus])
   @@index([approvalStatus, submittedAt])
+}
+
+model PartnerAgreementVersion {
+  id              String                       @id @default(cuid())
+  version         String                       @unique
+  title           String
+  contentHash     String
+  status          String                       @default("DRAFT")
+  effectiveAt     DateTime?
+  createdByUserId String
+  createdAt       DateTime                     @default(now())
+  createdBy       User                         @relation("PartnerAgreementCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  acceptances     PartnerAgreementAcceptance[]
+
+  @@index([status, effectiveAt])
+}
+
+model PartnerPhoneVerification {
+  id          String                       @id @default(cuid())
+  userId      String
+  phoneHash   String
+  phoneLast4  String
+  provider    String
+  providerRef String                       @unique
+  status      String                       @default("PENDING")
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime                     @default(now())
+  user        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acceptances PartnerAgreementAcceptance[]
+
+  @@index([userId, status, expiresAt])
+}
+
+model PartnerAgreementAcceptance {
+  id                  String                   @id @default(cuid())
+  userId              String
+  agreementVersionId  String
+  phoneVerificationId String
+  contentHash         String
+  acceptedName        String
+  ipHash              String
+  userAgentHash       String
+  acceptedAt          DateTime                 @default(now())
+  user                User                     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  agreementVersion    PartnerAgreementVersion  @relation(fields: [agreementVersionId], references: [id], onDelete: Restrict)
+  phoneVerification   PartnerPhoneVerification @relation(fields: [phoneVerificationId], references: [id], onDelete: Restrict)
+  onboardingOrder     PartnerOnboardingOrder?
+
+  @@unique([userId, agreementVersionId])
+  @@unique([phoneVerificationId, agreementVersionId])
+  @@index([agreementVersionId, acceptedAt])
+}
+
+model PartnerOnboardingCoupon {
+  id              String                   @id @default(cuid())
+  code            String                   @unique
+  description     String                   @default("")
+  waiverPercent   Int                      @default(100)
+  usageLimit      Int?
+  usageCount      Int                      @default(0)
+  startsAt        DateTime
+  endsAt          DateTime
+  active          Boolean                  @default(false)
+  version         Int                      @default(1)
+  createdByUserId String
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  createdBy       User                     @relation("PartnerOnboardingCouponCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  orders          PartnerOnboardingOrder[]
+
+  @@index([active, startsAt, endsAt])
+}
+
+model PartnerOnboardingOrder {
+  id                         String                      @id @default(cuid())
+  userId                     String
+  couponId                   String?
+  agreementAcceptanceId      String?                     @unique
+  idempotencyKey             String                      @unique
+  status                     String                      @default("CREATED")
+  priceVersion               String
+  oneTimeSetupAmount         Int
+  monthlySubscriptionAmount  Int
+  subtotalAmount             Int
+  discountAmount             Int                        @default(0)
+  dueNowAmount               Int
+  currency                   String                      @default("INR")
+  couponCodeSnapshot         String                      @default("")
+  provider                   String                      @default("")
+  providerRef                String?                     @unique
+  checkoutUrl                String                      @default("")
+  expiresAt                  DateTime?
+  capturedAt                 DateTime?
+  completedAt                DateTime?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  user                       User                        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  coupon                     PartnerOnboardingCoupon?    @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  agreementAcceptance        PartnerAgreementAcceptance? @relation(fields: [agreementAcceptanceId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, createdAt])
+  @@index([status, expiresAt])
+  @@unique([userId, couponId])
 }
 
 model PartnerVehicleInventoryDay {

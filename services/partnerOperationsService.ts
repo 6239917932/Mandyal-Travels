@@ -483,6 +483,7 @@ export const partnerOperationsService = {
 
   async reviewApplication(input: {
     applicationId: string;
+    commercialGateRequired?: boolean;
     decision: 'APPROVE' | 'REJECT';
     reviewNote: string;
     reviewerUserId: string;
@@ -509,6 +510,39 @@ export const partnerOperationsService = {
           },
           where: { id: application.id },
         });
+      }
+      if (input.commercialGateRequired) {
+        const enrollment = await transaction.partnerOnboardingOrder.findFirst({
+          include: {
+            agreementAcceptance: {
+              include: { agreementVersion: true, phoneVerification: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          where: {
+            status: { in: ['CAPTURED', 'WAIVED'] },
+            userId: application.applicantUserId,
+          },
+        });
+        const acceptance = enrollment?.agreementAcceptance;
+        const agreement = acceptance?.agreementVersion;
+        const phone = acceptance?.phoneVerification;
+        if (
+          !enrollment?.completedAt ||
+          !acceptance ||
+          acceptance.contentHash !== agreement?.contentHash ||
+          agreement.status !== 'APPROVED' ||
+          !agreement.effectiveAt ||
+          agreement.effectiveAt > new Date() ||
+          phone?.status !== 'VERIFIED' ||
+          !phone.verifiedAt ||
+          phone.expiresAt <= new Date()
+        ) {
+          throw new PartnerOperationsError(
+            'ONBOARDING_INCOMPLETE',
+            'Payment or waiver, current phone OTP, and the approved agreement are required before approval.',
+          );
+        }
       }
       if (
         application.partnerType !== 'BUS' &&
