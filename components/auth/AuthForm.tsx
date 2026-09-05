@@ -5,15 +5,23 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
 import { readJsonResponse } from '@/lib/api/clientResponse';
+import type { LoginAudience } from '@/lib/auth/loginAudience';
 
 type AuthFormProps = {
   accountType?: 'agent' | 'business' | 'customer';
+  loginAudience?: LoginAudience;
   message?: string;
   mode: 'login' | 'register';
   returnTo?: string;
 };
 
-export function AuthForm({ accountType = 'customer', message, mode, returnTo }: AuthFormProps) {
+export function AuthForm({
+  accountType = 'customer',
+  loginAudience,
+  message,
+  mode,
+  returnTo,
+}: AuthFormProps) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +39,7 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
           email: form.get('email'),
           firstName: form.get('firstName'),
           lastName: form.get('lastName'),
+          loginAudience,
           accountType,
           marketingConsent: form.get('marketingConsent') === 'on',
           organizationName: form.get('organizationName'),
@@ -62,15 +71,20 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
   }
 
   const isRegister = mode === 'register';
-  const isPartnerAccess =
-    !isRegister && (returnTo === '/partner' || returnTo?.startsWith('/partner/'));
-  const alternateHref = isPartnerAccess
-    ? `/register?returnTo=${encodeURIComponent('/partners/apply')}`
-    : returnTo
-      ? `${isRegister ? '/login' : '/register'}?returnTo=${encodeURIComponent(returnTo)}`
-      : isRegister
-        ? '/login'
-        : '/register';
+  const isPartnerRegistration = isRegister && returnTo?.startsWith('/partners/apply');
+  const alternateHref = isPartnerRegistration
+    ? `/login?portal=partner&returnTo=${encodeURIComponent('/partners/apply')}`
+    : isRegister && accountType === 'business'
+      ? '/login?portal=corporate'
+      : isRegister && accountType === 'agent'
+        ? '/login?portal=partner'
+        : isRegister
+          ? '/login?portal=customer'
+          : loginAudience === 'partner'
+            ? `/register?returnTo=${encodeURIComponent('/partners/apply')}`
+            : loginAudience === 'corporate'
+              ? '/register?account=business'
+              : '/register';
 
   return (
     <form className="auth-form ui-card ui-card--padded" onSubmit={handleSubmit}>
@@ -188,20 +202,30 @@ export function AuthForm({ accountType = 'customer', message, mode, returnTo }: 
                 : 'Sign in'}
       </button>
 
-      <p className="auth-form__alternate">
-        {isRegister
-          ? 'Already have an account?'
-          : isPartnerAccess
-            ? 'Not an approved partner yet?'
-            : 'New to Mandyal Travels?'}{' '}
-        <Link href={alternateHref}>
+      {!isRegister && loginAudience === 'admin' ? (
+        <p className="auth-form__alternate">
+          Administrator access is restricted to the separately configured platform administrator.
+        </p>
+      ) : (
+        <p className="auth-form__alternate">
           {isRegister
-            ? 'Sign in'
-            : isPartnerAccess
-              ? 'Apply as a hotel or car partner'
-              : 'Create an account'}
-        </Link>
-      </p>
+            ? 'Already have an account?'
+            : loginAudience === 'partner'
+              ? 'New hotel or car partner?'
+              : loginAudience === 'corporate'
+                ? 'Setting up company travel?'
+                : 'New to Mandyal Travels?'}{' '}
+          <Link href={alternateHref}>
+            {isRegister
+              ? 'Sign in'
+              : loginAudience === 'partner'
+                ? 'Create a partner application'
+                : loginAudience === 'corporate'
+                  ? 'Create a corporate account'
+                  : 'Create a customer account'}
+          </Link>
+        </p>
+      )}
     </form>
   );
 }
