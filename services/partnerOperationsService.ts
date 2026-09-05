@@ -15,6 +15,11 @@ import {
   type VehicleComplianceDates,
 } from '@/lib/car/complianceRules';
 import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
+import {
+  evaluatePropertyListingRisk,
+  evaluateVehicleListingRisk,
+  vehicleMayBePublished,
+} from '@/lib/partner/listingRiskRules';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -1448,16 +1453,41 @@ export const partnerOperationsService = {
         'This property is already approved.',
       );
     }
-    return prisma.partnerProperty.update({
-      data: {
-        approvalNote: '',
-        approvalStatus: 'PENDING_REVIEW',
-        publicationStatus: 'DRAFT',
-        reviewedAt: null,
-        reviewedByUserId: null,
-        submittedAt: new Date(),
-      },
-      where: { id: property.id },
+    const findings = evaluatePropertyListingRisk(property);
+    return prisma.$transaction(async (transaction) => {
+      const updated = await transaction.partnerProperty.update({
+        data: {
+          approvalNote: '',
+          approvalStatus: 'PENDING_REVIEW',
+          publicationStatus: 'DRAFT',
+          reviewedAt: null,
+          reviewedByUserId: null,
+          submittedAt: new Date(),
+        },
+        where: { id: property.id },
+      });
+      await transaction.riskSignal.deleteMany({
+        where: {
+          source: 'SUPPLIER_LISTING_RULES_V1',
+          status: 'OPEN',
+          subjectId: property.id,
+          subjectType: 'PARTNER_PROPERTY',
+        },
+      });
+      for (const finding of findings) {
+        await transaction.riskSignal.create({
+          data: {
+            evidenceJson: JSON.stringify({ propertyId: property.id, rule: finding.code }),
+            severity: finding.severity,
+            signalType: finding.code,
+            source: 'SUPPLIER_LISTING_RULES_V1',
+            subjectId: property.id,
+            subjectType: 'PARTNER_PROPERTY',
+            summary: finding.summary,
+          },
+        });
+      }
+      return updated;
     });
   },
 
@@ -1804,32 +1834,67 @@ export const partnerOperationsService = {
         'Fleet units must be between 1 and 500.',
       );
     }
-    return prisma.partnerVehicle.create({
-      data: {
-        bags: input.bags,
-        cancellationPolicy: normalizeText(input.cancellationPolicy, 240),
-        category: normalizeText(input.category, 80),
-        code: createVehicleCode(partnerId, input.vehicleName),
-        dropoffLocation: normalizeText(input.dropoffLocation, 80),
-        featuresJson: JSON.stringify(
-          input.features
-            .map((feature) => normalizeText(feature, 60))
-            .filter(Boolean)
-            .slice(0, 12),
-        ),
-        fuelPolicy: normalizeText(input.fuelPolicy, 120),
-        mileagePolicy: normalizeText(input.mileagePolicy, 120),
-        partnerId,
-        pickupLocation: normalizeText(input.pickupLocation, 80),
-        pricePerDay: input.pricePerDay,
-        registrationNumber: input.registrationNumber
-          ? normalizeText(input.registrationNumber, 30).toUpperCase()
-          : null,
-        seats: input.seats,
-        totalUnits: input.totalUnits,
-        transmission: input.transmission,
-        vehicleName: normalizeText(input.vehicleName, 120),
-      },
+    const registrationNumber = input.registrationNumber
+      ? normalizeText(input.registrationNumber, 30).toUpperCase()
+      : null;
+    const findings = evaluateVehicleListingRisk({ ...input, registrationNumber });
+    if (
+      registrationNumber &&
+      (await prisma.partnerVehicle.findFirst({
+        select: { id: true },
+        where: { registrationNumber, status: { not: 'ARCHIVED' } },
+      }))
+    ) {
+      findings.push({
+        code: 'VEHICLE_REGISTRATION_DUPLICATE',
+        severity: 'HIGH',
+        summary:
+          'This registration number already exists in another active or paused fleet record.',
+      });
+    }
+    return prisma.$transaction(async (transaction) => {
+      const vehicle = await transaction.partnerVehicle.create({
+        data: {
+          approvalStatus: 'PENDING_REVIEW',
+          bags: input.bags,
+          cancellationPolicy: normalizeText(input.cancellationPolicy, 240),
+          category: normalizeText(input.category, 80),
+          code: createVehicleCode(partnerId, input.vehicleName),
+          dropoffLocation: normalizeText(input.dropoffLocation, 80),
+          featuresJson: JSON.stringify(
+            input.features
+              .map((feature) => normalizeText(feature, 60))
+              .filter(Boolean)
+              .slice(0, 12),
+          ),
+          fuelPolicy: normalizeText(input.fuelPolicy, 120),
+          mileagePolicy: normalizeText(input.mileagePolicy, 120),
+          partnerId,
+          pickupLocation: normalizeText(input.pickupLocation, 80),
+          pricePerDay: input.pricePerDay,
+          publicationStatus: 'DRAFT',
+          registrationNumber,
+          seats: input.seats,
+          totalUnits: input.totalUnits,
+          submittedAt: new Date(),
+          transmission: input.transmission,
+          vehicleName: normalizeText(input.vehicleName, 120),
+        },
+      });
+      for (const finding of findings) {
+        await transaction.riskSignal.create({
+          data: {
+            evidenceJson: JSON.stringify({ rule: finding.code, vehicleId: vehicle.id }),
+            severity: finding.severity,
+            signalType: finding.code,
+            source: 'SUPPLIER_LISTING_RULES_V1',
+            subjectId: vehicle.id,
+            subjectType: 'PARTNER_VEHICLE',
+            summary: finding.summary,
+          },
+        });
+      }
+      return vehicle;
     });
   },
 
@@ -1925,7 +1990,7 @@ export const partnerOperationsService = {
       },
       where: { code: input.offerId },
     });
-    if (!vehicle || vehicle.status !== 'ACTIVE' || vehicle.partner.status !== 'ACTIVE') {
+    if (!vehicle || !vehicleMayBePublished(vehicle) || vehicle.partner.status !== 'ACTIVE') {
       throw new PartnerOperationsError(
         'VEHICLE_UNAVAILABLE',
         'This direct supplier vehicle is no longer available.',
@@ -2010,6 +2075,12 @@ export const partnerOperationsService = {
       throw new PartnerOperationsError('VEHICLE_NOT_FOUND', 'The vehicle was not found.');
     if (vehicle.status === input.status) return vehicle;
     if (input.status === 'ACTIVE') {
+      if (vehicle.approvalStatus !== 'APPROVED') {
+        throw new PartnerOperationsError(
+          'VEHICLE_APPROVAL_REQUIRED',
+          'An administrator must approve this vehicle before it can be restored to sale.',
+        );
+      }
       if (!vehicle.registrationNumber) {
         throw new PartnerOperationsError(
           'REGISTRATION_REQUIRED',
@@ -2025,7 +2096,10 @@ export const partnerOperationsService = {
       }
     }
     return prisma.partnerVehicle.update({
-      data: { status: input.status },
+      data: {
+        publicationStatus: input.status === 'ACTIVE' ? 'PUBLISHED' : 'PAUSED',
+        status: input.status,
+      },
       where: { id: vehicle.id },
     });
   },
@@ -2207,6 +2281,8 @@ export const partnerOperationsService = {
         },
       },
       where: {
+        approvalStatus: 'APPROVED',
+        publicationStatus: 'PUBLISHED',
         status: 'ACTIVE',
       },
     });

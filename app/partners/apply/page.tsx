@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
+import { PARTNER_ONBOARDING_PRICE } from '@/lib/partner/onboardingCommercialRules';
 
 export const metadata: Metadata = {
   robots: { follow: false, index: false },
@@ -57,6 +58,23 @@ export default async function PartnerApplicationPage() {
           Tell us about your hotel or car fleet. Access is activated only after a platform
           administrator reviews the business.
         </p>
+        <Card>
+          <p className="hotel-page__eyebrow">Supplier software plan</p>
+          <h2>
+            ₹{(PARTNER_ONBOARDING_PRICE.oneTimeSetupAmount / 100).toLocaleString('en-IN')} setup + ₹
+            {(PARTNER_ONBOARDING_PRICE.monthlySubscriptionAmount / 100).toLocaleString('en-IN')}
+            /month
+          </h2>
+          <p>
+            Approved launch coupons can waive the first amount, including reducing it to ₹0. A
+            coupon never bypasses identity, agreement, tax, safety, or listing review.
+          </p>
+          <small>
+            Recurring billing starts only after a separate mandate and consent. Payment enrollment
+            remains disabled until PayU reconciliation, phone OTP, and the final counsel-approved
+            agreement are active.
+          </small>
+        </Card>
       </div>
       {application?.status === 'PENDING' ? (
         <Card className="partner-application__status">

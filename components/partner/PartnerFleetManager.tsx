@@ -28,6 +28,8 @@ type Vehicle = {
   pricePerDay: number;
   totalUnits: number;
   status: string;
+  approvalStatus: string;
+  publicationStatus: string;
   inventoryDays: Array<{
     serviceDate: string;
     availableUnits: number;
@@ -95,7 +97,7 @@ export function PartnerFleetManager({
       setError(result && 'error' in result ? result.error.message : 'Vehicle could not be added.');
     else {
       event.currentTarget.reset();
-      setMessage('Vehicle added to the live supplier fleet.');
+      setMessage('Vehicle submitted for administrator review. It is not yet visible to customers.');
       setVehicles(await fetchVehicles());
     }
     setBusy(false);
@@ -293,14 +295,15 @@ export function PartnerFleetManager({
             </p>
             <strong>₹{vehicle.pricePerDay.toLocaleString('en-IN')} / day</strong>
             <p>
-              Distribution status: <strong>{vehicle.status}</strong>
+              Distribution status: <strong>{vehicle.publicationStatus}</strong> · review:{' '}
+              <strong>{vehicle.approvalStatus.replaceAll('_', ' ')}</strong>
             </p>
             <Button
               disabled={!canCreateVehicles || busy}
               onClick={() => updateVehicleStatus(vehicle)}
               variant="secondary"
             >
-              {vehicle.status === 'ACTIVE' ? 'Pause vehicle sales' : 'Restore vehicle sales'}
+              {vehicle.status === 'ACTIVE' ? 'Pause vehicle sales' : 'Restore approved vehicle'}
             </Button>
             <form className="supplier-form" onSubmit={(event) => saveCompliance(event, vehicle.id)}>
               <h3>Compliance and document expiries</h3>
