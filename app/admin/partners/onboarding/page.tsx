@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import {
+  AdminAgreementDraftForm,
+  AdminAgreementLifecycle,
   AdminOnboardingCouponCreateForm,
   AdminOnboardingCouponStatus,
 } from '@/components/admin/AdminPartnerOnboardingManager';
@@ -25,7 +27,7 @@ function money(value: number, currency: string) {
 
 export default async function AdminPartnerOnboardingPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners/onboarding');
-  const [enabled, coupons, orders, couponEvents] = await Promise.all([
+  const [enabled, coupons, orders, couponEvents, agreements, agreementEvents] = await Promise.all([
     isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING'),
     prisma.partnerOnboardingCoupon.findMany({
       include: { createdBy: { select: { firstName: true, lastName: true } } },
@@ -47,6 +49,23 @@ export default async function AdminPartnerOnboardingPage() {
       include: {
         actor: { select: { firstName: true, lastName: true } },
         coupon: { select: { code: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    }),
+    prisma.partnerAgreementVersion.findMany({
+      include: {
+        _count: { select: { acceptances: true } },
+        createdBy: { select: { firstName: true, lastName: true } },
+        release: { select: { key: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    prisma.partnerAgreementVersionEvent.findMany({
+      include: {
+        actor: { select: { firstName: true, lastName: true } },
+        agreementVersion: { select: { version: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -114,10 +133,108 @@ export default async function AdminPartnerOnboardingPage() {
           <strong>{orders.filter((order) => order.completedAt).length}</strong>
         </Card>
         <Card>
-          <span>Usable waiver coupons</span>
-          <strong>{usableCoupons}</strong>
+          <span>Released agreement</span>
+          <strong>{agreements.find((agreement) => agreement.release)?.version ?? 'NONE'}</strong>
         </Card>
       </div>
+
+      <Card>
+        <h2>Create an agreement draft</h2>
+        <p>
+          Paste only text supplied or approved for review by qualified Indian counsel. Mandyal
+          Travels does not generate legal terms automatically.
+        </p>
+        <AdminAgreementDraftForm />
+      </Card>
+
+      <section className="account-trips">
+        <div className="account-trips__heading">
+          <p className="hotel-page__eyebrow">Binding evidence controls</p>
+          <h2>Supplier agreement versions</h2>
+        </div>
+        <Card className="business-report__table-card">
+          <div className="business-report__table-scroll">
+            <table className="business-report__table">
+              <thead>
+                <tr>
+                  <th>Agreement</th>
+                  <th>Integrity</th>
+                  <th>Lifecycle</th>
+                  <th>Acceptances</th>
+                  <th>Control</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agreements.map((agreement) => (
+                  <tr key={agreement.id}>
+                    <td>
+                      <strong>{agreement.version}</strong>
+                      <span>{agreement.title}</span>
+                      <span>
+                        Created by {agreement.createdBy.firstName} {agreement.createdBy.lastName}
+                      </span>
+                      <details>
+                        <summary>Review exact immutable text</summary>
+                        <pre className="agreement-governance__content">{agreement.content}</pre>
+                      </details>
+                    </td>
+                    <td>
+                      SHA-256
+                      <span>{agreement.contentHash.slice(0, 16)}…</span>
+                      <span>Control version {agreement.governanceVersion}</span>
+                    </td>
+                    <td>
+                      <strong>{agreement.status}</strong>
+                      <span>{agreement.release ? 'CURRENT RELEASE' : 'Not released'}</span>
+                      <span>Effective: {date(agreement.effectiveAt)}</span>
+                      <span>Retired: {date(agreement.retiredAt)}</span>
+                    </td>
+                    <td>{agreement._count.acceptances.toLocaleString('en-IN')}</td>
+                    <td>
+                      <AdminAgreementLifecycle
+                        agreementId={agreement.id}
+                        governanceVersion={agreement.governanceVersion}
+                        status={agreement.status}
+                        versionLabel={agreement.version}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {agreements.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No supplier agreement drafts exist.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </section>
+
+      <section>
+        <p className="hotel-page__eyebrow">Immutable legal-control activity</p>
+        <h2>Agreement audit history</h2>
+        <div className="supplier-admin__grid">
+          {agreementEvents.map((event) => (
+            <Card key={event.id}>
+              <strong>
+                {event.agreementVersion.version} · {event.action}
+              </strong>
+              <p>{event.reason}</p>
+              <small>
+                {event.legalApprovalReference
+                  ? `Counsel record: ${event.legalApprovalReference} · `
+                  : ''}
+                Version {event.version} · {event.actor.firstName} {event.actor.lastName} ·{' '}
+                {date(event.createdAt)}
+              </small>
+            </Card>
+          ))}
+          {agreementEvents.length === 0 ? (
+            <Card>No agreement lifecycle decisions have been recorded.</Card>
+          ) : null}
+        </div>
+      </section>
 
       <Card>
         <h2>Create a launch waiver</h2>
@@ -269,6 +386,11 @@ export default async function AdminPartnerOnboardingPage() {
           ) : null}
         </div>
       </section>
+
+      <Card>
+        <span>Currently usable waiver coupons</span>
+        <strong>{usableCoupons.toLocaleString('en-IN')}</strong>
+      </Card>
     </section>
   );
 }

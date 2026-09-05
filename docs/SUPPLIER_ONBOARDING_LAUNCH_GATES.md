@@ -31,6 +31,10 @@ Status: implementation and legal review checklist. This is not legal advice or a
 - Browser redirects and signed PayU webhooks both use server-side `verify_payment`; browser-provided success text never marks an order captured.
 - Full-waiver coupons are created by a platform administrator, bounded by a start/end time and optional usage cap, and cannot be consumed repeatedly by the same supplier account.
 - Agreement acceptance stores the exact approved content hash and hashed request evidence. It requires a current provider-backed phone-verification record and a captured or waived enrollment order.
+- Agreement text is stored as an immutable, server-hashed draft. Releasing it requires an exact
+  confirmation, the current governance version, a decision reason, and a counsel-approval reference.
+  Releasing a new version atomically supersedes the previous release, and only the single current
+  release can be accepted.
 - Supplier application submission and administrator approval independently re-check the completed enrollment when `PAID_PARTNER_ONBOARDING` is enabled.
 - `PAID_PARTNER_ONBOARDING` remains disabled by default. The UI and data model being present do not authorize production enrollment.
 

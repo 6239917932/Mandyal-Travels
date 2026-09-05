@@ -209,11 +209,14 @@ export async function acceptPartnerAgreement(input: {
   userAgent: string;
   userId: string;
 }) {
-  const agreement = await prisma.partnerAgreementVersion.findUnique({
-    where: { version: input.agreementVersion },
+  const release = await prisma.partnerAgreementRelease.findUnique({
+    include: { agreementVersion: true },
+    where: { key: 'SUPPLIER_ONBOARDING' },
   });
+  const agreement = release?.agreementVersion;
   if (
     !agreement ||
+    agreement.version !== input.agreementVersion ||
     agreement.status !== 'APPROVED' ||
     !agreement.effectiveAt ||
     agreement.effectiveAt > new Date()
@@ -246,7 +249,6 @@ export async function acceptPartnerAgreement(input: {
     const order = await transaction.partnerOnboardingOrder.findFirst({
       orderBy: { createdAt: 'desc' },
       where: {
-        agreementAcceptanceId: null,
         status: { in: ['CAPTURED', 'WAIVED'] },
         userId: input.userId,
       },
@@ -286,7 +288,10 @@ export async function assertPartnerEnrollmentComplete(userId: string) {
   const order = await prisma.partnerOnboardingOrder.findFirst({
     include: {
       agreementAcceptance: {
-        include: { agreementVersion: true, phoneVerification: true },
+        include: {
+          agreementVersion: { include: { release: true } },
+          phoneVerification: true,
+        },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -300,6 +305,7 @@ export async function assertPartnerEnrollmentComplete(userId: string) {
     !acceptance ||
     acceptance.contentHash !== agreement?.contentHash ||
     agreement.status !== 'APPROVED' ||
+    agreement.release?.key !== 'SUPPLIER_ONBOARDING' ||
     !agreement.effectiveAt ||
     agreement.effectiveAt > new Date() ||
     verification?.status !== 'VERIFIED' ||

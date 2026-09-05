@@ -359,3 +359,50 @@ test('onboarding coupon lifecycle is stale-write protected and audited atomicall
   assert.match(schema, /model PartnerOnboardingCouponEvent/);
   assert.match(schema, /@@unique\(\[couponId, version\]\)/);
 });
+
+test('supplier agreement drafts are immutable, server-hashed and never self-approved', async () => {
+  const [route, manager, schema] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/admin/partners/onboarding/agreements/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(
+      new URL('../components/admin/AdminPartnerOnboardingManager.tsx', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../prisma/schema.prisma', import.meta.url), 'utf8'),
+  ]);
+  assert.match(route, /createHash\('sha256'\)/);
+  assert.match(route, /status: 'DRAFT'/);
+  assert.match(route, /CREATED_DRAFT/);
+  assert.match(route, /legalApprovalReference/);
+  assert.match(manager, /Create immutable draft/);
+  assert.match(manager, /Counsel approval reference/);
+  assert.match(schema, /model PartnerAgreementVersionEvent/);
+  assert.match(schema, /model PartnerAgreementRelease/);
+  assert.match(schema, /content\s+String/);
+});
+
+test('agreement release decisions are exact, version-safe, atomic and single-pointer governed', async () => {
+  const [route, enrollment, operations, applicationPage] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/admin/partners/onboarding/agreements/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../services/partnerEnrollmentService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../services/partnerOperationsService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/partners/apply/page.tsx', import.meta.url), 'utf8'),
+  ]);
+  assert.match(route, /isSameOriginMutation/);
+  assert.match(route, /getPlatformAdmin/);
+  assert.match(route, /governanceVersion: expectedVersion/);
+  assert.match(route, /updateMany/);
+  assert.match(route, /partnerAgreementRelease\.upsert/);
+  assert.match(route, /partnerAgreementVersionEvent\.create/);
+  assert.match(route, /confirmation !== `\$\{action\} \$\{current\.version\}`/);
+  assert.match(route, /SUPERSEDED/);
+  assert.match(enrollment, /partnerAgreementRelease\.findUnique/);
+  assert.match(enrollment, /agreement\.release\?\.key !== 'SUPPLIER_ONBOARDING'/);
+  assert.match(operations, /agreement\.release\?\.key !== 'SUPPLIER_ONBOARDING'/);
+  assert.match(applicationPage, /agreement\.release\?\.key === 'SUPPLIER_ONBOARDING'/);
+});

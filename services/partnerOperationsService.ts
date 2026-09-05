@@ -515,7 +515,10 @@ export const partnerOperationsService = {
         const enrollment = await transaction.partnerOnboardingOrder.findFirst({
           include: {
             agreementAcceptance: {
-              include: { agreementVersion: true, phoneVerification: true },
+              include: {
+                agreementVersion: { include: { release: true } },
+                phoneVerification: true,
+              },
             },
           },
           orderBy: { createdAt: 'desc' },
@@ -532,6 +535,7 @@ export const partnerOperationsService = {
           !acceptance ||
           acceptance.contentHash !== agreement?.contentHash ||
           agreement.status !== 'APPROVED' ||
+          agreement.release?.key !== 'SUPPLIER_ONBOARDING' ||
           !agreement.effectiveAt ||
           agreement.effectiveAt > new Date() ||
           phone?.status !== 'VERIFIED' ||

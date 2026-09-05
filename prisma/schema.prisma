@@ -78,6 +78,8 @@ model User {
   createdOnboardingCoupons    PartnerOnboardingCoupon[]       @relation("PartnerOnboardingCouponCreator")
   onboardingCouponEvents      PartnerOnboardingCouponEvent[]  @relation("PartnerOnboardingCouponEventActor")
   createdPartnerAgreements    PartnerAgreementVersion[]       @relation("PartnerAgreementCreator")
+  partnerAgreementEvents      PartnerAgreementVersionEvent[]  @relation("PartnerAgreementEventActor")
+  updatedPartnerAgreementReleases PartnerAgreementRelease[]   @relation("PartnerAgreementReleaseUpdater")
 
   @@index([role, accessStatus])
 }
@@ -649,20 +651,58 @@ model PartnerVehicle {
 }
 
 model PartnerAgreementVersion {
-  id              String                       @id @default(cuid())
-  version         String                       @unique
-  title           String
-  contentHash     String
-  status          String                       @default("DRAFT")
-  effectiveAt     DateTime?
-  createdByUserId String
-  createdAt       DateTime                     @default(now())
-  createdBy       User                         @relation("PartnerAgreementCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  acceptances     PartnerAgreementAcceptance[]
+  id                String                         @id @default(cuid())
+  version           String                         @unique
+  title             String
+  content           String                         @default("")
+  contentHash       String
+  status            String                         @default("DRAFT")
+  governanceVersion Int                            @default(1)
+  effectiveAt       DateTime?
+  approvedAt        DateTime?
+  retiredAt         DateTime?
+  createdByUserId   String
+  createdAt         DateTime                       @default(now())
+  updatedAt         DateTime                       @updatedAt
+  createdBy         User                           @relation("PartnerAgreementCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  acceptances       PartnerAgreementAcceptance[]
+  events            PartnerAgreementVersionEvent[]
+  release           PartnerAgreementRelease?
 
   @@index([status, effectiveAt])
 }
 
+model PartnerAgreementVersionEvent {
+  id                     String                  @id @default(cuid())
+  agreementVersionId     String
+  actorUserId            String
+  action                 String
+  fromStatus             String?
+  toStatus               String
+  reason                 String
+  legalApprovalReference String?
+  version                Int
+  createdAt              DateTime                @default(now())
+  agreementVersion       PartnerAgreementVersion @relation(fields: [agreementVersionId], references: [id], onDelete: Cascade)
+  actor                  User                    @relation("PartnerAgreementEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([agreementVersionId, version])
+  @@index([agreementVersionId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model PartnerAgreementRelease {
+  key                String                  @id
+  agreementVersionId String                  @unique
+  version            Int                     @default(1)
+  updatedByUserId    String
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  agreementVersion   PartnerAgreementVersion @relation(fields: [agreementVersionId], references: [id], onDelete: Restrict)
+  updatedBy          User                    @relation("PartnerAgreementReleaseUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([updatedByUserId, updatedAt])
+}
 model PartnerPhoneVerification {
   id          String                       @id @default(cuid())
   userId      String

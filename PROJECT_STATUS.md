@@ -262,7 +262,7 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
-- Deterministic PostgreSQL schema materialization with a reviewable 106-table native baseline, Prisma
+- Deterministic PostgreSQL schema materialization with a reviewable 108-table native baseline, Prisma
   Client generation, and CI drift detection that requires no provider credentials or live connection
 
 ### Security and reliability controls
@@ -385,6 +385,13 @@ All administrator approve, reject, pause, archive, and restore decisions require
 version shown to the reviewer. The state change and audit event commit together, so a concurrent
 supplier or administrator update cannot be silently overwritten by a stale decision.
 
+Supplier agreements now have an administrator-only immutable draft and release workflow. Exact
+agreement text is normalized and SHA-256 hashed on the server; approval requires the current
+governance version, an exact typed confirmation, a decision reason, and a recorded counsel-approval
+reference. A single release pointer governs the acceptable version, approving a replacement
+atomically supersedes the previous release, and each lifecycle decision is append-only audited.
+This operational control does not replace counsel review or enable paid supplier onboarding.
+
 Direct bus-operator inventory now participates in customer search alongside the bounded fixture
 adapter. Search subtracts confirmed reservations from seat capacity, supports overnight arrivals,
 and exposes only active routes, trips, and partners. Booking completion reserves the customer's
@@ -432,6 +439,6 @@ until completion, and completed rentals remain included in confirmed-value perfo
 The current travel-domain milestone passes 560 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
 internal worker routes, clean-database verification of all 82 SQLite migrations with foreign-key
-integrity enabled, a synchronized 106-table PostgreSQL-native baseline, and the portable deployment
+integrity enabled, a synchronized 108-table PostgreSQL-native baseline, and the portable deployment
 contract. Provider integration work must preserve those checks and add provider-specific automated
 tests before going live.
