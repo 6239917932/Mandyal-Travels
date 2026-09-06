@@ -19,6 +19,7 @@ import { AccountAccessDeniedError, createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
+import { isEmailOtpRequired, issueEmailOtp, verifyEmailOtp } from '@/services/emailOtpService';
 import { verifyUserSecondFactor } from '@/services/mfaService';
 
 const LOGIN_ATTEMPT_LIMIT = 8;
@@ -81,6 +82,56 @@ export async function POST(request: Request) {
           { error: 'The authentication code is incorrect.', mfaRequired: true },
           { status: 401 },
         );
+      }
+    }
+
+    if (isEmailOtpRequired()) {
+      const emailOtpChallengeId =
+        typeof body.emailOtpChallengeId === 'string' ? body.emailOtpChallengeId : '';
+      const emailOtpCode = typeof body.emailOtpCode === 'string' ? body.emailOtpCode.trim() : '';
+      if (!emailOtpChallengeId) {
+        try {
+          const challenge = await issueEmailOtp({
+            email: user.email,
+            firstName: user.firstName,
+            purpose: 'LOGIN',
+            userId: user.id,
+          });
+          return NextResponse.json(
+            {
+              emailOtpChallengeId: challenge.challengeId,
+              emailOtpRequired: true,
+              error: 'Enter the six-digit code sent to your email address.',
+            },
+            { status: 401 },
+          );
+        } catch (error) {
+          console.error('Sign-in email OTP could not be delivered.', error);
+          return NextResponse.json(
+            { error: 'A verification code could not be delivered. Please try again later.' },
+            { status: 503 },
+          );
+        }
+      }
+      if (
+        !(await verifyEmailOtp({
+          challengeId: emailOtpChallengeId,
+          code: emailOtpCode,
+          purpose: 'LOGIN',
+          userId: user.id,
+        }))
+      ) {
+        return NextResponse.json(
+          {
+            emailOtpChallengeId,
+            emailOtpRequired: true,
+            error: 'The email verification code is incorrect or expired.',
+          },
+          { status: 401 },
+        );
+      }
+      if (!user.emailVerifiedAt) {
+        await prisma.user.update({ data: { emailVerifiedAt: new Date() }, where: { id: user.id } });
       }
     }
 
