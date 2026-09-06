@@ -26,6 +26,9 @@ export function AuthForm({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [emailOtpRequired, setEmailOtpRequired] = useState(false);
+  const [emailOtpChallengeId, setEmailOtpChallengeId] = useState('');
+  const [verificationMessage, setVerificationMessage] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,15 +48,33 @@ export function AuthForm({
           organizationName: form.get('organizationName'),
           password: form.get('password'),
           mfaCode: form.get('mfaCode'),
+          emailOtpCode: form.get('emailOtpCode'),
+          emailOtpChallengeId,
           returnTo,
         }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       });
       const result =
-        (await readJsonResponse<{ error?: string; mfaRequired?: boolean; redirectTo?: string }>(
-          response,
-        )) ?? {};
+        (await readJsonResponse<{
+          emailOtpChallengeId?: string;
+          emailOtpRequired?: boolean;
+          error?: string;
+          message?: string;
+          mfaRequired?: boolean;
+          redirectTo?: string;
+        }>(response)) ?? {};
+
+      if (result.emailOtpRequired && result.emailOtpChallengeId) {
+        const newlyIssued = result.emailOtpChallengeId !== emailOtpChallengeId;
+        setEmailOtpRequired(true);
+        setEmailOtpChallengeId(result.emailOtpChallengeId);
+        if (newlyIssued) {
+          setVerificationMessage(result.message ?? result.error ?? 'Enter the code sent by email.');
+        }
+        setError(newlyIssued ? '' : (result.error ?? 'The verification code was not accepted.'));
+        return;
+      }
 
       if (!response.ok) {
         setMfaRequired(Boolean(result.mfaRequired));
@@ -91,6 +112,11 @@ export function AuthForm({
       {message ? (
         <p className="business-policy__success" role="status">
           {message}
+        </p>
+      ) : null}
+      {verificationMessage ? (
+        <p className="business-policy__success" role="status">
+          {verificationMessage}
         </p>
       ) : null}
       {isRegister ? (
@@ -156,6 +182,21 @@ export function AuthForm({
           />
         </label>
       ) : null}
+      {emailOtpRequired ? (
+        <label className="ui-field">
+          <span className="ui-field__label">Email verification code</span>
+          <input
+            autoComplete="one-time-code"
+            className="ui-input"
+            inputMode="numeric"
+            maxLength={6}
+            name="emailOtpCode"
+            pattern="[0-9]{6}"
+            required
+          />
+          <small>Enter the six-digit code. It expires after 10 minutes.</small>
+        </label>
+      ) : null}
       <label className="ui-field">
         <span className="ui-field__label">Password</span>
         <input
@@ -193,13 +234,17 @@ export function AuthForm({
       <button className="ui-button ui-button--accent ui-button--full-width" disabled={isSubmitting}>
         {isSubmitting
           ? 'Please wait...'
-          : isRegister && accountType === 'agent'
-            ? 'Create travel agency account'
-            : isRegister && accountType === 'business'
-              ? 'Create business account'
-              : isRegister
-                ? 'Create account'
-                : 'Sign in'}
+          : emailOtpRequired
+            ? isRegister
+              ? 'Verify code and finish registration'
+              : 'Verify code and sign in'
+            : isRegister && accountType === 'agent'
+              ? 'Create travel agency account'
+              : isRegister && accountType === 'business'
+                ? 'Create business account'
+                : isRegister
+                  ? 'Create account'
+                  : 'Sign in'}
       </button>
 
       {!isRegister && loginAudience === 'admin' ? (
