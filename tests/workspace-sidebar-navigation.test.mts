@@ -76,8 +76,8 @@ test('hotel partner sidebar includes the complete governed PMS registry without 
   ]);
   assert.match(partnerLayout, /pmsModuleGroups/);
   assert.match(partnerLayout, /pmsModules/);
-  assert.match(partnerLayout, /module\.href/);
-  assert.match(partnerLayout, /Phase \$\{module\.phase\}/);
+  assert.match(partnerLayout, /getPmsModuleHref\(module\)/);
+  assert.match(partnerLayout, /module\.status === 'LIVE'/);
   assert.match(partnerLayout, /Tax and billing/);
   assert.doesNotMatch(partnerPage, /className="admin-hero__actions"/);
   assert.doesNotMatch(pmsLayout, /pms-sidebar/);

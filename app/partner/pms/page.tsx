@@ -4,7 +4,12 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { countPmsModules, pmsModuleGroups, pmsModules } from '@/lib/pms/moduleRegistry';
+import {
+  countPmsModules,
+  getPmsModuleHref,
+  pmsModuleGroups,
+  pmsModules,
+} from '@/lib/pms/moduleRegistry';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'Mandyal PMS control centre' };
@@ -131,8 +136,9 @@ export default async function PmsControlCentrePage() {
       <div className="pms-control-centre__notice" role="note">
         <strong>Controlled rollout</strong>
         <span>
-          Live links use production data today. Foundation and planned areas are listed for delivery
-          visibility, but cannot be opened or mistaken for completed software.
+          Every module now opens from the persistent sidebar. Live links use production data;
+          foundation and planned workspaces show their governed delivery scope without exposing
+          unfinished transactions.
         </span>
       </div>
 
@@ -161,13 +167,9 @@ export default async function PmsControlCentrePage() {
                   </div>
                   <h3>{module.name}</h3>
                   <p>{module.description}</p>
-                  {module.href ? (
-                    <Link className="home-card__link" href={module.href}>
-                      Open module
-                    </Link>
-                  ) : (
-                    <span className="pms-module-card__unavailable">Not enabled yet</span>
-                  )}
+                  <Link className="home-card__link" href={getPmsModuleHref(module)}>
+                    {module.status === 'LIVE' ? 'Open module' : 'Open workspace'}
+                  </Link>
                 </Card>
               ))}
           </div>

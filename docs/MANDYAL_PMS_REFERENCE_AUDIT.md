@@ -117,6 +117,8 @@ Exit criteria: every guest charge reaches one auditable folio and the hotel's da
 
 ## Current milestone
 
-The first original Mandyal PMS control centre is connected to live partner/property data. It reports
-operational date, occupancy, arrivals, departures, room readiness and pending amendments, links to
-the existing working modules, and visibly separates live, foundation and planned capabilities.
+The original Mandyal PMS control centre is connected to live partner/property data. It reports the
+operational date, occupancy, arrivals, departures, room readiness and pending amendments. Every
+approved module is reachable from the persistent sidebar: live modules open their production
+workflow, while foundation and planned modules open a controlled scope workspace that cannot
+submit unfinished transactions.
