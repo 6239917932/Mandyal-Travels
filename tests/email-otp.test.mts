@@ -38,5 +38,7 @@ test('email OTP is mandatory only behind an explicit delivery-ready flag', async
   assert.match(form, /name="emailOtpCode"/);
   assert.match(provider, /EMAIL_SMTP_ALLOWED_HOSTS/);
   assert.match(example, /AUTH_EMAIL_OTP_REQUIRED="false"/);
+  assert.match(example, /SESSION_SECRET="replace-with-a-different-long-random-secret"/);
+  assert.match(releaseVerifier, /'SESSION_SECRET'/);
   assert.match(releaseVerifier, /A configured SMTP or HTTPS email provider is required/);
 });
