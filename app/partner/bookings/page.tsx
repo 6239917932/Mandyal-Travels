@@ -359,10 +359,17 @@ export default function PartnerBookingsPage() {
                         {booking.status}
                       </strong>
                       <small>{booking.operationalStatus.replaceAll('_', ' ').toLowerCase()}</small>
+                      <small>
+                        {booking.source === 'PARTNER_DIRECT' ? 'Direct / walk-in' : 'Online'}
+                      </small>
                     </div>
                     <div>
                       <span>Payment</span>
-                      <strong>{booking.paymentStatus}</strong>
+                      <strong>
+                        {booking.source === 'PARTNER_DIRECT' && booking.paymentStatus === 'pending'
+                          ? 'Due at property'
+                          : booking.paymentStatus}
+                      </strong>
                     </div>
                     <div>
                       <span>Total</span>

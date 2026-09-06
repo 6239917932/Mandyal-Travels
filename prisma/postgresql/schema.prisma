@@ -1389,6 +1389,7 @@ model Booking {
   idempotencyKey          String                   @unique
   accessTokenHash         String?                  @unique
   hotelSlug               String
+  source                  String                   @default("ONLINE")
   status                  String
   operationalStatus       String                   @default("RESERVED")
   assignedRoomNumbersJson String                   @default("[]")

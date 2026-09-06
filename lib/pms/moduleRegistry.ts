@@ -62,9 +62,10 @@ export const pmsModules: readonly PmsModule[] = [
     code: 'WI',
     description: 'Create a direct desk reservation and register an immediate arrival.',
     group: 'Front office and operations',
+    href: '/partner/pms/walk-in',
     name: 'Walk-in booking',
     phase: 1,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'NA',
