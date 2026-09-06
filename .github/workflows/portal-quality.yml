@@ -64,3 +64,43 @@ jobs:
 
       - name: Build standalone web image
         run: docker build --target runner --tag mandyal-travels:${{ github.sha }} .
+
+  postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: mandyal_ci
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mandyal_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mandyal_ci?schema=public&sslmode=disable
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mandyal_ci?schema=public&sslmode=disable
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply native PostgreSQL migrations
+        run: npm run db:deploy:postgresql
+
+      - name: Verify live PostgreSQL schema
+        run: npm run db:verify:postgresql:live

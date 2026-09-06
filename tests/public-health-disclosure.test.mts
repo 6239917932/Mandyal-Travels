@@ -10,4 +10,8 @@ test('public readiness health returns only generic dependency posture', () => {
   assert.doesNotMatch(route, /hotelbedsContent: hotelbeds/);
   assert.doesNotMatch(route, /pendingCount,/);
   assert.doesNotMatch(route, /deadLetterCount,/);
+  assert.match(route, /partnerOnboardingCouponEvent\.findFirst/);
+  assert.match(route, /partnerAgreementRelease\.findFirst/);
+  assert.match(route, /emailOtpChallenge\.findFirst/);
+  assert.match(route, /partnerPayoutAccountEvent\.findFirst/);
 });
