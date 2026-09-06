@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { countPmsModules, pmsModules } from '@/lib/pms/moduleRegistry';
+import { countPmsModules, pmsModuleGroups, pmsModules } from '@/lib/pms/moduleRegistry';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'Mandyal PMS control centre' };
@@ -78,7 +78,6 @@ export default async function PmsControlCentrePage() {
     .reduce((total, state) => total + state._count._all, 0);
   const activeRoomCount = Math.max(0, roomCount - unavailableRooms);
   const occupancy = activeRoomCount ? Math.round((inHouse / activeRoomCount) * 100) : 0;
-  const groups = [...new Set(pmsModules.map((module) => module.group))];
 
   return (
     <section className="account-page partner-workspace pms-control-centre">
@@ -148,7 +147,7 @@ export default async function PmsControlCentrePage() {
         </span>
       </div>
 
-      {groups.map((group) => (
+      {pmsModuleGroups.map((group) => (
         <section className="pms-control-centre__group" key={group}>
           <div className="pms-control-centre__group-heading">
             <p className="hotel-page__eyebrow">{group}</p>
