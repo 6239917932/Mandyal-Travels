@@ -11,7 +11,14 @@ import { normalizeAdminSearchProjectionHealth } from '@/services/adminSearchProj
 export async function getHotelSearchProjectionHealth() {
   const [properties, projections] = await Promise.all([
     prisma.partnerProperty.findMany({
-      where: { status: 'ACTIVE', publicationStatus: 'PUBLISHED' },
+      where: {
+        partner: {
+          applications: { some: { kycStatus: 'VERIFIED', status: 'APPROVED' } },
+          status: 'ACTIVE',
+        },
+        status: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
+      },
       include: { rooms: { where: { status: 'ACTIVE' } } },
     }),
     prisma.searchProjectionDocument.findMany({
@@ -54,7 +61,14 @@ export async function rebuildHotelSearchProjectionsInTransaction(
   options?: { maximumSourceCount?: number },
 ) {
   const properties = await transaction.partnerProperty.findMany({
-    where: { status: 'ACTIVE', publicationStatus: 'PUBLISHED' },
+    where: {
+      partner: {
+        applications: { some: { kycStatus: 'VERIFIED', status: 'APPROVED' } },
+        status: 'ACTIVE',
+      },
+      status: 'ACTIVE',
+      publicationStatus: 'PUBLISHED',
+    },
     include: { rooms: { where: { status: 'ACTIVE' } } },
   });
   if (options?.maximumSourceCount !== undefined && properties.length > options.maximumSourceCount) {

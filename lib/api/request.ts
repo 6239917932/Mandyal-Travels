@@ -1,3 +1,5 @@
+import { isTrustedPortalMutation } from './portalOrigin.ts';
+
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 64 * 1024;
 export const DEFAULT_TEXT_BODY_LIMIT_BYTES = 256 * 1024;
 
@@ -72,12 +74,7 @@ export function isSameOriginMutation(request: Request): boolean {
 
   const origin = request.headers.get('origin');
   if (!origin) return fetchSite === 'same-origin';
-
-  try {
-    return new URL(origin).origin === new URL(request.url).origin;
-  } catch {
-    return false;
-  }
+  return isTrustedPortalMutation(request, process.env.PUBLIC_APP_ORIGIN);
 }
 
 export async function readTextBody(

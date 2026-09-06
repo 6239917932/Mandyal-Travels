@@ -89,8 +89,14 @@ test('hotel GST moves to 18 percent when the public nightly value exceeds the th
 
 test('marketplace publication and live checkout remain independently gated', () => {
   const hotelRepository = readFileSync('repositories/hotelRepository.ts', 'utf8');
+  const carRepository = readFileSync('repositories/carOfferRepository.ts', 'utf8');
+  const partnerOperations = readFileSync('services/partnerOperationsService.ts', 'utf8');
   const checkoutRoute = readFileSync('app/api/v1/payments/checkout-intents/route.ts', 'utf8');
   assert.match(hotelRepository, /isPlatformFeatureEnabled\('PUBLIC_PARTNER_LISTINGS'\)/);
+  assert.match(hotelRepository, /kycStatus: 'VERIFIED', status: 'APPROVED'/);
+  assert.match(carRepository, /isPlatformFeatureEnabled\('CAR_MARKETPLACE'\)/);
+  assert.match(partnerOperations, /isPlatformFeatureEnabled\('CAR_MARKETPLACE'\)/);
+  assert.match(partnerOperations, /kycStatus: 'VERIFIED', status: 'APPROVED'/);
   assert.match(checkoutRoute, /isPlatformFeatureEnabled\('LIVE_MARKETPLACE_PAYMENTS'\)/);
   assert.match(checkoutRoute, /LIVE_PAYMENTS_NOT_APPROVED/);
 });

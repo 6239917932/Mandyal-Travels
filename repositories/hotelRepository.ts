@@ -21,7 +21,16 @@ export class InMemoryHotelRepository implements HotelRepository {
       ? await Promise.allSettled([
           prisma.partnerProperty.findMany({
             include: {
-              partner: { include: { taxProfile: true } },
+              partner: {
+                include: {
+                  applications: {
+                    select: { id: true },
+                    take: 1,
+                    where: { kycStatus: 'VERIFIED', status: 'APPROVED' },
+                  },
+                  taxProfile: true,
+                },
+              },
               rooms: {
                 include: {
                   ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } },
@@ -45,6 +54,7 @@ export class InMemoryHotelRepository implements HotelRepository {
       .filter(
         (property) =>
           property.partner.status === 'ACTIVE' &&
+          property.partner.applications.length > 0 &&
           property.partner.commissionBasisPoints === 2_000 &&
           property.partner.taxProfile?.reviewStatus === 'VERIFIED' &&
           ['REGISTERED', 'UNREGISTERED'].includes(
