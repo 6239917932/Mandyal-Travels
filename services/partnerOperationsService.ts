@@ -20,6 +20,7 @@ import {
   evaluateVehicleListingRisk,
   vehicleMayBePublished,
 } from '@/lib/partner/listingRiskRules';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -487,6 +488,7 @@ export const partnerOperationsService = {
     decision: 'APPROVE' | 'REJECT';
     reviewNote: string;
     reviewerUserId: string;
+    trialWorkspaceAllowed?: boolean;
   }) {
     return prisma.$transaction(async (transaction) => {
       const application = await transaction.partnerApplication.findUnique({
@@ -563,7 +565,7 @@ export const partnerOperationsService = {
         partnerType: application.partnerType,
         today: new Date().toISOString().slice(0, 10),
       });
-      if (!kycSummary.complete) {
+      if (!kycSummary.complete && !input.trialWorkspaceAllowed) {
         const blocked = [...kycSummary.missing, ...kycSummary.expired];
         throw new PartnerOperationsError(
           'KYC_EVIDENCE_INCOMPLETE',
@@ -611,9 +613,14 @@ export const partnerOperationsService = {
           actorUserId: input.reviewerUserId,
           entityId: application.id,
           entityType: 'PARTNER_APPLICATION',
-          metadataJson: JSON.stringify({ partnerType: application.partnerType }),
+          metadataJson: JSON.stringify({
+            partnerType: application.partnerType,
+            trialWorkspace: !kycSummary.complete,
+          }),
           partnerId: partner.id,
-          summary: 'Supplier application approved and secure workspace provisioned.',
+          summary: kycSummary.complete
+            ? 'Supplier application approved and secure workspace provisioned.'
+            : 'Private trial supplier workspace provisioned; public inventory remains blocked pending verification.',
         },
       });
       await transaction.partnerKycDocument.updateMany({
@@ -626,7 +633,7 @@ export const partnerOperationsService = {
           reviewedAt: new Date(),
           reviewedByUserId: input.reviewerUserId,
           reviewNote: normalizeText(input.reviewNote, 500),
-          kycStatus: 'VERIFIED',
+          kycStatus: kycSummary.complete ? 'VERIFIED' : application.kycStatus,
           status: 'APPROVED',
         },
         where: { id: application.id },
@@ -2356,13 +2363,28 @@ export const partnerOperationsService = {
     },
   ) {
     if (!input.offerId.startsWith('direct-')) return null;
+    if (!(await isPlatformFeatureEnabled('CAR_MARKETPLACE'))) {
+      throw new PartnerOperationsError(
+        'VEHICLE_UNAVAILABLE',
+        'Direct supplier vehicles are not currently available.',
+      );
+    }
     const dates = enumerateDates(input.pickupDate, input.dropoffDate);
     const vehicle = await transaction.partnerVehicle.findUnique({
       include: {
         inventoryDays: {
           where: { serviceDate: { gte: input.pickupDate, lt: input.dropoffDate } },
         },
-        partner: { select: { status: true } },
+        partner: {
+          select: {
+            applications: {
+              select: { id: true },
+              take: 1,
+              where: { kycStatus: 'VERIFIED', status: 'APPROVED' },
+            },
+            status: true,
+          },
+        },
         reservations: {
           where: {
             dropoffDate: { gt: input.pickupDate },
@@ -2373,7 +2395,12 @@ export const partnerOperationsService = {
       },
       where: { code: input.offerId },
     });
-    if (!vehicle || !vehicleMayBePublished(vehicle) || vehicle.partner.status !== 'ACTIVE') {
+    if (
+      !vehicle ||
+      !vehicleMayBePublished(vehicle) ||
+      vehicle.partner.status !== 'ACTIVE' ||
+      vehicle.partner.applications.length === 0
+    ) {
       throw new PartnerOperationsError(
         'VEHICLE_UNAVAILABLE',
         'This direct supplier vehicle is no longer available.',
@@ -2648,13 +2675,24 @@ export const partnerOperationsService = {
   },
 
   async searchDirectVehicles(criteria: CarSearchCriteria): Promise<CarOffer[]> {
+    if (!(await isPlatformFeatureEnabled('CAR_MARKETPLACE'))) return [];
     const dates = enumerateDates(criteria.pickupDate, criteria.dropoffDate);
     const vehicles = await prisma.partnerVehicle.findMany({
       include: {
         inventoryDays: {
           where: { serviceDate: { gte: criteria.pickupDate, lt: criteria.dropoffDate } },
         },
-        partner: { select: { name: true, status: true } },
+        partner: {
+          select: {
+            applications: {
+              select: { id: true },
+              take: 1,
+              where: { kycStatus: 'VERIFIED', status: 'APPROVED' },
+            },
+            name: true,
+            status: true,
+          },
+        },
         reservations: {
           where: {
             dropoffDate: { gt: criteria.pickupDate },
@@ -2675,6 +2713,7 @@ export const partnerOperationsService = {
       .filter(
         (vehicle) =>
           vehicle.partner.status === 'ACTIVE' &&
+          vehicle.partner.applications.length > 0 &&
           vehicle.pickupLocation.trim().toLocaleLowerCase() === pickupLocation &&
           vehicle.dropoffLocation.trim().toLocaleLowerCase() === dropoffLocation,
       )

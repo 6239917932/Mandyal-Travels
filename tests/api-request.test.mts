@@ -87,3 +87,25 @@ test('same-origin mutation guard rejects cross-site and mismatched origins', () 
     true,
   );
 });
+
+test('same-origin mutation guard accepts official apex and www hosts behind a reverse proxy', () => {
+  const previousOrigin = process.env.PUBLIC_APP_ORIGIN;
+  process.env.PUBLIC_APP_ORIGIN = 'https://www.mandyaltravels.com';
+
+  try {
+    for (const origin of ['https://mandyaltravels.com', 'https://www.mandyaltravels.com']) {
+      assert.equal(
+        isSameOriginMutation(
+          new Request('https://mandyal-travels.onrender.com/api/v1/partners/applications', {
+            method: 'POST',
+            headers: { origin, 'sec-fetch-site': 'same-site' },
+          }),
+        ),
+        true,
+      );
+    }
+  } finally {
+    if (previousOrigin === undefined) delete process.env.PUBLIC_APP_ORIGIN;
+    else process.env.PUBLIC_APP_ORIGIN = previousOrigin;
+  }
+});

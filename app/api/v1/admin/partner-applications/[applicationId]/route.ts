@@ -23,14 +23,40 @@ export async function PATCH(request: Request, { params }: Context) {
     return failure('REVIEW_NOTE_REQUIRED', 'Add a short rejection reason.', 400);
   try {
     const { applicationId } = await params;
+    const [
+      paidOnboardingEnabled,
+      payoutOnboardingEnabled,
+      publicListingsEnabled,
+      livePaymentsEnabled,
+      carMarketplaceEnabled,
+      trialWorkspacesEnabled,
+    ] =
+      action === 'APPROVE'
+        ? await Promise.all([
+            isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING'),
+            isPlatformFeatureEnabled('PARTNER_PAYOUT_ONBOARDING'),
+            isPlatformFeatureEnabled('PUBLIC_PARTNER_LISTINGS'),
+            isPlatformFeatureEnabled('LIVE_MARKETPLACE_PAYMENTS'),
+            isPlatformFeatureEnabled('CAR_MARKETPLACE'),
+            isPlatformFeatureEnabled('TRIAL_PARTNER_WORKSPACES'),
+          ])
+        : [false, false, false, false, false, false];
+    const trialWorkspaceAllowed =
+      action === 'APPROVE' &&
+      trialWorkspacesEnabled &&
+      !paidOnboardingEnabled &&
+      !payoutOnboardingEnabled &&
+      !publicListingsEnabled &&
+      !livePaymentsEnabled &&
+      !carMarketplaceEnabled;
     return Response.json({
       data: await partnerOperationsService.reviewApplication({
         applicationId,
-        commercialGateRequired:
-          action === 'APPROVE' && (await isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING')),
+        commercialGateRequired: action === 'APPROVE' && paidOnboardingEnabled,
         decision: action,
         reviewerUserId: admin.id,
         reviewNote,
+        trialWorkspaceAllowed,
       }),
     });
   } catch (error) {

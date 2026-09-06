@@ -2,6 +2,7 @@ import { mockCarOffers } from '@/constants/carData';
 import { settleAvailableSources } from '@/lib/inventory/settleAvailableSources';
 import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { partnerOperationsService } from '@/services/partnerOperationsService';
+import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import type { CarOffer, CarSearchCriteria } from '@/types/car';
 
 export interface CarSupplierAdapter {
@@ -24,6 +25,7 @@ export class FixtureCarSupplierAdapter implements CarSupplierAdapter {
 
 export class DirectCarSupplierAdapter implements CarSupplierAdapter {
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
+    if (!(await isPlatformFeatureEnabled('CAR_MARKETPLACE'))) return [];
     if (criteria.rentalMode !== 'self-drive' || criteria.pickupTime !== criteria.dropoffTime)
       return [];
     return partnerOperationsService.searchDirectVehicles(criteria);

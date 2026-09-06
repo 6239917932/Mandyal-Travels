@@ -13,6 +13,13 @@ export const PLATFORM_FEATURES = [
     label: 'New partner applications',
   },
   {
+    defaultEnabled: true,
+    description:
+      'Allows administrator-provisioned private supplier workspaces for trial data entry while public listings, payouts, paid onboarding, and live payments remain disabled.',
+    key: 'TRIAL_PARTNER_WORKSPACES',
+    label: 'Private trial partner workspaces',
+  },
+  {
     defaultEnabled: false,
     description:
       'Controls paid or coupon-waived supplier enrollment. Enable only after PayU return reconciliation, approved agreement evidence, and phone OTP delivery are complete.',

@@ -295,6 +295,29 @@ test('paid enrollment is persistent, fixed-price and reconciled server-side', as
   assert.match(webhook, /reconcilePartnerOnboardingPayment/);
 });
 
+test('private trial workspaces remain isolated from public inventory and verified KYC', async () => {
+  const [reviewRoute, operations, hotels, cars] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/admin/partner-applications/[applicationId]/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(new URL('../services/partnerOperationsService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../repositories/hotelRepository.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../repositories/carOfferRepository.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(reviewRoute, /TRIAL_PARTNER_WORKSPACES/);
+  assert.match(reviewRoute, /!publicListingsEnabled/);
+  assert.match(reviewRoute, /!livePaymentsEnabled/);
+  assert.match(reviewRoute, /!carMarketplaceEnabled/);
+  assert.match(operations, /!kycSummary\.complete && !input\.trialWorkspaceAllowed/);
+  assert.match(
+    operations,
+    /kycStatus: kycSummary\.complete \? 'VERIFIED' : application\.kycStatus/,
+  );
+  assert.match(hotels, /kycStatus: 'VERIFIED', status: 'APPROVED'/);
+  assert.match(cars, /isPlatformFeatureEnabled\('CAR_MARKETPLACE'\)/);
+});
+
 test('agreement evidence and launch coupons are bounded and attributable', async () => {
   const [acceptance, coupons, schema] = await Promise.all([
     readFile(
