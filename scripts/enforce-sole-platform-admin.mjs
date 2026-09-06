@@ -3,6 +3,8 @@ import process from 'node:process';
 
 import pg from 'pg';
 
+import { postgreSqlClientOptions } from './lib/postgresql-client-options.mjs';
+
 const email = process.env.SOLE_PLATFORM_ADMIN_EMAIL?.trim().toLowerCase();
 
 if (!email) process.exit(0);
@@ -15,7 +17,7 @@ if (!databaseUrl || !/^postgres(?:ql)?:/i.test(databaseUrl)) {
   throw new Error('SOLE_PLATFORM_ADMIN_DATABASE_REQUIRED');
 }
 
-const client = new pg.Client({ connectionString: databaseUrl });
+const client = new pg.Client(postgreSqlClientOptions(databaseUrl));
 
 try {
   await client.connect();
