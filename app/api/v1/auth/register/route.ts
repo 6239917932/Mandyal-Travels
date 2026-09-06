@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
 import { readJsonObject } from '@/lib/api/request';
-import { hashPassword } from '@/lib/auth/password';
+import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
 import {
   clearRateLimit,
@@ -24,6 +24,7 @@ import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
 } from '@/services/accountSecurityService';
+import { isEmailOtpRequired, issueEmailOtp, verifyEmailOtp } from '@/services/emailOtpService';
 
 const REGISTRATION_ATTEMPT_LIMIT = 5;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
@@ -91,6 +92,69 @@ export async function POST(request: Request) {
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
+    if (
+      isEmailOtpRequired() &&
+      !existingUser.emailVerifiedAt &&
+      (await verifyPassword(password, existingUser.passwordHash))
+    ) {
+      const challengeId =
+        typeof body.emailOtpChallengeId === 'string' ? body.emailOtpChallengeId : '';
+      const code = typeof body.emailOtpCode === 'string' ? body.emailOtpCode.trim() : '';
+      if (!challengeId) {
+        try {
+          const challenge = await issueEmailOtp({
+            email: existingUser.email,
+            firstName: existingUser.firstName,
+            purpose: 'REGISTRATION',
+            userId: existingUser.id,
+          });
+          return NextResponse.json(
+            {
+              emailOtpChallengeId: challenge.challengeId,
+              emailOtpRequired: true,
+              message: 'Enter the six-digit code sent to your email address.',
+            },
+            { status: 202 },
+          );
+        } catch (error) {
+          console.error('Registration email OTP could not be delivered.', error);
+          return NextResponse.json(
+            { error: 'A verification code could not be delivered. Please try again later.' },
+            { status: 503 },
+          );
+        }
+      }
+      if (
+        !(await verifyEmailOtp({
+          challengeId,
+          code,
+          purpose: 'REGISTRATION',
+          userId: existingUser.id,
+        }))
+      ) {
+        return NextResponse.json(
+          {
+            emailOtpChallengeId: challengeId,
+            emailOtpRequired: true,
+            error: 'The email verification code is incorrect or expired.',
+          },
+          { status: 400 },
+        );
+      }
+      await prisma.user.update({
+        data: { emailVerifiedAt: new Date() },
+        where: { id: existingUser.id },
+      });
+      await clearRateLimit('REGISTER', rateLimitIdentifier);
+      await createSession(existingUser.id);
+      return NextResponse.json(
+        {
+          redirectTo: returnTo ?? getAccountHomePath(existingUser.role),
+          user: { email: existingUser.email, firstName: existingUser.firstName },
+        },
+        { status: 201 },
+      );
+    }
     return NextResponse.json(
       { error: 'An account already exists for this email.' },
       { status: 409 },
@@ -170,6 +234,33 @@ export async function POST(request: Request) {
   }
 
   await clearRateLimit('REGISTER', rateLimitIdentifier);
+  if (isEmailOtpRequired()) {
+    try {
+      const challenge = await issueEmailOtp({
+        email: user.email,
+        firstName: user.firstName,
+        purpose: 'REGISTRATION',
+        userId: user.id,
+      });
+      return NextResponse.json(
+        {
+          emailOtpChallengeId: challenge.challengeId,
+          emailOtpRequired: true,
+          message: 'Enter the six-digit code sent to your email address.',
+        },
+        { status: 202 },
+      );
+    } catch (error) {
+      console.error('Registration email OTP could not be delivered.', error);
+      return NextResponse.json(
+        {
+          error:
+            'Your account was created, but a verification code could not be delivered. Try again later.',
+        },
+        { status: 503 },
+      );
+    }
+  }
   await createSession(user.id);
   return NextResponse.json(
     {

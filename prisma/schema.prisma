@@ -50,6 +50,7 @@ model User {
   analyticsEvents             AnalyticsEvent[]
   notificationDeliveries      NotificationDelivery[]
   passwordResetTokens         PasswordResetToken[]
+  emailOtpChallenges          EmailOtpChallenge[]
   mfaCredential               UserMfaCredential?
   mfaRecoveryCodes            UserMfaRecoveryCode[]
   consentRecords              UserConsentRecord[]
@@ -651,6 +652,21 @@ model PartnerVehicle {
   @@index([partnerId, status])
   @@index([pickupLocation, dropoffLocation, status, publicationStatus])
   @@index([approvalStatus, submittedAt])
+}
+
+model EmailOtpChallenge {
+  id         String    @id
+  userId     String
+  purpose    String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt, consumedAt])
 }
 
 model PartnerAgreementVersion {

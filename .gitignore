@@ -30,6 +30,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 /.npm-cache/
+/.npm-task-cache/
+/.gh-task-cache/
 
 # local database
 /prisma/dev.db
