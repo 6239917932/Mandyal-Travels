@@ -153,6 +153,14 @@ export default async function PartnerWorkspacePage() {
       {partner.type === 'HOTEL' ? (
         <div className="partner-workspace__links">
           <Card>
+            <p className="hotel-page__eyebrow">Hotel operations</p>
+            <h2>Mandyal PMS control centre</h2>
+            <p>Open the unified front-office, room, revenue, finance, and operations workspace.</p>
+            <Link className="home-card__link" href="/partner/pms">
+              Open PMS
+            </Link>
+          </Card>
+          <Card>
             <p className="hotel-page__eyebrow">Property setup</p>
             <h2>Rooms and rates</h2>
             <p>Create properties, room types, opening rates, policies, and public listings.</p>
