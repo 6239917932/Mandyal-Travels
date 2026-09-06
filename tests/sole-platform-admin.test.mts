@@ -10,6 +10,7 @@ test('production startup enforces one separately configured platform administrat
   assert.match(render, /key: SOLE_PLATFORM_ADMIN_EMAIL\s+sync: false/);
   assert.match(start, /scripts\/enforce-sole-platform-admin\.mjs/);
   assert.match(script, /SOLE_PLATFORM_ADMIN_EMAIL/);
+  assert.match(script, /postgreSqlClientOptions\(databaseUrl\)/);
   assert.match(script, /FOR UPDATE/);
   assert.match(script, /SET role = 'PLATFORM_ADMIN'/);
   assert.match(script, /SET role = 'CUSTOMER'/);
