@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AgencyCustomerManager } from '@/components/agent/AgencyCustomerManager';
 import { AgencyTravelRequestManager } from '@/components/agent/AgencyTravelRequestManager';
@@ -61,20 +60,6 @@ export default async function AgentWorkspacePage() {
           <strong>{booked}</strong>
           <span> Booked requests</span>
         </div>
-      </div>
-      <div className="manage-booking__document-actions">
-        <Link className="ui-button ui-button--primary" href="/agent/reports">
-          Customer reports
-        </Link>
-        <Link className="ui-button ui-button--secondary" href="/business/dashboard">
-          Agency operations
-        </Link>
-        <Link className="ui-button ui-button--secondary" href="/business/statements">
-          Statements
-        </Link>
-        <Link className="ui-button ui-button--secondary" href="/business/support">
-          Support
-        </Link>
       </div>
       <AgencyTravelRequestManager
         customers={agencyCustomers.map((customer) => ({
