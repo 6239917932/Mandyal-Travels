@@ -134,29 +134,6 @@ export default async function BusinessDashboardPage() {
           <p className="hotel-page__eyebrow">Organization reporting</p>
           <h2>Company travel summary</h2>
         </div>
-        <div className="manage-booking__document-actions">
-          <Link className="ui-button ui-button--secondary" href="/business/audit">
-            Audit log
-          </Link>
-          <Link className="ui-button ui-button--secondary" href="/business/reports">
-            Company report
-          </Link>
-          <Link className="ui-button ui-button--secondary" href="/business/statements">
-            Company statements
-          </Link>
-          <Link className="ui-button ui-button--secondary" href="/business/support">
-            Support cases
-          </Link>
-          <Link className="ui-button ui-button--secondary" href="/business/members">
-            Team access
-          </Link>
-          <Link className="ui-button ui-button--primary" href="/account#company-travel-request">
-            Create company request
-          </Link>
-          <Link className="ui-button ui-button--secondary" href="/account">
-            Personal account settings
-          </Link>
-        </div>
       </div>
 
       <div className="partner-bookings__summary">

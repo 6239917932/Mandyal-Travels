@@ -78,36 +78,6 @@ export default async function PartnerWorkspacePage() {
             Welcome, {user.firstName}. Manage only the inventory assigned to this verified supplier
             account.
           </p>
-          <div className="admin-hero__actions">
-            <Link
-              className="ui-button ui-button--primary"
-              href={partner.type === 'CAR' ? '/partner/reservations' : '/partner/bookings'}
-            >
-              {partner.type === 'CAR' ? 'Open reservations' : 'Open bookings'}
-            </Link>
-            <Link
-              className="ui-button ui-button--secondary"
-              href={partner.type === 'CAR' ? '/cars' : '/partner/properties'}
-            >
-              {partner.type === 'CAR' ? 'View live car search' : 'Manage properties'}
-            </Link>
-            {partner.type === 'HOTEL' || partner.type === 'CAR' ? (
-              <Link className="ui-button ui-button--secondary" href="/partner/reports">
-                Performance reports
-              </Link>
-            ) : null}
-            <Link className="ui-button ui-button--secondary" href="/partner/compliance">
-              Compliance evidence
-            </Link>
-            <Link className="ui-button ui-button--secondary" href="/partner/tax">
-              Tax and settlement tracker
-            </Link>
-            <form action="/api/v1/auth/logout" method="post">
-              <button className="admin-hero__signout" type="submit">
-                Sign out
-              </button>
-            </form>
-          </div>
         </div>
         <div className="admin-hero__posture">
           <span className="admin-hero__secure">{partner.type} supply partner</span>

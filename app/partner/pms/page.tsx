@@ -89,17 +89,6 @@ export default async function PmsControlCentrePage() {
             One property-scoped workspace for front desk, rooms, rates, guest operations, finance,
             controls and reporting.
           </p>
-          <div className="admin-hero__actions">
-            <Link className="ui-button ui-button--primary" href="/partner/bookings">
-              Open front desk
-            </Link>
-            <Link className="ui-button ui-button--secondary" href="/partner/housekeeping">
-              Open housekeeping
-            </Link>
-            <Link className="ui-button ui-button--secondary" href="/partner/inventory">
-              Rates and availability
-            </Link>
-          </div>
         </div>
         <div className="admin-hero__posture">
           <span className="admin-hero__secure">Operational date {today}</span>
