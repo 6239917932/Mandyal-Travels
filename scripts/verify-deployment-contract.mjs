@@ -54,8 +54,8 @@ requireText(
 );
 requireText(
   dockerfile,
-  'CMD ["node", "server.js"]',
-  'The web container must start the standalone server.',
+  'CMD ["node", "scripts/start-render.mjs"]',
+  'The web container must gate standalone startup on database migrations.',
 );
 requireText(
   dockerfile,

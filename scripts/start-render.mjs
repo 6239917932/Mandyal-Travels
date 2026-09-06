@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import process from 'node:process';
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -6,12 +7,19 @@ const environment = { ...process.env };
 const redundantPromotionMigration = '20260826100000_add_promotion_redemptions';
 
 if (!environment.PUBLIC_APP_ORIGIN) {
-  const renderHostname = environment.RENDER_EXTERNAL_HOSTNAME?.trim();
-  if (!renderHostname) {
-    console.error('PUBLIC_APP_ORIGIN or RENDER_EXTERNAL_HOSTNAME is required.');
+  const publicHostname =
+    environment.RENDER_EXTERNAL_HOSTNAME?.trim() || environment.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (!publicHostname) {
+    console.error(
+      'PUBLIC_APP_ORIGIN, RENDER_EXTERNAL_HOSTNAME, or RAILWAY_PUBLIC_DOMAIN is required.',
+    );
     process.exit(1);
   }
-  environment.PUBLIC_APP_ORIGIN = `https://${renderHostname}`;
+  environment.PUBLIC_APP_ORIGIN = `https://${publicHostname}`;
+}
+
+if (!environment.DIRECT_DATABASE_URL && environment.DATABASE_URL) {
+  environment.DIRECT_DATABASE_URL = environment.DATABASE_URL;
 }
 
 if (environment.RENDER_REPAIR_REDUNDANT_BASELINE === 'true') {
@@ -73,10 +81,15 @@ if (administratorProvisioning.status !== 0) {
   process.exit(administratorProvisioning.status ?? 1);
 }
 
-const portal = spawn(npmCommand, ['start'], {
-  env: environment,
-  stdio: 'inherit',
-});
+const standalone = existsSync('server.js');
+const portal = spawn(
+  standalone ? process.execPath : npmCommand,
+  standalone ? ['server.js'] : ['start'],
+  {
+    env: environment,
+    stdio: 'inherit',
+  },
+);
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => portal.kill(signal));
