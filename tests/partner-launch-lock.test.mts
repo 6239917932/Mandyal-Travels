@@ -12,10 +12,10 @@ test('launch posture blocks every partner mutation before route authorization', 
   assert.match(source, /PARTNER_OPERATIONS_PAUSED/);
 });
 
-test('Render keeps supplier writes disabled for the Cashfree review launch', async () => {
+test('Render enables governed supplier writes for the partner trial', async () => {
   const source = await readFile(new URL('../render.yaml', import.meta.url), 'utf8');
 
-  assert.match(source, /key: PARTNER_MUTATIONS_ENABLED\s+value: 'false'/);
+  assert.match(source, /key: PARTNER_MUTATIONS_ENABLED\s+value: 'true'/);
 });
 
 test('Render repairs only the known redundant baseline migration', async () => {

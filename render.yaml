@@ -23,7 +23,7 @@ services:
       - key: ALLOW_DEMO_TRANSPORT_CHECKOUT
         value: 'false'
       - key: PARTNER_MUTATIONS_ENABLED
-        value: 'false'
+        value: 'true'
       - key: SOLE_PLATFORM_ADMIN_EMAIL
         sync: false
       - key: DATABASE_TRUST_RENDER_PRIVATE_NETWORK
