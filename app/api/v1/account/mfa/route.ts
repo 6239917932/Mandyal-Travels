@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import {
   createRecoveryCodes,
@@ -13,13 +14,14 @@ import {
 } from '@/lib/auth/mfa';
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { hashRecoveryCodes, verifyUserSecondFactor } from '@/services/mfaService';
 
 const MFA_MUTATION_LIMIT = 10;
 const MFA_MUTATION_WINDOW_MS = 10 * 60 * 1000;
 
 async function authorizeMfaMutation(request: Request) {
-  if (!isSameOriginMutation(request)) {
+  if (!isTrustedPortalMutation(request, resolvePublicPortalOrigin())) {
     return {
       response: NextResponse.json(
         { error: 'This request must originate from the Mandyal Travels portal.' },

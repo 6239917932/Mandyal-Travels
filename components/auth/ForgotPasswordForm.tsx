@@ -12,10 +12,11 @@ export function ForgotPasswordForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setError('');
     setMessage('');
     setIsSubmitting(true);
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch('/api/v1/auth/password-reset/request', {
@@ -33,7 +34,7 @@ export function ForgotPasswordForm() {
         result.data?.message ??
           'If an account uses that email address, a password reset link will be sent shortly.',
       );
-      event.currentTarget.reset();
+      formElement.reset();
     } catch {
       setError('The account service could not be reached. Please try again.');
     } finally {
