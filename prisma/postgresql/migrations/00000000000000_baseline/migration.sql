@@ -505,6 +505,20 @@ CREATE TABLE "PartnerVehicle" (
 );
 
 -- CreateTable
+CREATE TABLE "EmailOtpChallenge" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "purpose" TEXT NOT NULL,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "consumedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailOtpChallenge_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PartnerAgreementVersion" (
     "id" TEXT NOT NULL,
     "version" TEXT NOT NULL,
@@ -2135,6 +2149,12 @@ CREATE INDEX "PartnerVehicle_pickupLocation_dropoffLocation_status_public_idx" O
 CREATE INDEX "PartnerVehicle_approvalStatus_submittedAt_idx" ON "PartnerVehicle"("approvalStatus", "submittedAt");
 
 -- CreateIndex
+CREATE INDEX "EmailOtpChallenge_userId_purpose_createdAt_idx" ON "EmailOtpChallenge"("userId", "purpose", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "EmailOtpChallenge_expiresAt_consumedAt_idx" ON "EmailOtpChallenge"("expiresAt", "consumedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PartnerAgreementVersion_version_key" ON "PartnerAgreementVersion"("version");
 
 -- CreateIndex
@@ -2940,6 +2960,9 @@ ALTER TABLE "PartnerHotelInventoryDay" ADD CONSTRAINT "PartnerHotelInventoryDay_
 
 -- AddForeignKey
 ALTER TABLE "PartnerVehicle" ADD CONSTRAINT "PartnerVehicle_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "SupplyPartner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailOtpChallenge" ADD CONSTRAINT "EmailOtpChallenge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PartnerAgreementVersion" ADD CONSTRAINT "PartnerAgreementVersion_createdByUserId_fkey" FOREIGN KEY ("createdByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
