@@ -4,10 +4,8 @@ import test from 'node:test';
 
 test('production startup enforces one separately configured platform administrator', () => {
   const script = readFileSync('scripts/enforce-sole-platform-admin.mjs', 'utf8');
-  const start = readFileSync('scripts/start-render.mjs', 'utf8');
-  const render = readFileSync('render.yaml', 'utf8');
+  const start = readFileSync('scripts/start-production.mjs', 'utf8');
 
-  assert.match(render, /key: SOLE_PLATFORM_ADMIN_EMAIL\s+sync: false/);
   assert.match(start, /scripts\/enforce-sole-platform-admin\.mjs/);
   assert.match(script, /SOLE_PLATFORM_ADMIN_EMAIL/);
   assert.match(script, /postgreSqlClientOptions\(databaseUrl\)/);
