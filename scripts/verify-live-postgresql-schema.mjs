@@ -1,6 +1,8 @@
 import process from 'node:process';
 import pg from 'pg';
 
+import { postgreSqlClientOptions } from './lib/postgresql-client-options.mjs';
+
 const databaseUrl = process.env.DIRECT_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim();
 
 if (!databaseUrl?.startsWith('postgresql://') && !databaseUrl?.startsWith('postgres://')) {
@@ -37,7 +39,7 @@ const requiredColumns = new Map([
   ],
 ]);
 
-const client = new pg.Client({ connectionString: databaseUrl });
+const client = new pg.Client(postgreSqlClientOptions(databaseUrl));
 
 try {
   await client.connect();
