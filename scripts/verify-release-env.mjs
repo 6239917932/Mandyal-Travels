@@ -55,6 +55,7 @@ function endpointUsesAllowedHost(endpointName, hostsName) {
 
 for (const name of [
   'BOOKING_TOKEN_SECRET',
+  'SESSION_SECRET',
   'PARTNER_ADMIN_KEY',
   'MFA_ENCRYPTION_KEY',
   'NOTIFICATION_WORKER_SECRET',
