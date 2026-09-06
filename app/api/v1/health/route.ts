@@ -18,6 +18,11 @@ export async function GET() {
         prisma.booking.findFirst({ select: { id: true } }),
         prisma.businessTravelRequest.findFirst({ select: { id: true } }),
         prisma.integrationOutboxEvent.count({ where: { status: 'DEAD_LETTER' } }),
+        prisma.partnerApplication.findFirst({ select: { id: true } }),
+        prisma.partnerOnboardingCouponEvent.findFirst({ select: { id: true } }),
+        prisma.partnerAgreementRelease.findFirst({ select: { key: true } }),
+        prisma.emailOtpChallenge.findFirst({ select: { id: true } }),
+        prisma.partnerPayoutAccountEvent.findFirst({ select: { id: true } }),
       ]),
       syncEnabled ? getHotelbedsContentReadiness() : Promise.resolve(undefined),
     ]);

@@ -61,6 +61,10 @@ test('web image fails closed when no database URL is injected', () => {
   assert.match(dockerfile, /CMD \["npm", "run", "worker:notifications"\]/);
   assert.match(dockerfile, /CMD \["node", "scripts\/start-render\.mjs"\]/);
   assert.match(startup, /db:deploy:postgresql/);
+  assert.match(startup, /verify-live-postgresql-schema\.mjs/);
+  assert.ok(
+    startup.indexOf('db:deploy:postgresql') < startup.indexOf('verify-live-postgresql-schema.mjs'),
+  );
   assert.match(startup, /existsSync\('server\.js'\)/);
   assert.match(startup, /standalone \? \['server\.js'\] : \['start'\]/);
   assert.match(startup, /DIRECT_DATABASE_URL = environment\.DATABASE_URL/);

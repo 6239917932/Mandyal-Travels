@@ -62,6 +62,20 @@ if (migration.error) {
 }
 if (migration.status !== 0) process.exit(migration.status ?? 1);
 
+const schemaVerification = spawnSync(
+  process.execPath,
+  ['scripts/verify-live-postgresql-schema.mjs'],
+  {
+    env: environment,
+    stdio: 'inherit',
+  },
+);
+if (schemaVerification.error) {
+  console.error('Unable to start PostgreSQL schema verification.', schemaVerification.error);
+  process.exit(1);
+}
+if (schemaVerification.status !== 0) process.exit(schemaVerification.status ?? 1);
+
 const administratorProvisioning = spawnSync(
   process.execPath,
   ['scripts/enforce-sole-platform-admin.mjs'],
