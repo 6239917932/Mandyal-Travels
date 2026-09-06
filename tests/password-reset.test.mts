@@ -29,14 +29,18 @@ test('password reset token hashing rejects malformed input', () => {
 });
 
 test('recovery stays account-neutral and reset secrets use URL fragments', async () => {
-  const [requestRoute, resetService, registrationRoute] = await Promise.all([
+  const [requestRoute, resetService, registrationRoute, forgotPasswordForm] = await Promise.all([
     readFile('app/api/v1/auth/password-reset/request/route.ts', 'utf8'),
     readFile('services/passwordResetService.ts', 'utf8'),
     readFile('app/api/v1/auth/register/route.ts', 'utf8'),
+    readFile('components/auth/ForgotPasswordForm.tsx', 'utf8'),
   ]);
 
   assert.match(requestRoute, /If an account uses that email address/);
   assert.match(requestRoute, /after\(\(\) => sendPasswordResetEmail/);
   assert.match(resetService, /reset-password#token=/);
   assert.doesNotMatch(registrationRoute, /role:\s*['"]PLATFORM_ADMIN['"]/);
+  assert.match(forgotPasswordForm, /const formElement = event\.currentTarget/);
+  assert.match(forgotPasswordForm, /formElement\.reset\(\)/);
+  assert.doesNotMatch(forgotPasswordForm, /event\.currentTarget\.reset\(\)/);
 });
