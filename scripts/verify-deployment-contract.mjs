@@ -54,7 +54,7 @@ requireText(
 );
 requireText(
   dockerfile,
-  'CMD ["node", "scripts/start-render.mjs"]',
+  'CMD ["node", "scripts/start-production.mjs"]',
   'The web container must gate standalone startup on database migrations.',
 );
 requireText(
@@ -210,6 +210,6 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    'Deployment contract verified. Runtime PostgreSQL support is ready; live infrastructure and cutover approval remain gated.',
+    'Deployment contract verified. Railway production startup, PostgreSQL, and portable workload controls are ready.',
   );
 }

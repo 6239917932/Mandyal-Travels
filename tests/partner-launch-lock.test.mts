@@ -12,13 +12,7 @@ test('launch posture blocks every partner mutation before route authorization', 
   assert.match(source, /PARTNER_OPERATIONS_PAUSED/);
 });
 
-test('Render enables governed supplier writes for the partner trial', async () => {
-  const source = await readFile(new URL('../render.yaml', import.meta.url), 'utf8');
-
-  assert.match(source, /key: PARTNER_MUTATIONS_ENABLED\s+value: 'true'/);
-});
-
-test('Render repairs only the known redundant baseline migration', async () => {
+test('production startup never mutates historical migration state', async () => {
   const [promotionMigration, kycMigration, startup] = await Promise.all([
     readFile(
       new URL(
@@ -34,12 +28,11 @@ test('Render repairs only the known redundant baseline migration', async () => {
       ),
       'utf8',
     ),
-    readFile(new URL('../scripts/start-render.mjs', import.meta.url), 'utf8'),
+    readFile(new URL('../scripts/start-production.mjs', import.meta.url), 'utf8'),
   ]);
 
   assert.doesNotMatch(promotionMigration, /\b(?:ALTER|CREATE)\s+(?:TABLE|INDEX)\b/i);
   assert.doesNotMatch(kycMigration, /\b(?:ALTER|CREATE)\s+(?:TABLE|INDEX)\b/i);
-  assert.match(startup, /RENDER_REPAIR_REDUNDANT_BASELINE/);
-  assert.match(startup, /20260826100000_add_promotion_redemptions/);
-  assert.match(startup, /P3012/);
+  assert.doesNotMatch(startup, /migrate['",\s]+resolve/);
+  assert.doesNotMatch(startup, /RENDER_REPAIR_REDUNDANT_BASELINE/);
 });
