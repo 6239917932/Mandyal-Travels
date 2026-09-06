@@ -287,3 +287,12 @@ export const pmsModules: readonly PmsModule[] = [
 export function countPmsModules(status: PmsModuleStatus): number {
   return pmsModules.filter((module) => module.status === status).length;
 }
+
+export function getPmsModule(code: string): PmsModule | undefined {
+  const normalizedCode = code.trim().toUpperCase();
+  return pmsModules.find((module) => module.code === normalizedCode);
+}
+
+export function getPmsModuleHref(module: PmsModule): string {
+  return module.href ?? `/partner/pms/modules/${module.code.toLowerCase()}`;
+}
