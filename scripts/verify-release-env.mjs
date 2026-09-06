@@ -171,6 +171,36 @@ for (const [endpointName, hostsName] of [
 ]) {
   endpointUsesAllowedHost(endpointName, hostsName);
 }
+if (process.env.AUTH_EMAIL_OTP_REQUIRED === 'true') {
+  const smtpHost = (process.env.EMAIL_SMTP_HOST ?? '').trim().toLowerCase();
+  const smtpAllowedHosts = parseAllowedHosts(process.env.EMAIL_SMTP_ALLOWED_HOSTS);
+  const smtpConfigured = Boolean(
+    smtpHost || process.env.EMAIL_SMTP_USER || process.env.EMAIL_SMTP_PASSWORD,
+  );
+  if (!(process.env.EMAIL_FROM_ADDRESS ?? '').trim()) {
+    failures.push('EMAIL_FROM_ADDRESS is required when email OTP is mandatory.');
+  }
+  if (smtpConfigured) {
+    if (!isPublicDomainName(smtpHost) || !smtpAllowedHosts.includes(smtpHost)) {
+      failures.push(
+        'EMAIL_SMTP_HOST must exactly match an approved EMAIL_SMTP_ALLOWED_HOSTS entry.',
+      );
+    }
+    if (process.env.EMAIL_SMTP_PORT !== '465') {
+      failures.push('EMAIL_SMTP_PORT must be 465 for implicit TLS.');
+    }
+    if (!(process.env.EMAIL_SMTP_USER ?? '').trim() || !(process.env.EMAIL_SMTP_PASSWORD ?? '')) {
+      failures.push('EMAIL_SMTP_USER and EMAIL_SMTP_PASSWORD are required for SMTP email OTP.');
+    }
+  } else if (
+    !(process.env.EMAIL_PROVIDER_ENDPOINT ?? '').trim() ||
+    !(process.env.EMAIL_PROVIDER_API_KEY ?? '').trim()
+  ) {
+    failures.push(
+      'A configured SMTP or HTTPS email provider is required when email OTP is mandatory.',
+    );
+  }
+}
 if (process.env.NODE_ENV !== 'production')
   failures.push('NODE_ENV must be production for a release deployment.');
 if (process.env.FIXTURE_INVENTORY_ENABLED === 'true')
