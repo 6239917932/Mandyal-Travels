@@ -54,8 +54,14 @@ test('production workloads are hardened and receive secrets only by reference', 
 
 test('web image fails closed when no database URL is injected', () => {
   const dockerfile = read('Dockerfile');
+  const startup = read('scripts/start-render.mjs');
 
   assert.doesNotMatch(dockerfile, /ENV\s+DATABASE_URL\s*=\s*file:/i);
   assert.match(dockerfile, /FROM operations AS worker/);
   assert.match(dockerfile, /CMD \["npm", "run", "worker:notifications"\]/);
+  assert.match(dockerfile, /CMD \["node", "scripts\/start-render\.mjs"\]/);
+  assert.match(startup, /db:deploy:postgresql/);
+  assert.match(startup, /existsSync\('server\.js'\)/);
+  assert.match(startup, /standalone \? \['server\.js'\] : \['start'\]/);
+  assert.match(startup, /DIRECT_DATABASE_URL = environment\.DATABASE_URL/);
 });
