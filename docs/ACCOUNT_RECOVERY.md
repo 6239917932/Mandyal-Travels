@@ -26,6 +26,13 @@ allow-list and return a bounded provider message identifier.
 The deployment runtime must support Next.js `after` work. The prepared Node.js and container
 runtimes do; a custom serverless adapter must provide the documented `waitUntil` integration.
 
+Titan or another SMTP mailbox can be used instead of the provider-neutral HTTP adapter by setting
+`EMAIL_SMTP_HOST`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASSWORD`,
+`EMAIL_SMTP_ALLOWED_HOSTS`, and `EMAIL_FROM_ADDRESS` in the deployment secret manager. After a
+delivery test succeeds, set `AUTH_EMAIL_OTP_REQUIRED=true` to require a six-digit email code during
+registration and every password-based sign-in. Do not enable the flag before delivery is verified;
+an unavailable provider would correctly block authentication.
+
 Before launch, verify:
 
 1. Known and unknown emails receive indistinguishable HTTP 202 responses.
