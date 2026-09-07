@@ -5,7 +5,7 @@ import {
   PartnerHotelFolioError,
 } from '@/services/partnerHotelFolioService';
 import {
-  assertNoOpenHotelPosOrdersForCheckout,
+  assertNoOpenHotelServiceOrdersForCheckout,
   PartnerHotelPosError,
 } from '@/services/partnerHotelPosService';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
@@ -294,7 +294,7 @@ export const partnerOperationsService = {
       async (transaction) => {
         if (nextStatus === 'CHECKED_OUT') {
           try {
-            await assertNoOpenHotelPosOrdersForCheckout(transaction, booking.id);
+            await assertNoOpenHotelServiceOrdersForCheckout(transaction, booking.id);
             await assertHotelFolioSettledForCheckout(transaction, booking.id);
           } catch (error) {
             if (error instanceof PartnerHotelFolioError || error instanceof PartnerHotelPosError) {

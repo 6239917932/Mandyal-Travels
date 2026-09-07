@@ -53,7 +53,7 @@ test('night audit close requires exact confirmation, a reason and a strong retry
 test('night audit blocker total is deterministic and includes every hard gate', () => {
   assert.equal(
     countNightAuditBlockers({
-      activePosOrders: 6,
+      activeServiceOrders: 6,
       openCashierShifts: 1,
       overdueDepartures: 2,
       pendingAmendments: 3,
@@ -80,7 +80,7 @@ test('night audit route and service enforce a protected immutable close', async 
   assert.match(service, /hotelPosOrder\.count/);
   assert.doesNotMatch(service, /hotelNightAuditClose\.(update|delete)/);
   assert.match(page, /Mandatory close checklist/);
-  assert.match(page, /unfinished POS and kitchen orders/);
+  assert.match(page, /unfinished guest-service orders/);
   assert.match(page, /append-only/);
   assert.match(registry, /href: '\/partner\/pms\/night-audit'/);
 });
