@@ -1,4 +1,4 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import {
   PartnerOperationsError,
@@ -16,6 +16,9 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ physicalRoomId: string; propertyId: string; roomId: string }> },
 ) {
+  if (!isSameOriginMutation(request)) {
+    return failure('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels partner portal.', 403);
+  }
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return failure('HOTEL_PARTNER_REQUIRED', 'An active hotel supplier account is required.', 403);

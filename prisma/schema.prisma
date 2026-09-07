@@ -247,6 +247,8 @@ model SupplyPartner {
   taxProfile            PartnerTaxProfile?
   taxSnapshots          MarketplaceTaxSnapshot[]
   cashierShifts         HotelCashierShift[]
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
 
   @@index([status, createdAt])
 }
@@ -314,6 +316,8 @@ model PartnerProperty {
   rooms               PartnerRoomType[]
   channelMappings     HotelChannelPropertyMapping[]
   cashierShifts       HotelCashierShift[]
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1739,6 +1743,8 @@ model PartnerPhysicalRoom {
   updatedAt          DateTime        @updatedAt
   property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   roomType           PartnerRoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
 
   @@unique([propertyId, roomNumber])
   @@index([propertyId, housekeepingStatus, operationalStatus])
@@ -1834,6 +1840,71 @@ model BookingGuest {
   booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([email])
+}
+
+model HotelHousekeepingInspection {
+  id                 String              @id @default(cuid())
+  partnerId          String
+  propertyId         String
+  physicalRoomId     String
+  result             String
+  note               String              @default("")
+  businessDate       String
+  inspectedByUserId  String
+  idempotencyKey     String              @unique
+  requestFingerprint String
+  inspectedAt        DateTime            @default(now())
+  partner            SupplyPartner       @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty     @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  physicalRoom       PartnerPhysicalRoom @relation(fields: [physicalRoomId], references: [id], onDelete: Restrict)
+
+  @@index([partnerId, inspectedAt])
+  @@index([propertyId, businessDate, inspectedAt])
+  @@index([physicalRoomId, inspectedAt])
+}
+
+model HotelMaintenanceWorkOrder {
+  id                   String                         @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  physicalRoomId       String
+  category             String
+  priority             String                         @default("NORMAL")
+  summary              String
+  description          String                         @default("")
+  status               String                         @default("OPEN")
+  version              Int                            @default(1)
+  openedByUserId       String
+  resolvedAt           DateTime?
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+  createIdempotencyKey String                         @unique
+  requestFingerprint   String
+  partner              SupplyPartner                  @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property             PartnerProperty                @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  physicalRoom         PartnerPhysicalRoom            @relation(fields: [physicalRoomId], references: [id], onDelete: Restrict)
+  events               HotelMaintenanceWorkOrderEvent[]
+
+  @@index([partnerId, status, createdAt])
+  @@index([propertyId, status, priority, createdAt])
+  @@index([physicalRoomId, status, createdAt])
+}
+
+model HotelMaintenanceWorkOrderEvent {
+  id          String                    @id @default(cuid())
+  workOrderId String
+  action      String
+  fromStatus  String
+  toStatus    String
+  note        String                    @default("")
+  version     Int
+  actorUserId String
+  createdAt   DateTime                  @default(now())
+  workOrder   HotelMaintenanceWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+
+  @@unique([workOrderId, version])
+  @@index([workOrderId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model HotelGuestRegistration {

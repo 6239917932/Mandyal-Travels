@@ -144,11 +144,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'MX',
-    description: 'Corrective work orders, preventive schedules and room downtime.',
+    description: 'Corrective room work orders, controlled downtime and immutable status history.',
     group: 'Front office and operations',
+    href: '/partner/pms/maintenance',
     name: 'Maintenance',
-    phase: 2,
-    status: 'PLANNED',
+    phase: 1,
+    status: 'LIVE',
   },
   {
     code: 'RM',

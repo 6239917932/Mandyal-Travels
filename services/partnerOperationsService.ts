@@ -1117,16 +1117,41 @@ export const partnerOperationsService = {
       );
     }
     if (physicalRoom.operationalStatus !== 'ACTIVE' && input.operationalStatus === 'ACTIVE') {
-      const [roomType, activeRoomCount] = await Promise.all([
+      const [roomType, activeRoomCount, latestMaintenance, latestInspection] = await Promise.all([
         prisma.partnerRoomType.findUnique({ where: { id: roomTypeId } }),
         prisma.partnerPhysicalRoom.count({
           where: { operationalStatus: 'ACTIVE', roomTypeId },
+        }),
+        prisma.hotelMaintenanceWorkOrder.findFirst({
+          orderBy: { updatedAt: 'desc' },
+          where: { physicalRoomId },
+        }),
+        prisma.hotelHousekeepingInspection.findFirst({
+          orderBy: { inspectedAt: 'desc' },
+          where: { physicalRoomId },
         }),
       ]);
       if (!roomType || activeRoomCount >= roomType.inventoryCount) {
         throw new PartnerOperationsError(
           'PHYSICAL_ROOM_LIMIT',
           'Increase the room type inventory before returning this physical room to service.',
+        );
+      }
+      if (latestMaintenance && ['OPEN', 'IN_PROGRESS'].includes(latestMaintenance.status)) {
+        throw new PartnerOperationsError(
+          'MAINTENANCE_UNRESOLVED',
+          'Resolve or cancel the active maintenance work order before returning this room to service.',
+        );
+      }
+      if (
+        latestMaintenance &&
+        (!latestInspection ||
+          latestInspection.result !== 'PASSED' ||
+          latestInspection.inspectedAt <= latestMaintenance.updatedAt)
+      ) {
+        throw new PartnerOperationsError(
+          'FRESH_INSPECTION_REQUIRED',
+          'Record a passed inspection after maintenance before returning this room to service.',
         );
       }
     }
