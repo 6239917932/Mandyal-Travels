@@ -120,3 +120,11 @@ test('administrator routes enforce platform access and append audit events', () 
   assert.match(service, /updateMany/);
   assert.match(service, /VERSION_CONFLICT/);
 });
+
+test('missing advisory schema warnings are emitted at most once per server process', () => {
+  const service = fs.readFileSync('services/serviceAdvisoryService.ts', 'utf8');
+
+  assert.match(service, /let warnedAboutMissingAdvisorySchema = false/);
+  assert.match(service, /if \(warnedAboutMissingAdvisorySchema\) return/);
+  assert.match(service, /warnAboutMissingAdvisorySchema\(\)/);
+});
