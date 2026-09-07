@@ -120,7 +120,10 @@ Exit criteria: every guest charge reaches one auditable folio and the hotel's da
 The original Mandyal PMS control centre is connected to live partner/property data. It reports the
 operational date, occupancy, arrivals, departures, room readiness and pending amendments. Its live
 room rack projects registered physical rooms, readiness and assigned stays across a bounded
-seven-day window without creating a second room or reservation store. Every approved module is
+seven-day window without creating a second room or reservation store. The guest register stores
+only an inspected document type and its final four characters for active stays, requires recorded
+consent or another lawful basis, prevents duplicate submissions and writes an operator audit event;
+it never retains the full identity number or document image. Every approved module is
 reachable from the persistent sidebar: live modules open their production workflow, while
 foundation and planned modules open a controlled scope workspace that cannot submit unfinished
 transactions.

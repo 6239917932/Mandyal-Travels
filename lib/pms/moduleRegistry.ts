@@ -77,6 +77,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'GR',
+    description: 'Masked, audited identity references for registered guests on active stays.',
+    group: 'Front office and operations',
+    href: '/partner/pms/guest-registration',
+    name: 'Guest registration',
+    phase: 1,
+    status: 'LIVE',
+  },
+  {
     code: 'NA',
     description: 'Close the operational date through a checked and immutable audit workflow.',
     group: 'Front office and operations',

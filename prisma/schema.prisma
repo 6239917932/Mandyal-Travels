@@ -1403,6 +1403,7 @@ model Booking {
   quote                   HotelQuote               @relation(fields: [quoteId], references: [id])
   availabilityLock        AvailabilityLock         @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
+  guestRegistrations      HotelGuestRegistration[]
   payment                 PaymentTransaction?
   refunds                 RefundRequest[]
   amendments              BookingAmendment[]
@@ -1830,6 +1831,26 @@ model BookingGuest {
   booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([email])
+}
+
+model HotelGuestRegistration {
+  id                     String   @id @default(cuid())
+  bookingId              String
+  guestName              String
+  nationalityCountryCode String
+  residenceCity          String
+  identityType           String
+  identityLast4          String
+  referenceFingerprint   String   @unique
+  verificationStatus     String   @default("VERIFIED_AT_PROPERTY")
+  consentRecorded        Boolean  @default(true)
+  verifiedAt             DateTime @default(now())
+  verifiedByUserId       String
+  createdAt              DateTime @default(now())
+  booking                Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@index([bookingId, verificationStatus])
 }
 
 model PaymentTransaction {

@@ -376,6 +376,17 @@ export default function PartnerBookingsPage() {
                       <strong>{money(booking.totalAmount, booking.currency)}</strong>
                     </div>
                   </div>
+                  {booking.status === 'confirmed' &&
+                  ['RESERVED', 'CHECKED_IN'].includes(booking.operationalStatus) ? (
+                    <div className="manage-booking__document-actions">
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/partner/pms/guest-registration?booking=${encodeURIComponent(booking.confirmationCode)}`}
+                      >
+                        Open guest register
+                      </Link>
+                    </div>
+                  ) : null}
                   {booking.specialRequests ? (
                     <div className="booking-confirmation__note">
                       <strong>Guest special requests</strong>

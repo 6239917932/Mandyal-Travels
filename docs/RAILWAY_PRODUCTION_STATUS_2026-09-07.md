@@ -13,9 +13,9 @@
 
 ## Quality evidence
 
-- 631 domain and security tests pass.
-- All 93 SQLite migrations and the 110-model PostgreSQL parity contract pass.
-- The production build completes with 224 application routes.
+- 636 domain and security tests pass.
+- All 94 SQLite migrations and the 111-model PostgreSQL parity contract pass.
+- The production build completes with 225 application routes.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.
 - The production dependency audit reports no known high-severity runtime vulnerabilities.
 
