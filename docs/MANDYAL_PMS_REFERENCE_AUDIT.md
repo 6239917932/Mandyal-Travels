@@ -136,3 +136,12 @@ requires a newer passed inspection before the room can return to service. Every 
 reachable from the persistent sidebar: live modules open their
 production workflow, while foundation and planned modules open a controlled scope workspace that
 cannot submit unfinished transactions.
+
+Phase 1 closes with a governed Night Audit that checks cashier shifts, arrivals, departures,
+amendments and urgent maintenance before an administrator can advance the property operational
+date. Every close preserves an immutable readiness snapshot. Phase 2 begins with an
+administrator-only Owner Overview. It derives occupancy, ADR, RevPAR, booked accommodation value,
+folio collections and outstanding balances from the shared property, booking and append-only folio
+records. The view is property-scoped and bounded, withholds financial totals when a safety limit or
+mixed currency would make them incomplete, and labels allocated stay value separately from
+statutory invoices or recognized accounting revenue.

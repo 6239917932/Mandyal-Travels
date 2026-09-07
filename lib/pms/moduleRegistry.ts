@@ -36,9 +36,10 @@ export const pmsModules: readonly PmsModule[] = [
     code: 'OE',
     description: 'Owner-focused financial, occupancy, performance and receivables snapshot.',
     group: 'Overview',
+    href: '/partner/pms/owner-overview',
     name: 'Owner overview',
     phase: 2,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'FD',
