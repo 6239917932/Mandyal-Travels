@@ -155,3 +155,13 @@ orders require a reason, open orders block checkout and Night Audit, and posted 
 edited or deleted. This operational charge is
 not represented as a GST invoice, inventory depletion, gateway payment or recognized accounting
 revenue.
+
+Laundry and minibar are now live on that same property-scoped service-order ledger instead of a
+second guest, booking, charge or folio store. An operator can create an itemized order only for an
+assigned room on a checked-in stay. Laundry follows placed, accepted, preparing and ready states;
+minibar follows placed and accepted verification before posting. Completion and the corresponding
+`LAUNDRY` or `MINIBAR` folio charge commit atomically, transitions are versioned, retries are
+idempotent, early cancellation requires a reason, and unfinished services block checkout and Night
+Audit. The POS and kitchen workspaces remain isolated to room-service and outlet orders while the
+dedicated Laundry workspace shows only laundry and minibar work. These records do not claim stock
+depletion, a GST invoice, gateway payment or recognized accounting revenue.

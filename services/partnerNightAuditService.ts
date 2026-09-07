@@ -42,7 +42,7 @@ async function readAuditSnapshot(
   businessDate: string,
 ) {
   const [
-    activePosOrders,
+    activeServiceOrders,
     openCashierShifts,
     unresolvedArrivals,
     overdueDepartures,
@@ -102,7 +102,7 @@ async function readAuditSnapshot(
     }),
   ]);
   const blockers = {
-    activePosOrders,
+    activeServiceOrders,
     openCashierShifts,
     overdueDepartures,
     pendingAmendments,

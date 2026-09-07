@@ -11,6 +11,7 @@ import type { ApiErrorResponse } from '@/types/commerce';
 
 type Stay = { confirmationCode: string; guestName: string; roomNumber: string };
 type DraftItem = { name: string; quantity: string; unitPrice: string };
+type HotelServiceWorkflow = 'GUEST_SERVICES' | 'POS';
 
 function newRetryKey() {
   return crypto.randomUUID();
@@ -25,7 +26,15 @@ async function errorMessage(response: Response, fallback: string) {
     : undefined;
 }
 
-export function HotelPosOrderForm({ propertyId, stays }: { propertyId: string; stays: Stay[] }) {
+function HotelServiceOrderForm({
+  propertyId,
+  stays,
+  workflow,
+}: {
+  propertyId: string;
+  stays: Stay[];
+  workflow: HotelServiceWorkflow;
+}) {
   const router = useRouter();
   const retryKey = useRef(newRetryKey());
   const [error, setError] = useState<string>();
@@ -39,21 +48,24 @@ export function HotelPosOrderForm({ propertyId, stays }: { propertyId: string; s
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      const response = await fetch('/api/v1/partner/pos-orders', {
-        body: JSON.stringify({
-          confirmationCode: form.get('confirmationCode'),
-          items,
-          note: form.get('note'),
-          outletName: form.get('outletName'),
-          propertyId,
-          serviceMode: form.get('serviceMode'),
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': retryKey.current,
+      const response = await fetch(
+        workflow === 'POS' ? '/api/v1/partner/pos-orders' : '/api/v1/partner/guest-service-orders',
+        {
+          body: JSON.stringify({
+            confirmationCode: form.get('confirmationCode'),
+            items,
+            note: form.get('note'),
+            outletName: form.get('outletName'),
+            propertyId,
+            serviceMode: form.get('serviceMode'),
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Idempotency-Key': retryKey.current,
+          },
+          method: 'POST',
         },
-        method: 'POST',
-      });
+      );
       const message = await errorMessage(response, 'The order was not placed.');
       if (message) {
         setError(message);
@@ -86,16 +98,27 @@ export function HotelPosOrderForm({ propertyId, stays }: { propertyId: string; s
       <label className="ui-field">
         <span className="ui-field__label">Service mode</span>
         <select className="ui-input" name="serviceMode" required>
-          <option value="ROOM_SERVICE">Room service</option>
-          <option value="OUTLET">Hotel outlet</option>
+          {workflow === 'POS' ? (
+            <>
+              <option value="ROOM_SERVICE">Room service</option>
+              <option value="OUTLET">Hotel outlet</option>
+            </>
+          ) : (
+            <>
+              <option value="LAUNDRY">Guest laundry</option>
+              <option value="MINIBAR">Minibar posting</option>
+            </>
+          )}
         </select>
       </label>
       <Input
-        label="Serving outlet or kitchen"
+        label={
+          workflow === 'POS' ? 'Serving outlet or kitchen' : 'Service desk or inspection point'
+        }
         maxLength={80}
         minLength={2}
         name="outletName"
-        placeholder="Main kitchen"
+        placeholder={workflow === 'POS' ? 'Main kitchen' : 'Laundry desk'}
         required
       />
       <Input label="Service note (optional)" maxLength={240} name="note" />
@@ -176,20 +199,30 @@ export function HotelPosOrderForm({ propertyId, stays }: { propertyId: string; s
         </p>
       ) : null}
       <Button className="supplier-form__full-width" isLoading={isSaving} type="submit">
-        Place kitchen order
+        {workflow === 'POS' ? 'Place kitchen order' : 'Record guest-service order'}
       </Button>
     </form>
   );
 }
 
-export function HotelPosTransitionControls({
+export function HotelPosOrderForm(props: { propertyId: string; stays: Stay[] }) {
+  return <HotelServiceOrderForm {...props} workflow="POS" />;
+}
+
+export function HotelGuestServiceOrderForm(props: { propertyId: string; stays: Stay[] }) {
+  return <HotelServiceOrderForm {...props} workflow="GUEST_SERVICES" />;
+}
+
+function HotelServiceTransitionControls({
   nextStatuses,
   orderId,
   version,
+  workflow,
 }: {
   nextStatuses: readonly HotelPosStatus[];
   orderId: string;
   version: number;
+  workflow: HotelServiceWorkflow;
 }) {
   const router = useRouter();
   const retryKey = useRef(newRetryKey());
@@ -201,7 +234,9 @@ export function HotelPosTransitionControls({
     setError(undefined);
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/v1/partner/pos-orders/${encodeURIComponent(orderId)}`, {
+      const basePath =
+        workflow === 'POS' ? '/api/v1/partner/pos-orders' : '/api/v1/partner/guest-service-orders';
+      const response = await fetch(`${basePath}/${encodeURIComponent(orderId)}`, {
         body: JSON.stringify({
           note: targetStatus === 'CANCELLED' ? cancellationReason : '',
           targetStatus,
@@ -249,7 +284,9 @@ export function HotelPosTransitionControls({
           variant={status === 'CANCELLED' ? 'secondary' : 'primary'}
         >
           {status === 'POSTED'
-            ? 'Serve and post to folio'
+            ? workflow === 'POS'
+              ? 'Serve and post to folio'
+              : 'Complete and post to folio'
             : status === 'CANCELLED'
               ? 'Cancel order'
               : `Move to ${status.toLowerCase()}`}
@@ -262,4 +299,16 @@ export function HotelPosTransitionControls({
       ) : null}
     </div>
   );
+}
+
+export function HotelPosTransitionControls(
+  props: Omit<Parameters<typeof HotelServiceTransitionControls>[0], 'workflow'>,
+) {
+  return <HotelServiceTransitionControls {...props} workflow="POS" />;
+}
+
+export function HotelGuestServiceTransitionControls(
+  props: Omit<Parameters<typeof HotelServiceTransitionControls>[0], 'workflow'>,
+) {
+  return <HotelServiceTransitionControls {...props} workflow="GUEST_SERVICES" />;
 }

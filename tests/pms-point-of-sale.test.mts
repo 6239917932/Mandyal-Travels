@@ -107,8 +107,8 @@ test('POS routes and service enforce origin, tenant scope, checked-in stays and 
   assert.match(service, /isolationLevel: 'Serializable'/);
   assert.match(service, /hotelFolioEntry\.create/);
   assert.match(service, /folioIdempotencyKey/);
-  assert.match(service, /assertNoOpenHotelPosOrdersForCheckout/);
-  assert.match(checkoutService, /assertNoOpenHotelPosOrdersForCheckout/);
+  assert.match(service, /assertNoOpenHotelServiceOrdersForCheckout/);
+  assert.match(checkoutService, /assertNoOpenHotelServiceOrdersForCheckout/);
   assert.match(service, /HOTEL_POS_ORDER_/);
   assert.doesNotMatch(service, /hotelPosOrder\.(delete|update)\(/);
   assert.match(posPage, /existing append-only guest folio/i);

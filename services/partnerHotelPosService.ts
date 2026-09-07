@@ -5,9 +5,15 @@ import { prisma } from '@/lib/prisma';
 import { hotelFolioRequestFingerprint } from '@/lib/pms/folio';
 import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
+  HOTEL_GUEST_SERVICE_MODES,
+  HOTEL_POS_SERVICE_MODES,
+  type HotelGuestServiceMode,
   type HotelPosStatus,
   hotelPosFingerprint,
+  nextHotelGuestServiceStatuses,
   nextHotelPosStatuses,
+  normalizeHotelGuestServiceOrder,
+  normalizeHotelGuestServiceTransition,
   normalizeHotelPosOrder,
   normalizeHotelPosTransition,
   parseStoredHotelPosItems,
@@ -19,6 +25,7 @@ const MAX_PROPERTIES = 100;
 const MAX_STAYS = 200;
 const MAX_ORDERS = 200;
 const MAX_EVENTS = 20;
+type HotelServiceWorkflow = 'GUEST_SERVICES' | 'POS';
 
 export class PartnerHotelPosError extends Error {
   readonly code: string;
@@ -57,10 +64,13 @@ async function ownedProperties(partnerId: string) {
   });
 }
 
-export async function getPartnerHotelPosWorkspace(input: {
-  partnerId: string;
-  requestedPropertyId?: string;
-}) {
+async function getPartnerHotelServiceWorkspace(
+  input: {
+    partnerId: string;
+    requestedPropertyId?: string;
+  },
+  workflow: HotelServiceWorkflow,
+) {
   const storedProperties = await ownedProperties(input.partnerId);
   const properties = storedProperties.slice(0, MAX_PROPERTIES);
   const selected =
@@ -93,7 +103,13 @@ export async function getPartnerHotelPosWorkspace(input: {
       },
       orderBy: { createdAt: 'desc' },
       take: MAX_ORDERS + 1,
-      where: { partnerId: input.partnerId, propertyId: selected.id },
+      where: {
+        partnerId: input.partnerId,
+        propertyId: selected.id,
+        serviceMode: {
+          in: workflow === 'POS' ? [...HOTEL_POS_SERVICE_MODES] : [...HOTEL_GUEST_SERVICE_MODES],
+        },
+      },
     }),
   ]);
   const stays = storedStays.slice(0, MAX_STAYS);
@@ -114,7 +130,13 @@ export async function getPartnerHotelPosWorkspace(input: {
       guestName: guestName(order.booking.guest),
       id: order.id,
       items: parseStoredHotelPosItems(order.itemsJson),
-      nextStatuses: nextHotelPosStatuses(order.status as HotelPosStatus),
+      nextStatuses:
+        workflow === 'POS'
+          ? nextHotelPosStatuses(order.status as HotelPosStatus)
+          : nextHotelGuestServiceStatuses(
+              order.serviceMode as HotelGuestServiceMode,
+              order.status as HotelPosStatus,
+            ),
       note: order.note,
       outletName: order.outletName,
       roomNumber: order.roomNumber,
@@ -137,23 +159,41 @@ export async function getPartnerHotelPosWorkspace(input: {
   } as const;
 }
 
-export async function createPartnerHotelPosOrder(input: {
-  actorUserId: string;
-  confirmationCode: string;
-  idempotencyKey: string;
-  items?: unknown;
-  note?: unknown;
-  outletName?: unknown;
+export function getPartnerHotelPosWorkspace(input: {
   partnerId: string;
-  propertyId: string;
-  serviceMode?: unknown;
+  requestedPropertyId?: string;
 }) {
+  return getPartnerHotelServiceWorkspace(input, 'POS');
+}
+
+export function getPartnerHotelGuestServiceWorkspace(input: {
+  partnerId: string;
+  requestedPropertyId?: string;
+}) {
+  return getPartnerHotelServiceWorkspace(input, 'GUEST_SERVICES');
+}
+
+async function createPartnerHotelServiceOrder(
+  input: {
+    actorUserId: string;
+    confirmationCode: string;
+    idempotencyKey: string;
+    items?: unknown;
+    note?: unknown;
+    outletName?: unknown;
+    partnerId: string;
+    propertyId: string;
+    serviceMode?: unknown;
+  },
+  workflow: HotelServiceWorkflow,
+) {
   const idempotencyKey = requireHotelPosIdempotencyKey(input.idempotencyKey);
   const confirmationCode = normalizeHotelBookingReference(input.confirmationCode);
   if (!confirmationCode) {
     throw new PartnerHotelPosError('INVALID_BOOKING_REFERENCE', 'Choose a checked-in stay.');
   }
-  const normalized = normalizeHotelPosOrder(input);
+  const normalized =
+    workflow === 'POS' ? normalizeHotelPosOrder(input) : normalizeHotelGuestServiceOrder(input);
   const requestFingerprint = hotelPosFingerprint({
     confirmationCode,
     items: normalized.items,
@@ -206,10 +246,10 @@ export async function createPartnerHotelPosOrder(input: {
         );
       }
       const assignedRoom = roomNumber(booking.assignedRoomNumbersJson);
-      if (normalized.serviceMode === 'ROOM_SERVICE' && !assignedRoom) {
+      if (normalized.serviceMode !== 'OUTLET' && !assignedRoom) {
         throw new PartnerHotelPosError(
           'ROOM_ASSIGNMENT_REQUIRED',
-          'Assign a physical room before placing a room-service order.',
+          'Assign a physical room before placing this guest-service order.',
         );
       }
       const order = await transaction.hotelPosOrder.create({
@@ -244,7 +284,8 @@ export async function createPartnerHotelPosOrder(input: {
       });
       await transaction.partnerAuditLog.create({
         data: {
-          action: 'HOTEL_POS_ORDER_PLACED',
+          action:
+            workflow === 'POS' ? 'HOTEL_POS_ORDER_PLACED' : 'HOTEL_GUEST_SERVICE_ORDER_PLACED',
           actorUserId: input.actorUserId,
           entityId: order.id,
           entityType: 'HOTEL_POS_ORDER',
@@ -256,7 +297,7 @@ export async function createPartnerHotelPosOrder(input: {
             totalAmount: order.totalAmount,
           }),
           partnerId: input.partnerId,
-          summary: `${order.serviceMode === 'ROOM_SERVICE' ? 'Room-service' : 'Outlet'} order placed for ${confirmationCode}.`,
+          summary: `${order.serviceMode.replaceAll('_', ' ').toLowerCase()} order placed for ${confirmationCode}.`,
         },
       });
       return order;
@@ -265,15 +306,28 @@ export async function createPartnerHotelPosOrder(input: {
   );
 }
 
-export async function transitionPartnerHotelPosOrder(input: {
-  actorUserId: string;
-  idempotencyKey: string;
-  note?: unknown;
-  orderId: string;
-  partnerId: string;
-  targetStatus?: unknown;
-  version: number;
-}) {
+type CreatePartnerHotelServiceOrderInput = Parameters<typeof createPartnerHotelServiceOrder>[0];
+
+export function createPartnerHotelPosOrder(input: CreatePartnerHotelServiceOrderInput) {
+  return createPartnerHotelServiceOrder(input, 'POS');
+}
+
+export function createPartnerHotelGuestServiceOrder(input: CreatePartnerHotelServiceOrderInput) {
+  return createPartnerHotelServiceOrder(input, 'GUEST_SERVICES');
+}
+
+async function transitionPartnerHotelServiceOrder(
+  input: {
+    actorUserId: string;
+    idempotencyKey: string;
+    note?: unknown;
+    orderId: string;
+    partnerId: string;
+    targetStatus?: unknown;
+    version: number;
+  },
+  workflow: HotelServiceWorkflow,
+) {
   const idempotencyKey = requireHotelPosIdempotencyKey(input.idempotencyKey);
   if (!Number.isSafeInteger(input.version) || input.version < 1) {
     throw new PartnerHotelPosError('STALE_ORDER', 'Refresh the order and try again.');
@@ -305,7 +359,9 @@ export async function transitionPartnerHotelPosOrder(input: {
         const existingOrder = await transaction.hotelPosOrder.findFirst({
           where: { id: existingEvent.orderId, partnerId: input.partnerId },
         });
-        if (!existingOrder) {
+        const allowedModes =
+          workflow === 'POS' ? HOTEL_POS_SERVICE_MODES : HOTEL_GUEST_SERVICE_MODES;
+        if (!existingOrder || !allowedModes.some((mode) => mode === existingOrder.serviceMode)) {
           throw new PartnerHotelPosError('ORDER_NOT_FOUND', 'The order was not found.');
         }
         return existingOrder;
@@ -315,14 +371,26 @@ export async function transitionPartnerHotelPosOrder(input: {
         where: { id: input.orderId, partnerId: input.partnerId },
       });
       if (!order) throw new PartnerHotelPosError('ORDER_NOT_FOUND', 'The order was not found.');
+      const allowedModes = workflow === 'POS' ? HOTEL_POS_SERVICE_MODES : HOTEL_GUEST_SERVICE_MODES;
+      if (!allowedModes.some((mode) => mode === order.serviceMode)) {
+        throw new PartnerHotelPosError('ORDER_NOT_FOUND', 'The order was not found.');
+      }
       if (order.version !== input.version) {
         throw new PartnerHotelPosError('STALE_ORDER', 'This order changed. Refresh and try again.');
       }
-      const transition = normalizeHotelPosTransition({
-        currentStatus: order.status,
-        note: input.note,
-        targetStatus: input.targetStatus,
-      });
+      const transition =
+        workflow === 'POS'
+          ? normalizeHotelPosTransition({
+              currentStatus: order.status,
+              note: input.note,
+              targetStatus: input.targetStatus,
+            })
+          : normalizeHotelGuestServiceTransition({
+              currentStatus: order.status,
+              note: input.note,
+              serviceMode: order.serviceMode as HotelGuestServiceMode,
+              targetStatus: input.targetStatus,
+            });
       if (
         order.property.listingSource !== 'MANAGED' ||
         order.property.partnerId !== input.partnerId ||
@@ -344,10 +412,18 @@ export async function transitionPartnerHotelPosOrder(input: {
       }
       let folioEntryId: string | undefined;
       if (transition.targetStatus === 'POSTED') {
-        const folioIdempotencyKey = `pos_${hotelPosFingerprint({ idempotencyKey, orderId: order.id }).slice(0, 60)}`;
+        const folioCategory =
+          order.serviceMode === 'ROOM_SERVICE'
+            ? 'ROOM_SERVICE'
+            : order.serviceMode === 'LAUNDRY'
+              ? 'LAUNDRY'
+              : order.serviceMode === 'MINIBAR'
+                ? 'MINIBAR'
+                : 'FOOD_AND_BEVERAGE';
+        const folioIdempotencyKey = `service_${hotelPosFingerprint({ idempotencyKey, orderId: order.id }).slice(0, 56)}`;
         const folioFingerprint = hotelFolioRequestFingerprint({
           amount: order.totalAmount,
-          category: order.serviceMode === 'ROOM_SERVICE' ? 'ROOM_SERVICE' : 'FOOD_AND_BEVERAGE',
+          category: folioCategory,
           orderId: order.id,
         });
         const folioEntry = await transaction.hotelFolioEntry.create({
@@ -355,7 +431,7 @@ export async function transitionPartnerHotelPosOrder(input: {
             amount: order.totalAmount,
             bookingId: order.bookingId,
             businessDate: order.businessDate,
-            category: order.serviceMode === 'ROOM_SERVICE' ? 'ROOM_SERVICE' : 'FOOD_AND_BEVERAGE',
+            category: folioCategory,
             currency: order.currency,
             description: `${order.outletName} order ${order.id.slice(-8)}`.slice(0, 160),
             entryType: 'CHARGE',
@@ -392,7 +468,7 @@ export async function transitionPartnerHotelPosOrder(input: {
       });
       await transaction.partnerAuditLog.create({
         data: {
-          action: `HOTEL_POS_ORDER_${transition.targetStatus}`,
+          action: `${workflow === 'POS' ? 'HOTEL_POS_ORDER' : 'HOTEL_GUEST_SERVICE_ORDER'}_${transition.targetStatus}`,
           actorUserId: input.actorUserId,
           entityId: order.id,
           entityType: 'HOTEL_POS_ORDER',
@@ -419,7 +495,21 @@ export async function transitionPartnerHotelPosOrder(input: {
   );
 }
 
-export async function assertNoOpenHotelPosOrdersForCheckout(
+type TransitionPartnerHotelServiceOrderInput = Parameters<
+  typeof transitionPartnerHotelServiceOrder
+>[0];
+
+export function transitionPartnerHotelPosOrder(input: TransitionPartnerHotelServiceOrderInput) {
+  return transitionPartnerHotelServiceOrder(input, 'POS');
+}
+
+export function transitionPartnerHotelGuestServiceOrder(
+  input: TransitionPartnerHotelServiceOrderInput,
+) {
+  return transitionPartnerHotelServiceOrder(input, 'GUEST_SERVICES');
+}
+
+export async function assertNoOpenHotelServiceOrdersForCheckout(
   transaction: Prisma.TransactionClient,
   bookingId: string,
 ) {
@@ -431,8 +521,8 @@ export async function assertNoOpenHotelPosOrdersForCheckout(
   });
   if (activeOrders > 0) {
     throw new PartnerHotelPosError(
-      'OPEN_POS_ORDERS',
-      'Post or cancel every open room-service and outlet order before checkout.',
+      'OPEN_SERVICE_ORDERS',
+      'Post or cancel every open room-service, outlet, laundry, and minibar order before checkout.',
     );
   }
 }

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 export const HOTEL_POS_IDEMPOTENCY_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 export const HOTEL_POS_SERVICE_MODES = ['ROOM_SERVICE', 'OUTLET'] as const;
+export const HOTEL_GUEST_SERVICE_MODES = ['LAUNDRY', 'MINIBAR'] as const;
 export const HOTEL_POS_STATUSES = [
   'PLACED',
   'ACCEPTED',
@@ -12,6 +13,7 @@ export const HOTEL_POS_STATUSES = [
 ] as const;
 
 export type HotelPosServiceMode = (typeof HOTEL_POS_SERVICE_MODES)[number];
+export type HotelGuestServiceMode = (typeof HOTEL_GUEST_SERVICE_MODES)[number];
 export type HotelPosStatus = (typeof HOTEL_POS_STATUSES)[number];
 export type HotelPosItem = Readonly<{ name: string; quantity: number; unitPrice: number }>;
 
@@ -36,28 +38,31 @@ function wholeNumber(value: unknown, minimum: number, maximum: number, code: str
   return candidate;
 }
 
-export function normalizeHotelPosOrder(input: {
-  items?: unknown;
-  note?: unknown;
-  outletName?: unknown;
-  serviceMode?: unknown;
-}) {
+function normalizeHotelServiceOrder(
+  input: {
+    items?: unknown;
+    note?: unknown;
+    outletName?: unknown;
+    serviceMode?: unknown;
+  },
+  allowedModes: readonly string[],
+) {
   const serviceMode = String(input.serviceMode ?? '')
     .trim()
     .toUpperCase();
-  if (!HOTEL_POS_SERVICE_MODES.some((mode) => mode === serviceMode)) {
-    throw new HotelPosRuleError('INVALID_SERVICE_MODE', 'Choose room service or an outlet order.');
+  if (!allowedModes.includes(serviceMode)) {
+    throw new HotelPosRuleError('INVALID_SERVICE_MODE', 'Choose a valid guest service.');
   }
   const outletName = boundedText(input.outletName, 80);
   if (outletName.length < 2) {
-    throw new HotelPosRuleError('INVALID_OUTLET', 'Enter the serving outlet or kitchen name.');
+    throw new HotelPosRuleError('INVALID_OUTLET', 'Enter the service desk or outlet name.');
   }
   if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 20) {
-    throw new HotelPosRuleError('INVALID_ITEMS', 'Add between one and twenty order items.');
+    throw new HotelPosRuleError('INVALID_ITEMS', 'Add between one and twenty service items.');
   }
   const items = input.items.map((item): HotelPosItem => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      throw new HotelPosRuleError('INVALID_ITEM', 'Enter a valid order item.');
+      throw new HotelPosRuleError('INVALID_ITEM', 'Enter a valid service item.');
     }
     const record = item as Record<string, unknown>;
     const name = boundedText(record.name, 80);
@@ -72,15 +77,86 @@ export function normalizeHotelPosOrder(input: {
   });
   const totalAmount = items.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
   if (!Number.isSafeInteger(totalAmount) || totalAmount > 10_000_000) {
-    throw new HotelPosRuleError('INVALID_ORDER_TOTAL', 'The order total exceeds the safe limit.');
+    throw new HotelPosRuleError('INVALID_ORDER_TOTAL', 'The service total exceeds the safe limit.');
   }
   return {
     items,
     note: boundedText(input.note, 240),
     outletName,
-    serviceMode: serviceMode as HotelPosServiceMode,
+    serviceMode,
     totalAmount,
   } as const;
+}
+
+export function normalizeHotelPosOrder(input: {
+  items?: unknown;
+  note?: unknown;
+  outletName?: unknown;
+  serviceMode?: unknown;
+}) {
+  try {
+    const normalized = normalizeHotelServiceOrder(input, HOTEL_POS_SERVICE_MODES);
+    return { ...normalized, serviceMode: normalized.serviceMode as HotelPosServiceMode } as const;
+  } catch (error) {
+    if (error instanceof HotelPosRuleError && error.code === 'INVALID_SERVICE_MODE') {
+      throw new HotelPosRuleError(
+        'INVALID_SERVICE_MODE',
+        'Choose room service or an outlet order.',
+      );
+    }
+    throw error;
+  }
+}
+
+export function normalizeHotelGuestServiceOrder(input: {
+  items?: unknown;
+  note?: unknown;
+  outletName?: unknown;
+  serviceMode?: unknown;
+}) {
+  try {
+    const normalized = normalizeHotelServiceOrder(input, HOTEL_GUEST_SERVICE_MODES);
+    return {
+      ...normalized,
+      serviceMode: normalized.serviceMode as HotelGuestServiceMode,
+    } as const;
+  } catch (error) {
+    if (error instanceof HotelPosRuleError && error.code === 'INVALID_SERVICE_MODE') {
+      throw new HotelPosRuleError('INVALID_SERVICE_MODE', 'Choose laundry or minibar posting.');
+    }
+    throw error;
+  }
+}
+
+function normalizeHotelServiceTransition(
+  input: {
+    currentStatus: string;
+    note?: unknown;
+    targetStatus?: unknown;
+  },
+  nextStatuses: readonly HotelPosStatus[],
+) {
+  const currentStatus = input.currentStatus as HotelPosStatus;
+  if (!HOTEL_POS_STATUSES.includes(currentStatus)) {
+    throw new HotelPosRuleError('INVALID_ORDER_STATE', 'Refresh this order and try again.');
+  }
+  const targetStatus = String(input.targetStatus ?? '')
+    .trim()
+    .toUpperCase() as HotelPosStatus;
+  if (!nextStatuses.includes(targetStatus)) {
+    throw new HotelPosRuleError(
+      'INVALID_ORDER_TRANSITION',
+      'This order cannot move to the selected state.',
+    );
+  }
+  const note = boundedText(input.note, 240);
+  if (targetStatus === 'CANCELLED' && note.length < 8) {
+    throw new HotelPosRuleError(
+      'CANCELLATION_REASON_REQUIRED',
+      'Enter a cancellation reason of at least eight characters.',
+    );
+  }
+  return { note, targetStatus } as const;
 }
 
 export function nextHotelPosStatuses(status: HotelPosStatus): readonly HotelPosStatus[] {
@@ -97,26 +173,33 @@ export function normalizeHotelPosTransition(input: {
   targetStatus?: unknown;
 }) {
   const currentStatus = input.currentStatus as HotelPosStatus;
-  if (!HOTEL_POS_STATUSES.includes(currentStatus)) {
-    throw new HotelPosRuleError('INVALID_ORDER_STATE', 'Refresh this order and try again.');
+  return normalizeHotelServiceTransition(input, nextHotelPosStatuses(currentStatus));
+}
+
+export function nextHotelGuestServiceStatuses(
+  serviceMode: HotelGuestServiceMode,
+  status: HotelPosStatus,
+): readonly HotelPosStatus[] {
+  if (status === 'PLACED') return ['ACCEPTED', 'CANCELLED'];
+  if (status === 'ACCEPTED') {
+    return serviceMode === 'LAUNDRY' ? ['PREPARING', 'CANCELLED'] : ['POSTED', 'CANCELLED'];
   }
-  const targetStatus = String(input.targetStatus ?? '')
-    .trim()
-    .toUpperCase() as HotelPosStatus;
-  if (!nextHotelPosStatuses(currentStatus).includes(targetStatus)) {
-    throw new HotelPosRuleError(
-      'INVALID_ORDER_TRANSITION',
-      'This order cannot move to the selected state.',
-    );
-  }
-  const note = boundedText(input.note, 240);
-  if (targetStatus === 'CANCELLED' && note.length < 8) {
-    throw new HotelPosRuleError(
-      'CANCELLATION_REASON_REQUIRED',
-      'Enter a cancellation reason of at least eight characters.',
-    );
-  }
-  return { note, targetStatus } as const;
+  if (serviceMode === 'LAUNDRY' && status === 'PREPARING') return ['READY'];
+  if (serviceMode === 'LAUNDRY' && status === 'READY') return ['POSTED'];
+  return [];
+}
+
+export function normalizeHotelGuestServiceTransition(input: {
+  currentStatus: string;
+  note?: unknown;
+  serviceMode: HotelGuestServiceMode;
+  targetStatus?: unknown;
+}) {
+  const currentStatus = input.currentStatus as HotelPosStatus;
+  return normalizeHotelServiceTransition(
+    input,
+    nextHotelGuestServiceStatuses(input.serviceMode, currentStatus),
+  );
 }
 
 export function requireHotelPosIdempotencyKey(value: unknown): string {

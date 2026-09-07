@@ -140,11 +140,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'LD',
-    description: 'Guest laundry orders and hotel-linen processing cycles.',
+    description: 'Itemized guest laundry and minibar services with controlled folio posting.',
     group: 'Front office and operations',
+    href: '/partner/pms/laundry',
     name: 'Laundry',
     phase: 2,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'MX',
