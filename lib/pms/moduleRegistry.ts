@@ -89,9 +89,10 @@ export const pmsModules: readonly PmsModule[] = [
     code: 'NA',
     description: 'Close the operational date through a checked and immutable audit workflow.',
     group: 'Front office and operations',
+    href: '/partner/pms/night-audit',
     name: 'Night audit',
     phase: 1,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'PS',

@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
   HotelRoomOperationRuleError,
   normalizeHousekeepingInspection,
@@ -22,17 +23,6 @@ export class PartnerRoomOperationsError extends Error {
     super(message);
     this.code = code;
   }
-}
-
-function dateInTimezone(timezone: string, instant = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: timezone,
-    year: 'numeric',
-  }).formatToParts(instant);
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
 }
 
 async function requireManagedRoom(
@@ -125,7 +115,10 @@ export async function recordHousekeepingInspection(input: {
       });
       const created = await transaction.hotelHousekeepingInspection.create({
         data: {
-          businessDate: dateInTimezone(room.property.timezone),
+          businessDate: resolveOperationalDate(
+            room.property.operationalDate,
+            room.property.timezone,
+          ),
           idempotencyKey,
           inspectedByUserId: input.actorUserId,
           note: inspection.note,

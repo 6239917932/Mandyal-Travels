@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
   calculateExpectedCash,
   calculateHotelFolioBalance,
@@ -25,17 +26,6 @@ export class PartnerHotelFolioError extends Error {
     super(message);
     this.code = code;
   }
-}
-
-function dateInTimezone(timezone: string, instant = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: timezone,
-    year: 'numeric',
-  }).formatToParts(instant);
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
 }
 
 type StoredFolioEntry = {
@@ -86,7 +76,7 @@ function cashEntries(entries: StoredFolioEntry[]) {
 async function ownedProperties(client: Pick<typeof prisma, 'partnerProperty'>, partnerId: string) {
   return client.partnerProperty.findMany({
     orderBy: { displayName: 'asc' },
-    select: { displayName: true, hotelSlug: true, id: true, timezone: true },
+    select: { displayName: true, hotelSlug: true, id: true, operationalDate: true, timezone: true },
     take: MAX_PROPERTIES + 1,
     where: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
   });
@@ -171,7 +161,7 @@ export async function getPartnerHotelFolioWorkspace(input: {
         }
       : undefined,
     properties: boundedProperties.map((property) => ({
-      businessDate: dateInTimezone(property.timezone),
+      businessDate: resolveOperationalDate(property.operationalDate, property.timezone),
       id: property.id,
       name: property.displayName,
     })),
@@ -277,7 +267,7 @@ export async function openHotelCashierShift(input: {
       const shift = await transaction.hotelCashierShift.create({
         data: {
           activeKey,
-          businessDate: dateInTimezone(property.timezone),
+          businessDate: resolveOperationalDate(property.operationalDate, property.timezone),
           openIdempotencyKey: idempotencyKey,
           openedByUserId: input.actorUserId,
           openingFloatAmount,
@@ -480,7 +470,7 @@ export async function postHotelFolioEntry(input: {
         data: {
           ...posting,
           bookingId: booking.id,
-          businessDate: dateInTimezone(property.timezone),
+          businessDate: resolveOperationalDate(property.operationalDate, property.timezone),
           cashierShiftId: shift?.id,
           currency: booking.currency,
           idempotencyKey,
@@ -583,7 +573,7 @@ export async function reverseHotelFolioEntry(input: {
         data: {
           amount: original.amount,
           bookingId: booking.id,
-          businessDate: dateInTimezone(property.timezone),
+          businessDate: resolveOperationalDate(property.operationalDate, property.timezone),
           cashierShiftId: shift?.id,
           category: original.category,
           currency: original.currency,

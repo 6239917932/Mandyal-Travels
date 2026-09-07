@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { prisma } from '@/lib/prisma';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
   addRoomRackDays,
   buildRoomRackDates,
@@ -49,17 +50,6 @@ export type PartnerRoomRack = Readonly<{
   unassignedArrivalCount: number;
 }>;
 
-function dateInTimezone(timezone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: timezone,
-    year: 'numeric',
-  }).formatToParts(new Date());
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function guestName(guest: { firstName: string; lastName: string } | null): string {
   if (!guest) return 'Guest details unavailable';
   return `${guest.firstName} ${guest.lastName}`.trim().slice(0, 100) || 'Guest details unavailable';
@@ -71,7 +61,7 @@ export async function getPartnerPmsRoomRack(
 ): Promise<PartnerRoomRack> {
   const ownedProperties = await prisma.partnerProperty.findMany({
     orderBy: { displayName: 'asc' },
-    select: { displayName: true, hotelSlug: true, id: true, timezone: true },
+    select: { displayName: true, hotelSlug: true, id: true, operationalDate: true, timezone: true },
     take: MAX_RACK_PROPERTIES + 1,
     where: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
   });
@@ -90,7 +80,7 @@ export async function getPartnerPmsRoomRack(
       dates: [],
       departures: [],
       occupiedRoomCount: 0,
-      operationalDate: dateInTimezone('Asia/Kolkata'),
+      operationalDate: resolveOperationalDate('', 'Asia/Kolkata'),
       properties,
       readyRoomCount: 0,
       rooms: [],
@@ -99,7 +89,7 @@ export async function getPartnerPmsRoomRack(
     };
   }
 
-  const operationalDate = dateInTimezone(selected.timezone);
+  const operationalDate = resolveOperationalDate(selected.operationalDate, selected.timezone);
   const dates = buildRoomRackDates(operationalDate);
   const endExclusive = addRoomRackDays(operationalDate, dates.length);
   const [physicalRooms, storedBookings] = await Promise.all([
