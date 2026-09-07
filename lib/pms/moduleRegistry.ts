@@ -50,6 +50,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'RR',
+    description: 'Seven-day physical-room occupancy, readiness, arrivals and departures view.',
+    group: 'Front office and operations',
+    href: '/partner/pms/room-rack',
+    name: 'Room rack',
+    phase: 1,
+    status: 'LIVE',
+  },
+  {
     code: 'RS',
     description: 'Search and manage individual, direct, channel and corporate reservations.',
     group: 'Front office and operations',

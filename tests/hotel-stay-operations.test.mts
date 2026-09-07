@@ -54,6 +54,7 @@ test('stay transitions allow only reserved arrival outcomes and checked-in check
 
 test('room assignments are normalized, unique, bounded and exact', () => {
   assert.deepEqual(normalizeRoomAssignments([' 204 ', '205'], 2), { roomNumbers: ['204', '205'] });
+  assert.deepEqual(normalizeRoomAssignments(['A.1', 'A_1'], 2), { roomNumbers: ['A.1', 'A_1'] });
   assert.equal(
     normalizeRoomAssignments(['204', '204'], 2).violation?.code,
     'INVALID_ROOM_ASSIGNMENT',

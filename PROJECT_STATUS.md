@@ -441,10 +441,10 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 624 regression tests, formatting verification, Prisma
+The current travel-domain milestone passes 631 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
 internal worker routes, clean-database verification of all 93 SQLite migrations with foreign-key
 integrity enabled, a synchronized 110-table PostgreSQL-native baseline, the portable deployment
-contract, a 223-route production build, and live Railway smoke/accessibility/link/load checks.
+contract, a 224-route production build, and live Railway smoke/accessibility/link/load checks.
 Provider integration work must preserve those checks and add provider-specific automated tests
 before going live.
