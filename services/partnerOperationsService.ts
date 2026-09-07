@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
   assertHotelFolioSettledForCheckout,
   PartnerHotelFolioError,
@@ -130,25 +131,6 @@ function readStoredStringList(value: string): string[] {
   }
 }
 
-function dateInTimezone(timezone: string, instant = new Date()): string {
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      timeZone: timezone,
-      year: 'numeric',
-    }).formatToParts(instant);
-    const value = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((part) => part.type === type)?.value ?? '';
-    return `${value('year')}-${value('month')}-${value('day')}`;
-  } catch {
-    throw new PartnerOperationsError(
-      'INVALID_PROPERTY_TIMEZONE',
-      'The property timezone must be corrected before recording stay operations.',
-    );
-  }
-}
-
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -230,7 +212,7 @@ export const partnerOperationsService = {
     actorUserId?: string,
   ) {
     const properties = await prisma.partnerProperty.findMany({
-      select: { hotelSlug: true, id: true, timezone: true },
+      select: { hotelSlug: true, id: true, operationalDate: true, timezone: true },
       where: { partnerId, status: 'ACTIVE' },
     });
     const booking = await prisma.booking.findFirst({
@@ -256,7 +238,7 @@ export const partnerOperationsService = {
         'The assigned property was not found.',
       );
     }
-    const localDate = dateInTimezone(property.timezone);
+    const localDate = resolveOperationalDate(property.operationalDate, property.timezone);
     const timingViolation = evaluateStayTiming({
       checkInDate: booking.quote.checkInDate,
       checkOutDate: booking.quote.checkOutDate,

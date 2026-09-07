@@ -249,6 +249,7 @@ model SupplyPartner {
   cashierShifts         HotelCashierShift[]
   housekeepingInspections HotelHousekeepingInspection[]
   maintenanceWorkOrders HotelMaintenanceWorkOrder[]
+  nightAuditCloses      HotelNightAuditClose[]
 
   @@index([status, createdAt])
 }
@@ -275,6 +276,8 @@ model PartnerProperty {
   contactEmail        String                        @default("")
   contactPhone        String                        @default("")
   timezone            String                        @default("Asia/Kolkata")
+  operationalDate     String                        @default("")
+  operationalDateVersion Int                        @default(0)
   status              String                        @default("ACTIVE")
   listingSource       String                        @default("ASSIGNED")
   publicationStatus   String                        @default("PUBLISHED")
@@ -318,6 +321,7 @@ model PartnerProperty {
   cashierShifts       HotelCashierShift[]
   housekeepingInspections HotelHousekeepingInspection[]
   maintenanceWorkOrders HotelMaintenanceWorkOrder[]
+  nightAuditCloses    HotelNightAuditClose[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1974,6 +1978,26 @@ model HotelFolioEntry {
   @@index([bookingId, createdAt])
   @@index([cashierShiftId, createdAt])
   @@index([businessDate, entryType, createdAt])
+}
+
+model HotelNightAuditClose {
+  id                     String          @id @default(cuid())
+  partnerId              String
+  propertyId             String
+  businessDate           String
+  nextBusinessDate       String
+  closeNote               String
+  snapshotJson            String
+  closedByUserId          String
+  idempotencyKey          String          @unique
+  requestFingerprint      String
+  closedAt                DateTime        @default(now())
+  partner                 SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@unique([propertyId, businessDate])
+  @@index([partnerId, closedAt])
+  @@index([propertyId, closedAt])
 }
 
 model PaymentTransaction {
