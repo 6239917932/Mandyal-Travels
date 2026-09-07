@@ -5,6 +5,7 @@ import { isIsoCalendarDate } from './operationalDate.ts';
 export const NIGHT_AUDIT_IDEMPOTENCY_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 
 export type NightAuditBlockerCounts = Readonly<{
+  activePosOrders: number;
   openCashierShifts: number;
   overdueDepartures: number;
   pendingAmendments: number;

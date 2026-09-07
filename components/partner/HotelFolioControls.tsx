@@ -211,6 +211,7 @@ export function FolioPostingControls({
           {entryType === 'CHARGE' ? (
             <>
               <option value="ROOM_SERVICE">Room service</option>
+              <option value="FOOD_AND_BEVERAGE">Food and beverage</option>
               <option value="LAUNDRY">Laundry</option>
               <option value="MINIBAR">Minibar</option>
               <option value="DAMAGE">Damage</option>

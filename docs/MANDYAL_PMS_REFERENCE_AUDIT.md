@@ -145,3 +145,13 @@ folio collections and outstanding balances from the shared property, booking and
 records. The view is property-scoped and bounded, withholds financial totals when a safety limit or
 mixed currency would make them incomplete, and labels allocated stay value separately from
 statutory invoices or recognized accounting revenue.
+
+Phase 2 service operations now begin with a shared Point of Sale and kitchen queue. A hotel operator
+can place a bounded room-service or outlet order only against a checked-in stay owned by the active
+partner and managed property. Orders keep immutable, versioned state events from placed through
+accepted, preparing and ready. The final serve action and its guest charge commit atomically into the
+existing append-only folio; retries are idempotent, concurrent stale actions are rejected, cancelled
+orders require a reason, open orders block checkout and Night Audit, and posted orders cannot be
+edited or deleted. This operational charge is
+not represented as a GST invoice, inventory depletion, gateway payment or recognized accounting
+revenue.

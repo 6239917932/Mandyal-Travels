@@ -4,6 +4,10 @@ import {
   assertHotelFolioSettledForCheckout,
   PartnerHotelFolioError,
 } from '@/services/partnerHotelFolioService';
+import {
+  assertNoOpenHotelPosOrdersForCheckout,
+  PartnerHotelPosError,
+} from '@/services/partnerHotelPosService';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import type { Prisma } from '@/generated/prisma/client';
 import {
@@ -290,9 +294,10 @@ export const partnerOperationsService = {
       async (transaction) => {
         if (nextStatus === 'CHECKED_OUT') {
           try {
+            await assertNoOpenHotelPosOrdersForCheckout(transaction, booking.id);
             await assertHotelFolioSettledForCheckout(transaction, booking.id);
           } catch (error) {
-            if (error instanceof PartnerHotelFolioError) {
+            if (error instanceof PartnerHotelFolioError || error instanceof PartnerHotelPosError) {
               throw new PartnerOperationsError(error.code, error.message);
             }
             throw error;
