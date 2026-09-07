@@ -129,6 +129,10 @@ records, then keeps property charges, partial deposits, at-property payments and
 append-only folio ledger. Payment collection is administrator-only, requires an open cashier shift,
 uses idempotent serializable mutations and exact cash reconciliation, and blocks checkout while a
 positive balance remains. It deliberately does not claim to issue GST invoices or perform gateway
-refunds. Every approved module is reachable from the persistent sidebar: live modules open their
+refunds. The housekeeping board now preserves bounded inspection history, and the maintenance
+workspace records idempotent room work orders with immutable, versioned status events. Opening a
+work order takes the room out of service; unresolved work blocks reactivation, and completed work
+requires a newer passed inspection before the room can return to service. Every approved module is
+reachable from the persistent sidebar: live modules open their
 production workflow, while foundation and planned modules open a controlled scope workspace that
 cannot submit unfinished transactions.
