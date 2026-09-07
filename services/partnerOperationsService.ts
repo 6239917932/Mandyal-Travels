@@ -1,4 +1,8 @@
 import { prisma } from '@/lib/prisma';
+import {
+  assertHotelFolioSettledForCheckout,
+  PartnerHotelFolioError,
+} from '@/services/partnerHotelFolioService';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import type { Prisma } from '@/generated/prisma/client';
 import {
@@ -300,70 +304,83 @@ export const partnerOperationsService = {
         );
       }
     }
-    return prisma.$transaction(async (transaction) => {
-      if (nextStatus === 'CHECKED_IN') {
-        const activeStays = await transaction.booking.findMany({
-          include: { quote: true },
-          where: {
-            hotelSlug: booking.hotelSlug,
-            id: { not: booking.id },
-            operationalStatus: 'CHECKED_IN',
-            quote: {
-              checkInDate: { lt: booking.quote.checkOutDate },
-              checkOutDate: { gt: booking.quote.checkInDate },
-            },
-            status: 'confirmed',
-          },
-        });
-        const occupiedRooms = new Set(
-          activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
-        );
-        const conflicts = normalizedRoomNumbers.filter((roomNumber) =>
-          occupiedRooms.has(roomNumber),
-        );
-        if (conflicts.length) {
-          throw new PartnerOperationsError(
-            'ROOM_ALREADY_ASSIGNED',
-            `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
-          );
+    return prisma.$transaction(
+      async (transaction) => {
+        if (nextStatus === 'CHECKED_OUT') {
+          try {
+            await assertHotelFolioSettledForCheckout(transaction, booking.id);
+          } catch (error) {
+            if (error instanceof PartnerHotelFolioError) {
+              throw new PartnerOperationsError(error.code, error.message);
+            }
+            throw error;
+          }
         }
-      }
-      const updated = await transaction.booking.update({
-        data: {
-          assignedRoomNumbersJson:
-            nextStatus === 'CHECKED_IN'
-              ? JSON.stringify(normalizedRoomNumbers)
-              : booking.assignedRoomNumbersJson,
-          operationalStatus: nextStatus,
-        },
-        where: { id: booking.id },
-      });
-      if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
-        await transaction.partnerPhysicalRoom.updateMany({
-          data: { housekeepingStatus: 'DIRTY' },
-          where: {
-            propertyId: property.id,
-            roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+        if (nextStatus === 'CHECKED_IN') {
+          const activeStays = await transaction.booking.findMany({
+            include: { quote: true },
+            where: {
+              hotelSlug: booking.hotelSlug,
+              id: { not: booking.id },
+              operationalStatus: 'CHECKED_IN',
+              quote: {
+                checkInDate: { lt: booking.quote.checkOutDate },
+                checkOutDate: { gt: booking.quote.checkInDate },
+              },
+              status: 'confirmed',
+            },
+          });
+          const occupiedRooms = new Set(
+            activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+          );
+          const conflicts = normalizedRoomNumbers.filter((roomNumber) =>
+            occupiedRooms.has(roomNumber),
+          );
+          if (conflicts.length) {
+            throw new PartnerOperationsError(
+              'ROOM_ALREADY_ASSIGNED',
+              `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
+            );
+          }
+        }
+        const updated = await transaction.booking.update({
+          data: {
+            assignedRoomNumbersJson:
+              nextStatus === 'CHECKED_IN'
+                ? JSON.stringify(normalizedRoomNumbers)
+                : booking.assignedRoomNumbersJson,
+            operationalStatus: nextStatus,
+          },
+          where: { id: booking.id },
+        });
+        if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
+          await transaction.partnerPhysicalRoom.updateMany({
+            data: { housekeepingStatus: 'DIRTY' },
+            where: {
+              propertyId: property.id,
+              roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+            },
+          });
+        }
+        await transaction.partnerAuditLog.create({
+          data: {
+            action: `HOTEL_STAY_${nextStatus}`,
+            actorUserId,
+            entityId: booking.id,
+            entityType: 'HOTEL_BOOKING',
+            metadataJson: JSON.stringify({
+              confirmationCode,
+              previousStatus: booking.operationalStatus,
+              assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
+            }),
+            partnerId,
+            summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
           },
         });
-      }
-      await transaction.partnerAuditLog.create({
-        data: {
-          action: `HOTEL_STAY_${nextStatus}`,
-          actorUserId,
-          entityId: booking.id,
-          entityType: 'HOTEL_BOOKING',
-          metadataJson: JSON.stringify({
-            confirmationCode,
-            previousStatus: booking.operationalStatus,
-            assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
-          }),
-          partnerId,
-          summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
-        },
-      });
-      return updated;
-    });
+        return updated;
+      },
+      { isolationLevel: 'Serializable' },
+    );
   },
   async updateHotelPartnerNote(
     partnerId: string,

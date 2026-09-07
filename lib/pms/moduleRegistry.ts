@@ -186,11 +186,13 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'BC',
-    description: 'Guest folios, charges, deposits, receipts, refunds and cashier shifts.',
+    description:
+      'Append-only guest folios, charges, deposits, payment corrections and cashier shifts.',
     group: 'Finance and back office',
+    href: '/partner/pms/billing',
     name: 'Billing and cashier',
     phase: 1,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'GT',
