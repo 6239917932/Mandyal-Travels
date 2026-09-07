@@ -27,7 +27,7 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 32);
+  assert.equal(pmsModules.length, 33);
   assert.equal(pmsModuleGroups.length, 7);
   assert.ok(countPmsModules('LIVE') >= 5);
   assert.ok(countPmsModules('FOUNDATION') >= 3);
@@ -41,6 +41,7 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Owner overview',
     'Room rack',
     'Walk-in booking',
+    'Guest registration',
     'Night audit',
     'Point of sale',
     'Kitchen display',
