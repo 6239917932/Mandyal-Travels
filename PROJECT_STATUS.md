@@ -220,6 +220,12 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   audit records; notes remain excluded from customer records and operational CSV exports
 - Guest special requests captured before payment, persisted with the lead guest, shown on customer
   confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
+- Persistent PMS navigation with a live operational dashboard, seven-day room rack, direct walk-in
+  booking, minimized guest registration, and booking-linked billing workspace
+- Booking-owned append-only hotel folios that derive the accommodation charge and captured online
+  payment from existing records, support incidental charges and partial at-property payments, require
+  administrator cashier shifts, reconcile cash exactly, audit every mutation, use reversals for
+  corrections, and prevent checkout with a positive balance
 - Platform property review workflow for supplier-created listings with pending, approved, and
   rejected states, correction notes, administrator decisions, audit history, and approval-gated search publication
 - Consolidated administrator property-review queue with oldest-first ordering, submission context,
@@ -441,10 +447,10 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 636 regression tests, formatting verification, Prisma
+The current travel-domain milestone passes 643 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
-internal worker routes, clean-database verification of all 94 SQLite migrations with foreign-key
-integrity enabled, a synchronized 111-table PostgreSQL-native baseline, the portable deployment
-contract, a 225-route production build, and live Railway smoke/accessibility/link/load checks.
+internal worker routes, clean-database verification of all 95 SQLite migrations with foreign-key
+integrity enabled, a synchronized 113-table PostgreSQL-native baseline, the portable deployment
+contract, a 228-route production build, and live Railway smoke/accessibility/link/load checks.
 Provider integration work must preserve those checks and add provider-specific automated tests
 before going live.

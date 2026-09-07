@@ -123,7 +123,12 @@ room rack projects registered physical rooms, readiness and assigned stays acros
 seven-day window without creating a second room or reservation store. The guest register stores
 only an inspected document type and its final four characters for active stays, requires recorded
 consent or another lawful basis, prevents duplicate submissions and writes an operator audit event;
-it never retains the full identity number or document image. Every approved module is
-reachable from the persistent sidebar: live modules open their production workflow, while
-foundation and planned modules open a controlled scope workspace that cannot submit unfinished
-transactions.
+it never retains the full identity number or document image. The billing workspace now derives its
+opening accommodation charge and any captured online payment from the existing booking and payment
+records, then keeps property charges, partial deposits, at-property payments and corrections in an
+append-only folio ledger. Payment collection is administrator-only, requires an open cashier shift,
+uses idempotent serializable mutations and exact cash reconciliation, and blocks checkout while a
+positive balance remains. It deliberately does not claim to issue GST invoices or perform gateway
+refunds. Every approved module is reachable from the persistent sidebar: live modules open their
+production workflow, while foundation and planned modules open a controlled scope workspace that
+cannot submit unfinished transactions.

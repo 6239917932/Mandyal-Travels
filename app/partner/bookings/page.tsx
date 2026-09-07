@@ -385,6 +385,12 @@ export default function PartnerBookingsPage() {
                       >
                         Open guest register
                       </Link>
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/partner/pms/billing?booking=${encodeURIComponent(booking.confirmationCode)}`}
+                      >
+                        Open folio
+                      </Link>
                     </div>
                   ) : null}
                   {booking.specialRequests ? (

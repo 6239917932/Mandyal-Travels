@@ -246,6 +246,7 @@ model SupplyPartner {
   flightConnections     FlightSupplierConnection[]
   taxProfile            PartnerTaxProfile?
   taxSnapshots          MarketplaceTaxSnapshot[]
+  cashierShifts         HotelCashierShift[]
 
   @@index([status, createdAt])
 }
@@ -312,6 +313,7 @@ model PartnerProperty {
   physicalRooms       PartnerPhysicalRoom[]
   rooms               PartnerRoomType[]
   channelMappings     HotelChannelPropertyMapping[]
+  cashierShifts       HotelCashierShift[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1404,6 +1406,7 @@ model Booking {
   availabilityLock        AvailabilityLock         @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
   guestRegistrations      HotelGuestRegistration[]
+  folioEntries            HotelFolioEntry[]
   payment                 PaymentTransaction?
   refunds                 RefundRequest[]
   amendments              BookingAmendment[]
@@ -1851,6 +1854,55 @@ model HotelGuestRegistration {
 
   @@index([bookingId, createdAt])
   @@index([bookingId, verificationStatus])
+}
+
+model HotelCashierShift {
+  id                    String            @id @default(cuid())
+  partnerId             String
+  propertyId            String
+  businessDate          String
+  status                String            @default("OPEN")
+  activeKey             String?           @unique
+  openingFloatAmount    Int               @default(0)
+  declaredClosingAmount Int?
+  openedByUserId        String
+  closedByUserId        String?
+  openedAt              DateTime          @default(now())
+  closedAt              DateTime?
+  version               Int               @default(1)
+  openIdempotencyKey    String            @unique
+  closeIdempotencyKey   String?           @unique
+  partner               SupplyPartner     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property              PartnerProperty   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  folioEntries          HotelFolioEntry[]
+
+  @@index([partnerId, businessDate, openedAt])
+  @@index([propertyId, status, openedAt])
+}
+
+model HotelFolioEntry {
+  id                 String             @id @default(cuid())
+  bookingId          String
+  cashierShiftId     String?
+  entryType          String
+  category           String
+  description        String
+  amount             Int
+  currency           String
+  businessDate       String
+  idempotencyKey     String             @unique
+  requestFingerprint String
+  reversalOfId       String?            @unique
+  postedByUserId     String
+  createdAt          DateTime           @default(now())
+  booking            Booking            @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  cashierShift       HotelCashierShift? @relation(fields: [cashierShiftId], references: [id], onDelete: Restrict)
+  reversalOf         HotelFolioEntry?   @relation("HotelFolioReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversedBy         HotelFolioEntry?   @relation("HotelFolioReversal")
+
+  @@index([bookingId, createdAt])
+  @@index([cashierShiftId, createdAt])
+  @@index([businessDate, entryType, createdAt])
 }
 
 model PaymentTransaction {
