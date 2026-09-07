@@ -32,6 +32,7 @@ type AuditClient = Pick<
   | 'bookingAmendment'
   | 'hotelCashierShift'
   | 'hotelMaintenanceWorkOrder'
+  | 'hotelPosOrder'
   | 'partnerPhysicalRoom'
 >;
 
@@ -41,6 +42,7 @@ async function readAuditSnapshot(
   businessDate: string,
 ) {
   const [
+    activePosOrders,
     openCashierShifts,
     unresolvedArrivals,
     overdueDepartures,
@@ -50,6 +52,12 @@ async function readAuditSnapshot(
     occupiedRooms,
     roomStates,
   ] = await Promise.all([
+    client.hotelPosOrder.count({
+      where: {
+        propertyId: property.id,
+        status: { in: ['PLACED', 'ACCEPTED', 'PREPARING', 'READY'] },
+      },
+    }),
     client.hotelCashierShift.count({ where: { propertyId: property.id, status: 'OPEN' } }),
     client.booking.count({
       where: {
@@ -94,6 +102,7 @@ async function readAuditSnapshot(
     }),
   ]);
   const blockers = {
+    activePosOrders,
     openCashierShifts,
     overdueDepartures,
     pendingAmendments,

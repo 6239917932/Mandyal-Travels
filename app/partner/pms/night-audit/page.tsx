@@ -115,6 +115,11 @@ export default async function PartnerNightAuditPage({ searchParams }: NightAudit
               <h2>{selected.name}</h2>
               <ul className="pms-room-rack__queue-list">
                 {checklistItem(
+                  'unfinished POS and kitchen orders',
+                  snapshot.blockers.activePosOrders,
+                  'Every order is posted to its guest folio or cancelled.',
+                )}
+                {checklistItem(
                   'open cashier shifts',
                   snapshot.blockers.openCashierShifts,
                   'Every shift is reconciled and closed.',

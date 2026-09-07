@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 export const HOTEL_FOLIO_IDEMPOTENCY_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 export const HOTEL_FOLIO_CHARGE_CATEGORIES = [
   'ROOM_SERVICE',
+  'FOOD_AND_BEVERAGE',
   'LAUNDRY',
   'MINIBAR',
   'DAMAGE',
