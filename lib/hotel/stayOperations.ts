@@ -62,7 +62,7 @@ export function normalizeRoomAssignments(
   ];
   if (
     roomNumbers.length !== requiredRooms ||
-    roomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 /-]{0,19}$/.test(roomNumber))
+    roomNumbers.some((roomNumber) => !/^[a-zA-Z0-9][a-zA-Z0-9 ._/-]{0,19}$/.test(roomNumber))
   ) {
     return {
       roomNumbers,

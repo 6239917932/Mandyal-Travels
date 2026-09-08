@@ -37,6 +37,8 @@ model User {
   customerSupportEvents       CustomerSupportCaseEvent[]     @relation("CustomerSupportCaseEventActor")
   sentBusinessInvitations     OrganizationInvitation[]       @relation("BusinessInvitationSender")
   acceptedInvitations         OrganizationInvitation[]       @relation("BusinessInvitationAcceptor")
+  sentPartnerInvitations      PartnerMemberInvitation[]       @relation("PartnerInvitationSender")
+  acceptedPartnerInvitations  PartnerMemberInvitation[]       @relation("PartnerInvitationAcceptor")
   createdPolicyVersions       OrganizationPolicyVersion[]    @relation("OrganizationPolicyVersionCreator")
   supplyPartnerMemberships    SupplyPartnerMember[]
   partnerAuditEntries         PartnerAuditLog[]              @relation("PartnerAuditActor")
@@ -228,6 +230,7 @@ model SupplyPartner {
   createdAt             DateTime                    @default(now())
   updatedAt             DateTime                    @updatedAt
   members               SupplyPartnerMember[]
+  memberInvitations     PartnerMemberInvitation[]
   properties            PartnerProperty[]
   auditEntries          PartnerAuditLog[]
   applications          PartnerApplication[]
@@ -246,6 +249,14 @@ model SupplyPartner {
   flightConnections     FlightSupplierConnection[]
   taxProfile            PartnerTaxProfile?
   taxSnapshots          MarketplaceTaxSnapshot[]
+  cashierShifts         HotelCashierShift[]
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
+  nightAuditCloses      HotelNightAuditClose[]
+  posOrders             HotelPosOrder[]
+  banquetEvents         HotelBanquetEvent[]
+  stockItems            HotelStockItem[]
+  stockMovements        HotelStockMovement[]
 
   @@index([status, createdAt])
 }
@@ -263,6 +274,27 @@ model SupplyPartnerMember {
   @@index([partnerId, role])
 }
 
+model PartnerMemberInvitation {
+  id               String        @id @default(cuid())
+  partnerId        String
+  email            String
+  role             String        @default("OPERATOR")
+  tokenHash        String        @unique
+  status           String        @default("PENDING")
+  invitedByUserId  String
+  acceptedByUserId String?
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  partner          SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  invitedBy        User          @relation("PartnerInvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  acceptedBy       User?         @relation("PartnerInvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId, status, createdAt])
+  @@index([email, status, expiresAt])
+}
+
 model PartnerProperty {
   id                  String                        @id @default(cuid())
   partnerId           String
@@ -272,6 +304,8 @@ model PartnerProperty {
   contactEmail        String                        @default("")
   contactPhone        String                        @default("")
   timezone            String                        @default("Asia/Kolkata")
+  operationalDate     String                        @default("")
+  operationalDateVersion Int                        @default(0)
   status              String                        @default("ACTIVE")
   listingSource       String                        @default("ASSIGNED")
   publicationStatus   String                        @default("PUBLISHED")
@@ -312,6 +346,14 @@ model PartnerProperty {
   physicalRooms       PartnerPhysicalRoom[]
   rooms               PartnerRoomType[]
   channelMappings     HotelChannelPropertyMapping[]
+  cashierShifts       HotelCashierShift[]
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
+  nightAuditCloses    HotelNightAuditClose[]
+  posOrders           HotelPosOrder[]
+  banquetEvents       HotelBanquetEvent[]
+  stockItems          HotelStockItem[]
+  stockMovements      HotelStockMovement[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1389,6 +1431,7 @@ model Booking {
   idempotencyKey          String                   @unique
   accessTokenHash         String?                  @unique
   hotelSlug               String
+  source                  String                   @default("ONLINE")
   status                  String
   operationalStatus       String                   @default("RESERVED")
   assignedRoomNumbersJson String                   @default("[]")
@@ -1402,6 +1445,9 @@ model Booking {
   quote                   HotelQuote               @relation(fields: [quoteId], references: [id])
   availabilityLock        AvailabilityLock         @relation(fields: [availabilityLockId], references: [id])
   guest                   BookingGuest?
+  guestRegistrations      HotelGuestRegistration[]
+  folioEntries            HotelFolioEntry[]
+  posOrders               HotelPosOrder[]
   payment                 PaymentTransaction?
   refunds                 RefundRequest[]
   amendments              BookingAmendment[]
@@ -1734,6 +1780,8 @@ model PartnerPhysicalRoom {
   updatedAt          DateTime        @updatedAt
   property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   roomType           PartnerRoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  housekeepingInspections HotelHousekeepingInspection[]
+  maintenanceWorkOrders HotelMaintenanceWorkOrder[]
 
   @@unique([propertyId, roomNumber])
   @@index([propertyId, housekeepingStatus, operationalStatus])
@@ -1775,6 +1823,51 @@ model PartnerRatePlanInventoryDay {
 
   @@unique([ratePlanId, stayDate])
   @@index([stayDate])
+}
+
+model HotelStockItem {
+  id             String               @id @default(cuid())
+  partnerId      String
+  propertyId     String
+  sku            String
+  name           String
+  category       String
+  unit           String
+  quantityOnHand Int                  @default(0)
+  reorderLevel   Int                  @default(0)
+  status         String               @default("ACTIVE")
+  version        Int                  @default(1)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  partner        SupplyPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property       PartnerProperty      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  movements      HotelStockMovement[]
+
+  @@unique([propertyId, sku])
+  @@index([partnerId, status, updatedAt])
+  @@index([propertyId, category, status])
+}
+
+model HotelStockMovement {
+  id                 String          @id @default(cuid())
+  itemId             String
+  partnerId          String
+  propertyId         String
+  movementType       String
+  quantity           Int
+  resultingQuantity Int
+  note               String
+  actorUserId        String
+  idempotencyKey     String          @unique
+  requestFingerprint String
+  createdAt          DateTime        @default(now())
+  item               HotelStockItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  partner            SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@index([itemId, createdAt])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, createdAt])
 }
 
 model HotelReview {
@@ -1829,6 +1922,265 @@ model BookingGuest {
   booking         Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([email])
+}
+
+model HotelHousekeepingInspection {
+  id                 String              @id @default(cuid())
+  partnerId          String
+  propertyId         String
+  physicalRoomId     String
+  result             String
+  note               String              @default("")
+  businessDate       String
+  inspectedByUserId  String
+  idempotencyKey     String              @unique
+  requestFingerprint String
+  inspectedAt        DateTime            @default(now())
+  partner            SupplyPartner       @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty     @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  physicalRoom       PartnerPhysicalRoom @relation(fields: [physicalRoomId], references: [id], onDelete: Restrict)
+
+  @@index([partnerId, inspectedAt])
+  @@index([propertyId, businessDate, inspectedAt])
+  @@index([physicalRoomId, inspectedAt])
+}
+
+model HotelMaintenanceWorkOrder {
+  id                   String                         @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  physicalRoomId       String
+  category             String
+  priority             String                         @default("NORMAL")
+  summary              String
+  description          String                         @default("")
+  status               String                         @default("OPEN")
+  version              Int                            @default(1)
+  openedByUserId       String
+  resolvedAt           DateTime?
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+  createIdempotencyKey String                         @unique
+  requestFingerprint   String
+  partner              SupplyPartner                  @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property             PartnerProperty                @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  physicalRoom         PartnerPhysicalRoom            @relation(fields: [physicalRoomId], references: [id], onDelete: Restrict)
+  events               HotelMaintenanceWorkOrderEvent[]
+
+  @@index([partnerId, status, createdAt])
+  @@index([propertyId, status, priority, createdAt])
+  @@index([physicalRoomId, status, createdAt])
+}
+
+model HotelMaintenanceWorkOrderEvent {
+  id          String                    @id @default(cuid())
+  workOrderId String
+  action      String
+  fromStatus  String
+  toStatus    String
+  note        String                    @default("")
+  version     Int
+  actorUserId String
+  createdAt   DateTime                  @default(now())
+  workOrder   HotelMaintenanceWorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+
+  @@unique([workOrderId, version])
+  @@index([workOrderId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model HotelGuestRegistration {
+  id                     String   @id @default(cuid())
+  bookingId              String
+  guestName              String
+  nationalityCountryCode String
+  residenceCity          String
+  identityType           String
+  identityLast4          String
+  referenceFingerprint   String   @unique
+  verificationStatus     String   @default("VERIFIED_AT_PROPERTY")
+  consentRecorded        Boolean  @default(true)
+  verifiedAt             DateTime @default(now())
+  verifiedByUserId       String
+  createdAt              DateTime @default(now())
+  booking                Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@index([bookingId, verificationStatus])
+}
+
+model HotelCashierShift {
+  id                    String            @id @default(cuid())
+  partnerId             String
+  propertyId            String
+  businessDate          String
+  status                String            @default("OPEN")
+  activeKey             String?           @unique
+  openingFloatAmount    Int               @default(0)
+  declaredClosingAmount Int?
+  openedByUserId        String
+  closedByUserId        String?
+  openedAt              DateTime          @default(now())
+  closedAt              DateTime?
+  version               Int               @default(1)
+  openIdempotencyKey    String            @unique
+  closeIdempotencyKey   String?           @unique
+  partner               SupplyPartner     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property              PartnerProperty   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  folioEntries          HotelFolioEntry[]
+
+  @@index([partnerId, businessDate, openedAt])
+  @@index([propertyId, status, openedAt])
+}
+
+model HotelFolioEntry {
+  id                 String             @id @default(cuid())
+  bookingId          String
+  cashierShiftId     String?
+  entryType          String
+  category           String
+  description        String
+  amount             Int
+  currency           String
+  businessDate       String
+  idempotencyKey     String             @unique
+  requestFingerprint String
+  reversalOfId       String?            @unique
+  postedByUserId     String
+  createdAt          DateTime           @default(now())
+  booking            Booking            @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  cashierShift       HotelCashierShift? @relation(fields: [cashierShiftId], references: [id], onDelete: Restrict)
+  reversalOf         HotelFolioEntry?   @relation("HotelFolioReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversedBy         HotelFolioEntry?   @relation("HotelFolioReversal")
+  posOrder           HotelPosOrder?
+
+  @@index([bookingId, createdAt])
+  @@index([cashierShiftId, createdAt])
+  @@index([businessDate, entryType, createdAt])
+}
+
+model HotelPosOrder {
+  id                   String               @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  bookingId            String
+  folioEntryId         String?              @unique
+  serviceMode          String
+  outletName           String
+  roomNumber           String               @default("")
+  itemsJson            String
+  note                 String               @default("")
+  totalAmount          Int
+  currency             String
+  businessDate         String
+  status               String               @default("PLACED")
+  version              Int                  @default(1)
+  createIdempotencyKey String               @unique
+  requestFingerprint   String
+  createdByUserId      String
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  partner              SupplyPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property             PartnerProperty      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  booking              Booking              @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  folioEntry           HotelFolioEntry?      @relation(fields: [folioEntryId], references: [id], onDelete: Restrict)
+  events               HotelPosOrderEvent[]
+
+  @@index([partnerId, createdAt])
+  @@index([propertyId, status, createdAt])
+  @@index([bookingId, createdAt])
+  @@index([businessDate, status, createdAt])
+}
+
+model HotelPosOrderEvent {
+  id                 String        @id @default(cuid())
+  orderId            String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String        @default("")
+  version            Int
+  actorUserId        String
+  idempotencyKey     String        @unique
+  requestFingerprint String
+  createdAt          DateTime      @default(now())
+  order              HotelPosOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, version])
+  @@index([orderId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model HotelBanquetEvent {
+  id                   String                    @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  eventName            String
+  organizerName        String
+  contactEmail         String                    @default("")
+  contactPhone         String                    @default("")
+  eventType             String
+  venueName             String
+  eventDate             String
+  startTime             String
+  endTime               String
+  expectedGuests        Int
+  quoteAmount           Int
+  currency              String                    @default("INR")
+  requirements          String                    @default("")
+  status                String                    @default("INQUIRY")
+  version               Int                       @default(1)
+  createIdempotencyKey  String                    @unique
+  requestFingerprint    String
+  createdByUserId       String
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  partner               SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property              PartnerProperty            @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  events                HotelBanquetEventHistory[]
+
+  @@index([partnerId, createdAt])
+  @@index([propertyId, eventDate, status])
+  @@index([propertyId, venueName, eventDate, startTime, endTime])
+}
+
+model HotelBanquetEventHistory {
+  id                 String             @id @default(cuid())
+  banquetEventId     String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String             @default("")
+  version            Int
+  actorUserId        String
+  idempotencyKey     String             @unique
+  requestFingerprint String
+  createdAt          DateTime           @default(now())
+  banquetEvent       HotelBanquetEvent  @relation(fields: [banquetEventId], references: [id], onDelete: Restrict)
+
+  @@unique([banquetEventId, version])
+  @@index([banquetEventId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model HotelNightAuditClose {
+  id                     String          @id @default(cuid())
+  partnerId              String
+  propertyId             String
+  businessDate           String
+  nextBusinessDate       String
+  closeNote               String
+  snapshotJson            String
+  closedByUserId          String
+  idempotencyKey          String          @unique
+  requestFingerprint      String
+  closedAt                DateTime        @default(now())
+  partner                 SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property                PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@unique([propertyId, businessDate])
+  @@index([partnerId, closedAt])
+  @@index([propertyId, closedAt])
 }
 
 model PaymentTransaction {

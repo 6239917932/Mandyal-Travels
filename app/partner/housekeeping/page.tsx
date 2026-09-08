@@ -3,49 +3,38 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { HousekeepingRoomActions } from '@/components/partner/HousekeepingRoomActions';
+import { RoomInspectionForm } from '@/components/partner/HousekeepingMaintenanceControls';
 import { Card } from '@/components/ui/Card';
-import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { prisma } from '@/lib/prisma';
+import { getPartnerRoomOperationsWorkspace } from '@/services/partnerHousekeepingMaintenanceService';
 
 export const metadata: Metadata = { title: 'Housekeeping board' };
 
 export default async function PartnerHousekeepingPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login?returnTo=/partner/housekeeping');
   const access = await getPartnerAccess();
-  if (!access?.partnerId || access.partnerType !== 'HOTEL') redirect('/partner');
+  if (!access?.partnerId || !access.userId || access.partnerType !== 'HOTEL') redirect('/partner');
 
-  const properties = await prisma.partnerProperty.findMany({
-    include: {
-      rooms: {
-        include: { physicalRooms: { orderBy: [{ floorLabel: 'asc' }, { roomNumber: 'asc' }] } },
-        orderBy: { name: 'asc' },
-        where: { status: 'ACTIVE' },
-      },
-    },
-    orderBy: { displayName: 'asc' },
-    where: { partnerId: access.partnerId, status: 'ACTIVE' },
-  });
-  const physicalRooms = properties.flatMap((property) =>
-    property.rooms.flatMap((room) =>
-      room.physicalRooms.map((physicalRoom) => ({ physicalRoom, property, room })),
-    ),
-  );
+  const workspace = await getPartnerRoomOperationsWorkspace(access.partnerId);
+  const physicalRooms = workspace.rooms;
+  const activeMaintenanceByRoom = new Map<string, number>();
+  for (const workOrder of workspace.workOrders) {
+    if (!['OPEN', 'IN_PROGRESS'].includes(workOrder.status)) continue;
+    activeMaintenanceByRoom.set(
+      workOrder.physicalRoomId,
+      (activeMaintenanceByRoom.get(workOrder.physicalRoomId) ?? 0) + 1,
+    );
+  }
   const ready = physicalRooms.filter(
-    ({ physicalRoom }) =>
-      physicalRoom.housekeepingStatus === 'READY' && physicalRoom.operationalStatus === 'ACTIVE',
+    (room) => room.housekeepingStatus === 'READY' && room.operationalStatus === 'ACTIVE',
   ).length;
   const dirty = physicalRooms.filter(
-    ({ physicalRoom }) =>
-      physicalRoom.housekeepingStatus === 'DIRTY' && physicalRoom.operationalStatus === 'ACTIVE',
+    (room) => room.housekeepingStatus === 'DIRTY' && room.operationalStatus === 'ACTIVE',
   ).length;
   const cleaning = physicalRooms.filter(
-    ({ physicalRoom }) =>
-      physicalRoom.housekeepingStatus === 'CLEANING' && physicalRoom.operationalStatus === 'ACTIVE',
+    (room) => room.housekeepingStatus === 'CLEANING' && room.operationalStatus === 'ACTIVE',
   ).length;
   const outOfService = physicalRooms.filter(
-    ({ physicalRoom }) => physicalRoom.operationalStatus === 'OUT_OF_SERVICE',
+    (room) => room.operationalStatus === 'OUT_OF_SERVICE',
   ).length;
 
   return (
@@ -69,8 +58,17 @@ export default async function PartnerHousekeepingPage() {
           <Link className="ui-button ui-button--secondary" href="/partner/bookings">
             Front desk
           </Link>
+          <Link className="ui-button ui-button--secondary" href="/partner/pms/maintenance">
+            Maintenance
+          </Link>
         </div>
       </header>
+      {workspace.safetyLimitReached ? (
+        <p className="booking-page__payment-error" role="alert">
+          Display safety limit reached. Review archived maintenance history before adding more
+          operational work.
+        </p>
+      ) : null}
       <div className="partner-bookings__summary">
         <Card>
           <span>Ready</span>
@@ -90,11 +88,11 @@ export default async function PartnerHousekeepingPage() {
         </Card>
       </div>
       <div className="partner-bookings__list">
-        {physicalRooms.map(({ physicalRoom, property, room }) => (
+        {physicalRooms.map((physicalRoom) => (
           <Card className="partner-bookings__booking" key={physicalRoom.id}>
             <div className="booking-confirmation__reference">
               <span>
-                {property.displayName} · {room.name}
+                {physicalRoom.property.displayName} · {physicalRoom.roomType.name}
               </span>
               <strong>Room {physicalRoom.roomNumber}</strong>
             </div>
@@ -115,14 +113,35 @@ export default async function PartnerHousekeepingPage() {
                 <span>Room notes</span>
                 <strong>{physicalRoom.notes || 'No notes'}</strong>
               </div>
+              <div>
+                <span>Open maintenance</span>
+                <strong>{activeMaintenanceByRoom.get(physicalRoom.id) ?? 0}</strong>
+              </div>
             </div>
             <HousekeepingRoomActions
               housekeepingStatus={physicalRoom.housekeepingStatus}
               operationalStatus={physicalRoom.operationalStatus}
               physicalRoomId={physicalRoom.id}
-              propertyId={property.id}
-              roomId={room.id}
+              propertyId={physicalRoom.propertyId}
+              roomId={physicalRoom.roomTypeId}
             />
+            <RoomInspectionForm physicalRoomId={physicalRoom.id} />
+            {physicalRoom.housekeepingInspections.length ? (
+              <ul className="pms-room-rack__queue-list">
+                {physicalRoom.housekeepingInspections.map((inspection) => (
+                  <li key={inspection.id}>
+                    <strong>{inspection.result.toLowerCase()} inspection</strong>
+                    <span>{inspection.note || 'No inspection note'}</span>
+                    <small>
+                      Business date {inspection.businessDate} ·{' '}
+                      {inspection.inspectedAt.toLocaleString('en-IN')}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No room inspection has been recorded yet.</p>
+            )}
           </Card>
         ))}
         {physicalRooms.length === 0 ? (

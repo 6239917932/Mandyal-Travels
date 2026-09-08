@@ -224,6 +224,7 @@ function mapBooking(booking: {
   partnerNote: string;
   payment: { amount: number; status: string } | null;
   quoteId: string;
+  source: string;
   status: string;
   totalAmount: number;
 }): HotelBookingRecord | undefined {
@@ -247,6 +248,7 @@ function mapBooking(booking: {
     paymentAmount: booking.payment.amount,
     paymentStatus: booking.payment.status as HotelBookingRecord['paymentStatus'],
     quoteId: booking.quoteId,
+    source: booking.source as HotelBookingRecord['source'],
     status: booking.status as HotelBookingRecord['status'],
     totalAmount: booking.totalAmount,
   };
@@ -493,6 +495,7 @@ export class PrismaBookingRepository implements BookingRepository {
             },
           },
           quoteId: booking.quoteId,
+          source: booking.source,
           status: booking.status,
           totalAmount: booking.totalAmount,
         },

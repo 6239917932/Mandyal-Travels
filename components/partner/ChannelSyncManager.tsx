@@ -19,8 +19,11 @@ type Mapping = {
   status: string;
 };
 type Connection = {
+  dispatchReady: boolean;
   externalAccountRef: string;
   id: string;
+  lastHealthAt: string | null;
+  lastHealthStatus: string;
   propertyMappings: Mapping[];
   providerName: string;
   status: string;
@@ -28,9 +31,11 @@ type Connection = {
 };
 
 export function ChannelSyncManager({
+  canAdminister,
   connections,
   properties,
 }: {
+  canAdminister: boolean;
   connections: Connection[];
   properties: PropertyOption[];
 }) {
@@ -91,46 +96,61 @@ export function ChannelSyncManager({
           {message}
         </p>
       ) : null}
-      <form
-        className="supplier-form"
-        onSubmit={(event) =>
-          void submit(
-            event,
-            '/api/v1/partner/channels',
-            'Connection shell created. Configure its credentials in the deployment secret store.',
-          )
-        }
-      >
-        <h2>Add channel connection</h2>
+      <div className="ui-card">
+        <strong>Controlled dispatch only</strong>
         <p>
-          No passwords or API keys are stored here. This creates governed provider metadata only.
+          Synchronization remains locked until platform configuration marks the provider active and
+          a successful health check is less than 24 hours old. Provider acceptance is dispatch
+          evidence; conflicts still require reconciliation.
         </p>
-        <div className="supplier-form__grid">
-          <label>
-            Provider name
-            <input
-              name="providerName"
-              required
-              minLength={2}
-              maxLength={80}
-              placeholder="SiteMinder, STAAH, AxisRooms"
-            />
-          </label>
-          <label>
-            External account reference
-            <input
-              name="externalAccountRef"
-              required
-              minLength={2}
-              maxLength={100}
-              placeholder="account-123"
-            />
-          </label>
+      </div>
+      {canAdminister ? (
+        <form
+          className="supplier-form"
+          onSubmit={(event) =>
+            void submit(
+              event,
+              '/api/v1/partner/channels',
+              'Connection shell created. Configure its credentials in the deployment secret store.',
+            )
+          }
+        >
+          <h2>Add channel connection</h2>
+          <p>
+            No passwords or API keys are stored here. This creates governed provider metadata only.
+          </p>
+          <div className="supplier-form__grid">
+            <label>
+              Provider name
+              <input
+                name="providerName"
+                required
+                minLength={2}
+                maxLength={80}
+                placeholder="SiteMinder, STAAH, AxisRooms"
+              />
+            </label>
+            <label>
+              External account reference
+              <input
+                name="externalAccountRef"
+                required
+                minLength={2}
+                maxLength={100}
+                placeholder="account-123"
+              />
+            </label>
+          </div>
+          <button className="ui-button ui-button--primary" disabled={busy} type="submit">
+            {busy ? 'Working…' : 'Create connection'}
+          </button>
+        </form>
+      ) : (
+        <div className="ui-card">
+          <strong>Administrator controls hidden</strong>
+          <p>Operators can review mappings and run evidence but cannot change or dispatch them.</p>
         </div>
-        <button className="ui-button ui-button--primary" disabled={busy} type="submit">
-          {busy ? 'Working…' : 'Create connection'}
-        </button>
-      </form>
+      )}
 
       {connections.map((connection) => (
         <section className="ui-card partner-channel-card" key={connection.id}>
@@ -138,37 +158,45 @@ export function ChannelSyncManager({
             <span className="admin-status-badge">{connection.status.replaceAll('_', ' ')}</span>
             <h2>{connection.providerName}</h2>
             <p>Account reference: {connection.externalAccountRef}</p>
+            <p>
+              Health: {connection.lastHealthStatus.replaceAll('_', ' ')}
+              {connection.lastHealthAt
+                ? ` · checked ${new Date(connection.lastHealthAt).toLocaleString('en-IN')}`
+                : ' · never checked'}
+            </p>
           </div>
-          <form
-            className="supplier-form"
-            onSubmit={(event) =>
-              void submit(event, '/api/v1/partner/channels/mappings', 'Property mapping saved.')
-            }
-          >
-            <input name="connectionId" type="hidden" value={connection.id} />
-            <div className="supplier-form__grid">
-              <label>
-                Property
-                <select name="propertyId" required defaultValue="">
-                  <option value="" disabled>
-                    Select property
-                  </option>
-                  {properties.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {property.displayName}
+          {canAdminister ? (
+            <form
+              className="supplier-form"
+              onSubmit={(event) =>
+                void submit(event, '/api/v1/partner/channels/mappings', 'Property mapping saved.')
+              }
+            >
+              <input name="connectionId" type="hidden" value={connection.id} />
+              <div className="supplier-form__grid">
+                <label>
+                  Property
+                  <select name="propertyId" required defaultValue="">
+                    <option value="" disabled>
+                      Select property
                     </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                External property reference
-                <input name="externalPropertyRef" required minLength={2} maxLength={100} />
-              </label>
-            </div>
-            <button className="ui-button ui-button--secondary" disabled={busy} type="submit">
-              {busy ? 'Working…' : 'Save mapping'}
-            </button>
-          </form>
+                    {properties.map((property) => (
+                      <option key={property.id} value={property.id}>
+                        {property.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  External property reference
+                  <input name="externalPropertyRef" required minLength={2} maxLength={100} />
+                </label>
+              </div>
+              <button className="ui-button ui-button--secondary" disabled={busy} type="submit">
+                {busy ? 'Working…' : 'Save mapping'}
+              </button>
+            </form>
+          ) : null}
           <div className="partner-channel-mappings">
             <h3>Property mappings</h3>
             {connection.propertyMappings.map((mapping) => (
@@ -179,29 +207,35 @@ export function ChannelSyncManager({
             ))}
             {connection.propertyMappings.length === 0 ? <p>No properties mapped yet.</p> : null}
           </div>
-          <form
-            className="supplier-form"
-            onSubmit={(event) =>
-              void submit(
-                event,
-                '/api/v1/partner/channels/syncs',
-                'Synchronization queued for the integration worker.',
-              )
-            }
-          >
-            <input name="connectionId" type="hidden" value={connection.id} />
-            <label>
-              Direction
-              <select name="direction" defaultValue="BIDIRECTIONAL">
-                <option value="PULL">Pull into Mandyal</option>
-                <option value="PUSH">Push to channel</option>
-                <option value="BIDIRECTIONAL">Bidirectional</option>
-              </select>
-            </label>
-            <button className="ui-button ui-button--primary" disabled={busy} type="submit">
-              {busy ? 'Working…' : 'Queue sync'}
-            </button>
-          </form>
+          {canAdminister ? (
+            <form
+              className="supplier-form"
+              onSubmit={(event) =>
+                void submit(
+                  event,
+                  '/api/v1/partner/channels/syncs',
+                  'Synchronization queued for the integration worker.',
+                )
+              }
+            >
+              <input name="connectionId" type="hidden" value={connection.id} />
+              <label>
+                Direction
+                <select name="direction" defaultValue="BIDIRECTIONAL">
+                  <option value="PULL">Pull into Mandyal</option>
+                  <option value="PUSH">Push to channel</option>
+                  <option value="BIDIRECTIONAL">Bidirectional</option>
+                </select>
+              </label>
+              <button
+                className="ui-button ui-button--primary"
+                disabled={busy || !connection.dispatchReady}
+                type="submit"
+              >
+                {busy ? 'Working…' : 'Dispatch sync'}
+              </button>
+            </form>
+          ) : null}
           <div className="partner-channel-runs">
             <h3>Recent synchronization</h3>
             {connection.syncRuns.map((run) => (

@@ -1,8 +1,6 @@
-import { createHash, createHmac } from 'node:crypto';
-
 import { calculatePromotion } from '@/constants/promotionRules';
 import { normalizeEmail } from '@/lib/auth/validation';
-import { readConfiguredSecret } from '@/lib/security/configuredSecret';
+import { createBookingAccessToken, hashBookingAccessToken } from '@/lib/bookingAccessToken';
 import { createBookingReference } from '@/lib/confirmationCode';
 import { prisma } from '@/lib/prisma';
 
@@ -46,19 +44,6 @@ import type {
 } from '@/types/commerce';
 
 const availabilityLockTtlMilliseconds = 10 * 60 * 1000;
-
-function hashBookingAccessToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
-
-function createBookingAccessToken(idempotencyKey: string): string {
-  const secret = readConfiguredSecret('BOOKING_TOKEN_SECRET');
-  if (!secret) {
-    throw new Error('BOOKING_TOKEN_SECRET is not securely configured.');
-  }
-
-  return createHmac('sha256', secret).update(idempotencyKey).digest('hex');
-}
 
 export class HotelBookingRuleError extends Error {
   constructor(
@@ -428,6 +413,7 @@ export class HotelBookingService {
       paymentAmount: totalAmount,
       paymentStatus: 'captured',
       quoteId: quote.id,
+      source: 'ONLINE',
       status: 'confirmed',
       totalAmount,
     };
@@ -668,15 +654,25 @@ export class HotelBookingService {
     const bookings = await this.bookings.findAll(options);
     const results = await Promise.all(
       bookings.map(async (booking) => {
-        const [hotel, quote] = await Promise.all([
+        const [hotel, quote, property] = await Promise.all([
           this.hotels.getHotelBySlug(booking.hotelSlug),
           this.quotes.findById(booking.quoteId),
+          prisma.partnerProperty.findUnique({
+            include: { rooms: { include: { ratePlans: true } } },
+            where: { hotelSlug: booking.hotelSlug },
+          }),
         ]);
         const room = hotel?.rooms.find(
           (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
         );
         const ratePlan = room?.ratePlans.find((candidate) => candidate.id === quote?.ratePlanId);
-        if (!hotel || !quote || !room || !ratePlan) return undefined;
+        const managedRoom = property?.rooms.find(
+          (candidate) => candidate.roomTypeId === quote?.availabilityLock.roomTypeId,
+        );
+        const managedRatePlan = managedRoom?.ratePlans.find(
+          (candidate) => candidate.ratePlanId === quote?.ratePlanId,
+        );
+        if (!quote || (!hotel && !property) || (!room && !managedRoom)) return undefined;
         return {
           assignedRoomNumbers: booking.assignedRoomNumbers,
           checkInDate: quote.checkInDate,
@@ -686,13 +682,14 @@ export class HotelBookingService {
           currency: booking.currency,
           guestEmail: booking.guest.email,
           guestName: `${booking.guest.firstName} ${booking.guest.lastName}`,
-          hotelName: hotel.name,
+          hotelName: hotel?.name ?? property!.displayName,
           operationalStatus: booking.operationalStatus,
           partnerNote: booking.partnerNote ?? '',
           paymentStatus: booking.paymentStatus,
-          ratePlanName: ratePlan.name,
-          roomName: room.name,
+          ratePlanName: ratePlan?.name ?? managedRatePlan?.name ?? managedRoom!.ratePlanName,
+          roomName: room?.name ?? managedRoom!.name,
           rooms: quote.rooms,
+          source: booking.source,
           specialRequests: booking.guest.specialRequests,
           status: booking.status,
           totalAmount: booking.totalAmount,

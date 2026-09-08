@@ -69,11 +69,7 @@ export function resolveDatabasePoolConfiguration(
   };
 }
 
-export function validatePostgreSqlRuntimeUrl(
-  databaseUrl: string,
-  production: boolean,
-  trustRenderPrivateNetwork = false,
-): URL {
+export function validatePostgreSqlRuntimeUrl(databaseUrl: string, production: boolean): URL {
   let parsed: URL;
   try {
     parsed = new URL(databaseUrl);
@@ -88,12 +84,7 @@ export function validatePostgreSqlRuntimeUrl(
   }
   if (production) {
     const sslMode = parsed.searchParams.get('sslmode');
-    const trustedRenderPrivateHost =
-      trustRenderPrivateNetwork && /^dpg-[a-z0-9-]+-a$/.test(parsed.hostname);
-    if (
-      !trustedRenderPrivateHost &&
-      !['require', 'verify-ca', 'verify-full'].includes(sslMode ?? '')
-    ) {
+    if (!['require', 'verify-ca', 'verify-full'].includes(sslMode ?? '')) {
       throw new Error('DATABASE_URL_TLS_REQUIRED');
     }
   }
@@ -109,11 +100,7 @@ export function createDatabaseClient(
     return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: databaseUrl }) });
   }
 
-  validatePostgreSqlRuntimeUrl(
-    databaseUrl,
-    environment.NODE_ENV === 'production',
-    environment.DATABASE_TRUST_RENDER_PRIVATE_NETWORK === 'true',
-  );
+  validatePostgreSqlRuntimeUrl(databaseUrl, environment.NODE_ENV === 'production');
   const pool = resolveDatabasePoolConfiguration(environment);
   const postgresqlClient = new PostgreSqlPrismaClient({
     adapter: new PrismaPg({

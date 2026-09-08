@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { getWorkspaceActiveNavigationKey } from '@/lib/navigation/workspaceActiveRoute';
+
 export type WorkspaceNavigationItem = Readonly<{
   code: string;
   href?: string;
@@ -35,12 +37,7 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const pathname = usePathname();
   if (publicPaths.includes(pathname)) return children;
-
-  const isActive = (href: string) => {
-    if (pathname === href) return true;
-    const root = href.split('/').filter(Boolean).length === 1;
-    return !root && pathname.startsWith(`${href}/`);
-  };
+  const activeNavigationKey = getWorkspaceActiveNavigationKey(pathname, groups);
 
   return (
     <div className="workspace-shell">
@@ -53,14 +50,16 @@ export function WorkspaceShell({
           </div>
         </div>
         <nav aria-label={`${title} sections`}>
-          {groups.map((group) => (
+          {groups.map((group, groupIndex) => (
             <details className="workspace-sidebar__group" key={group.label} open>
               <summary>{group.label}</summary>
               <div className="workspace-sidebar__links">
-                {group.items.map((item) =>
+                {group.items.map((item, itemIndex) =>
                   item.href ? (
                     <Link
-                      aria-current={isActive(item.href) ? 'page' : undefined}
+                      aria-current={
+                        activeNavigationKey === `${groupIndex}:${itemIndex}` ? 'page' : undefined
+                      }
                       href={item.href}
                       key={`${group.label}-${item.label}`}
                       prefetch={false}

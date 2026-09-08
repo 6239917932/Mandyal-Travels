@@ -359,16 +359,40 @@ export default function PartnerBookingsPage() {
                         {booking.status}
                       </strong>
                       <small>{booking.operationalStatus.replaceAll('_', ' ').toLowerCase()}</small>
+                      <small>
+                        {booking.source === 'PARTNER_DIRECT' ? 'Direct / walk-in' : 'Online'}
+                      </small>
                     </div>
                     <div>
                       <span>Payment</span>
-                      <strong>{booking.paymentStatus}</strong>
+                      <strong>
+                        {booking.source === 'PARTNER_DIRECT' && booking.paymentStatus === 'pending'
+                          ? 'Due at property'
+                          : booking.paymentStatus}
+                      </strong>
                     </div>
                     <div>
                       <span>Total</span>
                       <strong>{money(booking.totalAmount, booking.currency)}</strong>
                     </div>
                   </div>
+                  {booking.status === 'confirmed' &&
+                  ['RESERVED', 'CHECKED_IN'].includes(booking.operationalStatus) ? (
+                    <div className="manage-booking__document-actions">
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/partner/pms/guest-registration?booking=${encodeURIComponent(booking.confirmationCode)}`}
+                      >
+                        Open guest register
+                      </Link>
+                      <Link
+                        className="ui-button ui-button--secondary"
+                        href={`/partner/pms/billing?booking=${encodeURIComponent(booking.confirmationCode)}`}
+                      >
+                        Open folio
+                      </Link>
+                    </div>
+                  ) : null}
                   {booking.specialRequests ? (
                     <div className="booking-confirmation__note">
                       <strong>Guest special requests</strong>

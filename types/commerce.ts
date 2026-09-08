@@ -92,6 +92,7 @@ export interface PartnerBookingRecord {
   ratePlanName: string;
   roomName: string;
   rooms: number;
+  source: HotelBookingRecord['source'];
   specialRequests: string;
   status: HotelBookingRecord['status'];
   totalAmount: number;
@@ -153,9 +154,40 @@ export interface HotelBookingRecord {
   paymentStatus: PaymentStatus;
   paymentAmount: number;
   quoteId: string;
+  source: 'ONLINE' | 'PARTNER_DIRECT';
   status: 'confirmed' | 'cancelled';
   totalAmount: number;
   currency: CurrencyCode;
+}
+
+export interface PartnerDirectBookingOption {
+  hotelSlug: string;
+  id: string;
+  name: string;
+  rooms: Array<{
+    id: string;
+    inventoryCount: number;
+    name: string;
+    ratePlans: Array<{
+      id: string;
+      name: string;
+      nightlyRate: number;
+      ratePlanId: string;
+      taxesAndFees: number;
+    }>;
+    roomTypeId: string;
+  }>;
+}
+
+export interface PartnerDirectQuoteRequest extends HotelQuoteRequest {
+  partnerId: string;
+}
+
+export interface CreatePartnerDirectBookingRequest {
+  availabilityLockId: string;
+  guest: HotelBookingRecord['guest'];
+  hotelSlug: string;
+  quoteId: string;
 }
 
 export interface ManagedHotelBooking extends HotelBookingRecord {

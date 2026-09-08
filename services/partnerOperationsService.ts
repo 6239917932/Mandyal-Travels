@@ -1,4 +1,13 @@
 import { prisma } from '@/lib/prisma';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
+import {
+  assertHotelFolioSettledForCheckout,
+  PartnerHotelFolioError,
+} from '@/services/partnerHotelFolioService';
+import {
+  assertNoOpenHotelServiceOrdersForCheckout,
+  PartnerHotelPosError,
+} from '@/services/partnerHotelPosService';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import type { Prisma } from '@/generated/prisma/client';
 import {
@@ -126,25 +135,6 @@ function readStoredStringList(value: string): string[] {
   }
 }
 
-function dateInTimezone(timezone: string, instant = new Date()): string {
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      timeZone: timezone,
-      year: 'numeric',
-    }).formatToParts(instant);
-    const value = (type: Intl.DateTimeFormatPartTypes) =>
-      parts.find((part) => part.type === type)?.value ?? '';
-    return `${value('year')}-${value('month')}-${value('day')}`;
-  } catch {
-    throw new PartnerOperationsError(
-      'INVALID_PROPERTY_TIMEZONE',
-      'The property timezone must be corrected before recording stay operations.',
-    );
-  }
-}
-
 function reservationUnitsForDate(
   reservations: Array<{ dropoffDate: string; pickupDate: string; units: number }>,
   serviceDate: string,
@@ -226,7 +216,7 @@ export const partnerOperationsService = {
     actorUserId?: string,
   ) {
     const properties = await prisma.partnerProperty.findMany({
-      select: { hotelSlug: true, id: true, timezone: true },
+      select: { hotelSlug: true, id: true, operationalDate: true, timezone: true },
       where: { partnerId, status: 'ACTIVE' },
     });
     const booking = await prisma.booking.findFirst({
@@ -252,7 +242,7 @@ export const partnerOperationsService = {
         'The assigned property was not found.',
       );
     }
-    const localDate = dateInTimezone(property.timezone);
+    const localDate = resolveOperationalDate(property.operationalDate, property.timezone);
     const timingViolation = evaluateStayTiming({
       checkInDate: booking.quote.checkInDate,
       checkOutDate: booking.quote.checkOutDate,
@@ -300,70 +290,84 @@ export const partnerOperationsService = {
         );
       }
     }
-    return prisma.$transaction(async (transaction) => {
-      if (nextStatus === 'CHECKED_IN') {
-        const activeStays = await transaction.booking.findMany({
-          include: { quote: true },
-          where: {
-            hotelSlug: booking.hotelSlug,
-            id: { not: booking.id },
-            operationalStatus: 'CHECKED_IN',
-            quote: {
-              checkInDate: { lt: booking.quote.checkOutDate },
-              checkOutDate: { gt: booking.quote.checkInDate },
-            },
-            status: 'confirmed',
-          },
-        });
-        const occupiedRooms = new Set(
-          activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
-        );
-        const conflicts = normalizedRoomNumbers.filter((roomNumber) =>
-          occupiedRooms.has(roomNumber),
-        );
-        if (conflicts.length) {
-          throw new PartnerOperationsError(
-            'ROOM_ALREADY_ASSIGNED',
-            `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
-          );
+    return prisma.$transaction(
+      async (transaction) => {
+        if (nextStatus === 'CHECKED_OUT') {
+          try {
+            await assertNoOpenHotelServiceOrdersForCheckout(transaction, booking.id);
+            await assertHotelFolioSettledForCheckout(transaction, booking.id);
+          } catch (error) {
+            if (error instanceof PartnerHotelFolioError || error instanceof PartnerHotelPosError) {
+              throw new PartnerOperationsError(error.code, error.message);
+            }
+            throw error;
+          }
         }
-      }
-      const updated = await transaction.booking.update({
-        data: {
-          assignedRoomNumbersJson:
-            nextStatus === 'CHECKED_IN'
-              ? JSON.stringify(normalizedRoomNumbers)
-              : booking.assignedRoomNumbersJson,
-          operationalStatus: nextStatus,
-        },
-        where: { id: booking.id },
-      });
-      if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
-        await transaction.partnerPhysicalRoom.updateMany({
-          data: { housekeepingStatus: 'DIRTY' },
-          where: {
-            propertyId: property.id,
-            roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+        if (nextStatus === 'CHECKED_IN') {
+          const activeStays = await transaction.booking.findMany({
+            include: { quote: true },
+            where: {
+              hotelSlug: booking.hotelSlug,
+              id: { not: booking.id },
+              operationalStatus: 'CHECKED_IN',
+              quote: {
+                checkInDate: { lt: booking.quote.checkOutDate },
+                checkOutDate: { gt: booking.quote.checkInDate },
+              },
+              status: 'confirmed',
+            },
+          });
+          const occupiedRooms = new Set(
+            activeStays.flatMap((stay) => readStoredStringList(stay.assignedRoomNumbersJson)),
+          );
+          const conflicts = normalizedRoomNumbers.filter((roomNumber) =>
+            occupiedRooms.has(roomNumber),
+          );
+          if (conflicts.length) {
+            throw new PartnerOperationsError(
+              'ROOM_ALREADY_ASSIGNED',
+              `Physical room ${conflicts.join(', ')} is already assigned to an overlapping checked-in stay.`,
+            );
+          }
+        }
+        const updated = await transaction.booking.update({
+          data: {
+            assignedRoomNumbersJson:
+              nextStatus === 'CHECKED_IN'
+                ? JSON.stringify(normalizedRoomNumbers)
+                : booking.assignedRoomNumbersJson,
+            operationalStatus: nextStatus,
+          },
+          where: { id: booking.id },
+        });
+        if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
+          await transaction.partnerPhysicalRoom.updateMany({
+            data: { housekeepingStatus: 'DIRTY' },
+            where: {
+              propertyId: property.id,
+              roomNumber: { in: readStoredStringList(booking.assignedRoomNumbersJson) },
+            },
+          });
+        }
+        await transaction.partnerAuditLog.create({
+          data: {
+            action: `HOTEL_STAY_${nextStatus}`,
+            actorUserId,
+            entityId: booking.id,
+            entityType: 'HOTEL_BOOKING',
+            metadataJson: JSON.stringify({
+              confirmationCode,
+              previousStatus: booking.operationalStatus,
+              assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
+            }),
+            partnerId,
+            summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
           },
         });
-      }
-      await transaction.partnerAuditLog.create({
-        data: {
-          action: `HOTEL_STAY_${nextStatus}`,
-          actorUserId,
-          entityId: booking.id,
-          entityType: 'HOTEL_BOOKING',
-          metadataJson: JSON.stringify({
-            confirmationCode,
-            previousStatus: booking.operationalStatus,
-            assignedRoomNumbers: nextStatus === 'CHECKED_IN' ? normalizedRoomNumbers : undefined,
-          }),
-          partnerId,
-          summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
-        },
-      });
-      return updated;
-    });
+        return updated;
+      },
+      { isolationLevel: 'Serializable' },
+    );
   },
   async updateHotelPartnerNote(
     partnerId: string,
@@ -1100,16 +1104,41 @@ export const partnerOperationsService = {
       );
     }
     if (physicalRoom.operationalStatus !== 'ACTIVE' && input.operationalStatus === 'ACTIVE') {
-      const [roomType, activeRoomCount] = await Promise.all([
+      const [roomType, activeRoomCount, latestMaintenance, latestInspection] = await Promise.all([
         prisma.partnerRoomType.findUnique({ where: { id: roomTypeId } }),
         prisma.partnerPhysicalRoom.count({
           where: { operationalStatus: 'ACTIVE', roomTypeId },
+        }),
+        prisma.hotelMaintenanceWorkOrder.findFirst({
+          orderBy: { updatedAt: 'desc' },
+          where: { physicalRoomId },
+        }),
+        prisma.hotelHousekeepingInspection.findFirst({
+          orderBy: { inspectedAt: 'desc' },
+          where: { physicalRoomId },
         }),
       ]);
       if (!roomType || activeRoomCount >= roomType.inventoryCount) {
         throw new PartnerOperationsError(
           'PHYSICAL_ROOM_LIMIT',
           'Increase the room type inventory before returning this physical room to service.',
+        );
+      }
+      if (latestMaintenance && ['OPEN', 'IN_PROGRESS'].includes(latestMaintenance.status)) {
+        throw new PartnerOperationsError(
+          'MAINTENANCE_UNRESOLVED',
+          'Resolve or cancel the active maintenance work order before returning this room to service.',
+        );
+      }
+      if (
+        latestMaintenance &&
+        (!latestInspection ||
+          latestInspection.result !== 'PASSED' ||
+          latestInspection.inspectedAt <= latestMaintenance.updatedAt)
+      ) {
+        throw new PartnerOperationsError(
+          'FRESH_INSPECTION_REQUIRED',
+          'Record a passed inspection after maintenance before returning this room to service.',
         );
       }
     }

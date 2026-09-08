@@ -1,4 +1,4 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import {
   PartnerOperationsError,
@@ -58,6 +58,9 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ confirmationCode: string }> },
 ): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return errorResponse('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels partner portal.', 403);
+  }
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'HOTEL') {
     return errorResponse('PARTNER_UNAUTHORIZED', 'Hotel partner access is required.', 401);

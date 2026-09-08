@@ -1,9 +1,9 @@
 # Mandyal Travels Project Status
 
-Last reviewed: 31 August 2026
+Last reviewed: 7 September 2026
 
 The current launch-gate register is maintained in
-[`docs/PRODUCTION_READINESS_SNAPSHOT_2026-08-31.md`](docs/PRODUCTION_READINESS_SNAPSHOT_2026-08-31.md).
+[`docs/RAILWAY_PRODUCTION_STATUS_2026-09-07.md`](docs/RAILWAY_PRODUCTION_STATUS_2026-09-07.md).
 
 This document separates the working portal from items that require approved production providers,
 credentials, or commercial rules. The Master Blueprint remains the product source of truth.
@@ -220,6 +220,12 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   audit records; notes remain excluded from customer records and operational CSV exports
 - Guest special requests captured before payment, persisted with the lead guest, shown on customer
   confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
+- Persistent PMS navigation with a live operational dashboard, seven-day room rack, direct walk-in
+  booking, minimized guest registration, and booking-linked billing workspace
+- Booking-owned append-only hotel folios that derive the accommodation charge and captured online
+  payment from existing records, support incidental charges and partial at-property payments, require
+  administrator cashier shifts, reconcile cash exactly, audit every mutation, use reversals for
+  corrections, and prevent checkout with a positive balance
 - Platform property review workflow for supplier-created listings with pending, approved, and
   rejected states, correction notes, administrator decisions, audit history, and approval-gated search publication
 - Consolidated administrator property-review queue with oldest-first ordering, submission context,
@@ -257,8 +263,8 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   connection to customer search, availability, booking, cancellation, or payments
 - Automated Hotel domain regression tests for PMS restrictions, seasonal rates, property approval,
   stay timing, physical-room assignment, housekeeping readiness, and integration retries
-- On-demand SQLite backups with SHA-256 sidecars and bounded retention, plus a production release
-  environment preflight that rejects missing, short, or placeholder secrets
+- On-demand SQLite backups with SHA-256 sidecars for local development, plus Railway PostgreSQL
+  point-in-time recovery, daily/weekly/monthly volume backups, and a completed post-migration backup
 - Safe Windows start and update helpers with automatic pre-update database backups
 - Automated clean-database migration and foreign-key integrity verification in the release quality
   gate
@@ -295,20 +301,19 @@ credentials, contracts, or signed-off business rules:
 3. Transactional email, SMS, and WhatsApp delivery providers
 4. Statutory GST tax invoices, tax component rules, credit notes, and invoice numbering
 5. Contracted corporate pricing, partner commission, markup, settlement, and refund rules
-6. Production database, off-site encrypted backup storage, monitoring, alerting, domain/DNS, TLS,
-   hosting, and activation/scheduling of the prepared integration-outbox worker against an approved
-   supplier gateway
+6. Production monitoring/alerting, high-availability capacity review, restore drills, and
+   activation/scheduling of the prepared integration-outbox worker against an approved supplier
+   gateway
 7. Operational legal-policy drafts now exist in the portal; independent legal approval and final
    jurisdiction-specific wording are still required before launch.
 
 The current company statements intentionally identify themselves as reporting statements, not GST
 tax invoices.
 
-The portable container and synchronized PostgreSQL schema/baseline are verified foundations, not
-completion of item 6. The active development runtime and historical migrations remain SQLite-specific,
-while production preflight requires PostgreSQL. The approved runtime adapter, managed provider,
-rehearsal, reconciliation, restore testing, and reversible cutover in
-`docs/PRODUCTION_DATA_PLATFORM.md` remain mandatory.
+Railway now hosts the application and migrated PostgreSQL data behind the canonical custom domain.
+The transfer was reconciled, the live schema and sole-administrator invariant were verified, and
+point-in-time recovery plus scheduled backups are active. SQLite remains local-development-only.
+Remaining production gates are listed in `docs/RAILWAY_PRODUCTION_STATUS_2026-09-07.md`.
 
 ## Release procedure
 
@@ -335,9 +340,9 @@ payments, refunds, settlements, or payouts. Production scheduling and alerts rem
 
 Successful isolated PostgreSQL restore rehearsals can now report fresh, fingerprint-verified,
 replay-safe recovery evidence to the administrator autopilot console. Only safe aggregate validation
-counts are retained. Provider backups, restore access, credentials, PITR, retention, alerting, and
-cutover approval remain external production prerequisites; the portal never creates or restores a
-backup and never targets the active database.
+counts are retained. Railway PITR and scheduled retention are active; restore-drill evidence,
+alerting, and named incident ownership remain operational requirements. The portal never creates or
+restores a backup and never targets the active database.
 
 Partner settlement governance now holds bookings with unresolved refund reservations out of payout
 calculation, rejects inactive suppliers, and records draft, approval, and paid transitions in an
@@ -442,9 +447,10 @@ cancellation and refund decisions remain outside this lifecycle until approved c
 and a payment provider are connected. Picked-up rentals continue consuming dated fleet capacity
 until completion, and completed rentals remain included in confirmed-value performance totals.
 
-The current travel-domain milestone passes 595 regression tests, formatting verification, Prisma
+The current travel-domain milestone passes 643 regression tests, formatting verification, Prisma
 Client generation, strict TypeScript, ESLint, a Next.js production build including authenticated
-internal worker routes, clean-database verification of all 91 SQLite migrations with foreign-key
-integrity enabled, a synchronized 110-table PostgreSQL-native baseline, and the portable deployment
-contract. Provider integration work must preserve those checks and add provider-specific automated
-tests before going live.
+internal worker routes, clean-database verification of all 95 SQLite migrations with foreign-key
+integrity enabled, a synchronized 113-table PostgreSQL-native baseline, the portable deployment
+contract, a 228-route production build, and live Railway smoke/accessibility/link/load checks.
+Provider integration work must preserve those checks and add provider-specific automated tests
+before going live.

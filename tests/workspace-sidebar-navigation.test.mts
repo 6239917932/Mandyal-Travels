@@ -2,6 +2,28 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { getWorkspaceActiveNavigationKey } from '../lib/navigation/workspaceActiveRoute.ts';
+
+test('workspace navigation selects only the most specific matching route', () => {
+  const groups = [
+    {
+      items: [{ href: '/partner' }, { href: '/partner/pms' }, { href: '/partner/pms/guest-crm' }],
+    },
+  ];
+
+  assert.equal(getWorkspaceActiveNavigationKey('/partner', groups), '0:0');
+  assert.equal(getWorkspaceActiveNavigationKey('/partner/pms', groups), '0:1');
+  assert.equal(getWorkspaceActiveNavigationKey('/partner/pms/guest-crm', groups), '0:2');
+  assert.equal(getWorkspaceActiveNavigationKey('/partner/pms/guest-crm/detail', groups), '0:2');
+  assert.equal(getWorkspaceActiveNavigationKey('/unknown', groups), undefined);
+});
+
+test('workspace navigation marks only the first item when destinations are duplicated', () => {
+  const groups = [{ items: [{ href: '/partner/bookings' }, { href: '/partner/bookings' }] }];
+
+  assert.equal(getWorkspaceActiveNavigationKey('/partner/bookings', groups), '0:0');
+});
+
 test('all protected account types use the shared persistent workspace sidebar', async () => {
   const [shell, admin, partner, account, business, agent] = await Promise.all([
     readFile(new URL('../components/layout/WorkspaceShell.tsx', import.meta.url), 'utf8'),
@@ -76,8 +98,8 @@ test('hotel partner sidebar includes the complete governed PMS registry without 
   ]);
   assert.match(partnerLayout, /pmsModuleGroups/);
   assert.match(partnerLayout, /pmsModules/);
-  assert.match(partnerLayout, /module\.href/);
-  assert.match(partnerLayout, /Phase \$\{module\.phase\}/);
+  assert.match(partnerLayout, /getPmsModuleHref\(module\)/);
+  assert.match(partnerLayout, /module\.status === 'LIVE'/);
   assert.match(partnerLayout, /Tax and billing/);
   assert.doesNotMatch(partnerPage, /className="admin-hero__actions"/);
   assert.doesNotMatch(pmsLayout, /pms-sidebar/);

@@ -117,6 +117,106 @@ Exit criteria: every guest charge reaches one auditable folio and the hotel's da
 
 ## Current milestone
 
-The first original Mandyal PMS control centre is connected to live partner/property data. It reports
-operational date, occupancy, arrivals, departures, room readiness and pending amendments, links to
-the existing working modules, and visibly separates live, foundation and planned capabilities.
+The original Mandyal PMS control centre is connected to live partner/property data. It reports the
+operational date, occupancy, arrivals, departures, room readiness and pending amendments. Its live
+room rack projects registered physical rooms, readiness and assigned stays across a bounded
+seven-day window without creating a second room or reservation store. The guest register stores
+only an inspected document type and its final four characters for active stays, requires recorded
+consent or another lawful basis, prevents duplicate submissions and writes an operator audit event;
+it never retains the full identity number or document image. The billing workspace now derives its
+opening accommodation charge and any captured online payment from the existing booking and payment
+records, then keeps property charges, partial deposits, at-property payments and corrections in an
+append-only folio ledger. Payment collection is administrator-only, requires an open cashier shift,
+uses idempotent serializable mutations and exact cash reconciliation, and blocks checkout while a
+positive balance remains. It deliberately does not claim to issue GST invoices or perform gateway
+refunds. The housekeeping board now preserves bounded inspection history, and the maintenance
+workspace records idempotent room work orders with immutable, versioned status events. Opening a
+work order takes the room out of service; unresolved work blocks reactivation, and completed work
+requires a newer passed inspection before the room can return to service. Every approved module is
+reachable from the persistent sidebar: live modules open their
+production workflow, while foundation and planned modules open a controlled scope workspace that
+cannot submit unfinished transactions.
+
+Phase 1 closes with a governed Night Audit that checks cashier shifts, arrivals, departures,
+amendments and urgent maintenance before an administrator can advance the property operational
+date. Every close preserves an immutable readiness snapshot. Phase 2 begins with an
+administrator-only Owner Overview. It derives occupancy, ADR, RevPAR, booked accommodation value,
+folio collections and outstanding balances from the shared property, booking and append-only folio
+records. The view is property-scoped and bounded, withholds financial totals when a safety limit or
+mixed currency would make them incomplete, and labels allocated stay value separately from
+statutory invoices or recognized accounting revenue.
+
+The PMS registry exposes this workflow once as Owner Overview. The earlier Analytics and KPI alias
+used the same route and data, so it was removed instead of maintaining duplicate navigation and
+ambiguous active-state behavior.
+
+Access Control now has its own live supplier team directory rather than sharing the activity-log
+destination. It uses hashed, revocable seven-day invitations, administrator and operator roles,
+last-administrator protection, forced session revocation after role changes, and partner-scoped
+immutable audit entries. The activity log remains a separate read-only governance view.
+
+The Attendant View is now live as a prioritized projection of the same bounded room, inspection and
+maintenance workspace. It orders out-of-service and urgent-maintenance rooms before dirty,
+cleaning, failed-inspection and ready rooms, while preserving deterministic property and natural
+room-number ordering. Attendants use the existing protected room-status endpoint and idempotent,
+audited inspection workflow; no duplicate assignment, room, inspection or maintenance store was
+introduced. The older housekeeping page now also uses this shared bounded service instead of its
+previous unbounded direct query.
+
+Phase 2 service operations now begin with a shared Point of Sale and kitchen queue. A hotel operator
+can place a bounded room-service or outlet order only against a checked-in stay owned by the active
+partner and managed property. Orders keep immutable, versioned state events from placed through
+accepted, preparing and ready. The final serve action and its guest charge commit atomically into the
+existing append-only folio; retries are idempotent, concurrent stale actions are rejected, cancelled
+orders require a reason, open orders block checkout and Night Audit, and posted orders cannot be
+edited or deleted. This operational charge is
+not represented as a GST invoice, inventory depletion, gateway payment or recognized accounting
+revenue.
+
+Laundry and minibar are now live on that same property-scoped service-order ledger instead of a
+second guest, booking, charge or folio store. An operator can create an itemized order only for an
+assigned room on a checked-in stay. Laundry follows placed, accepted, preparing and ready states;
+minibar follows placed and accepted verification before posting. Completion and the corresponding
+`LAUNDRY` or `MINIBAR` folio charge commit atomically, transitions are versioned, retries are
+idempotent, early cancellation requires a reason, and unfinished services block checkout and Night
+Audit. The POS and kitchen workspaces remain isolated to room-service and outlet orders while the
+dedicated Laundry workspace shows only laundry and minibar work. These records do not claim stock
+depletion, a GST invoice, gateway payment or recognized accounting revenue.
+
+Phase 2 finance outputs now add an administrator-only, property-scoped daily operational report
+over the existing booking, append-only folio, cashier-shift, service-order and Night Audit records.
+The report accepts a bounded date range, exposes a bounded CSV export, and withholds every financial
+total and export when source rows are truncated or currencies conflict. Its values are operational
+ledger activity, not recognized accounting revenue or a GST return.
+
+The GST workspace similarly reuses each confirmed booking's immutable marketplace tax snapshot and
+the platform-reviewed supplier identity. It can print a preparation statement, but statutory
+issuance is deliberately disabled: the document is prominently marked `NOT A TAX INVOICE`, has no
+invented invoice number or tax split, and keeps supplemental folio charges separate until their tax
+classification is approved. Statutory invoice numbering, place-of-supply logic, SAC/HSN,
+CGST/SGST/IGST, credit notes, retention and e-invoicing remain blocked pending tax-adviser approval
+and a separately audited implementation.
+
+Phase 3 begins with a property-scoped group and banquet event diary. Partner administrators can
+record bounded enquiries and quotations, then progress them through provisional, confirmed,
+completed or reasoned-cancellation states. Provisional and confirmed events prevent overlapping
+holds for the same named function space and local event date/time. Creation and every transition
+are idempotent, serialized, version checked and appended to both dedicated history and the partner
+audit trail. The diary deliberately does not block guest rooms, collect deposits, issue tax
+invoices, post accounting revenue or send customer messages until those governed integrations are
+implemented.
+
+Central Reservations is now live as a bounded multi-property projection over the existing booking
+source. It calculates arrivals, departures, in-house rooms and assignment exceptions against each
+property's own controlled operational date, and presents a deterministic fourteen-day forward
+arrival queue. The server includes only active managed properties belonging to the authenticated
+hotel partner and fails closed for foreign slugs, cancelled bookings and closed stay states. All
+reservation and stay mutations remain in the established paginated reservation desk, so this view
+does not introduce a parallel booking or guest record.
+
+The Guest CRM now provides a read-only, property-scoped view over the same confirmed booking guest
+records. It groups normalized booking identities only inside the server-only data-access layer and
+returns masked contact details, bounded recent stay history, deterministic recognition labels,
+reservation-level requests and consent-backed registration counts. It creates no duplicate guest
+identity, exposes no document reference, carries no request into a future stay automatically and
+never treats booking or registration consent as permission for marketing.

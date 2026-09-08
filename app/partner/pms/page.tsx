@@ -4,33 +4,33 @@ import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { countPmsModules, pmsModuleGroups, pmsModules } from '@/lib/pms/moduleRegistry';
+import { resolveOperationalDate } from '@/lib/pms/operationalDate';
+import {
+  countPmsModules,
+  getPmsModuleHref,
+  pmsModuleGroups,
+  pmsModules,
+} from '@/lib/pms/moduleRegistry';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'Mandyal PMS control centre' };
-
-function localDate(timezone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: timezone,
-    year: 'numeric',
-  }).formatToParts(new Date());
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
-}
 
 export default async function PmsControlCentrePage() {
   const access = await getPartnerAccess();
   if (!access?.partnerId || access.partnerType !== 'HOTEL') redirect('/partner');
 
   const properties = await prisma.partnerProperty.findMany({
-    select: { hotelSlug: true, id: true, timezone: true },
+    select: { hotelSlug: true, id: true, operationalDate: true, timezone: true },
     where: { partnerId: access.partnerId, status: 'ACTIVE' },
   });
   const propertyIds = properties.map((property) => property.id);
   const hotelSlugs = properties.map((property) => property.hotelSlug);
-  const today = localDate(properties[0]?.timezone || 'Asia/Kolkata');
+  const datedProperties = properties.map((property) => ({
+    ...property,
+    date: resolveOperationalDate(property.operationalDate, property.timezone),
+  }));
+  const operationalDates = [...new Set(datedProperties.map((property) => property.date))];
+  const dateLabel = operationalDates.length === 1 ? operationalDates[0] : 'Property-specific dates';
 
   const [roomStates, arrivals, departures, inHouse, pendingAmendments] = await Promise.all([
     prisma.partnerPhysicalRoom.groupBy({
@@ -40,17 +40,21 @@ export default async function PmsControlCentrePage() {
     }),
     prisma.booking.count({
       where: {
-        hotelSlug: { in: hotelSlugs },
         operationalStatus: 'RESERVED',
-        quote: { checkInDate: today },
+        OR: datedProperties.map((property) => ({
+          hotelSlug: property.hotelSlug,
+          quote: { checkInDate: property.date },
+        })),
         status: 'confirmed',
       },
     }),
     prisma.booking.count({
       where: {
-        hotelSlug: { in: hotelSlugs },
         operationalStatus: 'CHECKED_IN',
-        quote: { checkOutDate: today },
+        OR: datedProperties.map((property) => ({
+          hotelSlug: property.hotelSlug,
+          quote: { checkOutDate: property.date },
+        })),
         status: 'confirmed',
       },
     }),
@@ -62,7 +66,7 @@ export default async function PmsControlCentrePage() {
       },
     }),
     prisma.bookingAmendment.count({
-      where: { booking: { hotelSlug: { in: hotelSlugs } }, status: 'PENDING' },
+      where: { booking: { hotelSlug: { in: hotelSlugs } }, status: 'pending' },
     }),
   ]);
 
@@ -91,7 +95,7 @@ export default async function PmsControlCentrePage() {
           </p>
         </div>
         <div className="admin-hero__posture">
-          <span className="admin-hero__secure">Operational date {today}</span>
+          <span className="admin-hero__secure">Operational date {dateLabel}</span>
           <strong>{properties.length} active properties</strong>
           <span>{countPmsModules('LIVE')} modules already operational</span>
           <span>Planned modules stay unavailable until their controls and tests are complete.</span>
@@ -131,8 +135,9 @@ export default async function PmsControlCentrePage() {
       <div className="pms-control-centre__notice" role="note">
         <strong>Controlled rollout</strong>
         <span>
-          Live links use production data today. Foundation and planned areas are listed for delivery
-          visibility, but cannot be opened or mistaken for completed software.
+          Every module now opens from the persistent sidebar. Live links use production data;
+          foundation and planned workspaces show their governed delivery scope without exposing
+          unfinished transactions.
         </span>
       </div>
 
@@ -161,13 +166,9 @@ export default async function PmsControlCentrePage() {
                   </div>
                   <h3>{module.name}</h3>
                   <p>{module.description}</p>
-                  {module.href ? (
-                    <Link className="home-card__link" href={module.href}>
-                      Open module
-                    </Link>
-                  ) : (
-                    <span className="pms-module-card__unavailable">Not enabled yet</span>
-                  )}
+                  <Link className="home-card__link" href={getPmsModuleHref(module)}>
+                    {module.status === 'LIVE' ? 'Open module' : 'Open workspace'}
+                  </Link>
                 </Card>
               ))}
           </div>

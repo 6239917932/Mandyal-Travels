@@ -29,6 +29,14 @@ export class ServiceAdvisoryError extends Error {
   }
 }
 
+let warnedAboutMissingAdvisorySchema = false;
+
+function warnAboutMissingAdvisorySchema() {
+  if (warnedAboutMissingAdvisorySchema) return;
+  warnedAboutMissingAdvisorySchema = true;
+  console.warn('Service advisories are unavailable until the database migration is applied.');
+}
+
 function advisorySnapshot(advisory: {
   endsAt: Date | null;
   id: string;
@@ -192,7 +200,7 @@ export async function getVisibleServiceAdvisories(
       .slice(0, 3);
   } catch (error) {
     if (isMissingAdvisorySchema(error)) {
-      console.warn('Service advisories are unavailable until the database migration is applied.');
+      warnAboutMissingAdvisorySchema();
       return [];
     }
     throw error;

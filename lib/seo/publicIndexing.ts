@@ -21,6 +21,7 @@ export const ROBOTS_DISALLOWED_PATHS = [
   '/partner$',
   '/partner/',
   '/partners/apply',
+  '/partners/invitations',
   '/register',
   '/reset-password',
 ] as const;
