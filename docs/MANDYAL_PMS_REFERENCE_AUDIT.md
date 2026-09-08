@@ -179,3 +179,12 @@ invented invoice number or tax split, and keeps supplemental folio charges separ
 classification is approved. Statutory invoice numbering, place-of-supply logic, SAC/HSN,
 CGST/SGST/IGST, credit notes, retention and e-invoicing remain blocked pending tax-adviser approval
 and a separately audited implementation.
+
+Phase 3 begins with a property-scoped group and banquet event diary. Partner administrators can
+record bounded enquiries and quotations, then progress them through provisional, confirmed,
+completed or reasoned-cancellation states. Provisional and confirmed events prevent overlapping
+holds for the same named function space and local event date/time. Creation and every transition
+are idempotent, serialized, version checked and appended to both dedicated history and the partner
+audit trail. The diary deliberately does not block guest rooms, collect deposits, issue tax
+invoices, post accounting revenue or send customer messages until those governed integrations are
+implemented.

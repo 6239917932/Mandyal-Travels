@@ -114,11 +114,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'BQ',
-    description: 'Function spaces, event diary, quotations, menus and banquet event orders.',
+    description: 'Audited enquiries, quotations, conflict-checked venue holds and event diary.',
     group: 'Front office and operations',
+    href: '/partner/pms/banquets',
     name: 'Banquets and events',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'HK',
