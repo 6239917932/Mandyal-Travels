@@ -13,15 +13,7 @@
 
 html {
   background: var(--color-surface-muted);
-  /* Keep the portal's shared type scale compact across public and authenticated workspaces. */
-  font-size: 90%;
-}
-
-/* Preserve the existing compact desktop ratio after the requested 10% reduction. */
-@media (min-width: 960px) {
-  html {
-    font-size: 84.375%;
-  }
+  font-size: 100%;
 }
 
 body {
@@ -30,8 +22,14 @@ body {
   background: var(--color-surface-muted);
   color: var(--color-text-primary);
   font-family: var(--font-family-sans);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+:where(h1, h2, h3, h4) {
+  font-family: var(--font-family-display);
+  letter-spacing: -0.025em;
 }
 
 button,

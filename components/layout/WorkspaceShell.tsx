@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { getWorkspaceActiveNavigationKey } from '@/lib/navigation/workspaceActiveRoute';
 
@@ -36,17 +36,39 @@ export function WorkspaceShell({
   title,
 }: WorkspaceShellProps) {
   const pathname = usePathname();
+  const [navigationOpen, setNavigationOpen] = useState(false);
   if (publicPaths.includes(pathname)) return children;
   const activeNavigationKey = getWorkspaceActiveNavigationKey(pathname, groups);
+  const activeCoordinates = activeNavigationKey?.split(':').map(Number);
+  const activeGroup = activeCoordinates ? groups[activeCoordinates[0]] : undefined;
+  const activeItem = activeCoordinates ? activeGroup?.items[activeCoordinates[1]] : undefined;
+  const pageLabel = activeItem?.label ?? title;
+  const initials = title
+    .split(/\s+/)
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="workspace-shell">
-      <aside aria-label={`${title} navigation`} className="workspace-sidebar">
+    <div className={`workspace-shell${navigationOpen ? 'workspace-shell--nav-open' : ''}`}>
+      <button
+        aria-label="Close workspace navigation"
+        className="workspace-shell__backdrop"
+        onClick={() => setNavigationOpen(false)}
+        type="button"
+      />
+      <aside
+        aria-label={`${title} navigation`}
+        className="workspace-sidebar"
+        id="workspace-navigation"
+      >
         <div className="workspace-sidebar__brand">
-          <span aria-hidden="true">MT</span>
+          <span aria-hidden="true">{initials}</span>
           <div>
+            <small>Mandyal workspace</small>
             <strong>{title}</strong>
-            <small>{subtitle}</small>
+            <span>{subtitle}</span>
           </div>
         </div>
         <nav aria-label={`${title} sections`}>
@@ -62,6 +84,7 @@ export function WorkspaceShell({
                       }
                       href={item.href}
                       key={`${group.label}-${item.label}`}
+                      onClick={() => setNavigationOpen(false)}
                       prefetch={false}
                     >
                       <span aria-hidden="true">{item.code}</span>
@@ -91,7 +114,38 @@ export function WorkspaceShell({
           </form>
         </div>
       </aside>
-      <div className="workspace-shell__content">{children}</div>
+      <div className="workspace-shell__stage">
+        <header className="workspace-topbar">
+          <div className="workspace-topbar__context">
+            <button
+              aria-controls="workspace-navigation"
+              aria-expanded={navigationOpen}
+              className="workspace-topbar__menu"
+              onClick={() => setNavigationOpen((open) => !open)}
+              type="button"
+            >
+              <span aria-hidden="true">☰</span>
+              <span>Menu</span>
+            </button>
+            <div>
+              <span>{activeGroup?.label ?? subtitle}</span>
+              <strong>{pageLabel}</strong>
+            </div>
+          </div>
+          <div className="workspace-topbar__status">
+            <span className="workspace-topbar__secure">
+              <i /> Secure workspace
+            </span>
+            <span aria-hidden="true" className="workspace-topbar__avatar">
+              {initials}
+            </span>
+            <span className="workspace-topbar__identity">{identity}</span>
+          </div>
+        </header>
+        <main className="workspace-shell__content" id="workspace-main">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

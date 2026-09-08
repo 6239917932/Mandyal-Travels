@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
+import { MetricBars, MetricDonut } from '@/components/ui/DashboardCharts';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
@@ -130,6 +131,25 @@ export default async function PmsControlCentrePage() {
           <strong>{pendingAmendments}</strong>
           <small>Waiting for property review</small>
         </Card>
+      </div>
+
+      <div className="dashboard-insights-grid" aria-label="Property operations visual summary">
+        <MetricDonut
+          caption={`${inHouse.toLocaleString('en-IN')} in-house stays across ${activeRoomCount.toLocaleString('en-IN')} active rooms.`}
+          label="Occupancy"
+          value={occupancy}
+        />
+        <MetricBars
+          description="A current comparison of front-office movement and room readiness."
+          items={[
+            { label: 'Arrivals', value: arrivals },
+            { label: 'Departures', value: departures },
+            { label: 'Ready rooms', value: readyRooms },
+            { label: 'Dirty rooms', value: dirtyRooms },
+            { label: 'Unavailable', value: unavailableRooms },
+          ]}
+          title="Today’s operating picture"
+        />
       </div>
 
       <div className="pms-control-centre__notice" role="note">
