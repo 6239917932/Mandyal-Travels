@@ -42,6 +42,18 @@ test('all protected account types use the shared persistent workspace sidebar', 
   }
 });
 
+test('workspace sign out remains available in the sticky top bar without sidebar scrolling', async () => {
+  const shell = await readFile(
+    new URL('../components/layout/WorkspaceShell.tsx', import.meta.url),
+    'utf8',
+  );
+  const topbar = shell.slice(shell.indexOf('<header className="workspace-topbar">'));
+
+  assert.match(topbar, /action="\/api\/v1\/auth\/logout"/);
+  assert.match(topbar, /workspace-topbar__signout/);
+  assert.doesNotMatch(shell, /workspace-sidebar__account/);
+});
+
 test('administrator navigation is grouped and covers every control-center destination', async () => {
   const [navigation, page] = await Promise.all([
     readFile(new URL('../lib/navigation/workspaceNavigation.ts', import.meta.url), 'utf8'),

@@ -107,12 +107,6 @@ export function WorkspaceShell({
             </details>
           ))}
         </nav>
-        <div className="workspace-sidebar__account">
-          <span>{identity}</span>
-          <form action="/api/v1/auth/logout" method="post">
-            <button type="submit">Sign out</button>
-          </form>
-        </div>
       </aside>
       <div className="workspace-shell__stage">
         <header className="workspace-topbar">
@@ -140,6 +134,11 @@ export function WorkspaceShell({
               {initials}
             </span>
             <span className="workspace-topbar__identity">{identity}</span>
+            <form action="/api/v1/auth/logout" method="post">
+              <button className="workspace-topbar__signout" type="submit">
+                Sign out
+              </button>
+            </form>
           </div>
         </header>
         <main className="workspace-shell__content" id="workspace-main">
