@@ -3382,3 +3382,285 @@
     transition: none;
   }
 }
+
+/* Compact, colour-balanced workspace density shared by every protected portal. */
+.workspace-shell {
+  grid-template-columns: 15.5rem minmax(0, 1fr);
+}
+
+.workspace-shell__stage {
+  background:
+    radial-gradient(circle at 8% 0, rgb(14 165 164 / 7%), transparent 22rem),
+    radial-gradient(circle at 98% 8%, rgb(245 158 11 / 7%), transparent 24rem),
+    var(--color-surface-muted);
+}
+
+.workspace-sidebar {
+  width: 15.5rem;
+  padding: 0.85rem 0.65rem;
+}
+
+.workspace-sidebar__brand {
+  margin-bottom: 0.65rem;
+  padding: 0.45rem 0.65rem 0.85rem;
+}
+
+.workspace-sidebar__brand > span {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.workspace-sidebar__group {
+  margin-top: 0.25rem;
+}
+
+.workspace-sidebar__group summary {
+  padding: 0.62rem 0.65rem;
+  font-size: 0.61rem;
+}
+
+.workspace-sidebar__links > a,
+.workspace-sidebar__disabled {
+  min-height: 2.35rem;
+  grid-template-columns: 1.72rem minmax(0, 1fr) auto;
+  gap: 0.42rem;
+  padding: 0.38rem 0.55rem;
+  font-size: 0.73rem;
+}
+
+.workspace-sidebar__links > a > span,
+.workspace-sidebar__disabled > span {
+  width: 1.55rem;
+  height: 1.55rem;
+  font-size: 0.58rem;
+}
+
+.workspace-sidebar__links small,
+.workspace-sidebar__disabled small {
+  font-size: 0.57rem;
+}
+
+.workspace-shell__content {
+  padding: 0 1.15rem;
+}
+
+.workspace-shell__content > .account-page,
+.workspace-shell__content > .booking-page {
+  padding-top: 1.15rem;
+  padding-bottom: 2rem;
+}
+
+.workspace-topbar {
+  min-height: 3.7rem;
+  padding: 0.55rem 1.15rem;
+}
+
+.workspace-topbar__status {
+  gap: 0.65rem;
+}
+
+.workspace-topbar__status form {
+  margin: 0;
+}
+
+.workspace-topbar__signout {
+  min-height: 2.15rem;
+  border: 1px solid #f0c58e;
+  border-radius: 0.65rem;
+  background: #fff7ed;
+  color: #9a4d08;
+  padding: 0.38rem 0.72rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.workspace-topbar__signout:hover,
+.workspace-topbar__signout:focus-visible {
+  transform: translateY(-1px);
+  border-color: #dc8b35;
+  background: #ffedd5;
+}
+
+.admin-hero {
+  grid-template-columns: minmax(0, 1.7fr) minmax(14rem, 0.65fr);
+  gap: 1.2rem;
+  border: 1px solid #cbdbea;
+  border-left: 0.3rem solid var(--color-brand-600);
+  border-radius: 0.85rem;
+  background:
+    radial-gradient(circle at 92% 8%, rgb(14 165 164 / 10%), transparent 18rem),
+    linear-gradient(118deg, #ffffff 0%, #f5faff 68%, #fff8ed 100%);
+  color: var(--color-text-primary);
+  padding: clamp(1rem, 2vw, 1.4rem);
+  box-shadow: 0 8px 24px rgb(16 35 61 / 8%);
+}
+
+.admin-hero h1 {
+  color: var(--color-brand-950);
+  font-size: clamp(1.55rem, 2.4vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.admin-hero__eyebrow,
+.admin-hero__secure {
+  color: var(--color-brand-600);
+  font-size: 0.66rem;
+}
+
+.admin-hero__content,
+.admin-hero__posture,
+.admin-hero > div:first-child:not([class]) {
+  gap: 0.55rem;
+}
+
+.admin-hero__content > p:not(.admin-hero__eyebrow),
+.admin-hero__posture span:not(.admin-hero__secure) {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.admin-hero__posture {
+  border: 1px solid #bfe4df;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #ecfdf8, #f0f9ff);
+  padding: 0.85rem 1rem;
+  backdrop-filter: none;
+}
+
+.admin-hero__posture strong {
+  color: #0f5f57;
+  font-size: 1.05rem;
+}
+
+.admin-hero .ui-button--secondary,
+.admin-hero__actions .ui-button--secondary {
+  border-color: var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-brand-800);
+}
+
+.admin-hero__actions .ui-button--secondary:hover:not(:disabled):not([aria-disabled='true']),
+.admin-hero__actions
+  .ui-button--secondary:focus-visible:not(:disabled):not([aria-disabled='true']) {
+  border-color: var(--color-brand-500);
+  background: var(--color-brand-50);
+  color: var(--color-brand-900);
+}
+
+.admin-overview-grid,
+.partner-bookings__summary {
+  gap: 0.8rem;
+}
+
+.admin-overview-grid .ui-card,
+.partner-bookings__summary .ui-card {
+  padding: 1rem;
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 1)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 1)::before {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 2)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 2)::before {
+  background: linear-gradient(90deg, #0f9f8f, #5eead4);
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 3)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 3)::before {
+  background: linear-gradient(90deg, #ea7b12, #fbbf24);
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 4)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 4)::before {
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 5)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 5)::before {
+  background: linear-gradient(90deg, #db2777, #fb7185);
+}
+
+.admin-overview-grid .ui-card > strong,
+.partner-bookings__summary .ui-card > strong {
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+}
+
+.dashboard-insights-grid {
+  gap: 0.9rem;
+}
+
+.dashboard-chart {
+  padding: 1.15rem;
+}
+
+.dashboard-chart header {
+  margin-bottom: 1rem;
+}
+
+.dashboard-chart__bar:nth-child(5n + 1) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+.dashboard-chart__bar:nth-child(5n + 2) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #0f9f8f, #5eead4);
+}
+
+.dashboard-chart__bar:nth-child(5n + 3) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #ea7b12, #fbbf24);
+}
+
+.dashboard-chart__bar:nth-child(5n + 4) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+}
+
+.dashboard-chart__bar:nth-child(5n + 5) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #db2777, #fb7185);
+}
+
+.dashboard-chart__donut {
+  width: 8rem;
+  height: 8rem;
+  background: conic-gradient(#0f9f8f var(--donut-value), #e8eef5 0);
+}
+
+.dashboard-chart__donut::before {
+  width: 5.8rem;
+  height: 5.8rem;
+}
+
+.pms-control-centre__group,
+.partner-workspace__columns {
+  margin-top: 1.35rem;
+}
+
+@media (max-width: 70rem) {
+  .workspace-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-sidebar {
+    width: 15.5rem;
+  }
+}
+
+@media (max-width: 46rem) {
+  .workspace-topbar__avatar {
+    display: none;
+  }
+
+  .workspace-topbar__signout {
+    padding-inline: 0.55rem;
+  }
+
+  .admin-hero {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
