@@ -524,3 +524,21 @@
     width: 100%;
   }
 }
+
+@media (max-width: 1179px) {
+  .site-header--workspace .site-header__menu-button {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-header__inner,
+  .back-navigation__inner {
+    width: min(calc(100% - 1.25rem), var(--container-max-width));
+  }
+
+  .mandyal-logo--compact .mandyal-logo__artwork,
+  .mandyal-logo__artwork {
+    width: min(10.5rem, 62vw);
+  }
+}

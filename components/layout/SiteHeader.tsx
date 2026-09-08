@@ -13,6 +13,11 @@ type SiteHeaderProps = { user: { firstName: string; role: string } | null };
 export function SiteHeader({ user }: SiteHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isWorkspacePath =
+    /^\/(account|admin|agent|partner)(\/|$)/.test(pathname) ||
+    /^\/business\/(audit|dashboard|members|reports|requests|statements|support)(\/|$)/.test(
+      pathname,
+    );
 
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -22,7 +27,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
     href === '/' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="site-header">
+    <header className={`site-header${isWorkspacePath ? 'site-header--workspace' : ''}`}>
       <div className="site-header__inner">
         <Link className="site-logo" href="/" onClick={closeMenu}>
           <MandyalLogo eager showTagline size="standard" />
@@ -41,7 +46,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
 
         <nav
           aria-label="Primary navigation"
-          className={`site-navigation ${isMenuOpen ? 'site-navigation--open' : ''}`}
+          className={`site-navigation ${isMenuOpen && !isWorkspacePath ? 'site-navigation--open' : ''}`}
           id="primary-navigation"
         >
           {siteConfig.navigation.map((item) => (

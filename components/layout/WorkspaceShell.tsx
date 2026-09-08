@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { getWorkspaceActiveNavigationKey } from '@/lib/navigation/workspaceActiveRoute';
 
@@ -37,7 +37,7 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [navigationOpen, setNavigationOpen] = useState(false);
-  if (publicPaths.includes(pathname)) return children;
+  const isPublicPath = publicPaths.includes(pathname);
   const activeNavigationKey = getWorkspaceActiveNavigationKey(pathname, groups);
   const activeCoordinates = activeNavigationKey?.split(':').map(Number);
   const activeGroup = activeCoordinates ? groups[activeCoordinates[0]] : undefined;
@@ -50,12 +50,28 @@ export function WorkspaceShell({
     .slice(0, 2)
     .toUpperCase();
 
+  useEffect(() => {
+    if (!navigationOpen) return;
+    document.body.classList.add('workspace-navigation-open');
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setNavigationOpen(false);
+    }
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.classList.remove('workspace-navigation-open');
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [navigationOpen]);
+
+  if (isPublicPath) return children;
+
   return (
     <div className={`workspace-shell${navigationOpen ? 'workspace-shell--nav-open' : ''}`}>
       <button
         aria-label="Close workspace navigation"
         className="workspace-shell__backdrop"
         onClick={() => setNavigationOpen(false)}
+        tabIndex={navigationOpen ? 0 : -1}
         type="button"
       />
       <aside
@@ -70,6 +86,14 @@ export function WorkspaceShell({
             <strong>{title}</strong>
             <span>{subtitle}</span>
           </div>
+          <button
+            aria-label="Close workspace menu"
+            className="workspace-sidebar__close"
+            onClick={() => setNavigationOpen(false)}
+            type="button"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
         <nav aria-label={`${title} sections`}>
           {groups.map((group, groupIndex) => (
