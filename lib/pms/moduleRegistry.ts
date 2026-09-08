@@ -224,11 +224,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'SI',
-    description: 'SKU stock, department issues, requisitions and reorder levels.',
+    description: 'Property SKUs, append-only receipts and issues, and reorder controls.',
     group: 'Finance and back office',
+    href: '/partner/pms/stock',
     name: 'Stock and inventory',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'PR',
