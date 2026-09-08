@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { getPartnerOwnerOverview } from '@/services/partnerOwnerOverviewService';
 
-export const metadata: Metadata = { title: 'Owner overview | Mandyal PMS' };
+export const metadata: Metadata = { title: 'Revenue dashboard | Mandyal PMS' };
 
 type OwnerOverviewPageProps = {
   searchParams: Promise<{ property?: string | string[] }>;
@@ -42,8 +42,8 @@ export default async function PartnerOwnerOverviewPage({ searchParams }: OwnerOv
         <div className="booking-page__container">
           <header className="partner-page__heading">
             <div>
-              <p className="hotel-page__eyebrow">Owner control · restricted finance</p>
-              <h1>Owner overview</h1>
+              <p className="hotel-page__eyebrow">Revenue control · restricted finance</p>
+              <h1>Revenue dashboard</h1>
             </div>
           </header>
           <Card>
@@ -74,8 +74,8 @@ export default async function PartnerOwnerOverviewPage({ searchParams }: OwnerOv
       <div className="booking-page__container">
         <header className="partner-page__heading">
           <div>
-            <p className="hotel-page__eyebrow">Owner control · source-of-truth snapshot</p>
-            <h1>Owner overview</h1>
+            <p className="hotel-page__eyebrow">Revenue control · source-of-truth snapshot</p>
+            <h1>Revenue dashboard</h1>
             <p className="booking-page__intro">
               Review occupancy, booked accommodation value, collections, receivables and daily
               operational exceptions without changing front-desk or financial records.
@@ -271,6 +271,66 @@ export default async function PartnerOwnerOverviewPage({ searchParams }: OwnerOv
                   </ul>
                 ) : (
                   <p>No confirmed stays have been recorded for this property.</p>
+                )}
+              </Card>
+            </div>
+
+            <div className="partner-workspace__columns">
+              <Card>
+                <p className="hotel-page__eyebrow">Thirty-day forward demand</p>
+                <h2>Booking pace</h2>
+                <p>
+                  Confirmed future arrivals created in the latest seven operational days compared
+                  with the preceding seven-day window. This is recorded booking activity, not a
+                  historical snapshot of later cancellations.
+                </p>
+                <ul className="pms-room-rack__queue-list">
+                  <li>
+                    <strong>Latest 7 days</strong>
+                    <span>
+                      {overview.bookingPace.currentBookings} bookings ·{' '}
+                      {overview.bookingPace.currentRooms} rooms
+                      {overview.financialComplete
+                        ? ` · ${money(overview.bookingPace.currentValue, overview.currency)}`
+                        : ''}
+                    </span>
+                  </li>
+                  <li>
+                    <strong>Previous 7 days</strong>
+                    <span>
+                      {overview.bookingPace.previousBookings} bookings ·{' '}
+                      {overview.bookingPace.previousRooms} rooms
+                      {overview.financialComplete
+                        ? ` · ${money(overview.bookingPace.previousValue, overview.currency)}`
+                        : ''}
+                    </span>
+                  </li>
+                </ul>
+              </Card>
+
+              <Card>
+                <p className="hotel-page__eyebrow">Seven-day outlet performance</p>
+                <h2>Posted guest-service sales</h2>
+                <p>
+                  Only POS orders already posted to the append-only guest folio are included.
+                  Pending, cancelled and unposted orders are excluded.
+                </p>
+                {overview.outletPerformance.length ? (
+                  <ul className="pms-room-rack__queue-list">
+                    {overview.outletPerformance.slice(0, 8).map((outlet) => (
+                      <li key={outlet.outlet}>
+                        <strong>{outlet.outlet}</strong>
+                        <span>
+                          {outlet.orders} posted order{outlet.orders === 1 ? '' : 's'}
+                          {overview.financialComplete
+                            ? ` · ${money(outlet.postedValue, overview.currency)}`
+                            : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No posted outlet sales exist in this reporting window.</p>
                 )}
               </Card>
             </div>

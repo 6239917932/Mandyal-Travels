@@ -1,10 +1,10 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
   normalizeExternalReference,
   normalizeProviderName,
   ChannelRuleError,
 } from '@/lib/hotel/channelRules';
-import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
+import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
 function failure(code: string, message: string, status: number): Response {
@@ -37,19 +37,29 @@ export async function POST(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'HOTEL' || access.memberRole !== 'ADMIN')
     return failure('PARTNER_UNAUTHORIZED', 'Hotel partner administrator access is required.', 401);
+  if (access.mode !== 'integration-key' && !isSameOriginMutation(request))
+    return failure('FORBIDDEN_ORIGIN', 'This request must come from the Mandyal portal.', 403);
+  const partnerId = access.partnerId;
   const body = await readJsonObject(request);
   if (!body) return failure('INVALID_JSON', 'A valid JSON body is required.', 400);
   try {
     const providerName = normalizeProviderName(body.providerName);
     const externalAccountRef = normalizeExternalReference(body.externalAccountRef, 'Account');
-    const connection = await prisma.hotelChannelConnection.create({
-      data: { externalAccountRef, partnerId: access.partnerId, providerName },
-    });
-    await recordPartnerAudit(access, {
-      action: 'CHANNEL_CONNECTION_CREATED',
-      entityId: connection.id,
-      entityType: 'HOTEL_CHANNEL_CONNECTION',
-      summary: `Created ${providerName} channel connection shell.`,
+    const connection = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.hotelChannelConnection.create({
+        data: { externalAccountRef, partnerId, providerName },
+      });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'CHANNEL_CONNECTION_CREATED',
+          actorUserId: access.userId,
+          entityId: created.id,
+          entityType: 'HOTEL_CHANNEL_CONNECTION',
+          partnerId,
+          summary: `Created ${providerName} channel connection shell.`,
+        },
+      });
+      return created;
     });
     return Response.json({ data: connection }, { status: 201 });
   } catch (error) {

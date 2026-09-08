@@ -1,5 +1,5 @@
-import { readJsonObject } from '@/lib/api/request';
-import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
 type Context = { params: Promise<{ syncRunId: string }> };
@@ -11,6 +11,8 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'HOTEL' || access.memberRole !== 'ADMIN')
     return failure('PARTNER_UNAUTHORIZED', 'Hotel partner administrator access is required.', 401);
+  if (access.mode !== 'integration-key' && !isSameOriginMutation(request))
+    return failure('FORBIDDEN_ORIGIN', 'This request must come from the Mandyal portal.', 403);
   const { syncRunId } = await context.params;
   const body = await readJsonObject(request);
   const note =
@@ -33,15 +35,33 @@ export async function PATCH(request: Request, context: Context): Promise<Respons
       'Only failed or conflicted runs can be reconciled.',
       409,
     );
-  const updated = await prisma.hotelChannelSyncRun.update({
-    data: { reconciliationNote: note, status: 'RECONCILED' },
-    where: { id: run.id },
-  });
-  await recordPartnerAudit(access, {
-    action: 'CHANNEL_SYNC_RECONCILED',
-    entityId: run.id,
-    entityType: 'HOTEL_CHANNEL_SYNC',
-    summary: 'Recorded a channel synchronization reconciliation decision.',
-  });
-  return Response.json({ data: updated });
+  try {
+    const updated = await prisma.$transaction(async (transaction) => {
+      const claimed = await transaction.hotelChannelSyncRun.updateMany({
+        data: { reconciliationNote: note, status: 'RECONCILED' },
+        where: { id: run.id, status: run.status },
+      });
+      if (claimed.count !== 1) throw new Error('STALE_CHANNEL_SYNC');
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'CHANNEL_SYNC_RECONCILED',
+          actorUserId: access.userId,
+          entityId: run.id,
+          entityType: 'HOTEL_CHANNEL_SYNC',
+          partnerId: access.partnerId!,
+          summary: 'Recorded a channel synchronization reconciliation decision.',
+        },
+      });
+      return transaction.hotelChannelSyncRun.findUniqueOrThrow({ where: { id: run.id } });
+    });
+    return Response.json({ data: updated });
+  } catch (error) {
+    return failure(
+      error instanceof Error && error.message === 'STALE_CHANNEL_SYNC'
+        ? 'STALE_CHANNEL_SYNC'
+        : 'CHANNEL_RECONCILIATION_FAILED',
+      'The synchronization changed before reconciliation. Refresh and review the latest state.',
+      409,
+    );
+  }
 }
