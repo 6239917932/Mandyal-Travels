@@ -188,3 +188,10 @@ are idempotent, serialized, version checked and appended to both dedicated histo
 audit trail. The diary deliberately does not block guest rooms, collect deposits, issue tax
 invoices, post accounting revenue or send customer messages until those governed integrations are
 implemented.
+
+The Guest CRM now provides a read-only, property-scoped view over the same confirmed booking guest
+records. It groups normalized booking identities only inside the server-only data-access layer and
+returns masked contact details, bounded recent stay history, deterministic recognition labels,
+reservation-level requests and consent-backed registration counts. It creates no duplicate guest
+identity, exposes no document reference, carries no request into a future stay automatically and
+never treats booking or registration consent as permission for marketing.
