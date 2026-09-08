@@ -34,11 +34,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'OE',
-    description: 'Consolidated into the revenue dashboard to avoid duplicate financial views.',
+    description: 'Property-scoped occupancy, ADR, RevPAR, channel mix and financial posture.',
     group: 'Overview',
+    href: '/partner/pms/owner-overview',
     name: 'Owner overview',
     phase: 2,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'FD',
@@ -274,16 +275,6 @@ export const pmsModules: readonly PmsModule[] = [
     group: 'Analytics and staff',
     href: '/partner/pms/reports',
     name: 'Reports',
-    phase: 2,
-    status: 'LIVE',
-  },
-  {
-    code: 'AK',
-    description:
-      'Property-scoped occupancy, ADR, RevPAR, channel mix, booking pace and posted outlet performance.',
-    group: 'Analytics and staff',
-    href: '/partner/pms/owner-overview',
-    name: 'Analytics and KPI',
     phase: 2,
     status: 'LIVE',
   },
