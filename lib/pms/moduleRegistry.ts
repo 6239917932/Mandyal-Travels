@@ -178,11 +178,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'BE',
-    description: 'Direct-booking widget, promotions, availability, payments and upsells.',
+    description: 'Governed public-search, quote, booking and hosted-payment release readiness.',
     group: 'Revenue and distribution',
+    href: '/partner/pms/booking-engine',
     name: 'Booking engine',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'CH',
