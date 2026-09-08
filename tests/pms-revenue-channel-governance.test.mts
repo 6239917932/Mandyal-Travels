@@ -120,6 +120,6 @@ test('channel mutations are scoped, origin protected, readiness gated and audite
   assert.match(outbox, /setChannelSyncRunStatus\(transaction, event, 'DISPATCHED'\)/);
   assert.match(
     registry,
-    /code: 'AK'[\s\S]*href: '\/partner\/pms\/owner-overview'[\s\S]*status: 'LIVE'/,
+    /code: 'OE'[\s\S]*href: '\/partner\/pms\/owner-overview'[\s\S]*status: 'LIVE'/,
   );
 });

@@ -27,7 +27,7 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 33);
+  assert.equal(pmsModules.length, 32);
   assert.equal(pmsModuleGroups.length, 7);
   assert.ok(countPmsModules('LIVE') >= 5);
   assert.ok(countPmsModules('FOUNDATION') >= 1);
@@ -60,7 +60,6 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Guest CRM',
     'Guest portal',
     'Telephone and EPABX',
-    'Analytics and KPI',
     'HR and payroll',
     'Access control',
   ]) {

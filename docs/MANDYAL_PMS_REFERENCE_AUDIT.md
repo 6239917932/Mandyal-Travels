@@ -146,6 +146,10 @@ records. The view is property-scoped and bounded, withholds financial totals whe
 mixed currency would make them incomplete, and labels allocated stay value separately from
 statutory invoices or recognized accounting revenue.
 
+The PMS registry exposes this workflow once as Owner Overview. The earlier Analytics and KPI alias
+used the same route and data, so it was removed instead of maintaining duplicate navigation and
+ambiguous active-state behavior.
+
 The Attendant View is now live as a prioritized projection of the same bounded room, inspection and
 maintenance workspace. It orders out-of-service and urgent-maintenance rooms before dirty,
 cleaning, failed-inspection and ready rooms, while preserving deterministic property and natural
