@@ -13,13 +13,15 @@
 
 ## Quality evidence
 
-- 714 domain and security tests pass.
+- 716 domain and security tests pass.
 - All 102 SQLite migrations and the 126-model PostgreSQL parity contract pass.
 - The production build completes with 241 application routes.
 - Static verification confirms 497 internal links resolve to registered application routes.
 - The PMS registry contains 32 unique workspaces: 30 live and 2 controlled foundations, with no
   unfinished module presented as planned or live.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.
+- A least-privilege synthetic monitor checks canonical availability, dependency readiness, security
+  headers, and bounded latency twice per hour through GitHub Actions.
 - The production dependency audit reports no known high-severity runtime vulnerabilities.
 - Next.js 16.3.4 was merged only after the refreshed branch passed the complete CI matrix.
 
@@ -29,7 +31,7 @@
 - Complete supplier contracts, agreements, and onboarding approvals.
 - Select and certify an SMS OTP provider if phone OTP is required in addition to email OTP.
 - Complete legal, tax, privacy, and operational sign-off.
-- Configure production monitoring and alerting, execute and record a restore drill, and approve the high-availability topology.
+- Validate external paging and on-call ownership, execute and record a restore drill, and approve the high-availability topology.
 - Enroll the platform administrator's authenticator before enabling live payments or supplier access.
 
 Until those gates are complete, the portal remains in staging posture and must not process live payments or supplier payouts.

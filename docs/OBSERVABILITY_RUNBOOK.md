@@ -28,3 +28,17 @@ The same default thresholds are executable through `evaluateOperationalAlerts`. 
 5. Record evidence and an on-call owner before launch.
 
 Runtime quality is independently exercised with `npm run test:runtime` against `PORTAL_BASE_URL`. This runs public-route smoke checks, an automated accessibility baseline, and a bounded health-endpoint load check. It complements, but does not replace, manual assistive-technology testing or a full production load exercise.
+
+## Scheduled synthetic monitoring
+
+`.github/workflows/production-monitor.yml` runs at minutes 17 and 47 of every hour and can also be
+started manually. It makes a small, read-only request set against the canonical production origin,
+requires database/dependency/schema readiness, checks the liveness response, verifies the core
+security headers, and fails when p95 latency exceeds 2,000 ms. The workflow has read-only repository
+permission, no secrets, a five-minute timeout, and concurrency cancellation so delayed runs do not
+pile up. GitHub records failures and can notify repository watchers through their existing Actions
+notification settings.
+
+This monitor does not replace an approved external uptime service, log ingestion, paging route,
+on-call acknowledgement test, restore drill, or high-availability review. Those require named
+operational owners and preserved external evidence before launch sign-off.
