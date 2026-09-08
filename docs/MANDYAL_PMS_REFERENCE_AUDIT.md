@@ -146,6 +146,14 @@ records. The view is property-scoped and bounded, withholds financial totals whe
 mixed currency would make them incomplete, and labels allocated stay value separately from
 statutory invoices or recognized accounting revenue.
 
+The Attendant View is now live as a prioritized projection of the same bounded room, inspection and
+maintenance workspace. It orders out-of-service and urgent-maintenance rooms before dirty,
+cleaning, failed-inspection and ready rooms, while preserving deterministic property and natural
+room-number ordering. Attendants use the existing protected room-status endpoint and idempotent,
+audited inspection workflow; no duplicate assignment, room, inspection or maintenance store was
+introduced. The older housekeeping page now also uses this shared bounded service instead of its
+previous unbounded direct query.
+
 Phase 2 service operations now begin with a shared Point of Sale and kitchen queue. A hotel operator
 can place a bounded room-service or outlet order only against a checked-in stay owned by the active
 partner and managed property. Orders keep immutable, versioned state events from placed through

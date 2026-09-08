@@ -132,11 +132,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'AT',
-    description: 'Mobile-first attendant assignments, rush rooms, issues and supplies.',
+    description: 'Prioritized room turnaround, readiness, inspections and maintenance context.',
     group: 'Front office and operations',
+    href: '/partner/pms/attendant',
     name: 'Attendant view',
     phase: 2,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'LD',
