@@ -37,6 +37,8 @@ model User {
   customerSupportEvents       CustomerSupportCaseEvent[]     @relation("CustomerSupportCaseEventActor")
   sentBusinessInvitations     OrganizationInvitation[]       @relation("BusinessInvitationSender")
   acceptedInvitations         OrganizationInvitation[]       @relation("BusinessInvitationAcceptor")
+  sentPartnerInvitations      PartnerMemberInvitation[]       @relation("PartnerInvitationSender")
+  acceptedPartnerInvitations  PartnerMemberInvitation[]       @relation("PartnerInvitationAcceptor")
   createdPolicyVersions       OrganizationPolicyVersion[]    @relation("OrganizationPolicyVersionCreator")
   supplyPartnerMemberships    SupplyPartnerMember[]
   partnerAuditEntries         PartnerAuditLog[]              @relation("PartnerAuditActor")
@@ -228,6 +230,7 @@ model SupplyPartner {
   createdAt             DateTime                    @default(now())
   updatedAt             DateTime                    @updatedAt
   members               SupplyPartnerMember[]
+  memberInvitations     PartnerMemberInvitation[]
   properties            PartnerProperty[]
   auditEntries          PartnerAuditLog[]
   applications          PartnerApplication[]
@@ -267,6 +270,27 @@ model SupplyPartnerMember {
 
   @@unique([partnerId, userId])
   @@index([partnerId, role])
+}
+
+model PartnerMemberInvitation {
+  id               String        @id @default(cuid())
+  partnerId        String
+  email            String
+  role             String        @default("OPERATOR")
+  tokenHash        String        @unique
+  status           String        @default("PENDING")
+  invitedByUserId  String
+  acceptedByUserId String?
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  partner          SupplyPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  invitedBy        User          @relation("PartnerInvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  acceptedBy       User?         @relation("PartnerInvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId, status, createdAt])
+  @@index([email, status, expiresAt])
 }
 
 model PartnerProperty {

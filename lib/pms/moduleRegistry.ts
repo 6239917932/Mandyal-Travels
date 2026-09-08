@@ -297,12 +297,13 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'AC',
-    description: 'Property-scoped roles, least-privilege permissions and audit history.',
+    description:
+      'Supplier-scoped roles, secure invitations, least-privilege permissions and audit history.',
     group: 'System and administration',
-    href: '/partner/activity',
+    href: '/partner/access',
     name: 'Access control',
     phase: 1,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
 ] as const;
 
