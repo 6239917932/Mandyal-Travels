@@ -255,6 +255,8 @@ model SupplyPartner {
   nightAuditCloses      HotelNightAuditClose[]
   posOrders             HotelPosOrder[]
   banquetEvents         HotelBanquetEvent[]
+  stockItems            HotelStockItem[]
+  stockMovements        HotelStockMovement[]
 
   @@index([status, createdAt])
 }
@@ -350,6 +352,8 @@ model PartnerProperty {
   nightAuditCloses    HotelNightAuditClose[]
   posOrders           HotelPosOrder[]
   banquetEvents       HotelBanquetEvent[]
+  stockItems          HotelStockItem[]
+  stockMovements      HotelStockMovement[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1819,6 +1823,51 @@ model PartnerRatePlanInventoryDay {
 
   @@unique([ratePlanId, stayDate])
   @@index([stayDate])
+}
+
+model HotelStockItem {
+  id             String               @id @default(cuid())
+  partnerId      String
+  propertyId     String
+  sku            String
+  name           String
+  category       String
+  unit           String
+  quantityOnHand Int                  @default(0)
+  reorderLevel   Int                  @default(0)
+  status         String               @default("ACTIVE")
+  version        Int                  @default(1)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  partner        SupplyPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property       PartnerProperty      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  movements      HotelStockMovement[]
+
+  @@unique([propertyId, sku])
+  @@index([partnerId, status, updatedAt])
+  @@index([propertyId, category, status])
+}
+
+model HotelStockMovement {
+  id                 String          @id @default(cuid())
+  itemId             String
+  partnerId          String
+  propertyId         String
+  movementType       String
+  quantity           Int
+  resultingQuantity Int
+  note               String
+  actorUserId        String
+  idempotencyKey     String          @unique
+  requestFingerprint String
+  createdAt          DateTime        @default(now())
+  item               HotelStockItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  partner            SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@index([itemId, createdAt])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, createdAt])
 }
 
 model HotelReview {
