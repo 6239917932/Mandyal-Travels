@@ -251,6 +251,7 @@ model SupplyPartner {
   maintenanceWorkOrders HotelMaintenanceWorkOrder[]
   nightAuditCloses      HotelNightAuditClose[]
   posOrders             HotelPosOrder[]
+  banquetEvents         HotelBanquetEvent[]
 
   @@index([status, createdAt])
 }
@@ -324,6 +325,7 @@ model PartnerProperty {
   maintenanceWorkOrders HotelMaintenanceWorkOrder[]
   nightAuditCloses    HotelNightAuditClose[]
   posOrders           HotelPosOrder[]
+  banquetEvents       HotelBanquetEvent[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -2033,6 +2035,58 @@ model HotelPosOrderEvent {
 
   @@unique([orderId, version])
   @@index([orderId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model HotelBanquetEvent {
+  id                   String                    @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  eventName            String
+  organizerName        String
+  contactEmail         String                    @default("")
+  contactPhone         String                    @default("")
+  eventType             String
+  venueName             String
+  eventDate             String
+  startTime             String
+  endTime               String
+  expectedGuests        Int
+  quoteAmount           Int
+  currency              String                    @default("INR")
+  requirements          String                    @default("")
+  status                String                    @default("INQUIRY")
+  version               Int                       @default(1)
+  createIdempotencyKey  String                    @unique
+  requestFingerprint    String
+  createdByUserId       String
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  partner               SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property              PartnerProperty            @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  events                HotelBanquetEventHistory[]
+
+  @@index([partnerId, createdAt])
+  @@index([propertyId, eventDate, status])
+  @@index([propertyId, venueName, eventDate, startTime, endTime])
+}
+
+model HotelBanquetEventHistory {
+  id                 String             @id @default(cuid())
+  banquetEventId     String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String             @default("")
+  version            Int
+  actorUserId        String
+  idempotencyKey     String             @unique
+  requestFingerprint String
+  createdAt          DateTime           @default(now())
+  banquetEvent       HotelBanquetEvent  @relation(fields: [banquetEventId], references: [id], onDelete: Restrict)
+
+  @@unique([banquetEventId, version])
+  @@index([banquetEventId, createdAt])
   @@index([actorUserId, createdAt])
 }
 
