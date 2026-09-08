@@ -168,11 +168,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'CR',
-    description: 'Multi-property reservation, availability and performance control.',
+    description: 'Bounded multi-property reservation, arrival and allocation control.',
     group: 'Revenue and distribution',
+    href: '/partner/pms/central-reservations',
     name: 'Central reservations',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'BE',

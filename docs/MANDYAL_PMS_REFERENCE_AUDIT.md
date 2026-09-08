@@ -197,6 +197,14 @@ audit trail. The diary deliberately does not block guest rooms, collect deposits
 invoices, post accounting revenue or send customer messages until those governed integrations are
 implemented.
 
+Central Reservations is now live as a bounded multi-property projection over the existing booking
+source. It calculates arrivals, departures, in-house rooms and assignment exceptions against each
+property's own controlled operational date, and presents a deterministic fourteen-day forward
+arrival queue. The server includes only active managed properties belonging to the authenticated
+hotel partner and fails closed for foreign slugs, cancelled bookings and closed stay states. All
+reservation and stay mutations remain in the established paginated reservation desk, so this view
+does not introduce a parallel booking or guest record.
+
 The Guest CRM now provides a read-only, property-scoped view over the same confirmed booking guest
 records. It groups normalized booking identities only inside the server-only data-access layer and
 returns masked contact details, bounded recent stay history, deterministic recognition labels,
