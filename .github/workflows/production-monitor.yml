@@ -1,0 +1,34 @@
+name: Production synthetic monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-synthetic-monitor
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      MONITOR_BASE_URL: https://www.mandyaltravels.com
+      MONITOR_MAX_P95_MS: 2000
+      MONITOR_REQUESTS: 6
+
+    steps:
+      - name: Check out monitored contract
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Verify production availability, readiness, latency, and security headers
+        run: node scripts/monitor-production.mjs
