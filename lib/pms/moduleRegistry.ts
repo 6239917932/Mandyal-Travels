@@ -202,12 +202,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'GT',
-    description: 'GST-ready invoices, credit notes, tax registers and e-invoice preparation.',
+    description: 'Controlled GST preparation statements and immutable booking tax register.',
     group: 'Finance and back office',
-    href: '/partner/tax',
+    href: '/partner/pms/gst-billing',
     name: 'GST billing',
     phase: 2,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'AL',
@@ -267,12 +267,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'RP',
-    description: 'Operational, statutory, revenue and management exports.',
+    description: 'Property-scoped operational ledger reports and bounded CSV export.',
     group: 'Analytics and staff',
-    href: '/partner/reports',
+    href: '/partner/pms/reports',
     name: 'Reports',
     phase: 2,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'AK',

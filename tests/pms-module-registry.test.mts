@@ -30,7 +30,7 @@ test('PMS registry exposes a controlled multi-phase rollout', () => {
   assert.equal(pmsModules.length, 33);
   assert.equal(pmsModuleGroups.length, 7);
   assert.ok(countPmsModules('LIVE') >= 5);
-  assert.ok(countPmsModules('FOUNDATION') >= 3);
+  assert.ok(countPmsModules('FOUNDATION') >= 1);
   assert.ok(countPmsModules('PLANNED') >= 5);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
 });

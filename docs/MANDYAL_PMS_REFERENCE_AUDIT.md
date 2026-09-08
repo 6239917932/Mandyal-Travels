@@ -165,3 +165,17 @@ idempotent, early cancellation requires a reason, and unfinished services block 
 Audit. The POS and kitchen workspaces remain isolated to room-service and outlet orders while the
 dedicated Laundry workspace shows only laundry and minibar work. These records do not claim stock
 depletion, a GST invoice, gateway payment or recognized accounting revenue.
+
+Phase 2 finance outputs now add an administrator-only, property-scoped daily operational report
+over the existing booking, append-only folio, cashier-shift, service-order and Night Audit records.
+The report accepts a bounded date range, exposes a bounded CSV export, and withholds every financial
+total and export when source rows are truncated or currencies conflict. Its values are operational
+ledger activity, not recognized accounting revenue or a GST return.
+
+The GST workspace similarly reuses each confirmed booking's immutable marketplace tax snapshot and
+the platform-reviewed supplier identity. It can print a preparation statement, but statutory
+issuance is deliberately disabled: the document is prominently marked `NOT A TAX INVOICE`, has no
+invented invoice number or tax split, and keeps supplemental folio charges separate until their tax
+classification is approved. Statutory invoice numbering, place-of-supply logic, SAC/HSN,
+CGST/SGST/IGST, credit notes, retention and e-invoicing remain blocked pending tax-adviser approval
+and a separately audited implementation.
