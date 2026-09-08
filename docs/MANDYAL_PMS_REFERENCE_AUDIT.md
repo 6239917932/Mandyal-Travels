@@ -150,6 +150,11 @@ The PMS registry exposes this workflow once as Owner Overview. The earlier Analy
 used the same route and data, so it was removed instead of maintaining duplicate navigation and
 ambiguous active-state behavior.
 
+Access Control now has its own live supplier team directory rather than sharing the activity-log
+destination. It uses hashed, revocable seven-day invitations, administrator and operator roles,
+last-administrator protection, forced session revocation after role changes, and partner-scoped
+immutable audit entries. The activity log remains a separate read-only governance view.
+
 The Attendant View is now live as a prioritized projection of the same bounded room, inspection and
 maintenance workspace. It orders out-of-service and urgent-maintenance rooms before dirty,
 cleaning, failed-inspection and ready rooms, while preserving deterministic property and natural

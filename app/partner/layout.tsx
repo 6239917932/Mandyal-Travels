@@ -26,7 +26,7 @@ export default async function PartnerLayout({ children }: PartnerLayoutProps) {
         { code: 'TX', href: '/partner/tax', label: 'Tax and billing' },
         { code: 'ST', href: '/partner/settlements', label: 'Settlements' },
         { code: 'RV', href: '/partner/reviews', label: 'Guest reviews' },
-        { code: 'AC', href: '/partner/activity', label: 'Activity and access' },
+        { code: 'LG', href: '/partner/activity', label: 'Activity log' },
       ],
     },
     ...pmsModuleGroups.map((group) => ({
@@ -64,7 +64,7 @@ export default async function PartnerLayout({ children }: PartnerLayoutProps) {
         { code: 'CP', href: '/partner/compliance', label: 'Compliance' },
         { code: 'TX', href: '/partner/tax', label: 'Tax and billing' },
         { code: 'ST', href: '/partner/settlements', label: 'Settlements' },
-        { code: 'AC', href: '/partner/activity', label: 'Activity and access' },
+        { code: 'LG', href: '/partner/activity', label: 'Activity log' },
       ],
     },
   ];
