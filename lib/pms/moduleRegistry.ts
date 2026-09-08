@@ -114,11 +114,38 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'TM',
+    description:
+      'Restaurant table reservations, service areas, menus, modifiers and availability controls.',
+    group: 'Front office and operations',
+    name: 'Restaurant menus and tables',
+    phase: 3,
+    status: 'PLANNED',
+  },
+  {
+    code: 'QR',
+    description:
+      'Consent-aware guest QR ordering with verified table or room context and controlled fulfilment.',
+    group: 'Front office and operations',
+    name: 'QR guest ordering',
+    phase: 3,
+    status: 'PLANNED',
+  },
+  {
+    code: 'CA',
+    description:
+      'Least-privilege captain and front-office mobile workflows for orders and guest operations.',
+    group: 'Front office and operations',
+    name: 'Captain and mobile operations',
+    phase: 4,
+    status: 'PLANNED',
+  },
+  {
     code: 'BQ',
     description: 'Audited enquiries, quotations, conflict-checked venue holds and event diary.',
     group: 'Front office and operations',
     href: '/partner/pms/banquets',
-    name: 'Banquets and events',
+    name: 'Group bookings and banquets',
     phase: 3,
     status: 'LIVE',
   },
@@ -195,6 +222,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'ON',
+    description:
+      'Contracted OTA connectivity at scale with certified adapters, reconciliation and monitored synchronization.',
+    group: 'Revenue and distribution',
+    name: 'External OTA network',
+    phase: 4,
+    status: 'PLANNED',
+  },
+  {
     code: 'BC',
     description:
       'Append-only guest folios, charges, deposits, payment corrections and cashier shifts.',
@@ -203,6 +239,24 @@ export const pmsModules: readonly PmsModule[] = [
     name: 'Billing and cashier',
     phase: 1,
     status: 'LIVE',
+  },
+  {
+    code: 'MP',
+    description:
+      'Controlled cash, card, bank and approved digital payment tendering with reconciliation evidence.',
+    group: 'Finance and back office',
+    name: 'Multiple payment modes',
+    phase: 2,
+    status: 'FOUNDATION',
+  },
+  {
+    code: 'SD',
+    description:
+      'Audited folio splitting, routed charges, bounded discounts and approval-aware corrections.',
+    group: 'Finance and back office',
+    name: 'Split billing and discounts',
+    phase: 3,
+    status: 'PLANNED',
   },
   {
     code: 'GT',
@@ -241,6 +295,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'VM',
+    description:
+      'Verified vendor directory, commercial terms, purchase approvals and supplier performance history.',
+    group: 'Finance and back office',
+    name: 'Vendor management',
+    phase: 3,
+    status: 'PLANNED',
+  },
+  {
     code: 'FA',
     description:
       'Property asset register with immutable custody and physical-verification evidence.',
@@ -255,9 +318,27 @@ export const pmsModules: readonly PmsModule[] = [
     description: 'Booking-derived guest profiles, stay requests, history and consent posture.',
     group: 'Guest and communication',
     href: '/partner/pms/guest-crm',
-    name: 'Guest CRM',
+    name: 'Guest profiles and CRM',
     phase: 3,
     status: 'LIVE',
+  },
+  {
+    code: 'GF',
+    description: 'Verified-stay ratings, moderated guest feedback and audited property responses.',
+    group: 'Guest and communication',
+    href: '/partner/reviews',
+    name: 'Guest feedback',
+    phase: 2,
+    status: 'LIVE',
+  },
+  {
+    code: 'NM',
+    description:
+      'Template-controlled email and WhatsApp journeys with consent, suppression and delivery evidence.',
+    group: 'Guest and communication',
+    name: 'Automated email and WhatsApp',
+    phase: 3,
+    status: 'FOUNDATION',
   },
   {
     code: 'GP',
@@ -287,6 +368,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'PL',
+    description:
+      'Approved expense capture and management profit-and-loss reporting without claiming statutory books.',
+    group: 'Analytics and staff',
+    name: 'Expenses and profit/loss',
+    phase: 4,
+    status: 'PLANNED',
+  },
+  {
     code: 'HR',
     description: 'Named staff access roster and privacy-safe payroll readiness controls.',
     group: 'Analytics and staff',
@@ -313,6 +403,24 @@ export const pmsModules: readonly PmsModule[] = [
     name: 'Access control',
     phase: 1,
     status: 'LIVE',
+  },
+  {
+    code: 'PC',
+    description:
+      'Consent, retention, access, deletion and export controls supporting accountable privacy operations.',
+    group: 'System and administration',
+    name: 'Privacy and data rights',
+    phase: 3,
+    status: 'FOUNDATION',
+  },
+  {
+    code: 'TX',
+    description:
+      'Versioned, reconciled Tally-compatible XML export after accounting ownership and schema approval.',
+    group: 'System and administration',
+    name: 'Tally/XML integration',
+    phase: 4,
+    status: 'PLANNED',
   },
 ] as const;
 
