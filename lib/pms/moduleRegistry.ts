@@ -243,11 +243,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'GC',
-    description: 'Guest profiles, preferences, stay history, recognition and consent.',
+    description: 'Booking-derived guest profiles, stay requests, history and consent posture.',
     group: 'Guest and communication',
+    href: '/partner/pms/guest-crm',
     name: 'Guest CRM',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'GP',
