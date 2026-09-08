@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { AdminCustomerSupportAction } from '@/components/admin/AdminCustomerSupportAction';
 import { AdminSupportAction } from '@/components/admin/AdminSupportAction';
 import { Card } from '@/components/ui/Card';
+import { MetricBars, MetricDonut } from '@/components/ui/DashboardCharts';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
 
@@ -143,7 +144,7 @@ export default async function AdminPage() {
   const exportToValue = formatDateInput(now);
 
   return (
-    <section className="account-page platform-admin-page">
+    <section className="account-page platform-admin-page admin-workspace">
       <header className="admin-hero" id="overview">
         <div className="admin-hero__content">
           <p className="admin-hero__eyebrow">Secure platform administration</p>
@@ -223,6 +224,24 @@ export default async function AdminPage() {
             {attentionCount > 0 ? 'Review the queues below' : 'No queued items at this snapshot'}
           </small>
         </Card>
+      </div>
+
+      <div className="dashboard-insights-grid" aria-label="Operations visual summary">
+        <MetricDonut
+          caption={`${activeSessionCount.toLocaleString('en-IN')} of ${Math.max(userCount, 1).toLocaleString('en-IN')} platform accounts currently have an active session.`}
+          label="Active sessions"
+          value={userCount ? Math.round((activeSessionCount / userCount) * 100) : 0}
+        />
+        <MetricBars
+          description="The relative size of each operational queue at this live snapshot."
+          items={[
+            { label: 'Travel requests', value: pendingRequestCount },
+            { label: 'Company support', value: openCompanySupportCount },
+            { label: 'Customer support', value: openCustomerSupportCount },
+            { label: 'Amendments', value: pendingAmendmentCount },
+          ]}
+          title="Work requiring attention"
+        />
       </div>
 
       <div className="admin-control-grid" aria-label="Administrative control posture">
