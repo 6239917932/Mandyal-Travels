@@ -1,4 +1,4 @@
-# Railway production status — 7 September 2026
+# Railway production status — updated 8 September 2026
 
 ## Verified platform state
 
@@ -13,11 +13,15 @@
 
 ## Quality evidence
 
-- 643 domain and security tests pass.
-- All 95 SQLite migrations and the 113-model PostgreSQL parity contract pass.
-- The production build completes with 228 application routes.
+- 706 domain and security tests pass.
+- All 101 SQLite migrations and the 124-model PostgreSQL parity contract pass.
+- The production build completes with 238 application routes.
+- Static verification confirms 493 internal links resolve to registered application routes.
+- The PMS registry contains 32 unique workspaces: 29 live and 3 controlled foundations, with no
+  unfinished module presented as planned or live.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.
 - The production dependency audit reports no known high-severity runtime vulnerabilities.
+- Next.js 16.3.4 was merged only after the refreshed branch passed the complete CI matrix.
 
 ## Remaining commercial launch gates
 
