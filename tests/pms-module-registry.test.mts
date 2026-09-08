@@ -29,8 +29,8 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 test('PMS registry exposes a controlled multi-phase rollout', () => {
   assert.equal(pmsModules.length, 32);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 29);
-  assert.equal(countPmsModules('FOUNDATION'), 3);
+  assert.equal(countPmsModules('LIVE'), 30);
+  assert.equal(countPmsModules('FOUNDATION'), 2);
   assert.equal(countPmsModules('PLANNED'), 0);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
 });

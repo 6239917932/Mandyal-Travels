@@ -13,11 +13,11 @@
 
 ## Quality evidence
 
-- 706 domain and security tests pass.
-- All 101 SQLite migrations and the 124-model PostgreSQL parity contract pass.
-- The production build completes with 238 application routes.
-- Static verification confirms 493 internal links resolve to registered application routes.
-- The PMS registry contains 32 unique workspaces: 29 live and 3 controlled foundations, with no
+- 714 domain and security tests pass.
+- All 102 SQLite migrations and the 126-model PostgreSQL parity contract pass.
+- The production build completes with 241 application routes.
+- Static verification confirms 497 internal links resolve to registered application routes.
+- The PMS registry contains 32 unique workspaces: 30 live and 2 controlled foundations, with no
   unfinished module presented as planned or live.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.
 - The production dependency audit reports no known high-severity runtime vulnerabilities.

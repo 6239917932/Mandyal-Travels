@@ -242,12 +242,13 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'FA',
-    description: 'Capital-asset governance readiness linked to maintenance and property controls.',
+    description:
+      'Property asset register with immutable custody and physical-verification evidence.',
     group: 'Finance and back office',
     href: '/partner/pms/fixed-assets',
     name: 'Fixed assets',
     phase: 4,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'GC',

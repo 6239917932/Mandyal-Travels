@@ -257,6 +257,8 @@ model SupplyPartner {
   banquetEvents         HotelBanquetEvent[]
   stockItems            HotelStockItem[]
   stockMovements        HotelStockMovement[]
+  fixedAssets           HotelFixedAsset[]
+  fixedAssetEvents      HotelFixedAssetEvent[]
 
   @@index([status, createdAt])
 }
@@ -354,6 +356,8 @@ model PartnerProperty {
   banquetEvents       HotelBanquetEvent[]
   stockItems          HotelStockItem[]
   stockMovements      HotelStockMovement[]
+  fixedAssets         HotelFixedAsset[]
+  fixedAssetEvents    HotelFixedAssetEvent[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1866,6 +1870,54 @@ model HotelStockMovement {
   property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
 
   @@index([itemId, createdAt])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, createdAt])
+}
+
+model HotelFixedAsset {
+  id                   String                 @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  assetTag             String
+  name                 String
+  category             String
+  location             String
+  custodian             String                @default("")
+  acquiredOn           String
+  acquisitionCostMinor Int
+  currency             String                @default("INR")
+  invoiceReference     String
+  status               String                @default("ACTIVE")
+  lastVerifiedAt       DateTime?
+  version              Int                   @default(1)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  partner              SupplyPartner         @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property             PartnerProperty       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  events               HotelFixedAssetEvent[]
+
+  @@unique([propertyId, assetTag])
+  @@index([partnerId, status, updatedAt])
+  @@index([propertyId, category, status])
+}
+
+model HotelFixedAssetEvent {
+  id                 String          @id @default(cuid())
+  assetId            String
+  partnerId          String
+  propertyId         String
+  eventType          String
+  note               String
+  actorUserId        String
+  idempotencyKey     String          @unique
+  requestFingerprint String
+  resultingStatus    String
+  createdAt          DateTime        @default(now())
+  asset              HotelFixedAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  partner            SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@index([assetId, createdAt])
   @@index([partnerId, createdAt])
   @@index([propertyId, createdAt])
 }
