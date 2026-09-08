@@ -1,5 +1,7 @@
 import 'server-only';
 
+import type { Prisma } from '@/generated/prisma/client';
+
 import {
   INTEGRATION_OUTBOX_BATCH_DEFAULT,
   INTEGRATION_OUTBOX_BATCH_MAXIMUM,
@@ -27,6 +29,22 @@ export interface IntegrationOutboxDeliverySummary {
   delivered: number;
   failed: number;
   recovered: number;
+}
+
+async function setChannelSyncRunStatus(
+  client: Prisma.TransactionClient | typeof prisma,
+  event: { aggregateId: string; aggregateType: string },
+  status: 'DISPATCHED' | 'FAILED' | 'PROCESSING' | 'QUEUED',
+) {
+  if (event.aggregateType !== 'HOTEL_CHANNEL_SYNC') return;
+  await client.hotelChannelSyncRun.updateMany({
+    data: {
+      ...(status === 'PROCESSING' ? { startedAt: new Date() } : {}),
+      ...(status === 'DISPATCHED' || status === 'FAILED' ? { completedAt: new Date() } : {}),
+      status,
+    },
+    where: { id: event.aggregateId },
+  });
 }
 
 export const integrationOutboxService = {
@@ -62,6 +80,7 @@ export const integrationOutboxService = {
       });
       if (claimed.count !== 1) continue;
       try {
+        await setChannelSyncRunStatus(prisma, event, 'PROCESSING');
         await adapter.deliver({
           aggregateId: event.aggregateId,
           aggregateType: event.aggregateType,
@@ -70,17 +89,20 @@ export const integrationOutboxService = {
           occurredAt: event.createdAt.toISOString(),
           payload: JSON.parse(event.payloadJson) as unknown,
         });
-        const completed = await prisma.integrationOutboxEvent.updateMany({
-          data: {
-            attempts: { increment: 1 },
-            lastError: '',
-            lockedAt: null,
-            processedAt: new Date(),
-            status: 'DELIVERED',
-          },
-          where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
+        await prisma.$transaction(async (transaction) => {
+          const completed = await transaction.integrationOutboxEvent.updateMany({
+            data: {
+              attempts: { increment: 1 },
+              lastError: '',
+              lockedAt: null,
+              processedAt: new Date(),
+              status: 'DELIVERED',
+            },
+            where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
+          });
+          if (completed.count !== 1) throw new Error('INTEGRATION_OUTBOX_LEASE_LOST');
+          await setChannelSyncRunStatus(transaction, event, 'DISPATCHED');
         });
-        if (completed.count !== 1) throw new Error('INTEGRATION_OUTBOX_LEASE_LOST');
         delivered += 1;
       } catch (error) {
         const retry = outboxRetryDecision({
@@ -88,15 +110,22 @@ export const integrationOutboxService = {
           maxAttempts: event.maxAttempts,
           now: new Date(),
         });
-        await prisma.integrationOutboxEvent.updateMany({
-          data: {
-            attempts: { increment: 1 },
-            lastError: safeOutboxError(error),
-            lockedAt: null,
-            nextAttemptAt: retry.nextAttemptAt,
-            status: retry.status,
-          },
-          where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
+        await prisma.$transaction(async (transaction) => {
+          await transaction.integrationOutboxEvent.updateMany({
+            data: {
+              attempts: { increment: 1 },
+              lastError: safeOutboxError(error),
+              lockedAt: null,
+              nextAttemptAt: retry.nextAttemptAt,
+              status: retry.status,
+            },
+            where: { id: event.id, lockedAt: now, status: 'PROCESSING' },
+          });
+          await setChannelSyncRunStatus(
+            transaction,
+            event,
+            retry.status === 'DEAD_LETTER' ? 'FAILED' : 'QUEUED',
+          );
         });
         failed += 1;
         if (retry.status === 'DEAD_LETTER') deadLettered += 1;

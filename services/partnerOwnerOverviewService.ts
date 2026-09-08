@@ -3,6 +3,8 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 import {
   buildOwnerSourceMix,
+  buildOutletPerformance,
+  calculateBookingPace,
   calculateOwnerDailyPerformance,
   calculateOwnerFinancialTotals,
   type OwnerOverviewBooking,
@@ -80,53 +82,76 @@ export async function getPartnerOwnerOverview(input: {
     selectedProperty.timezone,
   );
   const windowDates = Array.from({ length: 7 }, (_, index) => addDays(businessDate, index - 6));
-  const [rooms, bookings, openCashierShifts, pendingAmendments, activeMaintenance, recentCloses] =
-    await Promise.all([
-      prisma.partnerPhysicalRoom.findMany({
-        select: { housekeepingStatus: true, operationalStatus: true },
-        take: MAX_ROOMS + 1,
-        where: { propertyId: selectedProperty.id },
-      }),
-      prisma.booking.findMany({
-        include: {
-          folioEntries: {
-            include: { reversalOf: { select: { entryType: true } } },
-            orderBy: { createdAt: 'asc' },
-            take: MAX_ENTRIES_PER_BOOKING + 1,
-          },
-          payment: { select: { amount: true, status: true } },
-          quote: {
-            select: { checkInDate: true, checkOutDate: true, rooms: true },
-          },
-          refunds: { select: { amount: true, status: true } },
+  const [
+    rooms,
+    bookings,
+    openCashierShifts,
+    pendingAmendments,
+    activeMaintenance,
+    recentCloses,
+    outletOrders,
+  ] = await Promise.all([
+    prisma.partnerPhysicalRoom.findMany({
+      select: { housekeepingStatus: true, operationalStatus: true },
+      take: MAX_ROOMS + 1,
+      where: { propertyId: selectedProperty.id },
+    }),
+    prisma.booking.findMany({
+      include: {
+        folioEntries: {
+          include: { reversalOf: { select: { entryType: true } } },
+          orderBy: { createdAt: 'asc' },
+          take: MAX_ENTRIES_PER_BOOKING + 1,
         },
-        orderBy: { createdAt: 'desc' },
-        take: MAX_BOOKINGS + 1,
-        where: {
-          hotelSlug: selectedProperty.hotelSlug,
-          operationalStatus: { not: 'NO_SHOW' },
-          status: 'confirmed',
+        payment: { select: { amount: true, status: true } },
+        quote: {
+          select: { checkInDate: true, checkOutDate: true, rooms: true },
         },
-      }),
-      prisma.hotelCashierShift.count({
-        where: { propertyId: selectedProperty.id, status: 'OPEN' },
-      }),
-      prisma.bookingAmendment.count({
-        where: {
-          booking: { hotelSlug: selectedProperty.hotelSlug },
-          status: 'pending',
-        },
-      }),
-      prisma.hotelMaintenanceWorkOrder.count({
-        where: { propertyId: selectedProperty.id, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
-      }),
-      prisma.hotelNightAuditClose.findMany({
-        orderBy: { closedAt: 'desc' },
-        select: { businessDate: true, closedAt: true, nextBusinessDate: true },
-        take: 7,
-        where: { propertyId: selectedProperty.id },
-      }),
-    ]);
+        refunds: { select: { amount: true, status: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_BOOKINGS + 1,
+      where: {
+        hotelSlug: selectedProperty.hotelSlug,
+        operationalStatus: { not: 'NO_SHOW' },
+        status: 'confirmed',
+      },
+    }),
+    prisma.hotelCashierShift.count({
+      where: { propertyId: selectedProperty.id, status: 'OPEN' },
+    }),
+    prisma.bookingAmendment.count({
+      where: {
+        booking: { hotelSlug: selectedProperty.hotelSlug },
+        status: 'pending',
+      },
+    }),
+    prisma.hotelMaintenanceWorkOrder.count({
+      where: { propertyId: selectedProperty.id, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+    }),
+    prisma.hotelNightAuditClose.findMany({
+      orderBy: { closedAt: 'desc' },
+      select: { businessDate: true, closedAt: true, nextBusinessDate: true },
+      take: 7,
+      where: { propertyId: selectedProperty.id },
+    }),
+    prisma.hotelPosOrder.findMany({
+      orderBy: { createdAt: 'asc' },
+      select: {
+        currency: true,
+        outletName: true,
+        serviceMode: true,
+        status: true,
+        totalAmount: true,
+      },
+      take: MAX_BOOKINGS + 1,
+      where: {
+        businessDate: { gte: windowDates[0], lte: businessDate },
+        propertyId: selectedProperty.id,
+        status: 'POSTED',
+      },
+    }),
+  ]);
 
   const boundedRooms = rooms.slice(0, MAX_ROOMS);
   const boundedBookings = bookings.slice(0, MAX_BOOKINGS);
@@ -137,10 +162,12 @@ export async function getPartnerOwnerOverview(input: {
     properties.length > MAX_PROPERTIES ||
     rooms.length > MAX_ROOMS ||
     bookings.length > MAX_BOOKINGS ||
+    outletOrders.length > MAX_BOOKINGS ||
     bookingEntryLimitReached;
   const financialBookings: OwnerOverviewBooking[] = boundedBookings.map((booking) => ({
     checkInDate: booking.quote.checkInDate,
     checkOutDate: booking.quote.checkOutDate,
+    createdAt: booking.createdAt,
     currency: booking.currency,
     entries: balanceEntries(booking.folioEntries.slice(0, MAX_ENTRIES_PER_BOOKING)),
     onlinePayment: booking.payment,
@@ -150,7 +177,10 @@ export async function getPartnerOwnerOverview(input: {
     totalAmount: booking.totalAmount,
   }));
   const currencies = [
-    ...new Set(financialBookings.map((booking) => booking.currency.trim().toUpperCase())),
+    ...new Set([
+      ...financialBookings.map((booking) => booking.currency.trim().toUpperCase()),
+      ...outletOrders.slice(0, MAX_BOOKINGS).map((order) => order.currency.trim().toUpperCase()),
+    ]),
   ];
   const currencyConflict =
     currencies.length > 1 || currencies.some((value) => !/^[A-Z]{3}$/.test(value));
@@ -191,6 +221,8 @@ export async function getPartnerOwnerOverview(input: {
       totalRooms: boundedRooms.length,
     },
     performance: today,
+    bookingPace: calculateBookingPace({ bookings: financialBookings, businessDate }),
+    outletPerformance: buildOutletPerformance(outletOrders.slice(0, MAX_BOOKINGS)),
     performanceWindow: windowDates.map((date) => ({
       businessDate: date,
       ...calculateOwnerDailyPerformance({

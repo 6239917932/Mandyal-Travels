@@ -6,12 +6,20 @@ const DAY_MS = 86_400_000;
 export type OwnerOverviewBooking = Readonly<{
   checkInDate: string;
   checkOutDate: string;
+  createdAt?: Date | string;
   currency: string;
   entries: readonly HotelFolioBalanceEntry[];
   onlinePayment?: { amount: number; status: string } | null;
   onlineRefunds?: readonly { amount: number; status: string }[];
   rooms: number;
   source: string;
+  totalAmount: number;
+}>;
+
+export type OwnerOutletOrder = Readonly<{
+  outletName: string;
+  serviceMode: string;
+  status: string;
   totalAmount: number;
 }>;
 
@@ -131,5 +139,95 @@ export function buildOwnerSourceMix(bookings: readonly OwnerOverviewBooking[]) {
     .sort(
       (left, right) =>
         right.bookedValue - left.bookedValue || left.source.localeCompare(right.source),
+    );
+}
+
+export function calculateBookingPace(input: {
+  bookings: readonly Pick<
+    OwnerOverviewBooking,
+    'checkInDate' | 'createdAt' | 'rooms' | 'totalAmount'
+  >[];
+  businessDate: string;
+}) {
+  const businessTime = dateValue(input.businessDate);
+  if (businessTime === undefined) {
+    return {
+      currentBookings: 0,
+      currentRooms: 0,
+      currentValue: 0,
+      previousBookings: 0,
+      previousRooms: 0,
+      previousValue: 0,
+    } as const;
+  }
+  const currentStart = businessTime - 6 * DAY_MS;
+  const previousStart = businessTime - 13 * DAY_MS;
+  const futureThrough = businessTime + 29 * DAY_MS;
+  const totals = {
+    currentBookings: 0,
+    currentRooms: 0,
+    currentValue: 0,
+    previousBookings: 0,
+    previousRooms: 0,
+    previousValue: 0,
+  };
+  for (const booking of input.bookings) {
+    const arrival = dateValue(booking.checkInDate);
+    const created = booking.createdAt ? new Date(booking.createdAt).getTime() : Number.NaN;
+    if (
+      arrival === undefined ||
+      arrival < businessTime ||
+      arrival > futureThrough ||
+      !Number.isFinite(created)
+    )
+      continue;
+    const bucket =
+      created >= currentStart && created < businessTime + DAY_MS
+        ? 'current'
+        : created >= previousStart && created < currentStart
+          ? 'previous'
+          : undefined;
+    if (!bucket) continue;
+    const rooms = Number.isSafeInteger(booking.rooms) && booking.rooms > 0 ? booking.rooms : 0;
+    const value =
+      Number.isSafeInteger(booking.totalAmount) && booking.totalAmount > 0
+        ? booking.totalAmount
+        : 0;
+    if (bucket === 'current') {
+      totals.currentBookings += 1;
+      totals.currentRooms += rooms;
+      totals.currentValue += value;
+    } else {
+      totals.previousBookings += 1;
+      totals.previousRooms += rooms;
+      totals.previousValue += value;
+    }
+  }
+  return totals;
+}
+
+export function buildOutletPerformance(orders: readonly OwnerOutletOrder[]) {
+  const outlets = new Map<string, { orders: number; postedValue: number }>();
+  for (const order of orders) {
+    if (
+      order.status !== 'POSTED' ||
+      !Number.isSafeInteger(order.totalAmount) ||
+      order.totalAmount < 0
+    )
+      continue;
+    const outlet =
+      order.outletName.trim().slice(0, 80) ||
+      order.serviceMode.trim().slice(0, 40) ||
+      'Unassigned outlet';
+    const current = outlets.get(outlet) ?? { orders: 0, postedValue: 0 };
+    current.orders += 1;
+    current.postedValue += order.totalAmount;
+    outlets.set(outlet, current);
+  }
+  return [...outlets.entries()]
+    .map(([outlet, values]) => ({ outlet, ...values }))
+    .sort(
+      (left, right) =>
+        right.postedValue - left.postedValue || left.outlet.localeCompare(right.outlet),
     );
 }

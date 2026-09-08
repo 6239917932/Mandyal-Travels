@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { ChannelSyncManager } from '@/components/partner/ChannelSyncManager';
+import { channelConnectionReadiness } from '@/lib/hotel/channelRules';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
@@ -29,6 +30,7 @@ export default async function PartnerChannelsPage() {
   const connections = records.map((record) => ({
     ...record,
     createdAt: record.createdAt.toISOString(),
+    dispatchReady: channelConnectionReadiness(record).ready,
     lastHealthAt: record.lastHealthAt?.toISOString() ?? null,
     syncRuns: record.syncRuns.map((run) => ({
       ...run,
@@ -52,15 +54,19 @@ export default async function PartnerChannelsPage() {
           <p className="hotel-page__eyebrow">PMS and channel distribution</p>
           <h1>Channel synchronization</h1>
           <p>
-            Map hotel inventory to external systems, queue audited synchronization, and reconcile
-            exceptions.
+            Review governed provider configuration, property mapping, dispatch readiness and
+            reconciliation evidence. A connection shell does not mean a provider is live.
           </p>
         </div>
         <Link className="ui-button ui-button--secondary" href="/partner">
           Partner workspace
         </Link>
       </div>
-      <ChannelSyncManager connections={connections} properties={properties} />
+      <ChannelSyncManager
+        canAdminister={access.memberRole === 'ADMIN'}
+        connections={connections}
+        properties={properties}
+      />
     </section>
   );
 }

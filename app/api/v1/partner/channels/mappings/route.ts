@@ -1,6 +1,6 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { ChannelRuleError, normalizeExternalReference } from '@/lib/hotel/channelRules';
-import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
+import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
 function failure(code: string, message: string, status: number): Response {
@@ -11,6 +11,8 @@ export async function POST(request: Request): Promise<Response> {
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'HOTEL' || access.memberRole !== 'ADMIN')
     return failure('PARTNER_UNAUTHORIZED', 'Hotel partner administrator access is required.', 401);
+  if (access.mode !== 'integration-key' && !isSameOriginMutation(request))
+    return failure('FORBIDDEN_ORIGIN', 'This request must come from the Mandyal portal.', 403);
   const body = await readJsonObject(request);
   if (!body || typeof body.connectionId !== 'string' || typeof body.propertyId !== 'string')
     return failure('INVALID_MAPPING', 'Connection and property are required.', 400);
@@ -28,16 +30,23 @@ export async function POST(request: Request): Promise<Response> {
     );
   try {
     const externalPropertyRef = normalizeExternalReference(body.externalPropertyRef, 'Property');
-    const mapping = await prisma.hotelChannelPropertyMapping.upsert({
-      create: { connectionId: owned.id, externalPropertyRef, propertyId: property.id },
-      update: { externalPropertyRef, status: 'ACTIVE' },
-      where: { connectionId_propertyId: { connectionId: owned.id, propertyId: property.id } },
-    });
-    await recordPartnerAudit(access, {
-      action: 'CHANNEL_PROPERTY_MAPPED',
-      entityId: mapping.id,
-      entityType: 'HOTEL_CHANNEL_MAPPING',
-      summary: `Mapped ${property.displayName} to an external property reference.`,
+    const mapping = await prisma.$transaction(async (transaction) => {
+      const saved = await transaction.hotelChannelPropertyMapping.upsert({
+        create: { connectionId: owned.id, externalPropertyRef, propertyId: property.id },
+        update: { externalPropertyRef, status: 'ACTIVE' },
+        where: { connectionId_propertyId: { connectionId: owned.id, propertyId: property.id } },
+      });
+      await transaction.partnerAuditLog.create({
+        data: {
+          action: 'CHANNEL_PROPERTY_MAPPED',
+          actorUserId: access.userId,
+          entityId: saved.id,
+          entityType: 'HOTEL_CHANNEL_MAPPING',
+          partnerId: access.partnerId!,
+          summary: `Mapped ${property.displayName} to an external property reference.`,
+        },
+      });
+      return saved;
     });
     return Response.json({ data: mapping }, { status: 201 });
   } catch (error) {

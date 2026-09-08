@@ -36,3 +36,19 @@ export function normalizeSyncDirection(value: unknown): 'PULL' | 'PUSH' | 'BIDIR
     'Choose pull, push, or bidirectional synchronization.',
   );
 }
+
+export function channelConnectionReadiness(input: {
+  lastHealthAt: Date | string | null;
+  lastHealthStatus: string;
+  now?: Date;
+  status: string;
+}) {
+  if (input.status !== 'ACTIVE') return { code: 'CHANNEL_NOT_ACTIVE', ready: false } as const;
+  if (input.lastHealthStatus !== 'HEALTHY' || !input.lastHealthAt)
+    return { code: 'CHANNEL_HEALTH_REQUIRED', ready: false } as const;
+  const checkedAt = new Date(input.lastHealthAt).getTime();
+  const now = (input.now ?? new Date()).getTime();
+  if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt > 86_400_000)
+    return { code: 'CHANNEL_HEALTH_STALE', ready: false } as const;
+  return { code: 'READY', ready: true } as const;
+}
