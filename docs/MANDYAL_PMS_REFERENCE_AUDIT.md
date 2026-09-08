@@ -134,8 +134,8 @@ workspace records idempotent room work orders with immutable, versioned status e
 work order takes the room out of service; unresolved work blocks reactivation, and completed work
 requires a newer passed inspection before the room can return to service. Every approved module is
 reachable from the persistent sidebar: live modules open their
-production workflow, while foundation and planned modules open a controlled scope workspace that
-cannot submit unfinished transactions.
+production workflow, while foundation modules open a controlled scope workspace that cannot submit
+unfinished transactions. The registry currently contains no planned placeholder routes.
 
 Phase 1 closes with a governed Night Audit that checks cashier shifts, arrivals, departures,
 amendments and urgent maintenance before an administrator can advance the property operational
@@ -220,3 +220,16 @@ returns masked contact details, bounded recent stay history, deterministic recog
 reservation-level requests and consent-backed registration counts. It creates no duplicate guest
 identity, exposes no document reference, carries no request into a future stay automatically and
 never treats booking or registration consent as permission for marketing.
+
+Stock and Inventory is now live with property-scoped SKUs and an immutable movement ledger. Opening
+balances are movements rather than mutable counters; posting is idempotent, rejects stale versions
+and prevents negative stock. Procurement reuses this ledger for reorder and receipt evidence rather
+than creating a second inventory store. Vendor contracts, purchase-order approvals and payments
+remain explicit human and commercial controls.
+
+The Guest Portal is live as a governed view over the existing customer account and booking records;
+it creates no second identity, password or consent database. Fixed Assets, Telephone and EPABX, and
+HR and Payroll now have dedicated controlled foundation workspaces instead of dead or duplicate
+navigation. They expose only existing, authorized property, maintenance, reservation or partner-team
+evidence and deliberately do not fabricate depreciation policy, call records, payroll, attendance,
+bank, tax, medical or other regulated data before the required provider and legal approvals exist.
