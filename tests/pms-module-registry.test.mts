@@ -27,11 +27,11 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 32);
+  assert.equal(pmsModules.length, 44);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 30);
-  assert.equal(countPmsModules('FOUNDATION'), 2);
-  assert.equal(countPmsModules('PLANNED'), 0);
+  assert.equal(countPmsModules('LIVE'), 31);
+  assert.equal(countPmsModules('FOUNDATION'), 5);
+  assert.equal(countPmsModules('PLANNED'), 8);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
 });
 
@@ -45,7 +45,7 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Night audit',
     'Point of sale',
     'Kitchen display',
-    'Banquets and events',
+    'Group bookings and banquets',
     'Attendant view',
     'Laundry',
     'Maintenance',
@@ -57,12 +57,30 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Stock and inventory',
     'Procurement',
     'Fixed assets',
-    'Guest CRM',
+    'Guest profiles and CRM',
     'Guest portal',
     'Telephone and EPABX',
     'HR and payroll',
     'Access control',
+    'Restaurant menus and tables',
+    'QR guest ordering',
+    'Captain and mobile operations',
+    'External OTA network',
+    'Multiple payment modes',
+    'Split billing and discounts',
+    'Vendor management',
+    'Guest feedback',
+    'Automated email and WhatsApp',
+    'Expenses and profit/loss',
+    'Privacy and data rights',
+    'Tally/XML integration',
   ]) {
     assert.ok(names.has(required), `${required} must remain visible in the PMS catalogue`);
+  }
+});
+
+test('provider and statutory dependencies are never presented as operational', () => {
+  for (const code of ['ON', 'NM', 'MP', 'PL', 'TX']) {
+    assert.notEqual(getPmsModule(code)?.status, 'LIVE');
   }
 });

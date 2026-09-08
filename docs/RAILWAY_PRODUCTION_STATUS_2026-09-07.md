@@ -17,8 +17,9 @@
 - All 102 SQLite migrations and the 126-model PostgreSQL parity contract pass.
 - The production build completes with 241 application routes.
 - Static verification confirms 497 internal links resolve to registered application routes.
-- The PMS registry contains 32 unique workspaces: 30 live and 2 controlled foundations, with no
-  unfinished module presented as planned or live.
+- The additive PMS registry contains 44 unique workspaces: 31 live, 5 controlled foundations, and
+  8 clearly labelled planned workspaces. Existing modules remain available; unfinished or
+  provider-dependent transactions are not presented as live.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.
 - A least-privilege synthetic monitor checks canonical availability, dependency readiness, security
   headers, and bounded latency twice per hour through GitHub Actions.
