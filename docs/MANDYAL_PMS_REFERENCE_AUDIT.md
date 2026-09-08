@@ -163,6 +163,14 @@ audited inspection workflow; no duplicate assignment, room, inspection or mainte
 introduced. The older housekeeping page now also uses this shared bounded service instead of its
 previous unbounded direct query.
 
+Fixed Assets is now live as a property-scoped equipment and custody register. Supplier
+administrators can record a unique asset tag, invoice provenance, acquisition date and exact
+integer-safe cost, then append retry-safe physical-verification or movement evidence. Updates use
+optimistic concurrency, every mutation writes the partner audit trail, and the workspace has bounded
+register and event views. It does not treat consumable stock or repairs as capital assets and does
+not calculate depreciation, disposal gains or statutory accounting entries until an approved
+capitalization and tax policy exists.
+
 Phase 2 service operations now begin with a shared Point of Sale and kitchen queue. A hotel operator
 can place a bounded room-service or outlet order only against a checked-in stay owned by the active
 partner and managed property. Orders keep immutable, versioned state events from placed through

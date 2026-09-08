@@ -25,10 +25,8 @@ test('remaining PMS modules use dedicated governed routes without duplicate oper
   assert.match(procurement, /getPartnerStockInventory/);
   assert.match(procurement, /No duplicate inventory balance/);
   assert.doesNotMatch(procurement, /prisma\./);
-  assert.match(
-    fixedAssets,
-    /does not treat[\s\S]*room repairs or consumable stock as fixed[\s\S]*assets/,
-  );
+  assert.match(fixedAssets, /getPartnerFixedAssetWorkspace/);
+  assert.match(fixedAssets, /Depreciation[\s\S]*remains?\s+disabled/);
   assert.match(
     guestPortal,
     /does not[\s\S]*create a second password, identity, or consent database/,
