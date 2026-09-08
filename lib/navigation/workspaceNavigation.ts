@@ -6,6 +6,7 @@ export const adminWorkspaceNavigation = [
     items: [
       { code: 'DB', href: '/admin', label: 'Dashboard' },
       { code: 'AN', href: '/admin/analytics', label: 'Platform analytics' },
+      { code: 'LR', href: '/admin/readiness', label: 'Launch readiness' },
     ],
   },
   {
