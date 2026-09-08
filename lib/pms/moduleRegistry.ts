@@ -297,11 +297,12 @@ export const pmsModules: readonly PmsModule[] = [
   {
     code: 'VM',
     description:
-      'Verified vendor directory, commercial terms, purchase approvals and supplier performance history.',
+      'Property-scoped vendor directory, commercial terms and immutable activation history.',
     group: 'Finance and back office',
+    href: '/partner/pms/vendors',
     name: 'Vendor management',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'FA',

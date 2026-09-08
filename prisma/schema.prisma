@@ -259,6 +259,8 @@ model SupplyPartner {
   stockMovements        HotelStockMovement[]
   fixedAssets           HotelFixedAsset[]
   fixedAssetEvents      HotelFixedAssetEvent[]
+  vendors               HotelVendor[]
+  vendorEvents          HotelVendorEvent[]
 
   @@index([status, createdAt])
 }
@@ -358,6 +360,8 @@ model PartnerProperty {
   stockMovements      HotelStockMovement[]
   fixedAssets         HotelFixedAsset[]
   fixedAssetEvents    HotelFixedAssetEvent[]
+  vendors             HotelVendor[]
+  vendorEvents        HotelVendorEvent[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -1918,6 +1922,56 @@ model HotelFixedAssetEvent {
   property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
 
   @@index([assetId, createdAt])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, createdAt])
+}
+
+model HotelVendor {
+  id                  String             @id @default(cuid())
+  partnerId           String
+  propertyId          String
+  vendorCode          String
+  legalName           String
+  tradingName         String             @default("")
+  category            String
+  contactName         String
+  email               String             @default("")
+  phone               String             @default("")
+  paymentTermsDays    Int                @default(0)
+  commercialNote      String             @default("")
+  status              String             @default("ACTIVE")
+  version             Int                @default(1)
+  createdByUserId     String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  partner             SupplyPartner      @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property            PartnerProperty    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  events              HotelVendorEvent[]
+
+  @@unique([propertyId, vendorCode])
+  @@index([partnerId, status, updatedAt])
+  @@index([propertyId, category, status])
+}
+
+model HotelVendorEvent {
+  id                 String          @id @default(cuid())
+  vendorId           String
+  partnerId          String
+  propertyId         String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String
+  version            Int
+  actorUserId        String
+  idempotencyKey     String          @unique
+  requestFingerprint String
+  createdAt          DateTime        @default(now())
+  vendor             HotelVendor     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  partner            SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@unique([vendorId, version])
   @@index([partnerId, createdAt])
   @@index([propertyId, createdAt])
 }

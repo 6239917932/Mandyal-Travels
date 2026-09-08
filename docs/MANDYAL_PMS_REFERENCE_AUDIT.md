@@ -235,6 +235,14 @@ and prevents negative stock. Procurement reuses this ledger for reorder and rece
 than creating a second inventory store. Vendor contracts, purchase-order approvals and payments
 remain explicit human and commercial controls.
 
+Vendor Management is now live as an administrator-only, property-scoped supplier directory. It
+records normalized vendor identity, business contact ownership, supply category, bounded payment
+terms and commercial notes, while unique property vendor codes prevent accidental duplicates.
+Reasoned pause and reactivation actions use optimistic concurrency, retry-safe idempotency and an
+immutable event history. The directory cannot approve purchase orders, release payments or store
+bank account numbers, UPI credentials, PINs or OTPs; procurement and finance authority remain in
+their separate controlled workflows.
+
 The Guest Portal is live as a governed view over the existing customer account and booking records;
 it creates no second identity, password or consent database. Fixed Assets, Telephone and EPABX, and
 HR and Payroll now have dedicated controlled foundation workspaces instead of dead or duplicate

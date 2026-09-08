@@ -33,7 +33,9 @@ provider gate remains. **Planned** means the workspace is visible while transact
 
 - Live: property SKUs, receipts, issues, reorder controls, goods-receipt evidence and procurement
   worklists.
-- Planned: verified vendor directory, commercial terms, purchase approvals and performance history.
+- Live: property-scoped vendor registration, contact ownership, payment terms, reasoned pause or
+  reactivation and immutable decision history.
+- Planned: purchase-order approvals, supplier performance scoring and vendor payment release.
 
 ## Guest experience
 
