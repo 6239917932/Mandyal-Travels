@@ -994,6 +994,10 @@
   font-weight: 800;
 }
 
+.workspace-sidebar__close {
+  display: none;
+}
+
 .workspace-sidebar__brand div,
 .workspace-sidebar__links,
 .workspace-sidebar__account {
@@ -3279,8 +3283,10 @@
     bottom: 0;
     left: 0;
     z-index: 50;
-    max-height: 100vh;
-    min-height: 100vh;
+    width: min(18rem, calc(100vw - 2.5rem));
+    max-height: 100dvh;
+    min-height: 100dvh;
+    overscroll-behavior: contain;
     transform: translateX(-102%);
     transition: transform 180ms ease;
   }
@@ -3301,6 +3307,29 @@
 
   .workspace-sidebar nav {
     display: block;
+  }
+
+  .workspace-sidebar__brand {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .workspace-sidebar__links > a,
+  .workspace-sidebar__disabled {
+    min-height: 2.75rem;
+  }
+
+  .workspace-sidebar__close {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 20%);
+    border-radius: 0.65rem;
+    background: rgb(255 255 255 / 8%);
+    color: var(--color-white);
+    font-size: 1.5rem;
+    line-height: 1;
   }
 
   .workspace-topbar__menu {
@@ -3328,13 +3357,67 @@
     padding: var(--space-2) var(--space-4);
   }
 
+  .workspace-topbar__context {
+    min-width: 0;
+  }
+
+  .workspace-topbar__context > div {
+    min-width: 0;
+  }
+
+  .workspace-topbar__context > div > span,
+  .workspace-topbar__context > div > strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workspace-topbar__status {
+    flex: 0 0 auto;
+  }
+
   .workspace-topbar__secure,
   .workspace-topbar__identity {
     display: none;
   }
 
   .workspace-shell__content {
+    min-width: 0;
+    overflow-x: clip;
     padding: 0 var(--space-4);
+  }
+
+  .workspace-shell__content :where(.ui-card, form, fieldset, section, article, dl) {
+    min-width: 0;
+  }
+
+  .workspace-shell__content
+    :where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    width: 100%;
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .workspace-shell__content :where(button, .ui-button, a.ui-button) {
+    min-height: 2.75rem;
+  }
+
+  .workspace-shell__content table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workspace-shell__content :where(.business-report__filters, .supplier-form__grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-shell__content .business-report__search,
+  .workspace-shell__content .supplier-form__full-width {
+    grid-column: auto;
   }
 
   .workspace-shell__content > .account-page,
@@ -3373,6 +3456,61 @@
   .dashboard-chart header {
     flex-direction: column;
   }
+}
+
+@media (max-width: 26rem) {
+  .workspace-topbar {
+    gap: 0.45rem;
+    padding-inline: 0.65rem;
+  }
+
+  .workspace-topbar__context {
+    gap: 0.45rem;
+  }
+
+  .workspace-topbar__menu {
+    min-height: 2.75rem;
+    padding-inline: 0.55rem;
+  }
+
+  .workspace-topbar__context > div > span {
+    display: none;
+  }
+
+  .workspace-topbar__context > div > strong {
+    max-width: 7.5rem;
+    font-size: 0.82rem;
+  }
+
+  .workspace-topbar__signout {
+    min-height: 2.75rem;
+    padding-inline: 0.55rem;
+  }
+
+  .workspace-shell__content {
+    padding-inline: 0.65rem;
+  }
+
+  .workspace-shell__content > .account-page,
+  .workspace-shell__content > .booking-page {
+    padding-top: 0.85rem;
+  }
+
+  .admin-hero,
+  .admin-workspace > .partner-page__heading,
+  .admin-workspace > .account-trips__heading,
+  .dashboard-chart,
+  .dashboard-chart--donut {
+    padding: 0.85rem;
+  }
+
+  .admin-hero h1 {
+    font-size: clamp(1.45rem, 9vw, 1.8rem);
+  }
+}
+
+body.workspace-navigation-open {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3646,7 +3784,7 @@
   }
 
   .workspace-sidebar {
-    width: 15.5rem;
+    width: min(18rem, calc(100vw - 2.5rem));
   }
 }
 
