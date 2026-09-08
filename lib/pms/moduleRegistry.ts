@@ -215,11 +215,12 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'AL',
-    description: 'Double-entry journals, ledgers, expenses, receivables and day book.',
+    description: 'Supplier-scoped immutable double-entry journals, balances and day book.',
     group: 'Finance and back office',
+    href: '/partner/pms/accounting',
     name: 'Accounting and ledgers',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'SI',
