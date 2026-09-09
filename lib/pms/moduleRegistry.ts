@@ -116,7 +116,7 @@ export const pmsModules: readonly PmsModule[] = [
   {
     code: 'TM',
     description:
-      'Restaurant table reservations, service areas, menus, modifiers and availability controls.',
+      'Conflict-protected table reservations, service areas, menus and availability controls.',
     group: 'Front office and operations',
     href: '/partner/pms/restaurant',
     name: 'Restaurant menus and tables',

@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import {
   RestaurantMenuItemForm,
   RestaurantOutletForm,
+  RestaurantReservationForm,
+  RestaurantReservationStatusForm,
   RestaurantStatusForm,
   RestaurantTableForm,
 } from '@/components/partner/RestaurantCatalogControls';
@@ -24,17 +26,14 @@ function money(amount: number, currency: string) {
 
 export default async function PartnerRestaurantCatalogPage() {
   const access = await getPartnerAccess();
-  if (
-    !access?.partnerId ||
-    !access.userId ||
-    access.partnerType !== 'HOTEL' ||
-    access.memberRole !== 'ADMIN'
-  )
-    redirect('/partner');
+  if (!access?.partnerId || !access.userId || access.partnerType !== 'HOTEL') redirect('/partner');
   const workspace = await getPartnerRestaurantCatalogWorkspace(access.partnerId);
   const activeOutlets = workspace.outlets.filter((outlet) => outlet.status === 'ACTIVE');
   const activeTables = workspace.tables.filter((table) => table.status === 'ACTIVE').length;
   const activeMenuItems = workspace.menuItems.filter((item) => item.status === 'ACTIVE').length;
+  const openReservations = workspace.reservations.filter((reservation) =>
+    ['BOOKED', 'SEATED'].includes(reservation.status),
+  );
   const outletOptions = activeOutlets.map((outlet) => ({
     id: outlet.id,
     label: `${outlet.property.displayName} · ${outlet.name}`,
@@ -62,6 +61,25 @@ export default async function PartnerRestaurantCatalogPage() {
       version: item.version,
     })),
   ];
+  const tableOptions = workspace.tables
+    .filter(
+      (table) =>
+        table.status === 'ACTIVE' &&
+        workspace.outlets.some(
+          (outlet) => outlet.id === table.outletId && outlet.status === 'ACTIVE',
+        ),
+    )
+    .map((table) => ({
+      capacity: table.capacity,
+      id: table.id,
+      label: `${table.property.displayName} · ${table.outlet.name} · ${table.tableCode}`,
+    }));
+  const reservationOptions = openReservations.map((reservation) => ({
+    id: reservation.id,
+    label: `${reservation.guestName} · ${reservation.outlet.name} ${reservation.table.tableCode} · ${reservation.status.toLowerCase()}`,
+    status: reservation.status,
+    version: reservation.version,
+  }));
 
   return (
     <main className="booking-page">
@@ -109,36 +127,107 @@ export default async function PartnerRestaurantCatalogPage() {
             <span>Recorded changes</span>
             <strong>{workspace.events.length}</strong>
           </Card>
+          <Card>
+            <span>Open table reservations</span>
+            <strong>{openReservations.length}</strong>
+          </Card>
         </div>
+
+        {access.memberRole === 'ADMIN' ? (
+          <div className="partner-workspace__columns">
+            <Card>
+              <p className="hotel-page__eyebrow">Outlet master</p>
+              <h2>Register a restaurant or service outlet</h2>
+              <RestaurantOutletForm
+                properties={workspace.properties.map((property) => ({
+                  id: property.id,
+                  label: property.displayName,
+                }))}
+              />
+            </Card>
+            <Card>
+              <p className="hotel-page__eyebrow">Table inventory</p>
+              <h2>Add controlled dining capacity</h2>
+              <RestaurantTableForm outlets={outletOptions} />
+            </Card>
+            <Card>
+              <p className="hotel-page__eyebrow">Menu catalogue</p>
+              <h2>Add a priced menu item</h2>
+              <RestaurantMenuItemForm outlets={outletOptions} />
+            </Card>
+            <Card>
+              <p className="hotel-page__eyebrow">Lifecycle control</p>
+              <h2>Pause or restore availability</h2>
+              <p>Every status change is version checked, reasoned, and preserved.</p>
+              <RestaurantStatusForm entities={entityOptions} />
+            </Card>
+          </div>
+        ) : null}
 
         <div className="partner-workspace__columns">
           <Card>
-            <p className="hotel-page__eyebrow">Outlet master</p>
-            <h2>Register a restaurant or service outlet</h2>
-            <RestaurantOutletForm
-              properties={workspace.properties.map((property) => ({
-                id: property.id,
-                label: property.displayName,
-              }))}
-            />
+            <p className="hotel-page__eyebrow">Table reservations</p>
+            <h2>Protect a dining time slot</h2>
+            <RestaurantReservationForm tables={tableOptions} />
           </Card>
           <Card>
-            <p className="hotel-page__eyebrow">Table inventory</p>
-            <h2>Add controlled dining capacity</h2>
-            <RestaurantTableForm outlets={outletOptions} />
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Menu catalogue</p>
-            <h2>Add a priced menu item</h2>
-            <RestaurantMenuItemForm outlets={outletOptions} />
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Lifecycle control</p>
-            <h2>Pause or restore availability</h2>
-            <p>Every status change is version checked, reasoned, and preserved.</p>
-            <RestaurantStatusForm entities={entityOptions} />
+            <p className="hotel-page__eyebrow">Guest arrival</p>
+            <h2>Progress or release a reservation</h2>
+            <RestaurantReservationStatusForm reservations={reservationOptions} />
           </Card>
         </div>
+
+        <Card>
+          <p className="hotel-page__eyebrow">Restaurant diary</p>
+          <h2>Current and upcoming table reservations</h2>
+          {workspace.reservations.length ? (
+            <div className="pms-room-rack__table-wrap">
+              <table className="pms-room-rack__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Start</th>
+                    <th scope="col">Guest</th>
+                    <th scope="col">Outlet and table</th>
+                    <th scope="col">Party</th>
+                    <th scope="col">Contact</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workspace.reservations.map((reservation) => (
+                    <tr key={reservation.id}>
+                      <td>
+                        {reservation.startsAt.toLocaleString('en-IN', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                          timeZone: reservation.property.timezone,
+                        })}
+                      </td>
+                      <th scope="row">
+                        {reservation.guestName}
+                        <small>{reservation.notes}</small>
+                      </th>
+                      <td>
+                        {reservation.outlet.name} · {reservation.table.tableCode}
+                      </td>
+                      <td>{reservation.partySize}</td>
+                      <td>{reservation.contactPhone || reservation.contactEmail}</td>
+                      <td>
+                        <span
+                          className={`partner-status partner-status--${['BOOKED', 'SEATED'].includes(reservation.status) ? 'pending' : 'approved'}`}
+                        >
+                          {reservation.status.toLowerCase().replaceAll('_', ' ')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No current or upcoming table reservations have been recorded.</p>
+          )}
+        </Card>
 
         <Card>
           <p className="hotel-page__eyebrow">Outlet and table directory</p>
@@ -263,9 +352,9 @@ export default async function PartnerRestaurantCatalogPage() {
 
         <Card>
           <p>
-            This catalogue does not reserve tables, accept QR orders, post charges, or collect
-            payments. Guest orders continue through the existing audited Point of Sale, kitchen, and
-            append-only folio workflows.
+            Restaurant table reservations are conflict protected in half-hour slots. This workspace
+            does not accept QR orders, post charges, or collect payments. Guest orders continue
+            through the existing audited Point of Sale, kitchen, and append-only folio workflows.
           </p>
         </Card>
       </div>

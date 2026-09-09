@@ -265,6 +265,7 @@ model SupplyPartner {
   restaurantTables      HotelRestaurantTable[]
   restaurantMenuItems   HotelRestaurantMenuItem[]
   restaurantEvents      HotelRestaurantEvent[]
+  restaurantReservations HotelRestaurantReservation[]
 
   @@index([status, createdAt])
 }
@@ -370,6 +371,7 @@ model PartnerProperty {
   restaurantTables    HotelRestaurantTable[]
   restaurantMenuItems HotelRestaurantMenuItem[]
   restaurantEvents    HotelRestaurantEvent[]
+  restaurantReservations HotelRestaurantReservation[]
 
   @@index([partnerId, status])
   @@index([listingSource, publicationStatus, status])
@@ -2241,6 +2243,7 @@ model HotelRestaurantOutlet {
   property        PartnerProperty           @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   tables          HotelRestaurantTable[]
   menuItems       HotelRestaurantMenuItem[]
+  reservations    HotelRestaurantReservation[]
 
   @@unique([propertyId, outletCode])
   @@index([partnerId, status, createdAt])
@@ -2262,6 +2265,8 @@ model HotelRestaurantTable {
   partner         SupplyPartner         @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   property        PartnerProperty       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   outlet          HotelRestaurantOutlet @relation(fields: [outletId], references: [id], onDelete: Restrict)
+  reservations    HotelRestaurantReservation[]
+  reservationSlots HotelRestaurantReservationSlot[]
 
   @@unique([outletId, tableCode])
   @@index([partnerId, status, createdAt])
@@ -2314,6 +2319,71 @@ model HotelRestaurantEvent {
   @@unique([entityType, entityId, version])
   @@index([partnerId, createdAt])
   @@index([propertyId, entityType, createdAt])
+}
+
+model HotelRestaurantReservation {
+  id                    String                            @id @default(cuid())
+  partnerId             String
+  propertyId            String
+  outletId              String
+  tableId               String
+  guestName             String
+  contactPhone          String                            @default("")
+  contactEmail          String                            @default("")
+  partySize             Int
+  startsAt              DateTime
+  endsAt                DateTime
+  notes                 String                            @default("")
+  status                String                            @default("BOOKED")
+  version               Int                               @default(1)
+  createIdempotencyKey  String                            @unique
+  requestFingerprint    String
+  createdByUserId       String
+  createdAt             DateTime                          @default(now())
+  updatedAt             DateTime                          @updatedAt
+  partner               SupplyPartner                     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property              PartnerProperty                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  outlet                HotelRestaurantOutlet             @relation(fields: [outletId], references: [id], onDelete: Restrict)
+  table                 HotelRestaurantTable              @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  slots                 HotelRestaurantReservationSlot[]
+  events                HotelRestaurantReservationEvent[]
+
+  @@index([partnerId, startsAt])
+  @@index([propertyId, status, startsAt])
+  @@index([tableId, status, startsAt])
+}
+
+model HotelRestaurantReservationSlot {
+  id            String                     @id @default(cuid())
+  reservationId String
+  tableId       String
+  slotStart     DateTime
+  lockKey       String?                    @unique
+  createdAt     DateTime                   @default(now())
+  reservation   HotelRestaurantReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  table         HotelRestaurantTable       @relation(fields: [tableId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, slotStart])
+  @@index([tableId, slotStart])
+}
+
+model HotelRestaurantReservationEvent {
+  id                 String                     @id @default(cuid())
+  reservationId      String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String                     @default("")
+  version            Int
+  actorUserId        String
+  idempotencyKey     String                     @unique
+  requestFingerprint String
+  createdAt          DateTime                   @default(now())
+  reservation        HotelRestaurantReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, version])
+  @@index([reservationId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model HotelBanquetEvent {

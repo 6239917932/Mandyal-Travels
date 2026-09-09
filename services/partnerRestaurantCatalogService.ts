@@ -4,9 +4,12 @@ import { prisma } from '@/lib/prisma';
 import {
   normalizeRestaurantMenuItem,
   normalizeRestaurantOutlet,
+  normalizeRestaurantReservation,
+  normalizeRestaurantReservationStatus,
   normalizeRestaurantStatus,
   normalizeRestaurantTable,
   restaurantCatalogFingerprint,
+  restaurantReservationSlots,
   type HotelRestaurantEntityType,
 } from '@/lib/pms/restaurantCatalog';
 
@@ -14,6 +17,7 @@ const MAX_PROPERTIES = 100;
 const MAX_OUTLETS = 100;
 const MAX_TABLES = 500;
 const MAX_MENU_ITEMS = 1_000;
+const MAX_RESERVATIONS = 500;
 const MAX_EVENTS = 500;
 
 export class PartnerRestaurantCatalogError extends Error {
@@ -33,7 +37,7 @@ function requireIdempotencyKey(value: string) {
 }
 
 export async function getPartnerRestaurantCatalogWorkspace(partnerId: string) {
-  const [properties, outlets, tables, menuItems, events] = await Promise.all([
+  const [properties, outlets, tables, menuItems, reservations, events] = await Promise.all([
     prisma.partnerProperty.findMany({
       orderBy: { displayName: 'asc' },
       select: { displayName: true, id: true },
@@ -58,6 +62,19 @@ export async function getPartnerRestaurantCatalogWorkspace(partnerId: string) {
       take: MAX_MENU_ITEMS + 1,
       where: { partnerId },
     }),
+    prisma.hotelRestaurantReservation.findMany({
+      include: {
+        outlet: { select: { name: true } },
+        property: { select: { displayName: true, timezone: true } },
+        table: { select: { tableCode: true } },
+      },
+      orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+      take: MAX_RESERVATIONS + 1,
+      where: {
+        partnerId,
+        startsAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1_000) },
+      },
+    }),
     prisma.hotelRestaurantEvent.findMany({
       include: { property: { select: { displayName: true } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -70,11 +87,13 @@ export async function getPartnerRestaurantCatalogWorkspace(partnerId: string) {
     menuItems: menuItems.slice(0, MAX_MENU_ITEMS),
     outlets: outlets.slice(0, MAX_OUTLETS),
     properties: properties.slice(0, MAX_PROPERTIES),
+    reservations: reservations.slice(0, MAX_RESERVATIONS),
     safetyLimitReached:
       properties.length > MAX_PROPERTIES ||
       outlets.length > MAX_OUTLETS ||
       tables.length > MAX_TABLES ||
       menuItems.length > MAX_MENU_ITEMS ||
+      reservations.length > MAX_RESERVATIONS ||
       events.length > MAX_EVENTS,
     tables: tables.slice(0, MAX_TABLES),
   } as const;
@@ -284,6 +303,180 @@ export async function createPartnerRestaurantMenuItem(input: {
   }
 }
 
+export async function createPartnerRestaurantReservation(input: {
+  actorUserId: string;
+  idempotencyKey: string;
+  partnerId: string;
+  values: Record<string, unknown>;
+}) {
+  const values = normalizeRestaurantReservation(input.values);
+  if (!values)
+    throw new PartnerRestaurantCatalogError(
+      'INVALID_RESERVATION',
+      'Enter a valid guest, contact, table, half-hour start, and duration.',
+    );
+  const key = requireIdempotencyKey(input.idempotencyKey);
+  const table = await prisma.hotelRestaurantTable.findFirst({
+    include: { outlet: { select: { status: true } } },
+    where: {
+      id: values.tableId,
+      partnerId: input.partnerId,
+      property: { listingSource: 'MANAGED', status: 'ACTIVE' },
+      status: 'ACTIVE',
+    },
+  });
+  if (!table || table.outlet.status !== 'ACTIVE')
+    throw new PartnerRestaurantCatalogError(
+      'TABLE_NOT_AVAILABLE',
+      'Choose an active table in an active restaurant outlet.',
+    );
+  if (values.partySize > table.capacity)
+    throw new PartnerRestaurantCatalogError(
+      'TABLE_CAPACITY_EXCEEDED',
+      'The party is larger than this table capacity.',
+    );
+  const fingerprint = restaurantCatalogFingerprint({
+    action: 'CREATE_RESERVATION',
+    ...values,
+    endsAt: values.endsAt.toISOString(),
+    startsAt: values.startsAt.toISOString(),
+  });
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const replay = await transaction.hotelRestaurantReservation.findUnique({
+        where: { createIdempotencyKey: key },
+      });
+      if (replay) {
+        if (replay.partnerId !== input.partnerId || replay.requestFingerprint !== fingerprint)
+          throw new PartnerRestaurantCatalogError(
+            'IDEMPOTENCY_CONFLICT',
+            'That retry key belongs to another restaurant reservation.',
+          );
+        return { id: replay.id, replayed: true };
+      }
+      const reservation = await transaction.hotelRestaurantReservation.create({
+        data: {
+          contactEmail: values.contactEmail,
+          contactPhone: values.contactPhone,
+          createIdempotencyKey: key,
+          createdByUserId: input.actorUserId,
+          endsAt: values.endsAt,
+          guestName: values.guestName,
+          notes: values.notes,
+          outletId: table.outletId,
+          partnerId: input.partnerId,
+          partySize: values.partySize,
+          propertyId: table.propertyId,
+          requestFingerprint: fingerprint,
+          startsAt: values.startsAt,
+          tableId: table.id,
+        },
+      });
+      await transaction.hotelRestaurantReservationSlot.createMany({
+        data: restaurantReservationSlots(table.id, values.startsAt, values.endsAt).map((slot) => ({
+          ...slot,
+          reservationId: reservation.id,
+        })),
+      });
+      await transaction.hotelRestaurantReservationEvent.create({
+        data: {
+          action: 'CREATED',
+          actorUserId: input.actorUserId,
+          fromStatus: 'NONE',
+          idempotencyKey: `${key}:event`,
+          note: 'Restaurant table reservation recorded.',
+          requestFingerprint: fingerprint,
+          reservationId: reservation.id,
+          toStatus: reservation.status,
+          version: reservation.version,
+        },
+      });
+      return { id: reservation.id, replayed: false };
+    });
+  } catch (error) {
+    duplicateError(error, 'This table is already reserved during the selected time.');
+  }
+}
+
+const RESERVATION_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
+  BOOKED: ['CANCELLED', 'NO_SHOW', 'SEATED'],
+  SEATED: ['CANCELLED', 'COMPLETED'],
+};
+
+export async function changePartnerRestaurantReservationStatus(input: {
+  actorUserId: string;
+  idempotencyKey: string;
+  partnerId: string;
+  values: Record<string, unknown>;
+}) {
+  const values = normalizeRestaurantReservationStatus(input.values);
+  if (!values)
+    throw new PartnerRestaurantCatalogError(
+      'INVALID_RESERVATION_STATUS',
+      'Choose a valid reservation, status, version, and reason.',
+    );
+  const key = requireIdempotencyKey(input.idempotencyKey);
+  const fingerprint = restaurantCatalogFingerprint({ partnerId: input.partnerId, ...values });
+  return prisma.$transaction(async (transaction) => {
+    const replay = await transaction.hotelRestaurantReservationEvent.findUnique({
+      where: { idempotencyKey: key },
+    });
+    if (replay) {
+      if (replay.requestFingerprint !== fingerprint)
+        throw new PartnerRestaurantCatalogError(
+          'IDEMPOTENCY_CONFLICT',
+          'That retry key belongs to another reservation action.',
+        );
+      return replay;
+    }
+    const current = await transaction.hotelRestaurantReservation.findFirst({
+      where: { id: values.reservationId, partnerId: input.partnerId },
+    });
+    if (!current)
+      throw new PartnerRestaurantCatalogError(
+        'RESERVATION_NOT_FOUND',
+        'The restaurant reservation was not found.',
+      );
+    if (!(RESERVATION_TRANSITIONS[current.status] ?? []).includes(values.status))
+      throw new PartnerRestaurantCatalogError(
+        'INVALID_RESERVATION_TRANSITION',
+        `A ${current.status.toLowerCase()} reservation cannot become ${values.status.toLowerCase()}.`,
+      );
+    const changed = await transaction.hotelRestaurantReservation.updateMany({
+      data: { status: values.status, version: { increment: 1 } },
+      where: {
+        id: current.id,
+        partnerId: input.partnerId,
+        status: current.status,
+        version: values.expectedVersion,
+      },
+    });
+    if (changed.count !== 1)
+      throw new PartnerRestaurantCatalogError(
+        'STALE_RESERVATION',
+        'This reservation changed after the page loaded. Refresh and retry.',
+      );
+    if (['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(values.status))
+      await transaction.hotelRestaurantReservationSlot.updateMany({
+        data: { lockKey: null },
+        where: { reservationId: current.id, lockKey: { not: null } },
+      });
+    return transaction.hotelRestaurantReservationEvent.create({
+      data: {
+        action: `MARKED_${values.status}`,
+        actorUserId: input.actorUserId,
+        fromStatus: current.status,
+        idempotencyKey: key,
+        note: values.note,
+        requestFingerprint: fingerprint,
+        reservationId: current.id,
+        toStatus: values.status,
+        version: current.version + 1,
+      },
+    });
+  });
+}
+
 export async function changePartnerRestaurantEntityStatus(input: {
   actorUserId: string;
   idempotencyKey: string;
@@ -320,6 +513,21 @@ export async function changePartnerRestaurantEntityStatus(input: {
         ).count;
     } else if (values.entityType === 'TABLE') {
       current = await transaction.hotelRestaurantTable.findFirst({ where });
+      if (
+        current &&
+        values.status === 'OUT_OF_SERVICE' &&
+        (await transaction.hotelRestaurantReservation.count({
+          where: {
+            endsAt: { gt: new Date() },
+            status: { in: ['BOOKED', 'SEATED'] },
+            tableId: values.entityId,
+          },
+        })) > 0
+      )
+        throw new PartnerRestaurantCatalogError(
+          'TABLE_HAS_RESERVATIONS',
+          'Cancel or complete future table reservations before taking this table out of service.',
+        );
       if (current)
         changed = (
           await transaction.hotelRestaurantTable.updateMany({

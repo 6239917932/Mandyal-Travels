@@ -25,9 +25,9 @@ provider gate remains. **Planned** means the workspace is visible while transact
 
 ## Restaurant and food service
 
-- Live: point-of-sale service orders, kitchen order tickets, controlled folio posting and cashier
-  evidence.
-- Planned: table reservations, menu/modifier management, QR ordering, and captain/mobile workflows.
+- Live: point-of-sale service orders, kitchen order tickets, controlled folio posting, cashier
+  evidence, outlet/table/menu management, and conflict-protected table reservations.
+- Planned: menu modifiers, QR ordering, and captain/mobile workflows.
 
 ## Inventory and procurement
 

@@ -2,8 +2,10 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import {
   changePartnerRestaurantEntityStatus,
+  changePartnerRestaurantReservationStatus,
   createPartnerRestaurantMenuItem,
   createPartnerRestaurantOutlet,
+  createPartnerRestaurantReservation,
   createPartnerRestaurantTable,
   PartnerRestaurantCatalogError,
 } from '@/services/partnerRestaurantCatalogService';
@@ -17,17 +19,18 @@ export async function POST(request: Request) {
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || !access.userId || access.partnerType !== 'HOTEL')
     return failure('HOTEL_PARTNER_REQUIRED', 'A hotel partner account is required.', 403);
-  if (access.memberRole !== 'ADMIN')
-    return failure(
-      'PARTNER_ADMIN_REQUIRED',
-      'Only a supplier administrator can manage restaurant configuration.',
-      403,
-    );
   const body = await readJsonObject(request);
   if (!body) return failure('INVALID_RESTAURANT_ACTION', 'Enter valid restaurant details.', 400);
   const action = String(body.action ?? '')
     .trim()
     .toUpperCase();
+  const operationalActions = new Set(['CREATE_RESERVATION', 'CHANGE_RESERVATION_STATUS']);
+  if (access.memberRole !== 'ADMIN' && !operationalActions.has(action))
+    return failure(
+      'PARTNER_ADMIN_REQUIRED',
+      'Only a supplier administrator can manage restaurant configuration.',
+      403,
+    );
   const shared = {
     actorUserId: access.userId,
     idempotencyKey: request.headers.get('x-idempotency-key') ?? '',
@@ -42,9 +45,13 @@ export async function POST(request: Request) {
           ? await createPartnerRestaurantTable(shared)
           : action === 'CREATE_MENU_ITEM'
             ? await createPartnerRestaurantMenuItem(shared)
-            : action === 'CHANGE_STATUS'
-              ? await changePartnerRestaurantEntityStatus(shared)
-              : null;
+            : action === 'CREATE_RESERVATION'
+              ? await createPartnerRestaurantReservation(shared)
+              : action === 'CHANGE_RESERVATION_STATUS'
+                ? await changePartnerRestaurantReservationStatus(shared)
+                : action === 'CHANGE_STATUS'
+                  ? await changePartnerRestaurantEntityStatus(shared)
+                  : null;
     if (!result)
       return failure('INVALID_RESTAURANT_ACTION', 'Choose a supported restaurant action.', 400);
     await recordPartnerAudit(access, {

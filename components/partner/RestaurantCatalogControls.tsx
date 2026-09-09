@@ -7,6 +7,13 @@ import { readJsonResponse } from '@/lib/api/clientResponse';
 
 type ApiResult = { error?: { message?: string } };
 type OutletOption = { id: string; label: string };
+type TableOption = { capacity: number; id: string; label: string };
+type ReservationOption = {
+  id: string;
+  label: string;
+  status: string;
+  version: number;
+};
 type EntityOption = {
   id: string;
   label: string;
@@ -36,8 +43,13 @@ function CatalogForm({
     setMessage('');
     formData.set('action', action);
     try {
+      const payload = Object.fromEntries(formData);
+      if (action === 'CREATE_RESERVATION' && typeof payload.startsAt === 'string') {
+        const startsAt = new Date(payload.startsAt);
+        if (!Number.isNaN(startsAt.getTime())) payload.startsAt = startsAt.toISOString();
+      }
       const response = await fetch('/api/v1/partner/restaurant-catalog', {
-        body: JSON.stringify(Object.fromEntries(formData)),
+        body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json', 'x-idempotency-key': crypto.randomUUID() },
         method: 'POST',
       });
@@ -235,6 +247,136 @@ export function RestaurantStatusForm({ entities }: { entities: EntityOption[] })
       </label>
       <label className="ui-field supplier-form__full-width">
         <span className="ui-field__label">Reason</span>
+        <input className="ui-input" maxLength={300} minLength={8} name="note" required />
+      </label>
+    </CatalogForm>
+  );
+}
+
+export function RestaurantReservationForm({ tables }: { tables: TableOption[] }) {
+  const [selectedId, setSelectedId] = useState(tables[0]?.id ?? '');
+  const selected = tables.find((table) => table.id === selectedId);
+  return (
+    <CatalogForm
+      action="CREATE_RESERVATION"
+      disabled={!tables.length}
+      success="Table reservation recorded and its time slots protected."
+      submitLabel="Reserve table"
+    >
+      <label className="ui-field supplier-form__full-width">
+        <span className="ui-field__label">Active table</span>
+        <select
+          className="ui-input"
+          name="tableId"
+          onChange={(event) => setSelectedId(event.target.value)}
+          value={selectedId}
+          required
+        >
+          {tables.map((table) => (
+            <option key={table.id} value={table.id}>
+              {table.label} · up to {table.capacity} guests
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Guest name</span>
+        <input className="ui-input" maxLength={100} minLength={2} name="guestName" required />
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Party size</span>
+        <input
+          className="ui-input"
+          max={selected?.capacity ?? 50}
+          min={1}
+          name="partySize"
+          required
+          type="number"
+        />
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Contact phone</span>
+        <input className="ui-input" maxLength={30} name="contactPhone" type="tel" />
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Contact email</span>
+        <input className="ui-input" maxLength={160} name="contactEmail" type="email" />
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Reservation starts</span>
+        <input className="ui-input" name="startsAt" required step={1800} type="datetime-local" />
+      </label>
+      <label className="ui-field">
+        <span className="ui-field__label">Duration</span>
+        <select className="ui-input" defaultValue="90" name="durationMinutes" required>
+          <option value="30">30 minutes</option>
+          <option value="60">1 hour</option>
+          <option value="90">1 hour 30 minutes</option>
+          <option value="120">2 hours</option>
+          <option value="150">2 hours 30 minutes</option>
+          <option value="180">3 hours</option>
+        </select>
+      </label>
+      <label className="ui-field supplier-form__full-width">
+        <span className="ui-field__label">Reservation notes</span>
+        <input className="ui-input" maxLength={300} name="notes" />
+      </label>
+      <p className="supplier-form__full-width">
+        Enter either a phone number or email. Conflicting half-hour table slots are rejected.
+      </p>
+    </CatalogForm>
+  );
+}
+
+export function RestaurantReservationStatusForm({
+  reservations,
+}: {
+  reservations: ReservationOption[];
+}) {
+  const [selectedId, setSelectedId] = useState(reservations[0]?.id ?? '');
+  const selected = reservations.find((reservation) => reservation.id === selectedId);
+  const transitions =
+    selected?.status === 'BOOKED'
+      ? ['SEATED', 'CANCELLED', 'NO_SHOW']
+      : selected?.status === 'SEATED'
+        ? ['COMPLETED', 'CANCELLED']
+        : [];
+  return (
+    <CatalogForm
+      action="CHANGE_RESERVATION_STATUS"
+      disabled={!reservations.length || !transitions.length}
+      success="Reservation status changed with immutable evidence."
+      submitLabel="Record reservation status"
+    >
+      <label className="ui-field supplier-form__full-width">
+        <span className="ui-field__label">Open reservation</span>
+        <select
+          className="ui-input"
+          name="reservationId"
+          onChange={(event) => setSelectedId(event.target.value)}
+          value={selectedId}
+          required
+        >
+          {reservations.map((reservation) => (
+            <option key={reservation.id} value={reservation.id}>
+              {reservation.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <input name="expectedVersion" type="hidden" value={selected?.version ?? 0} />
+      <label className="ui-field">
+        <span className="ui-field__label">New status</span>
+        <select className="ui-input" key={selectedId} name="status" required>
+          {transitions.map((status) => (
+            <option key={status} value={status}>
+              {status.toLowerCase().replaceAll('_', ' ')}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="ui-field supplier-form__full-width">
+        <span className="ui-field__label">Reason or service note</span>
         <input className="ui-input" maxLength={300} minLength={8} name="note" required />
       </label>
     </CatalogForm>
