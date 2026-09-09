@@ -222,6 +222,9 @@ credentials, or commercial rules. The Master Blueprint remains the product sourc
   confirmation and supplier booking operations, and explicitly presented as non-guaranteed preferences
 - Persistent PMS navigation with a live operational dashboard, seven-day room rack, direct walk-in
   booking, minimized guest registration, and booking-linked billing workspace
+- Property-scoped restaurant outlet, dining-table and priced menu catalogue with bounded records,
+  retry-safe creation, optimistic lifecycle controls, immutable history, and explicit reuse of the
+  existing POS, kitchen and append-only guest-folio workflows
 - Booking-owned append-only hotel folios that derive the accommodation charge and captured online
   payment from existing records, support incidental charges and partial at-property payments, require
   administrator cashier shifts, reconcile cash exactly, audit every mutation, use reversals for

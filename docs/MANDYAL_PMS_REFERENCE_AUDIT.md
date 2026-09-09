@@ -243,6 +243,14 @@ immutable event history. The directory cannot approve purchase orders, release p
 bank account numbers, UPI credentials, PINs or OTPs; procurement and finance authority remain in
 their separate controlled workflows.
 
+Restaurant Menus and Tables is now live as the property-scoped operating catalogue for named
+outlets, dining-table capacity and priced menu items. Supplier administrators register each record
+through bounded validation, retry-safe creation and immutable opening evidence; pause,
+out-of-service and restoration decisions require a reason, optimistic version and append-only
+event. The catalogue deliberately reuses the existing Point of Sale, kitchen queue and guest folio
+instead of creating another order, booking or billing store. Table reservations, QR ordering,
+payment collection and automatic stock depletion remain separate gated workflows.
+
 The Guest Portal is live as a governed view over the existing customer account and booking records;
 it creates no second identity, password or consent database. Fixed Assets, Telephone and EPABX, and
 HR and Payroll now have dedicated controlled foundation workspaces instead of dead or duplicate
