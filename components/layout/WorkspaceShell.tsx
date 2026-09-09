@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 
 import { getWorkspaceActiveNavigationKey } from '@/lib/navigation/workspaceActiveRoute';
 
@@ -37,6 +43,7 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationToggleRef = useRef<HTMLInputElement>(null);
   const isPublicPath = publicPaths.includes(pathname);
   const activeNavigationKey = getWorkspaceActiveNavigationKey(pathname, groups);
   const activeCoordinates = activeNavigationKey?.split(':').map(Number);
@@ -63,16 +70,38 @@ export function WorkspaceShell({
     };
   }, [navigationOpen]);
 
+  function closeNavigation() {
+    if (navigationToggleRef.current) navigationToggleRef.current.checked = false;
+    setNavigationOpen(false);
+  }
+
+  function activateNavigationLabel(event: ReactKeyboardEvent<HTMLLabelElement>) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    navigationToggleRef.current?.click();
+  }
+
   if (isPublicPath) return children;
 
   return (
     <div className={`workspace-shell${navigationOpen ? 'workspace-shell--nav-open' : ''}`}>
-      <button
+      <input
+        aria-hidden="true"
+        className="workspace-shell__nav-toggle"
+        defaultChecked={false}
+        id="workspace-navigation-toggle"
+        onChange={(event) => setNavigationOpen(event.currentTarget.checked)}
+        ref={navigationToggleRef}
+        tabIndex={-1}
+        type="checkbox"
+      />
+      <label
         aria-label="Close workspace navigation"
         className="workspace-shell__backdrop"
-        onClick={() => setNavigationOpen(false)}
+        htmlFor="workspace-navigation-toggle"
+        onKeyDown={activateNavigationLabel}
+        role="button"
         tabIndex={navigationOpen ? 0 : -1}
-        type="button"
       />
       <aside
         aria-label={`${title} navigation`}
@@ -86,14 +115,18 @@ export function WorkspaceShell({
             <strong>{title}</strong>
             <span>{subtitle}</span>
           </div>
-          <button
+          <label
+            aria-controls="workspace-navigation"
+            aria-expanded={navigationOpen}
             aria-label="Close workspace menu"
             className="workspace-sidebar__close"
-            onClick={() => setNavigationOpen(false)}
-            type="button"
+            htmlFor="workspace-navigation-toggle"
+            onKeyDown={activateNavigationLabel}
+            role="button"
+            tabIndex={0}
           >
             <span aria-hidden="true">×</span>
-          </button>
+          </label>
         </div>
         <nav aria-label={`${title} sections`}>
           {groups.map((group, groupIndex) => (
@@ -108,7 +141,7 @@ export function WorkspaceShell({
                       }
                       href={item.href}
                       key={`${group.label}-${item.label}`}
-                      onClick={() => setNavigationOpen(false)}
+                      onClick={closeNavigation}
                       prefetch={false}
                     >
                       <span aria-hidden="true">{item.code}</span>
@@ -135,16 +168,19 @@ export function WorkspaceShell({
       <div className="workspace-shell__stage">
         <header className="workspace-topbar">
           <div className="workspace-topbar__context">
-            <button
+            <label
               aria-controls="workspace-navigation"
               aria-expanded={navigationOpen}
+              aria-label={navigationOpen ? 'Close workspace menu' : 'Open workspace menu'}
               className="workspace-topbar__menu"
-              onClick={() => setNavigationOpen((open) => !open)}
-              type="button"
+              htmlFor="workspace-navigation-toggle"
+              onKeyDown={activateNavigationLabel}
+              role="button"
+              tabIndex={0}
             >
               <span aria-hidden="true">☰</span>
               <span>Menu</span>
-            </button>
+            </label>
             <div>
               <span>{activeGroup?.label ?? subtitle}</span>
               <strong>{pageLabel}</strong>

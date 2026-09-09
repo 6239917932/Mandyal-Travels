@@ -5,10 +5,11 @@ import test from 'node:test';
 const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('protected workspaces expose one unambiguous mobile navigation control', async () => {
-  const [header, shell, layout] = await Promise.all([
+  const [header, shell, layout, components] = await Promise.all([
     read('components/layout/SiteHeader.tsx'),
     read('components/layout/WorkspaceShell.tsx'),
     read('styles/layout.css'),
+    read('styles/components.css'),
   ]);
   assert.match(header, /isWorkspacePath/);
   assert.match(header, /site-header--workspace/);
@@ -18,6 +19,10 @@ test('protected workspaces expose one unambiguous mobile navigation control', as
   assert.match(shell, /aria-label="Close workspace menu"/);
   assert.match(shell, /event\.key === 'Escape'/);
   assert.match(shell, /workspace-navigation-open/);
+  assert.match(shell, /id="workspace-navigation-toggle"/);
+  assert.match(shell, /htmlFor="workspace-navigation-toggle"/);
+  assert.match(components, /workspace-shell__nav-toggle:checked ~ \.workspace-sidebar/);
+  assert.match(components, /workspace-shell__nav-toggle:checked \+ \.workspace-shell__backdrop/);
 });
 
 test('phone layouts constrain controls, tables, drawers and dense content', async () => {
