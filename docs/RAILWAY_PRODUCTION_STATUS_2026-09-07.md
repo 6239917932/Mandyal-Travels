@@ -24,6 +24,8 @@
 - A least-privilege synthetic monitor checks canonical availability, dependency readiness, security
   headers, and bounded latency twice per hour through GitHub Actions.
 - The production dependency audit reports no known high-severity runtime vulnerabilities.
+- Restaurant outlets, tables, menus and conflict-protected table reservations are live within the
+  governed PMS catalogue; QR ordering and payment collection remain disabled.
 - Next.js 16.3.4 was merged only after the refreshed branch passed the complete CI matrix.
 
 ## Remaining commercial launch gates
