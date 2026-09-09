@@ -12,6 +12,8 @@ test('protected workspaces expose one unambiguous mobile navigation control', as
   ]);
   assert.match(header, /isWorkspacePath/);
   assert.match(header, /site-header--workspace/);
+  assert.match(header, /!isWorkspacePath \? \([\s\S]*site-header__menu-button/);
+  assert.doesNotMatch(header, /isMenuOpen && !isWorkspacePath/);
   assert.match(layout, /site-header--workspace \.site-header__menu-button[\s\S]*display: none/);
   assert.match(shell, /aria-label="Close workspace menu"/);
   assert.match(shell, /event\.key === 'Escape'/);

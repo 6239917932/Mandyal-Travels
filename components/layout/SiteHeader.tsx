@@ -33,20 +33,22 @@ export function SiteHeader({ user }: SiteHeaderProps) {
           <MandyalLogo eager showTagline size="standard" />
         </Link>
 
-        <button
-          aria-controls="primary-navigation"
-          aria-expanded={isMenuOpen}
-          aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          className="site-header__menu-button"
-          onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
-          type="button"
-        >
-          {isMenuOpen ? 'Close' : 'Menu'}
-        </button>
+        {!isWorkspacePath ? (
+          <button
+            aria-controls="primary-navigation"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            className="site-header__menu-button"
+            onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
+            type="button"
+          >
+            {isMenuOpen ? 'Close' : 'Menu'}
+          </button>
+        ) : null}
 
         <nav
           aria-label="Primary navigation"
-          className={`site-navigation ${isMenuOpen && !isWorkspacePath ? 'site-navigation--open' : ''}`}
+          className={`site-navigation ${isMenuOpen ? 'site-navigation--open' : ''}`}
           id="primary-navigation"
         >
           {siteConfig.navigation.map((item) => (
