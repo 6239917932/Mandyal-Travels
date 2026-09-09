@@ -2829,6 +2829,16 @@
   display: none;
 }
 
+.workspace-shell__nav-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .workspace-sidebar {
   top: 4.75rem;
   z-index: 12;
@@ -3295,12 +3305,25 @@
     transform: translateX(0);
   }
 
+  .workspace-shell__nav-toggle:checked ~ .workspace-sidebar {
+    transform: translateX(0);
+  }
+
   .workspace-shell--nav-open .workspace-shell__backdrop {
     position: fixed;
     inset: 0;
     z-index: 49;
     display: block;
     border: 0;
+    background: rgb(7 26 51 / 58%);
+    backdrop-filter: blur(2px);
+  }
+
+  .workspace-shell__nav-toggle:checked + .workspace-shell__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    display: block;
     background: rgb(7 26 51 / 58%);
     backdrop-filter: blur(2px);
   }
@@ -3343,6 +3366,8 @@
     color: var(--color-brand-800);
     padding: 0.45rem 0.7rem;
     font-weight: 750;
+    cursor: pointer;
+    touch-action: manipulation;
   }
 
   .dashboard-insights-grid {
