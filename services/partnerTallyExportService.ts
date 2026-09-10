@@ -57,6 +57,7 @@ export async function getPartnerTallyExport(input: {
       eligibleJournals: [],
       excludedCount: 0,
       from: '',
+      mappings: [],
       partnerCredit: 0,
       partnerDebit: 0,
       properties: [],
@@ -71,6 +72,14 @@ export async function getPartnerTallyExport(input: {
     from: input.from,
     through: input.through,
   });
+  const mappings = await prisma.partnerAccountingMapping.findMany({
+    orderBy: { accountCode: 'asc' },
+    select: { accountCode: true, tallyLedgerName: true, version: true },
+    where: { partnerId: input.partnerId, propertyId: selected.id },
+  });
+  const mappingByCode = new Map(
+    mappings.map((mapping) => [mapping.accountCode, mapping.tallyLedgerName]),
+  );
   const stored = await prisma.financialJournal.findMany({
     include: {
       payment: { select: { booking: { select: { hotelSlug: true } } } },
@@ -96,6 +105,17 @@ export async function getPartnerTallyExport(input: {
       OR: [
         { payment: { is: { booking: { is: { hotelSlug: selected.hotelSlug } } } } },
         { refund: { is: { booking: { is: { hotelSlug: selected.hotelSlug } } } } },
+        {
+          sourceId: { startsWith: `${selected.id}:` },
+          sourceType: {
+            in: [
+              'HOTEL_EXPENSE',
+              'HOTEL_EXPENSE_REVERSAL',
+              'HOTEL_PAYROLL',
+              'HOTEL_PAYROLL_REVERSAL',
+            ],
+          },
+        },
       ],
       postings: { some: { partnerId: input.partnerId } },
       status: 'POSTED',
@@ -106,7 +126,10 @@ export async function getPartnerTallyExport(input: {
     createdAt: journal.createdAt,
     currency: journal.currency,
     description: journal.description.slice(0, 240),
-    postings: journal.postings,
+    postings: journal.postings.map((posting) => ({
+      ...posting,
+      accountCode: mappingByCode.get(posting.accountCode) ?? posting.accountCode,
+    })),
     privateReference: privateReference(journal.reference),
     sourceType: journal.sourceType.slice(0, 80),
     status: journal.status,
@@ -114,6 +137,11 @@ export async function getPartnerTallyExport(input: {
     totalDebit: journal.totalDebit,
   }));
   const eligibleJournals = presented.filter(isEligibleTallyJournal);
+  const discoveredAccountCodes = [
+    ...new Set(
+      bounded.flatMap((journal) => journal.postings.map((posting) => posting.accountCode)),
+    ),
+  ].sort();
   const totals = eligibleJournals.reduce(
     (result, journal) => {
       for (const posting of journal.postings) {
@@ -128,6 +156,14 @@ export async function getPartnerTallyExport(input: {
     ...range,
     eligibleJournals,
     excludedCount: presented.length - eligibleJournals.length,
+    mappings: discoveredAccountCodes.map((accountCode) => {
+      const saved = mappings.find((mapping) => mapping.accountCode === accountCode);
+      return {
+        accountCode,
+        tallyLedgerName: saved?.tallyLedgerName ?? accountCode,
+        version: saved?.version ?? 0,
+      };
+    }),
     properties: boundedProperties.map((property) => ({
       id: property.id,
       name: property.displayName,

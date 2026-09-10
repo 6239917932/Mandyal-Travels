@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
+import { ExpenseEntryForm, ExpenseReversalButton } from '@/components/partner/ExpenseControls';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { HotelOperationalReportRuleError } from '@/lib/pms/operationalReport';
 import { getPartnerProfitLoss } from '@/services/partnerProfitLossService';
@@ -205,6 +206,58 @@ export default async function PartnerProfitLossPage({ searchParams }: PageProps)
         </div>
 
         <Card>
+          <p className="hotel-page__eyebrow">Expense register</p>
+          <h2>Post a property expense</h2>
+          <p>
+            Every expense creates a balanced, append-only INR journal. Corrections use a linked
+            reversal and never overwrite the original entry.
+          </p>
+          <ExpenseEntryForm properties={[...report.properties]} />
+        </Card>
+
+        <Card>
+          <p className="hotel-page__eyebrow">Recent expense postings</p>
+          <h2>Controlled correction history</h2>
+          {report.recentExpenses.length ? (
+            <div className="pms-room-rack__table-wrap">
+              <table className="pms-room-rack__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Posted</th>
+                    <th scope="col">Journal</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Correction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.recentExpenses.map((expense) => (
+                    <tr key={expense.id}>
+                      <td>
+                        {new Intl.DateTimeFormat('en-IN', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }).format(new Date(expense.createdAt))}
+                      </td>
+                      <th scope="row">{expense.description}</th>
+                      <td>{money(expense.amount, report.currency)}</td>
+                      <td>
+                        {expense.reversed ? (
+                          'Reversed'
+                        ) : (
+                          <ExpenseReversalButton journalId={expense.id} />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No manually posted expenses exist in this period.</p>
+          )}
+        </Card>
+
+        <Card>
           <p className="hotel-page__eyebrow">Daily performance</p>
           <h2>{report.selectedProperty.name}</h2>
           <div className="pms-room-rack__table-wrap">
@@ -279,10 +332,10 @@ export default async function PartnerProfitLossPage({ searchParams }: PageProps)
         <Card>
           <p className="hotel-page__eyebrow">Reporting boundary</p>
           <p>
-            This is a read-only management report assembled from confirmed stays, append-only guest
-            folios and posted partner-attributed journals. It does not create expenses, infer
-            missing costs, replace statutory books, or constitute a GST return or audited profit and
-            loss statement.
+            This management report is assembled from confirmed stays, append-only guest folios and
+            posted partner-attributed journals. The expense register posts controlled journals but
+            does not infer missing costs, replace statutory books, or constitute a GST return or
+            audited profit and loss statement.
           </p>
         </Card>
       </div>

@@ -34,8 +34,8 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 test('PMS registry exposes a controlled multi-phase rollout', () => {
   assert.equal(pmsModules.length, 46);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 37);
-  assert.equal(countPmsModules('FOUNDATION'), 8);
+  assert.equal(countPmsModules('LIVE'), 42);
+  assert.equal(countPmsModules('FOUNDATION'), 3);
   assert.equal(countPmsModules('PLANNED'), 1);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
 });
@@ -86,8 +86,8 @@ test('PMS registry contains every approved operational navigation area', () => {
   }
 });
 
-test('provider and statutory dependencies are never presented as operational', () => {
-  for (const code of ['ON', 'NM', 'MP', 'PL', 'TX']) {
+test('provider dependencies are never presented as operational', () => {
+  for (const code of ['ON', 'NM', 'MP', 'TP']) {
     assert.notEqual(getPmsModule(code)?.status, 'LIVE');
   }
 });

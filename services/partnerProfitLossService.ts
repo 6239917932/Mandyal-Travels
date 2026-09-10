@@ -64,45 +64,87 @@ export async function getPartnerProfitLoss(input: {
     through: input.through,
   });
   const postingThrough = new Date(`${addDays(range.through, 1)}T00:00:00.000Z`);
-  const [bookings, folioEntries, storedPostings] = await Promise.all([
-    prisma.booking.findMany({
-      orderBy: { createdAt: 'asc' },
-      select: {
-        currency: true,
-        quote: { select: { checkInDate: true, checkOutDate: true } },
-        totalAmount: true,
-      },
-      take: MAX_ROWS + 1,
-      where: {
-        hotelSlug: selected.hotelSlug,
-        operationalStatus: { not: 'NO_SHOW' },
-        quote: { checkInDate: { lte: range.through }, checkOutDate: { gt: range.from } },
-        status: 'confirmed',
-      },
-    }),
-    prisma.hotelFolioEntry.findMany({
-      include: { reversalOf: { select: { entryType: true } } },
-      orderBy: { createdAt: 'asc' },
-      take: MAX_ROWS + 1,
-      where: {
-        booking: { hotelSlug: selected.hotelSlug },
-        businessDate: { gte: range.from, lte: range.through },
-      },
-    }),
-    prisma.financialJournalPosting.findMany({
-      include: {
-        journal: {
-          select: { currency: true, status: true, totalCredit: true, totalDebit: true },
+  const [bookings, folioEntries, storedPostings, manualExpenseJournals, expenseReversals] =
+    await Promise.all([
+      prisma.booking.findMany({
+        orderBy: { createdAt: 'asc' },
+        select: {
+          currency: true,
+          quote: { select: { checkInDate: true, checkOutDate: true } },
+          totalAmount: true,
         },
-      },
-      orderBy: { createdAt: 'asc' },
-      take: MAX_ROWS + 1,
-      where: {
-        createdAt: { gte: new Date(`${range.from}T00:00:00.000Z`), lt: postingThrough },
-        partnerId: input.partnerId,
-      },
-    }),
-  ]);
+        take: MAX_ROWS + 1,
+        where: {
+          hotelSlug: selected.hotelSlug,
+          operationalStatus: { not: 'NO_SHOW' },
+          quote: { checkInDate: { lte: range.through }, checkOutDate: { gt: range.from } },
+          status: 'confirmed',
+        },
+      }),
+      prisma.hotelFolioEntry.findMany({
+        include: { reversalOf: { select: { entryType: true } } },
+        orderBy: { createdAt: 'asc' },
+        take: MAX_ROWS + 1,
+        where: {
+          booking: { hotelSlug: selected.hotelSlug },
+          businessDate: { gte: range.from, lte: range.through },
+        },
+      }),
+      prisma.financialJournalPosting.findMany({
+        include: {
+          journal: {
+            select: { currency: true, status: true, totalCredit: true, totalDebit: true },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: MAX_ROWS + 1,
+        where: {
+          createdAt: { gte: new Date(`${range.from}T00:00:00.000Z`), lt: postingThrough },
+          partnerId: input.partnerId,
+          journal: {
+            OR: [
+              { payment: { is: { booking: { is: { hotelSlug: selected.hotelSlug } } } } },
+              { refund: { is: { booking: { is: { hotelSlug: selected.hotelSlug } } } } },
+              {
+                sourceId: { startsWith: `${selected.id}:` },
+                sourceType: {
+                  in: [
+                    'HOTEL_EXPENSE',
+                    'HOTEL_EXPENSE_REVERSAL',
+                    'HOTEL_PAYROLL',
+                    'HOTEL_PAYROLL_REVERSAL',
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      }),
+      prisma.financialJournal.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true, description: true, id: true, totalDebit: true },
+        take: 50,
+        where: {
+          createdAt: { gte: new Date(`${range.from}T00:00:00.000Z`), lt: postingThrough },
+          postings: { some: { partnerId: input.partnerId } },
+          sourceId: { startsWith: `${selected.id}:` },
+          sourceType: 'HOTEL_EXPENSE',
+          status: 'POSTED',
+        },
+      }),
+      prisma.financialJournal.findMany({
+        select: { sourceId: true },
+        where: {
+          postings: { some: { partnerId: input.partnerId } },
+          sourceId: { startsWith: `${selected.id}:` },
+          sourceType: 'HOTEL_EXPENSE_REVERSAL',
+          status: 'POSTED',
+        },
+      }),
+    ]);
+  const reversedExpenseIds = new Set(
+    expenseReversals.map((journal) => journal.sourceId.slice(selected.id.length + 1)),
+  );
   const postings = storedPostings.slice(0, MAX_ROWS);
   const expensePostings = postings.filter((posting) =>
     isExplicitExpenseAccount(posting.accountCode),
@@ -161,6 +203,13 @@ export async function getPartnerProfitLoss(input: {
       !journalControlFailure,
     journalControlFailure,
     properties: properties.map((property) => ({ id: property.id, name: property.displayName })),
+    recentExpenses: manualExpenseJournals.map((journal) => ({
+      amount: journal.totalDebit,
+      createdAt: journal.createdAt.toISOString(),
+      description: journal.description,
+      id: journal.id,
+      reversed: reversedExpenseIds.has(journal.id),
+    })),
     safetyLimitReached,
     selectedProperty: { id: selected.id, name: selected.displayName },
   } as const;

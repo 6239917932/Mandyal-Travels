@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { PrivacyRequestManager } from '@/components/account/PrivacyRequestManager';
 import { Card } from '@/components/ui/Card';
+import { PartnerPrivacyEvidenceForm } from '@/components/partner/PartnerPrivacyEvidenceForm';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { getPartnerPrivacyWorkspace } from '@/services/partnerPrivacyWorkspaceService';
 
@@ -28,6 +29,7 @@ export default async function PartnerPrivacyPage() {
   }
   const workspace = await getPartnerPrivacyWorkspace({
     partnerId: access.partnerId,
+    memberRole: access.memberRole,
     userId: access.userId,
   });
   if (!workspace) redirect('/partner');
@@ -108,6 +110,40 @@ export default async function PartnerPrivacyPage() {
         </Card>
 
         <PrivacyRequestManager initialRequests={workspace.privacyRequests} />
+
+        {access.memberRole === 'ADMIN' ? (
+          <Card>
+            <p className="hotel-page__eyebrow">Hotel privacy response queue</p>
+            <h2>Guest requests connected to managed properties</h2>
+            <p>
+              Record the hotel’s response evidence for central privacy review. This does not
+              automatically erase booking, finance, security, or statutory records.
+            </p>
+            {workspace.partnerRequests.length ? (
+              workspace.partnerRequests.map((request) => (
+                <section key={request.id}>
+                  <h3>
+                    {request.requestType} · {request.name}
+                  </h3>
+                  <p>
+                    {request.email} · {request.status.replaceAll('_', ' ')} · due{' '}
+                    {formatDate(request.dueAt)}
+                  </p>
+                  {request.latestEvidence ? (
+                    <p>
+                      <strong>Latest hotel evidence:</strong>{' '}
+                      {request.latestEvidence.posture.replaceAll('_', ' ')} ·{' '}
+                      {request.latestEvidence.note}
+                    </p>
+                  ) : null}
+                  <PartnerPrivacyEvidenceForm requestId={request.id} />
+                </section>
+              ))
+            ) : (
+              <p>No open guest privacy requests are connected to this hotel portfolio.</p>
+            )}
+          </Card>
+        ) : null}
 
         <Card>
           <p className="hotel-page__eyebrow">Consent evidence</p>

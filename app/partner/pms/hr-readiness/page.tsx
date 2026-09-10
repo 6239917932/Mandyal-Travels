@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
+import { PayrollEntryForm, PayrollReversal } from '@/components/partner/PayrollControls';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { getPartnerHrReadiness } from '@/services/partnerHrReadinessService';
 
@@ -53,8 +54,8 @@ export default async function PartnerHrReadinessPage() {
             <h1>HR and payroll readiness</h1>
             <p className="booking-page__intro">
               Use named PMS accounts as the authoritative access roster, review role and security
-              posture, and keep payroll disabled until approved employment and statutory records
-              exist.
+              posture, and maintain an administrator-approved monthly payroll register without
+              transmitting bank payments or guessing statutory deductions.
             </p>
           </div>
           <div className="manage-booking__document-actions">
@@ -100,9 +101,75 @@ export default async function PartnerHrReadinessPage() {
           <Card>
             <span>Payroll execution</span>
             <strong>{workspace.payrollExecutionEnabled ? 'Enabled' : 'Not released'}</strong>
-            <small>No salary or bank instruction is stored here</small>
+            <small>Internal register only; no bank instruction is transmitted</small>
           </Card>
         </div>
+
+        <Card>
+          <p className="hotel-page__eyebrow">Internal payroll register</p>
+          <h2>Post approved monthly payroll</h2>
+          <p>
+            Record gross pay and administrator-approved deductions for a named PMS staff account.
+            Posting creates a balanced payroll expense journal; the system does not calculate
+            statutory deductions or transmit money to a bank.
+          </p>
+          <PayrollEntryForm
+            members={workspace.staff
+              .filter((member) => member.accessStatus === 'ACTIVE')
+              .map((member) => ({ id: member.id, label: `${member.name} · ${member.email}` }))}
+            properties={[...workspace.properties]}
+          />
+        </Card>
+
+        <Card>
+          <p className="hotel-page__eyebrow">Payroll history</p>
+          <h2>Posted payroll and payslip register</h2>
+          {workspace.payrollSafetyLimitReached ? (
+            <p role="alert">Only the 200 most recent payroll records are shown.</p>
+          ) : null}
+          {workspace.payrollRecords.length ? (
+            <div className="pms-room-rack__table-wrap">
+              <table className="pms-room-rack__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Period and employee</th>
+                    <th scope="col">Property</th>
+                    <th scope="col">Gross</th>
+                    <th scope="col">Deductions</th>
+                    <th scope="col">Net payslip amount</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workspace.payrollRecords.map((record) => (
+                    <tr key={record.id}>
+                      <th scope="row">
+                        {record.period} · revision {record.revision} · {record.employeeName}
+                        <small>{record.employeeEmail}</small>
+                      </th>
+                      <td>{record.propertyName}</td>
+                      <td>₹{record.grossAmount.toLocaleString('en-IN')}</td>
+                      <td>₹{record.deductionAmount.toLocaleString('en-IN')}</td>
+                      <td>
+                        ₹{record.netAmount.toLocaleString('en-IN')}
+                        <small>{record.note}</small>
+                      </td>
+                      <td>
+                        {record.status === 'POSTED' ? (
+                          <PayrollReversal recordId={record.id} version={record.version} />
+                        ) : (
+                          'Reversed'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No payroll has been posted.</p>
+          )}
+        </Card>
 
         <Card>
           <p className="hotel-page__eyebrow">Access-backed staff roster</p>
@@ -186,7 +253,7 @@ export default async function PartnerHrReadinessPage() {
 
         <Card>
           <p className="hotel-page__eyebrow">Payroll boundary</p>
-          <h2>Required before payroll can be designed or activated</h2>
+          <h2>Required before automated statutory payroll or bank payment</h2>
           <ul>
             <li>Verified employment identity, joining date, work location and contract terms.</li>
             <li>Approved earnings, deductions, overtime, leave and attendance policies.</li>
@@ -198,9 +265,10 @@ export default async function PartnerHrReadinessPage() {
             <li>Payslip, correction, arrears, termination and statutory filing controls.</li>
           </ul>
           <p>
-            None of these records are inferred from PMS access membership. This workspace does not
-            store salary, attendance, tax identifiers, bank details, generate payslips, calculate
-            statutory deductions, or transmit payroll payments.
+            Employment and statutory details are never inferred from PMS access membership. The
+            internal register stores approved gross pay, manual deductions and net payslip amounts;
+            it does not store bank details, calculate statutory deductions, file returns, or
+            transmit payroll payments.
           </p>
         </Card>
       </div>
