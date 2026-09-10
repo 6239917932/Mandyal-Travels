@@ -61,12 +61,20 @@ export function WorkspaceShell({
     if (!navigationOpen) return;
     document.body.classList.add('workspace-navigation-open');
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setNavigationOpen(false);
+      if (event.key !== 'Escape') return;
+      if (navigationToggleRef.current) navigationToggleRef.current.checked = false;
+      setNavigationOpen(false);
+    }
+    function closeOnHistoryNavigation() {
+      if (navigationToggleRef.current) navigationToggleRef.current.checked = false;
+      setNavigationOpen(false);
     }
     document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('popstate', closeOnHistoryNavigation);
     return () => {
       document.body.classList.remove('workspace-navigation-open');
       document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('popstate', closeOnHistoryNavigation);
     };
   }, [navigationOpen]);
 

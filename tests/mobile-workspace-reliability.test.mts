@@ -17,7 +17,12 @@ test('protected workspaces expose one unambiguous mobile navigation control', as
   assert.doesNotMatch(header, /isMenuOpen && !isWorkspacePath/);
   assert.match(layout, /site-header--workspace \.site-header__menu-button[\s\S]*display: none/);
   assert.match(shell, /aria-label="Close workspace menu"/);
-  assert.match(shell, /event\.key === 'Escape'/);
+  assert.match(shell, /event\.key !== 'Escape'/);
+  assert.match(
+    shell,
+    /closeOnEscape[\s\S]*navigationToggleRef\.current\.checked = false;[\s\S]*setNavigationOpen\(false\)/,
+  );
+  assert.match(shell, /window\.addEventListener\('popstate', closeOnHistoryNavigation\)/);
   assert.match(shell, /workspace-navigation-open/);
   assert.match(shell, /id="workspace-navigation-toggle"/);
   assert.match(shell, /htmlFor="workspace-navigation-toggle"/);
@@ -37,4 +42,5 @@ test('phone layouts constrain controls, tables, drawers and dense content', asyn
   assert.match(components, /\.workspace-shell__content table[\s\S]*overflow-x: auto/);
   assert.match(components, /font-size: 1rem/);
   assert.match(components, /body\.workspace-navigation-open[\s\S]*overflow: hidden/);
+  assert.match(components, /minmax\(min\(100%, 19rem\), 1fr\)/);
 });
