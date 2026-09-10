@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 export const HOTEL_ROOM_OPERATION_IDEMPOTENCY_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 export const HOTEL_MAINTENANCE_CATEGORIES = [
+  'HOUSEKEEPING',
   'PLUMBING',
   'ELECTRICAL',
   'HVAC',

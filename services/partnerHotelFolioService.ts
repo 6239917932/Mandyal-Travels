@@ -59,6 +59,7 @@ function presentEntry(entry: StoredFolioEntry) {
 function balanceEntries(entries: StoredFolioEntry[]) {
   return entries.map((entry) => ({
     amount: entry.amount,
+    category: entry.category,
     entryType: entry.entryType as 'CHARGE' | 'PAYMENT' | 'REVERSAL',
     reversalOfType: entry.reversalOf?.entryType as 'CHARGE' | 'PAYMENT' | undefined,
   }));

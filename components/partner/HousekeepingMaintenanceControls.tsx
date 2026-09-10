@@ -81,7 +81,13 @@ export type MaintenanceRoomOption = {
   label: string;
 };
 
-export function MaintenanceWorkOrderForm({ rooms }: { rooms: MaintenanceRoomOption[] }) {
+export function MaintenanceWorkOrderForm({
+  fixedCategory,
+  rooms,
+}: {
+  fixedCategory?: 'HOUSEKEEPING';
+  rooms: MaintenanceRoomOption[];
+}) {
   const router = useRouter();
   const key = useRef(retryKey());
   const [error, setError] = useState<string>();
@@ -105,7 +111,12 @@ export function MaintenanceWorkOrderForm({ rooms }: { rooms: MaintenanceRoomOpti
         headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': key.current },
         method: 'POST',
       });
-      const message = await responseError(response, 'The maintenance work order was not opened.');
+      const message = await responseError(
+        response,
+        fixedCategory
+          ? 'The housekeeping request was not opened.'
+          : 'The maintenance work order was not opened.',
+      );
       if (message) return setError(message);
       key.current = retryKey();
       element.reset();
@@ -117,7 +128,8 @@ export function MaintenanceWorkOrderForm({ rooms }: { rooms: MaintenanceRoomOpti
     }
   }
 
-  if (!rooms.length) return <p>Add physical rooms before opening a maintenance work order.</p>;
+  if (!rooms.length)
+    return <p>Add physical rooms before opening a housekeeping or maintenance request.</p>;
   return (
     <form className="supplier-form__grid" onSubmit={submit}>
       <label className="ui-field">
@@ -130,17 +142,21 @@ export function MaintenanceWorkOrderForm({ rooms }: { rooms: MaintenanceRoomOpti
           ))}
         </select>
       </label>
-      <label className="ui-field">
-        <span className="ui-field__label">Category</span>
-        <select className="ui-input" name="category" required>
-          <option value="PLUMBING">Plumbing</option>
-          <option value="ELECTRICAL">Electrical</option>
-          <option value="HVAC">HVAC</option>
-          <option value="FURNITURE">Furniture</option>
-          <option value="SAFETY">Safety</option>
-          <option value="OTHER">Other</option>
-        </select>
-      </label>
+      {fixedCategory ? (
+        <input name="category" type="hidden" value={fixedCategory} />
+      ) : (
+        <label className="ui-field">
+          <span className="ui-field__label">Category</span>
+          <select className="ui-input" name="category" required>
+            <option value="PLUMBING">Plumbing</option>
+            <option value="ELECTRICAL">Electrical</option>
+            <option value="HVAC">HVAC</option>
+            <option value="FURNITURE">Furniture</option>
+            <option value="SAFETY">Safety</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </label>
+      )}
       <label className="ui-field">
         <span className="ui-field__label">Priority</span>
         <select className="ui-input" defaultValue="NORMAL" name="priority" required>
@@ -150,13 +166,21 @@ export function MaintenanceWorkOrderForm({ rooms }: { rooms: MaintenanceRoomOpti
           <option value="URGENT">Urgent</option>
         </select>
       </label>
-      <Input label="Issue summary" maxLength={120} minLength={5} name="summary" required />
+      <Input
+        label={fixedCategory ? 'Request summary' : 'Issue summary'}
+        maxLength={120}
+        minLength={5}
+        name="summary"
+        required
+      />
       <label className="ui-field supplier-form__full-width">
         <span className="ui-field__label">Description</span>
         <textarea className="ui-input" maxLength={600} name="description" rows={4} />
       </label>
       <Button className="supplier-form__full-width" isLoading={saving} type="submit">
-        Open work order and take room out of service
+        {fixedCategory
+          ? 'Open housekeeping request'
+          : 'Open work order and take room out of service'}
       </Button>
       {error ? (
         <p className="ui-field__error supplier-form__full-width" role="alert">

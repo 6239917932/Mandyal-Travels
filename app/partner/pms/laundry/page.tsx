@@ -11,7 +11,7 @@ import { getPartnerAccess } from '@/lib/partnerAuth';
 import type { HotelPosStatus } from '@/lib/pms/pointOfSale';
 import { getPartnerHotelGuestServiceWorkspace } from '@/services/partnerHotelPosService';
 
-export const metadata: Metadata = { title: 'Laundry and minibar | Mandyal PMS' };
+export const metadata: Metadata = { title: 'Laundry, minibar and spa | Mandyal PMS' };
 
 type PageProps = { searchParams: Promise<{ property?: string | string[] }> };
 const firstValue = (value: string | string[] | undefined) =>
@@ -43,10 +43,10 @@ export default async function PartnerLaundryPage({ searchParams }: PageProps) {
         <header className="partner-page__heading">
           <div>
             <p className="hotel-page__eyebrow">Guest services · controlled folio posting</p>
-            <h1>Laundry and minibar</h1>
+            <h1>Laundry, minibar and spa</h1>
             <p className="booking-page__intro">
-              Record itemized guest laundry and minibar services against an assigned, checked-in
-              room. Completed services post once to the existing append-only guest folio.
+              Record laundry, minibar, spa and wellness services for an assigned, checked-in room.
+              Completed services post once to the existing append-only guest folio.
             </p>
           </div>
           <div className="manage-booking__document-actions">
@@ -106,6 +106,12 @@ export default async function PartnerLaundryPage({ searchParams }: PageProps) {
                   {activeOrders.filter((order) => order.serviceMode === 'MINIBAR').length}
                 </strong>
               </Card>
+              <Card>
+                <span>Open spa services</span>
+                <strong>
+                  {activeOrders.filter((order) => order.serviceMode === 'SPA').length}
+                </strong>
+              </Card>
             </div>
             <Card>
               <p className="hotel-page__eyebrow">New guest service</p>
@@ -129,8 +135,12 @@ export default async function PartnerLaundryPage({ searchParams }: PageProps) {
               activeOrders.map((order) => (
                 <Card key={order.id}>
                   <p className="hotel-page__eyebrow">
-                    {order.serviceMode === 'LAUNDRY' ? 'Guest laundry' : 'Minibar posting'} ·{' '}
-                    {order.status.toLowerCase()}
+                    {order.serviceMode === 'LAUNDRY'
+                      ? 'Guest laundry'
+                      : order.serviceMode === 'SPA'
+                        ? 'Spa and wellness'
+                        : 'Minibar posting'}{' '}
+                    · {order.status.toLowerCase()}
                   </p>
                   <h2>
                     Room {order.roomNumber} · {money(order.totalAmount, order.currency)}
@@ -159,7 +169,7 @@ export default async function PartnerLaundryPage({ searchParams }: PageProps) {
             ) : (
               <Card>
                 <h2>Guest-service queue is clear</h2>
-                <p>No laundry or minibar service is waiting to be completed or posted.</p>
+                <p>No laundry, minibar or spa service is waiting to be completed or posted.</p>
               </Card>
             )}
 
@@ -191,7 +201,7 @@ export default async function PartnerLaundryPage({ searchParams }: PageProps) {
         ) : (
           <Card>
             <h2>No active managed hotel property</h2>
-            <p>Add and activate a property before recording laundry or minibar services.</p>
+            <p>Add and activate a property before recording laundry, minibar or spa services.</p>
             <Link className="ui-button ui-button--primary" href="/partner/properties">
               Open property settings
             </Link>

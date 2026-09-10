@@ -31,10 +31,16 @@ function addDays(value: string, days: number): string {
 }
 
 function balanceEntries(
-  entries: Array<{ amount: number; entryType: string; reversalOf: { entryType: string } | null }>,
+  entries: Array<{
+    amount: number;
+    category: string;
+    entryType: string;
+    reversalOf: { entryType: string } | null;
+  }>,
 ) {
   return entries.map((entry) => ({
     amount: entry.amount,
+    category: entry.category,
     entryType: entry.entryType as 'CHARGE' | 'PAYMENT' | 'REVERSAL',
     reversalOfType: entry.reversalOf?.entryType as 'CHARGE' | 'PAYMENT' | undefined,
   }));

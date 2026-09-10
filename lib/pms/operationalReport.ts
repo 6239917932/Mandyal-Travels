@@ -97,9 +97,11 @@ export function buildHotelOperationalReport(input: {
   const rows = input.dates.map((businessDate) => {
     const entries = input.folioEntries.filter((entry) => entry.businessDate === businessDate);
     const folioCharges = entries.reduce((total, entry) => {
-      if (entry.entryType === 'CHARGE') return total + entry.amount;
+      if (entry.entryType === 'CHARGE') {
+        return total + (entry.category === 'DISCOUNT' ? -entry.amount : entry.amount);
+      }
       if (entry.entryType === 'REVERSAL' && entry.reversalOfType === 'CHARGE') {
-        return total - entry.amount;
+        return total + (entry.category === 'DISCOUNT' ? entry.amount : -entry.amount);
       }
       return total;
     }, 0);

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 export const HOTEL_POS_IDEMPOTENCY_PATTERN = /^[A-Za-z0-9_-]{16,96}$/;
 export const HOTEL_POS_SERVICE_MODES = ['ROOM_SERVICE', 'OUTLET'] as const;
-export const HOTEL_GUEST_SERVICE_MODES = ['LAUNDRY', 'MINIBAR'] as const;
+export const HOTEL_GUEST_SERVICE_MODES = ['LAUNDRY', 'MINIBAR', 'SPA'] as const;
 export const HOTEL_POS_STATUSES = [
   'PLACED',
   'ACCEPTED',
@@ -122,7 +122,10 @@ export function normalizeHotelGuestServiceOrder(input: {
     } as const;
   } catch (error) {
     if (error instanceof HotelPosRuleError && error.code === 'INVALID_SERVICE_MODE') {
-      throw new HotelPosRuleError('INVALID_SERVICE_MODE', 'Choose laundry or minibar posting.');
+      throw new HotelPosRuleError(
+        'INVALID_SERVICE_MODE',
+        'Choose laundry, minibar or spa service.',
+      );
     }
     throw error;
   }
@@ -182,10 +185,10 @@ export function nextHotelGuestServiceStatuses(
 ): readonly HotelPosStatus[] {
   if (status === 'PLACED') return ['ACCEPTED', 'CANCELLED'];
   if (status === 'ACCEPTED') {
-    return serviceMode === 'LAUNDRY' ? ['PREPARING', 'CANCELLED'] : ['POSTED', 'CANCELLED'];
+    return serviceMode === 'MINIBAR' ? ['POSTED', 'CANCELLED'] : ['PREPARING', 'CANCELLED'];
   }
-  if (serviceMode === 'LAUNDRY' && status === 'PREPARING') return ['READY'];
-  if (serviceMode === 'LAUNDRY' && status === 'READY') return ['POSTED'];
+  if (serviceMode !== 'MINIBAR' && status === 'PREPARING') return ['READY'];
+  if (serviceMode !== 'MINIBAR' && status === 'READY') return ['POSTED'];
   return [];
 }
 

@@ -40,6 +40,14 @@ test('maintenance validation uses closed categories, priorities and terminal tra
     },
   );
   assert.equal(
+    normalizeMaintenanceWorkOrder({
+      category: 'housekeeping',
+      priority: 'normal',
+      summary: 'Extra towels',
+    }).category,
+    'HOUSEKEEPING',
+  );
+  assert.equal(
     normalizeMaintenanceTransition({ currentStatus: 'OPEN', nextStatus: 'IN_PROGRESS' }).nextStatus,
     'IN_PROGRESS',
   );
@@ -93,8 +101,11 @@ test('room-operation retry keys are bounded and maintenance routes enforce origi
   }
   assert.match(service, /isolationLevel: 'Serializable'/);
   assert.match(service, /operationalStatus: 'OUT_OF_SERVICE'/);
+  assert.match(service, /work\.category === 'HOUSEKEEPING'/);
+  assert.match(service, /housekeepingStatus: 'DIRTY'/);
   assert.match(service, /HOTEL_ROOM_INSPECTED/);
   assert.match(roomService, /MAINTENANCE_UNRESOLVED/);
   assert.match(roomService, /FRESH_INSPECTION_REQUIRED/);
   assert.match(registry, /href: '\/partner\/pms\/maintenance'/);
+  assert.match(registry, /href: '\/partner\/pms\/housekeeping-requests'/);
 });

@@ -6,6 +6,7 @@ export const HOTEL_FOLIO_CHARGE_CATEGORIES = [
   'FOOD_AND_BEVERAGE',
   'LAUNDRY',
   'MINIBAR',
+  'SPA',
   'DAMAGE',
   'OTHER',
 ] as const;
@@ -118,6 +119,7 @@ export function hotelFolioRequestFingerprint(value: unknown): string {
 
 export type HotelFolioBalanceEntry = Readonly<{
   amount: number;
+  category?: string;
   entryType: HotelFolioEntryType;
   reversalOfType?: Exclude<HotelFolioEntryType, 'REVERSAL'>;
 }>;
@@ -143,10 +145,12 @@ export function calculateHotelFolioBalance(input: {
   payments = Math.max(0, payments - approvedRefunds);
   for (const entry of input.entries) {
     if (!Number.isSafeInteger(entry.amount) || entry.amount < 0) continue;
-    if (entry.entryType === 'CHARGE') charges += entry.amount;
+    if (entry.entryType === 'CHARGE') {
+      charges += entry.category === 'DISCOUNT' ? -entry.amount : entry.amount;
+    }
     if (entry.entryType === 'PAYMENT') payments += entry.amount;
     if (entry.entryType === 'REVERSAL' && entry.reversalOfType === 'CHARGE') {
-      charges -= entry.amount;
+      charges += entry.category === 'DISCOUNT' ? entry.amount : -entry.amount;
     }
     if (entry.entryType === 'REVERSAL' && entry.reversalOfType === 'PAYMENT') {
       payments -= entry.amount;

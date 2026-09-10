@@ -50,6 +50,9 @@ export default async function PartnerAccountingPage() {
             </p>
           </div>
           <div className="manage-booking__document-actions">
+            <Link className="ui-button ui-button--secondary" href="/partner/pms/tally-export">
+              Tally XML export
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/pms/billing">
               Guest folios
             </Link>

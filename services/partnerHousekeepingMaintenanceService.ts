@@ -211,7 +211,10 @@ export async function createMaintenanceWorkOrder(input: {
         },
       });
       await transaction.partnerPhysicalRoom.update({
-        data: { operationalStatus: 'OUT_OF_SERVICE' },
+        data:
+          work.category === 'HOUSEKEEPING'
+            ? { housekeepingStatus: 'DIRTY' }
+            : { operationalStatus: 'OUT_OF_SERVICE' },
         where: { id: room.id },
       });
       await transaction.partnerAuditLog.create({
@@ -227,7 +230,7 @@ export async function createMaintenanceWorkOrder(input: {
             propertyId: room.propertyId,
           }),
           partnerId: input.partnerId,
-          summary: `Maintenance opened for room ${room.roomNumber}: ${work.summary}`,
+          summary: `${work.category === 'HOUSEKEEPING' ? 'Housekeeping request' : 'Maintenance'} opened for room ${room.roomNumber}: ${work.summary}`,
         },
       });
       return created;

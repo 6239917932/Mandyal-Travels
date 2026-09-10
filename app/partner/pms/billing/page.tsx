@@ -61,6 +61,16 @@ export default async function PartnerPmsBillingPage({ searchParams }: BillingPag
             </p>
           </div>
           <div className="manage-booking__document-actions">
+            <Link
+              className="ui-button ui-button--secondary"
+              href={
+                folio
+                  ? `/partner/pms/split-billing?booking=${encodeURIComponent(folio.confirmationCode)}`
+                  : '/partner/pms/split-billing'
+              }
+            >
+              Split billing
+            </Link>
             <Link className="ui-button ui-button--secondary" href="/partner/bookings">
               Open Front desk
             </Link>
