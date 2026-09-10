@@ -13,6 +13,11 @@ test('PMS module names are unique and every live module has a destination', () =
   assert.equal(new Set(pmsModules.map((module) => module.name)).size, pmsModules.length);
   assert.ok(pmsModules.filter((module) => module.status === 'LIVE').every((module) => module.href));
   assert.ok(pmsModules.every((module) => getPmsModuleHref(module).startsWith('/partner/')));
+  const liveDestinations = pmsModules
+    .filter((module) => module.status === 'LIVE')
+    .map((module) => module.href);
+  assert.equal(new Set(liveDestinations).size, liveDestinations.length);
+  assert.equal(getPmsModule('RS')?.href, '/partner/pms/reservations');
 });
 
 test('every non-live PMS module resolves to its controlled workspace', () => {

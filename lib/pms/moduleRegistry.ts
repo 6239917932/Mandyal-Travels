@@ -63,7 +63,7 @@ export const pmsModules: readonly PmsModule[] = [
     code: 'RS',
     description: 'Search and manage individual, direct, channel and corporate reservations.',
     group: 'Front office and operations',
-    href: '/partner/bookings',
+    href: '/partner/pms/reservations',
     name: 'Reservations',
     phase: 1,
     status: 'LIVE',

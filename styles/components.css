@@ -1703,7 +1703,7 @@
 .partner-fleet__grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
   margin: 1rem 0 2.5rem;
 }
 
