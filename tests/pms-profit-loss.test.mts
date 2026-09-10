@@ -56,18 +56,22 @@ test('expense classification is explicit and excludes liabilities and customer r
   assert.equal(isExplicitExpenseAccount('CUSTOMER_REFUNDS'), false);
 });
 
-test('profit/loss workspace is read only, bounded, supplier scoped and caveated', async () => {
-  const [page, service] = await Promise.all([
+test('profit/loss workspace is bounded, supplier scoped and posts controlled expenses', async () => {
+  const [page, service, route, expenseService] = await Promise.all([
     readFile(new URL('../app/partner/pms/profit-loss/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../services/partnerProfitLossService.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/v1/partner/expenses/route.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../services/partnerExpenseService.ts', import.meta.url), 'utf8'),
   ]);
   assert.match(page, /memberRole !== 'ADMIN'/);
   assert.match(page, /not statutory profit/i);
-  assert.match(page, /does not create expenses/i);
+  assert.match(page, /Post a property expense/i);
   assert.match(service, /partnerId: input\.partnerId/);
   assert.match(service, /take: MAX_ROWS \+ 1/);
-  assert.doesNotMatch(
-    service,
-    /prisma\.[A-Za-z]+\.(?:create|update|delete)\(|transaction\.[A-Za-z]+\.(?:create|update|delete)\(/,
-  );
+  assert.match(route, /isSameOriginMutation/);
+  assert.match(route, /memberRole !== 'ADMIN'/);
+  assert.match(expenseService, /sourceType: 'HOTEL_EXPENSE'/);
+  assert.match(expenseService, /sourceType: 'HOTEL_EXPENSE_REVERSAL'/);
+  assert.match(expenseService, /totalCredit: amount/);
+  assert.match(expenseService, /totalDebit: amount/);
 });

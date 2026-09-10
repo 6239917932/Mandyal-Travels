@@ -1460,6 +1460,38 @@
   gap: var(--space-3);
 }
 
+.captain-guest-qr {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: 0.75rem;
+}
+
+.captain-guest-qr img,
+.captain-guest-qr__loading {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  display: block;
+  min-height: 11.25rem;
+  padding: 0.5rem;
+  width: 11.25rem;
+}
+
+.captain-guest-qr__loading {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .captain-guest-qr {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pms-module-card__status small {
   color: var(--color-text-muted);
 }

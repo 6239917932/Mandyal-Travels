@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Card } from '@/components/ui/Card';
+import { TallyMappingForm } from '@/components/partner/TallyMappingForm';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { TallyExportRuleError } from '@/lib/pms/tallyExport';
 import { getPartnerTallyExport } from '@/services/partnerTallyExportService';
@@ -96,6 +97,24 @@ export default async function PartnerTallyExportPage({
             </Link>
           </div>
         </header>
+
+        <Card>
+          <p className="hotel-page__eyebrow">Property ledger mapping</p>
+          <h2>Map PMS accounts to Tally ledger names</h2>
+          <p>Mappings are saved per property and applied to the next XML download.</p>
+          {result.selectedProperty && result.mappings.length ? (
+            result.mappings.map((mapping) => (
+              <TallyMappingForm
+                accountCode={mapping.accountCode}
+                initialName={mapping.tallyLedgerName}
+                key={mapping.accountCode}
+                propertyId={result.selectedProperty!.id}
+              />
+            ))
+          ) : (
+            <p>Post an eligible accounting journal to discover its ledger accounts.</p>
+          )}
+        </Card>
 
         <Card>
           <form className="supplier-form__grid" method="get">
@@ -200,9 +219,9 @@ export default async function PartnerTallyExportPage({
           <p className="hotel-page__eyebrow">Important boundary</p>
           <h2>Review before importing</h2>
           <p>
-            This is a Tally-compatible technical foundation, not a statutory book, GST return,
-            filing, accountant approval, or guarantee that ledger names match your Tally company. A
-            qualified accountant must review ledger mappings, opening balances and tax treatment
+            This operational export produces balanced Tally-compatible vouchers using the saved
+            property mappings. It is not a statutory book, GST return, filing, or accountant
+            approval. A qualified accountant must still review opening balances and tax treatment
             before production import.
           </p>
         </Card>

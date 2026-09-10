@@ -39,4 +39,6 @@ test('captain console links checked-in stays to guest menus and the audited kitc
   assert.match(link, /navigator\.share/);
   assert.match(link, /navigator\.clipboard\.writeText/);
   assert.match(link, /\/qr-order\//);
+  assert.match(link, /QRCode\.toDataURL/);
+  assert.match(link, /Download QR/);
 });

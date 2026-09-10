@@ -106,5 +106,6 @@ test('Tally page and download are administrator-only, scoped and fail closed', a
   assert.match(service, /take: TALLY_EXPORT_MAX_JOURNALS \+ 1/);
   assert.match(service, /status: 'POSTED'/);
   assert.match(page, /not a statutory book/i);
+  assert.match(page, /Map PMS accounts to Tally ledger names/);
   assert.match(accountingPage, /\/partner\/pms\/tally-export/);
 });

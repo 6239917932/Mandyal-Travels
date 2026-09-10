@@ -131,7 +131,7 @@ export const pmsModules: readonly PmsModule[] = [
     href: '/partner/pms/qr-order',
     name: 'QR guest ordering',
     phase: 3,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'CA',
@@ -400,16 +400,17 @@ export const pmsModules: readonly PmsModule[] = [
     href: '/partner/pms/profit-loss',
     name: 'Expenses and profit/loss',
     phase: 4,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'HR',
-    description: 'Named staff access roster and privacy-safe payroll readiness controls.',
+    description:
+      'Named staff roster, approved payroll register, payslip values and balanced finance postings.',
     group: 'Analytics and staff',
     href: '/partner/pms/hr-readiness',
     name: 'HR and payroll',
     phase: 4,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'ST',
@@ -438,7 +439,7 @@ export const pmsModules: readonly PmsModule[] = [
     href: '/partner/pms/privacy',
     name: 'Privacy and data rights',
     phase: 3,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
   {
     code: 'TX',
@@ -448,7 +449,7 @@ export const pmsModules: readonly PmsModule[] = [
     href: '/partner/pms/tally-export',
     name: 'Tally/XML integration',
     phase: 4,
-    status: 'FOUNDATION',
+    status: 'LIVE',
   },
 ] as const;
 

@@ -39,3 +39,15 @@ test('privacy page does not claim a complete partner export or automatic erasure
   assert.match(page, /does not claim a universal fixed retention period/);
   assert.doesNotMatch(page, /Delete all data|automatic deletion|instant deletion/i);
 });
+
+test('hotel administrators can submit scoped privacy response evidence without erasure', async () => {
+  const [page, route] = await Promise.all([
+    readFile(new URL('../app/partner/pms/privacy/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/api/v1/partner/privacy-evidence/route.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(page, /Hotel privacy response queue/);
+  assert.match(route, /memberRole !== 'ADMIN'/);
+  assert.match(route, /bookingGuest\.findFirst/);
+  assert.match(route, /PARTNER_PRIVACY_EVIDENCE_RECORDED/);
+  assert.doesNotMatch(route, /dataPrivacyRequest\.(?:update|delete)/);
+});
