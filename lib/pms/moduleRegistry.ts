@@ -128,18 +128,20 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Consent-aware guest QR ordering with verified table or room context and controlled fulfilment.',
     group: 'Front office and operations',
+    href: '/partner/pms/qr-order',
     name: 'QR guest ordering',
     phase: 3,
-    status: 'PLANNED',
+    status: 'FOUNDATION',
   },
   {
     code: 'CA',
     description:
       'Least-privilege captain and front-office mobile workflows for orders and guest operations.',
     group: 'Front office and operations',
+    href: '/partner/pms/captain',
     name: 'Captain and mobile operations',
     phase: 4,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'BQ',
@@ -160,6 +162,15 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'HQ',
+    description: 'Audited room cleaning and guest-service requests with controlled status history.',
+    group: 'Front office and operations',
+    href: '/partner/pms/housekeeping-requests',
+    name: 'Housekeeping requests',
+    phase: 2,
+    status: 'LIVE',
+  },
+  {
     code: 'AT',
     description: 'Prioritized room turnaround, readiness, inspections and maintenance context.',
     group: 'Front office and operations',
@@ -175,6 +186,15 @@ export const pmsModules: readonly PmsModule[] = [
     href: '/partner/pms/laundry',
     name: 'Laundry',
     phase: 2,
+    status: 'LIVE',
+  },
+  {
+    code: 'SV',
+    description: 'Itemized spa and wellness services with controlled fulfilment and folio posting.',
+    group: 'Front office and operations',
+    href: '/partner/pms/spa',
+    name: 'Spa and wellness',
+    phase: 3,
     status: 'LIVE',
   },
   {
@@ -246,6 +266,7 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Controlled cash, card, bank and approved digital payment tendering with reconciliation evidence.',
     group: 'Finance and back office',
+    href: '/partner/pms/payment-modes',
     name: 'Multiple payment modes',
     phase: 2,
     status: 'FOUNDATION',
@@ -255,9 +276,10 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Audited folio splitting, routed charges, bounded discounts and approval-aware corrections.',
     group: 'Finance and back office',
+    href: '/partner/pms/split-billing',
     name: 'Split billing and discounts',
     phase: 3,
-    status: 'PLANNED',
+    status: 'LIVE',
   },
   {
     code: 'GT',
@@ -338,6 +360,7 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Template-controlled email and WhatsApp journeys with consent, suppression and delivery evidence.',
     group: 'Guest and communication',
+    href: '/partner/pms/communications',
     name: 'Automated email and WhatsApp',
     phase: 3,
     status: 'FOUNDATION',
@@ -372,17 +395,18 @@ export const pmsModules: readonly PmsModule[] = [
   {
     code: 'PL',
     description:
-      'Approved expense capture and management profit-and-loss reporting without claiming statutory books.',
+      'Source-backed recorded expenses and management profit-and-loss reporting without claiming statutory books.',
     group: 'Analytics and staff',
+    href: '/partner/pms/profit-loss',
     name: 'Expenses and profit/loss',
     phase: 4,
-    status: 'PLANNED',
+    status: 'FOUNDATION',
   },
   {
     code: 'HR',
     description: 'Named staff access roster and privacy-safe payroll readiness controls.',
     group: 'Analytics and staff',
-    href: '/partner/pms/hr',
+    href: '/partner/pms/hr-readiness',
     name: 'HR and payroll',
     phase: 4,
     status: 'FOUNDATION',
@@ -411,6 +435,7 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Consent, retention, access, deletion and export controls supporting accountable privacy operations.',
     group: 'System and administration',
+    href: '/partner/pms/privacy',
     name: 'Privacy and data rights',
     phase: 3,
     status: 'FOUNDATION',
@@ -420,9 +445,10 @@ export const pmsModules: readonly PmsModule[] = [
     description:
       'Versioned, reconciled Tally-compatible XML export after accounting ownership and schema approval.',
     group: 'System and administration',
+    href: '/partner/pms/tally-export',
     name: 'Tally/XML integration',
     phase: 4,
-    status: 'PLANNED',
+    status: 'FOUNDATION',
   },
 ] as const;
 

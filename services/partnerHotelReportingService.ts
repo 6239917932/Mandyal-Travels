@@ -160,14 +160,17 @@ export async function getPartnerHotelOperationalReport(input: {
 function netSupplementalCharges(
   entries: readonly {
     amount: number;
+    category: string;
     entryType: string;
     reversalOf: { entryType: string } | null;
   }[],
 ) {
   return entries.reduce((total, entry) => {
-    if (entry.entryType === 'CHARGE') return total + entry.amount;
+    if (entry.entryType === 'CHARGE') {
+      return total + (entry.category === 'DISCOUNT' ? -entry.amount : entry.amount);
+    }
     if (entry.entryType === 'REVERSAL' && entry.reversalOf?.entryType === 'CHARGE') {
-      return total - entry.amount;
+      return total + (entry.category === 'DISCOUNT' ? entry.amount : -entry.amount);
     }
     return total;
   }, 0);
@@ -195,6 +198,7 @@ function presentGstBooking(booking: {
   currency: string;
   folioEntries: Array<{
     amount: number;
+    category: string;
     currency: string;
     entryType: string;
     reversalOf: { entryType: string } | null;

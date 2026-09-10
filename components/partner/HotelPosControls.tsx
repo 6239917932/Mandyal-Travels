@@ -107,6 +107,7 @@ function HotelServiceOrderForm({
             <>
               <option value="LAUNDRY">Guest laundry</option>
               <option value="MINIBAR">Minibar posting</option>
+              <option value="SPA">Spa and wellness service</option>
             </>
           )}
         </select>

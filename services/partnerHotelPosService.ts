@@ -419,7 +419,9 @@ async function transitionPartnerHotelServiceOrder(
               ? 'LAUNDRY'
               : order.serviceMode === 'MINIBAR'
                 ? 'MINIBAR'
-                : 'FOOD_AND_BEVERAGE';
+                : order.serviceMode === 'SPA'
+                  ? 'SPA'
+                  : 'FOOD_AND_BEVERAGE';
         const folioIdempotencyKey = `service_${hotelPosFingerprint({ idempotencyKey, orderId: order.id }).slice(0, 56)}`;
         const folioFingerprint = hotelFolioRequestFingerprint({
           amount: order.totalAmount,
@@ -522,7 +524,7 @@ export async function assertNoOpenHotelServiceOrdersForCheckout(
   if (activeOrders > 0) {
     throw new PartnerHotelPosError(
       'OPEN_SERVICE_ORDERS',
-      'Post or cancel every open room-service, outlet, laundry, and minibar order before checkout.',
+      'Post or cancel every open room-service, outlet, laundry, minibar, and spa order before checkout.',
     );
   }
 }

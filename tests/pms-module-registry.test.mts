@@ -32,11 +32,11 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 44);
+  assert.equal(pmsModules.length, 46);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 33);
-  assert.equal(countPmsModules('FOUNDATION'), 5);
-  assert.equal(countPmsModules('PLANNED'), 6);
+  assert.equal(countPmsModules('LIVE'), 37);
+  assert.equal(countPmsModules('FOUNDATION'), 8);
+  assert.equal(countPmsModules('PLANNED'), 1);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
 });
 
@@ -53,6 +53,8 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Group bookings and banquets',
     'Attendant view',
     'Laundry',
+    'Spa and wellness',
+    'Housekeeping requests',
     'Maintenance',
     'Central reservations',
     'Booking engine',

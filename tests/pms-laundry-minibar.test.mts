@@ -9,7 +9,7 @@ import {
   normalizeHotelGuestServiceTransition,
 } from '../lib/pms/pointOfSale.ts';
 
-test('laundry and minibar orders normalize bounded itemized whole-INR totals', () => {
+test('laundry, minibar and spa orders normalize bounded itemized whole-INR totals', () => {
   assert.deepEqual(
     normalizeHotelGuestServiceOrder({
       items: [
@@ -31,6 +31,14 @@ test('laundry and minibar orders normalize bounded itemized whole-INR totals', (
       totalAmount: 300,
     },
   );
+  assert.equal(
+    normalizeHotelGuestServiceOrder({
+      items: [{ name: 'Massage', quantity: 1, unitPrice: 2500 }],
+      outletName: 'Wellness desk',
+      serviceMode: 'spa',
+    }).serviceMode,
+    'SPA',
+  );
   assert.throws(
     () =>
       normalizeHotelGuestServiceOrder({
@@ -42,7 +50,7 @@ test('laundry and minibar orders normalize bounded itemized whole-INR totals', (
   );
 });
 
-test('laundry and minibar use distinct controlled state machines', () => {
+test('laundry, minibar and spa use controlled state machines', () => {
   assert.deepEqual(nextHotelGuestServiceStatuses('LAUNDRY', 'ACCEPTED'), [
     'PREPARING',
     'CANCELLED',
@@ -50,6 +58,8 @@ test('laundry and minibar use distinct controlled state machines', () => {
   assert.deepEqual(nextHotelGuestServiceStatuses('LAUNDRY', 'READY'), ['POSTED']);
   assert.deepEqual(nextHotelGuestServiceStatuses('MINIBAR', 'ACCEPTED'), ['POSTED', 'CANCELLED']);
   assert.deepEqual(nextHotelGuestServiceStatuses('MINIBAR', 'PREPARING'), []);
+  assert.deepEqual(nextHotelGuestServiceStatuses('SPA', 'ACCEPTED'), ['PREPARING', 'CANCELLED']);
+  assert.deepEqual(nextHotelGuestServiceStatuses('SPA', 'READY'), ['POSTED']);
   assert.deepEqual(
     normalizeHotelGuestServiceTransition({
       currentStatus: 'ACCEPTED',
@@ -106,6 +116,7 @@ test('guest services reuse the scoped immutable ledger and post atomically to th
   assert.match(service, /hotelFolioEntry\.create/);
   assert.match(service, /order\.serviceMode === 'LAUNDRY'/);
   assert.match(service, /order\.serviceMode === 'MINIBAR'/);
+  assert.match(service, /order\.serviceMode === 'SPA'/);
   assert.match(service, /HOTEL_GUEST_SERVICE_ORDER/);
   assert.match(service, /assertNoOpenHotelServiceOrdersForCheckout/);
   assert.match(service, /OPEN_SERVICE_ORDERS/);

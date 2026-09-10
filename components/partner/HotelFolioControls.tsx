@@ -214,6 +214,7 @@ export function FolioPostingControls({
               <option value="FOOD_AND_BEVERAGE">Food and beverage</option>
               <option value="LAUNDRY">Laundry</option>
               <option value="MINIBAR">Minibar</option>
+              <option value="SPA">Spa and wellness</option>
               <option value="DAMAGE">Damage</option>
               <option value="OTHER">Other</option>
             </>
