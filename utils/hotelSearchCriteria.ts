@@ -1,13 +1,19 @@
 import type { HotelSearchCriteria, HotelSearchFilters, HotelSearchSort } from '@/types/hotel';
+import { formatIndiaCalendarDate, offsetLocalCalendarDate } from './localDate.ts';
 
-export const defaultHotelSearchCriteria: HotelSearchCriteria = {
-  adults: 2,
-  checkInDate: '2026-10-18',
-  checkOutDate: '2026-10-21',
-  children: 0,
-  destination: '',
-  rooms: 1,
-};
+export function createDefaultHotelSearchCriteria(now: Date = new Date()): HotelSearchCriteria {
+  const today = formatIndiaCalendarDate(now);
+  return {
+    adults: 2,
+    checkInDate: today,
+    checkOutDate: offsetLocalCalendarDate(today, 1),
+    children: 0,
+    destination: '',
+    rooms: 1,
+  };
+}
+
+export const defaultHotelSearchCriteria = createDefaultHotelSearchCriteria();
 
 export const defaultHotelSearchFilters: HotelSearchFilters = {
   amenity: '',
@@ -77,19 +83,13 @@ function getNonNegativeInteger(value: string | undefined, fallback: number): num
 export function createHotelSearchCriteria(
   searchParams: Record<string, string | string[] | undefined>,
 ): HotelSearchCriteria {
+  const defaults = createDefaultHotelSearchCriteria();
   return {
-    adults: getPositiveInteger(
-      getFirstValue(searchParams.adults),
-      defaultHotelSearchCriteria.adults,
-    ),
-    checkInDate: getFirstValue(searchParams.checkInDate) ?? defaultHotelSearchCriteria.checkInDate,
-    checkOutDate:
-      getFirstValue(searchParams.checkOutDate) ?? defaultHotelSearchCriteria.checkOutDate,
-    children: getNonNegativeInteger(
-      getFirstValue(searchParams.children),
-      defaultHotelSearchCriteria.children,
-    ),
-    destination: getFirstValue(searchParams.destination) ?? defaultHotelSearchCriteria.destination,
-    rooms: getPositiveInteger(getFirstValue(searchParams.rooms), defaultHotelSearchCriteria.rooms),
+    adults: getPositiveInteger(getFirstValue(searchParams.adults), defaults.adults),
+    checkInDate: getFirstValue(searchParams.checkInDate) ?? defaults.checkInDate,
+    checkOutDate: getFirstValue(searchParams.checkOutDate) ?? defaults.checkOutDate,
+    children: getNonNegativeInteger(getFirstValue(searchParams.children), defaults.children),
+    destination: getFirstValue(searchParams.destination) ?? defaults.destination,
+    rooms: getPositiveInteger(getFirstValue(searchParams.rooms), defaults.rooms),
   };
 }

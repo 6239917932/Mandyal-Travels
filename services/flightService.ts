@@ -6,6 +6,7 @@ import { AmadeusFlightSupplierAdapter } from '@/repositories/amadeusFlightSuppli
 import type { FlightOffer, FlightSearchCriteria } from '@/types/flight';
 import { normalizeFlightOffer, validateFlightSearchCriteria } from '@/lib/flight/searchRules';
 import { readAmadeusFlightConfiguration } from '@/lib/flight/amadeusRules';
+import { formatIndiaCalendarDate } from '@/utils/localDate';
 
 export function createFlightSupplierAdapter(
   environment: Readonly<Record<string, string | undefined>> = process.env,
@@ -22,7 +23,7 @@ export class FlightService {
   ) {}
 
   async search(criteria: FlightSearchCriteria): Promise<FlightOffer[]> {
-    validateFlightSearchCriteria(criteria, { today: new Date().toISOString().slice(0, 10) });
+    validateFlightSearchCriteria(criteria, { today: formatIndiaCalendarDate() });
     const offers = await this.supplier.search(criteria);
     return offers
       .map((offer) => normalizeFlightOffer(offer, criteria))

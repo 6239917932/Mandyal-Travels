@@ -68,6 +68,10 @@ test('car criteria enforce driver and rental-duration bounds', () => {
     () => validateCarSearchCriteria({ ...criteria, pickupTime: '25:00' }, '2026-08-15'),
     /valid pickup and drop-off times/,
   );
+  assert.throws(
+    () => validateCarSearchCriteria({ ...criteria, pickupDate: '2026-02-30' }, '2026-01-01'),
+    /valid pickup and drop-off dates/,
+  );
   assert.equal(rentalDurationDays('2026-10-10', '2026-10-13', '10:00', '18:00'), 4);
 });
 

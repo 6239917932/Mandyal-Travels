@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
+
+import { formatIndiaCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
 type BookingProduct = 'hotels' | 'cars' | 'flights' | 'buses';
 
@@ -35,27 +37,26 @@ function ProductIcon({ product }: { product: BookingProduct }) {
 
 function Field({
   label,
-  name,
-  placeholder,
   required = true,
-  type = 'text',
-}: {
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'children'> & {
   label: string;
-  name: string;
-  placeholder?: string;
-  required?: boolean;
-  type?: string;
 }) {
   return (
     <label className="home-booking-widget__field">
       <span>{label}</span>
-      <input name={name} placeholder={placeholder} required={required} type={type} />
+      <input required={required} {...props} />
     </label>
   );
 }
 
 export function HomeBookingWidget() {
+  const today = formatIndiaCalendarDate();
   const [activeProduct, setActiveProduct] = useState<BookingProduct>('hotels');
+  const [hotelCheckIn, setHotelCheckIn] = useState(today);
+  const [hotelCheckOut, setHotelCheckOut] = useState(offsetLocalCalendarDate(today, 1));
+  const [carPickup, setCarPickup] = useState(today);
+  const [carDropoff, setCarDropoff] = useState(offsetLocalCalendarDate(today, 1));
   const active = PRODUCTS.find((product) => product.value === activeProduct) ?? PRODUCTS[0];
 
   return (
@@ -95,8 +96,28 @@ export function HomeBookingWidget() {
                 name="destination"
                 placeholder="City, area, or hotel"
               />
-              <Field label="Check-in" name="checkInDate" type="date" />
-              <Field label="Check-out" name="checkOutDate" type="date" />
+              <Field
+                label="Check-in"
+                min={today}
+                name="checkInDate"
+                onChange={(event) => {
+                  const nextCheckIn = event.target.value;
+                  setHotelCheckIn(nextCheckIn);
+                  if (hotelCheckOut <= nextCheckIn) {
+                    setHotelCheckOut(offsetLocalCalendarDate(nextCheckIn, 1));
+                  }
+                }}
+                type="date"
+                value={hotelCheckIn}
+              />
+              <Field
+                label="Check-out"
+                min={offsetLocalCalendarDate(hotelCheckIn, 1)}
+                name="checkOutDate"
+                onChange={(event) => setHotelCheckOut(event.target.value)}
+                type="date"
+                value={hotelCheckOut}
+              />
               <label className="home-booking-widget__field">
                 <span>Guests</span>
                 <select defaultValue="2" name="adults">
@@ -115,8 +136,28 @@ export function HomeBookingWidget() {
             <>
               <Field label="Pickup" name="pickupLocation" placeholder="Mandi" />
               <Field label="Drop-off" name="dropoffLocation" placeholder="Manali" />
-              <Field label="Pickup date" name="pickupDate" type="date" />
-              <Field label="Drop-off date" name="dropoffDate" type="date" />
+              <Field
+                label="Pickup date"
+                min={today}
+                name="pickupDate"
+                onChange={(event) => {
+                  const nextPickup = event.target.value;
+                  setCarPickup(nextPickup);
+                  if (carDropoff <= nextPickup) {
+                    setCarDropoff(offsetLocalCalendarDate(nextPickup, 1));
+                  }
+                }}
+                type="date"
+                value={carPickup}
+              />
+              <Field
+                label="Drop-off date"
+                min={offsetLocalCalendarDate(carPickup, 1)}
+                name="dropoffDate"
+                onChange={(event) => setCarDropoff(event.target.value)}
+                type="date"
+                value={carDropoff}
+              />
               <input name="pickupTime" type="hidden" value="10:00" />
               <input name="dropoffTime" type="hidden" value="10:00" />
               <input name="drivers" type="hidden" value="1" />

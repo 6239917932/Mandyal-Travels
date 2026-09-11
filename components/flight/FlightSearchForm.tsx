@@ -5,11 +5,30 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { FlightSearchCriteria } from '@/types/flight';
+import { formatIndiaCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
 export function FlightSearchForm({ criteria }: { criteria: FlightSearchCriteria }) {
+  const today = formatIndiaCalendarDate();
+  const initialDeparture = criteria.departureDate >= today ? criteria.departureDate : today;
   const [tripType, setTripType] = useState(criteria.tripType);
   const second = criteria.multiCitySegments?.[1];
   const third = criteria.multiCitySegments?.[2];
+  const [departureDate, setDepartureDate] = useState(initialDeparture);
+  const [returnDate, setReturnDate] = useState(
+    criteria.returnDate && criteria.returnDate > initialDeparture
+      ? criteria.returnDate
+      : offsetLocalCalendarDate(initialDeparture, 1),
+  );
+  const [secondDate, setSecondDate] = useState(
+    second?.departureDate && second.departureDate >= initialDeparture
+      ? second.departureDate
+      : initialDeparture,
+  );
+  const [thirdDate, setThirdDate] = useState(
+    third?.departureDate && third.departureDate >= (second?.departureDate ?? initialDeparture)
+      ? third.departureDate
+      : '',
+  );
   return (
     <form action="/flights" className="flight-search-form">
       <div className="ui-field">
@@ -37,19 +56,35 @@ export function FlightSearchForm({ criteria }: { criteria: FlightSearchCriteria 
         required
       />
       <Input
-        defaultValue={criteria.departureDate}
         label="Departure"
+        min={today}
         name="departureDate"
+        onChange={(event) => {
+          const nextDeparture = event.target.value;
+          setDepartureDate(nextDeparture);
+          if (returnDate <= nextDeparture) {
+            setReturnDate(offsetLocalCalendarDate(nextDeparture, 1));
+          }
+          if (secondDate < nextDeparture) {
+            setSecondDate(nextDeparture);
+          }
+          if (thirdDate && thirdDate < nextDeparture) {
+            setThirdDate(nextDeparture);
+          }
+        }}
         required
         type="date"
+        value={departureDate}
       />
       {tripType === 'return' ? (
         <Input
-          defaultValue={criteria.returnDate}
           label="Return"
+          min={offsetLocalCalendarDate(departureDate, 1)}
           name="returnDate"
+          onChange={(event) => setReturnDate(event.target.value)}
           required
           type="date"
+          value={returnDate}
         />
       ) : null}
       {tripType === 'multi-city' ? (
@@ -69,11 +104,17 @@ export function FlightSearchForm({ criteria }: { criteria: FlightSearchCriteria 
             required
           />
           <Input
-            defaultValue={second?.departureDate ?? '2026-09-18'}
             label="Segment 2 departure"
+            min={departureDate}
             name="segment2Date"
+            onChange={(event) => {
+              const nextSecondDate = event.target.value;
+              setSecondDate(nextSecondDate);
+              if (thirdDate && thirdDate < nextSecondDate) setThirdDate(nextSecondDate);
+            }}
             required
             type="date"
+            value={secondDate}
           />
           <Input
             defaultValue={third?.origin}
@@ -88,10 +129,12 @@ export function FlightSearchForm({ criteria }: { criteria: FlightSearchCriteria 
             name="segment3Destination"
           />
           <Input
-            defaultValue={third?.departureDate}
             label="Segment 3 departure (optional)"
+            min={secondDate}
             name="segment3Date"
+            onChange={(event) => setThirdDate(event.target.value)}
             type="date"
+            value={thirdDate}
           />
         </>
       ) : null}

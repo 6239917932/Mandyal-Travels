@@ -1,16 +1,9 @@
 import { isValidEmail, isValidName, normalizeEmail } from '../auth/validation.ts';
 import type { CreatePartnerDirectBookingRequest, HotelQuoteRequest } from '../../types/commerce.ts';
+import { formatIndiaCalendarDate, isValidCalendarDate } from '../../utils/localDate.ts';
 
 export const PARTNER_DIRECT_IDEMPOTENCY_PATTERN =
   /^partner-direct-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-function isCalendarDate(value: string): boolean {
-  if (!DATE_PATTERN.test(value)) return false;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
 
 function integer(value: unknown, minimum: number, maximum: number): value is number {
   return Number.isInteger(value) && Number(value) >= minimum && Number(value) <= maximum;
@@ -29,10 +22,10 @@ export function parsePartnerDirectQuoteRequest(
     rooms: Number(value.rooms),
     roomTypeId: String(value.roomTypeId ?? '').trim(),
   };
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatIndiaCalendarDate();
   if (
-    !isCalendarDate(request.checkInDate) ||
-    !isCalendarDate(request.checkOutDate) ||
+    !isValidCalendarDate(request.checkInDate) ||
+    !isValidCalendarDate(request.checkOutDate) ||
     request.checkInDate < today ||
     request.checkOutDate <= request.checkInDate ||
     !integer(request.rooms, 1, 20) ||

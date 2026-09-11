@@ -3,6 +3,7 @@ import { normalizeEmail } from '@/lib/auth/validation';
 import { createBookingAccessToken, hashBookingAccessToken } from '@/lib/bookingAccessToken';
 import { createBookingReference } from '@/lib/confirmationCode';
 import { prisma } from '@/lib/prisma';
+import { formatIndiaCalendarDate } from '@/utils/localDate';
 
 import {
   availabilityLockRepository,
@@ -139,7 +140,7 @@ export class HotelBookingService {
       );
     }
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatIndiaCalendarDate();
     if (request.checkInDate < today) {
       throw new HotelBookingRuleError('PAST_CHECK_IN', 'Check-in date cannot be in the past.');
     }
@@ -580,7 +581,7 @@ export class HotelBookingService {
     }
 
     const nights = calculateNights(request.requestedCheckInDate, request.requestedCheckOutDate);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatIndiaCalendarDate();
     if (!Number.isFinite(nights) || nights < 1 || request.requestedCheckInDate < today) {
       throw new HotelBookingRuleError(
         'INVALID_AMENDMENT_DATES',
@@ -709,7 +710,7 @@ export class HotelBookingService {
     hotelSlugs?: string[],
   ): Promise<PartnerInventoryRecord[]> {
     const nights = calculateNights(checkInDate, checkOutDate);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatIndiaCalendarDate();
     if (!Number.isFinite(nights) || nights < 1 || checkInDate < today) {
       throw new HotelBookingRuleError(
         'INVALID_INVENTORY_DATES',
@@ -772,7 +773,7 @@ export class HotelBookingService {
     hotelSlugs?: string[],
   ): Promise<PartnerInventoryRecord[]> {
     const nights = calculateNights(input.checkInDate, input.checkOutDate);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatIndiaCalendarDate();
     if (!Number.isFinite(nights) || nights < 1 || input.checkInDate < today) {
       throw new HotelBookingRuleError(
         'INVALID_INVENTORY_DATES',
@@ -821,7 +822,7 @@ export class HotelBookingService {
       );
     }
     const nights = calculateNights(pending.requestedCheckInDate, pending.requestedCheckOutDate);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatIndiaCalendarDate();
     if (!Number.isFinite(nights) || nights < 1 || pending.requestedCheckInDate < today) {
       throw new HotelBookingRuleError(
         'INVALID_AMENDMENT_DATES',

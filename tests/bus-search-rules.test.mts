@@ -45,6 +45,10 @@ test('bus criteria enforce routes, passenger bounds and dates', () => {
     () => validateBusSearchCriteria({ ...criteria, travelDate: '2026-08-14' }, '2026-08-15'),
     /cannot be in the past/,
   );
+  assert.throws(
+    () => validateBusSearchCriteria({ ...criteria, travelDate: '2026-02-30' }, '2026-01-01'),
+    /valid travel date/,
+  );
 });
 
 test('bus offers must match route, date, inventory, timing and price', () => {

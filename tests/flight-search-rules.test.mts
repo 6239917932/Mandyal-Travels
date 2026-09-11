@@ -58,6 +58,14 @@ test('flight criteria enforce airports, passenger bounds and travel dates', () =
       ),
     /cannot be in the past/,
   );
+  assert.throws(
+    () =>
+      validateFlightSearchCriteria(
+        { ...criteria, departureDate: '2026-02-30' },
+        { today: '2026-01-01' },
+      ),
+    /valid departure date/,
+  );
 });
 
 test('return searches require a return after departure', () => {

@@ -4,12 +4,13 @@ import {
 } from '@/repositories/busOfferRepository';
 import type { BusOffer, BusSearchCriteria } from '@/types/bus';
 import { normalizeBusOffer, validateBusSearchCriteria } from '@/lib/bus/searchRules';
+import { formatIndiaCalendarDate } from '@/utils/localDate';
 
 export class BusService {
   constructor(private readonly supplier: BusSupplierAdapter = new CompositeBusSupplierAdapter()) {}
 
   async search(criteria: BusSearchCriteria): Promise<BusOffer[]> {
-    validateBusSearchCriteria(criteria, new Date().toISOString().slice(0, 10));
+    validateBusSearchCriteria(criteria, formatIndiaCalendarDate());
     const offers = await this.supplier.search(criteria);
     return offers
       .map((offer) => normalizeBusOffer(offer, criteria))
