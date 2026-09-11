@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
+import {
+  PARTNER_AGREEMENTS,
+  PARTNER_AGREEMENT_VERSION,
+  type PartnerAgreementType,
+} from '@/lib/partner/partnerAgreementPolicy';
 
 export function PartnerApplicationForm({
   defaultEmail,
@@ -18,6 +23,8 @@ export function PartnerApplicationForm({
   const router = useRouter();
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
+  const [partnerType, setPartnerType] = useState<PartnerAgreementType>('HOTEL');
+  const agreement = PARTNER_AGREEMENTS[partnerType];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +60,13 @@ export function PartnerApplicationForm({
         <Input label="Business name" maxLength={120} name="businessName" required />
         <label className="ui-field">
           <span className="ui-field__label">Supplier channel</span>
-          <select className="ui-input" name="partnerType" required>
+          <select
+            className="ui-input"
+            name="partnerType"
+            onChange={(event) => setPartnerType(event.target.value as PartnerAgreementType)}
+            required
+            value={partnerType}
+          >
             <option value="HOTEL">Hotel owner or property manager</option>
             <option value="CAR">Car owner or fleet operator</option>
             <option value="BUS">Bus operator</option>
@@ -77,6 +90,54 @@ export function PartnerApplicationForm({
           type="email"
         />
       </div>
+      <div className="auth-form__row">
+        <Input
+          label="Signatory role or authority"
+          maxLength={100}
+          name="signingAuthority"
+          placeholder="Example: Owner, Director, authorised manager"
+          required
+        />
+        <Input
+          label="Operating licence or permit number"
+          maxLength={80}
+          name="operatingLicenceNumber"
+          required
+        />
+      </div>
+      <div className="auth-form__row">
+        <Input
+          label="Licence or permit issuing authority"
+          maxLength={120}
+          name="operatingLicenceIssuer"
+          required
+        />
+        <Input
+          label="Licence expiry (leave blank if no expiry)"
+          name="operatingLicenceExpiresOn"
+          type="date"
+        />
+      </div>
+      <div className="auth-form__row">
+        <Input
+          label={`${partnerType === 'HOTEL' ? 'Public liability / business' : 'Vehicle'} insurance policy number${partnerType === 'HOTEL' ? ' (if applicable)' : ''}`}
+          maxLength={80}
+          name="insurancePolicyNumber"
+          required={partnerType !== 'HOTEL'}
+        />
+        <Input
+          label={`Insurance provider${partnerType === 'HOTEL' ? ' (if applicable)' : ''}`}
+          maxLength={120}
+          name="insuranceProvider"
+          required={partnerType !== 'HOTEL'}
+        />
+      </div>
+      <Input
+        label="Insurance expiry (if applicable)"
+        name="insuranceExpiresOn"
+        required={partnerType !== 'HOTEL'}
+        type="date"
+      />
       <div className="auth-form__row">
         <Input label="Phone number" maxLength={30} name="contactPhone" required type="tel" />
         <Input label="Operating city" maxLength={100} name="city" required />
@@ -126,11 +187,69 @@ export function PartnerApplicationForm({
         Submitting this form does not grant supplier access. Mandyal Travels verifies and activates
         every supplier account.
       </p>
+      <div className="ui-card ui-card--padded">
+        <strong>{agreement.title}</strong>
+        <p>
+          Review version {PARTNER_AGREEMENT_VERSION} before submitting. A copy will also be emailed
+          to you for signature and return.
+        </p>
+        <a href={agreement.documentPath} rel="noreferrer" target="_blank">
+          Download and review the agreement
+        </a>
+      </div>
       <label className="supplier-form__checkbox">
         <input name="kycConsent" required type="checkbox" />
         <span>
           I confirm I am authorized to submit these verification details and consent to their use
           for supplier due diligence.
+        </span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackAuthority" required type="checkbox" />
+        <span>I am authorised to bind the applying business and submit this application.</span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackAgreement" required type="checkbox" />
+        <span>I have read and accept the applicable versioned partner agreement.</span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackIdentity" required type="checkbox" />
+        <span>The identity and signing-authority information supplied is genuine and current.</span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackOperatingRecords" required type="checkbox" />
+        <span>
+          I will keep all applicable licences, permits, registrations, insurance, tax, safety,
+          vehicle, driver and operating records valid and produce them promptly when required by
+          Mandyal Travels or a competent authority.
+        </span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackElectronicDelivery" required type="checkbox" />
+        <span>I consent to receive this agreement and verification notices electronically.</span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackSignedReturn" required type="checkbox" />
+        <span>
+          I will sign or e-sign the complete agreement, stamp it if available, and return it from
+          the registered business email.
+        </span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackApprovalGate" required type="checkbox" />
+        <span>I understand that submission does not create approval or listing rights.</span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackMaterialChanges" required type="checkbox" />
+        <span>
+          I will promptly notify Mandyal Travels of material compliance or ownership changes.
+        </span>
+      </label>
+      <label className="supplier-form__checkbox">
+        <input name="ackServiceResponsibility" required type="checkbox" />
+        <span>
+          I accept responsibility for safely and lawfully delivering the accommodation or transport
+          service and for acts and omissions within the supplier&apos;s control.
         </span>
       </label>
       {error ? (

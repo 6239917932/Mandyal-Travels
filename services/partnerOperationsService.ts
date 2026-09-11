@@ -30,6 +30,11 @@ import {
   vehicleMayBePublished,
 } from '@/lib/partner/listingRiskRules';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
+import {
+  PARTNER_AGREEMENT_VERSION,
+  PARTNER_AGREEMENTS,
+  type PartnerApplicationAcknowledgement,
+} from '@/lib/partner/partnerAgreementPolicy';
 
 const DAY_MS = 86_400_000;
 const MAX_CALENDAR_DAYS = 93;
@@ -47,6 +52,10 @@ export class PartnerOperationsError extends Error {
 
 function normalizeText(value: string, maximum: number) {
   return value.trim().replace(/\s+/g, ' ').slice(0, maximum);
+}
+
+function isCurrentExpiry(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && value > new Date().toISOString().slice(0, 10);
 }
 
 function enumerateDates(startDate: string, endDate: string) {
@@ -422,6 +431,14 @@ export const partnerOperationsService = {
     registrationId: string;
     identityType: string;
     identityReference: string;
+    signingAuthority: string;
+    operatingLicenceNumber: string;
+    operatingLicenceIssuer: string;
+    operatingLicenceExpiresOn: string;
+    insurancePolicyNumber: string;
+    insuranceProvider: string;
+    insuranceExpiresOn: string;
+    acknowledgements: Record<PartnerApplicationAcknowledgement, true>;
   }) {
     if (!['HOTEL', 'CAR', 'BUS'].includes(input.partnerType)) {
       throw new PartnerOperationsError(
@@ -442,6 +459,15 @@ export const partnerOperationsService = {
         input.taxIdentifier.trim().toUpperCase(),
       ) ||
       input.registrationId.trim().length < 3 ||
+      input.signingAuthority.trim().length < 2 ||
+      input.operatingLicenceNumber.trim().length < 2 ||
+      input.operatingLicenceIssuer.trim().length < 2 ||
+      ((input.partnerType === 'CAR' || input.partnerType === 'BUS') &&
+        (input.insurancePolicyNumber.trim().length < 2 ||
+          input.insuranceProvider.trim().length < 2 ||
+          !isCurrentExpiry(input.insuranceExpiresOn))) ||
+      (input.operatingLicenceExpiresOn && !isCurrentExpiry(input.operatingLicenceExpiresOn)) ||
+      (input.insuranceExpiresOn && !isCurrentExpiry(input.insuranceExpiresOn)) ||
       !['AADHAAR_LAST4', 'PASSPORT', 'DRIVING_LICENCE'].includes(input.identityType) ||
       (input.identityType === 'AADHAAR_LAST4'
         ? !/^\d{4}$/.test(input.identityReference.trim())
@@ -482,7 +508,67 @@ export const partnerOperationsService = {
         registeredAddress: normalizeText(input.registeredAddress, 300),
         registrationId: normalizeText(input.registrationId, 60),
         taxIdentifier: input.taxIdentifier.trim().toUpperCase(),
+        signingAuthority: normalizeText(input.signingAuthority, 100),
+        operatingLicenceNumber: normalizeText(input.operatingLicenceNumber, 80),
+        operatingLicenceIssuer: normalizeText(input.operatingLicenceIssuer, 120),
+        operatingLicenceExpiresOn: input.operatingLicenceExpiresOn,
+        insurancePolicyNumber: normalizeText(input.insurancePolicyNumber, 80),
+        insuranceProvider: normalizeText(input.insuranceProvider, 120),
+        insuranceExpiresOn: input.insuranceExpiresOn,
+        complianceDeclarationsJson: JSON.stringify({
+          acknowledgements: input.acknowledgements,
+          declaredAt: new Date().toISOString(),
+          recordsRetainedByPartner: true,
+        }),
+        agreementAcceptedAt: new Date(),
+        agreementDocumentPath:
+          PARTNER_AGREEMENTS[input.partnerType as 'HOTEL' | 'CAR' | 'BUS'].documentPath,
+        agreementContentHash:
+          PARTNER_AGREEMENTS[input.partnerType as 'HOTEL' | 'CAR' | 'BUS'].contentSha256,
+        agreementVersion: PARTNER_AGREEMENT_VERSION,
       },
+    });
+  },
+
+  async recordSignedAgreementReceipt(input: {
+    applicationId: string;
+    note: string;
+    reviewerUserId: string;
+  }) {
+    const note = normalizeText(input.note, 500);
+    if (note.length < 5) {
+      throw new PartnerOperationsError(
+        'SIGNED_AGREEMENT_NOTE_REQUIRED',
+        'Record where and when the complete signed agreement was reviewed.',
+      );
+    }
+    const application = await prisma.partnerApplication.findUnique({
+      where: { id: input.applicationId },
+    });
+    if (!application || application.status !== 'PENDING') {
+      throw new PartnerOperationsError(
+        'APPLICATION_UNAVAILABLE',
+        'This supplier application is no longer awaiting review.',
+      );
+    }
+    if (
+      !application.agreementVersion ||
+      !application.agreementContentHash ||
+      application.agreementEmailStatus !== 'SENT'
+    ) {
+      throw new PartnerOperationsError(
+        'AGREEMENT_DELIVERY_UNCONFIRMED',
+        'The versioned agreement must be delivered before its signed return can be recorded.',
+      );
+    }
+    return prisma.partnerApplication.update({
+      data: {
+        signedAgreementNote: note,
+        signedAgreementReceivedAt: new Date(),
+        signedAgreementReceivedByUserId: input.reviewerUserId,
+        signedAgreementStatus: 'RECEIVED',
+      },
+      where: { id: application.id },
     });
   },
 
@@ -553,6 +639,18 @@ export const partnerOperationsService = {
             'Payment or waiver, current phone OTP, and the approved agreement are required before approval.',
           );
         }
+      }
+      if (
+        !application.agreementVersion ||
+        !application.agreementContentHash ||
+        application.agreementEmailStatus !== 'SENT' ||
+        application.signedAgreementStatus !== 'RECEIVED' ||
+        !application.signedAgreementReceivedAt
+      ) {
+        throw new PartnerOperationsError(
+          'SIGNED_AGREEMENT_REQUIRED',
+          'Confirm delivery and review the complete signed partner agreement before approval.',
+        );
       }
       if (
         application.partnerType !== 'BUS' &&

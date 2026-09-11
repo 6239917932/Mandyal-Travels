@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildPartnerKycObjectKey,
+  auditablePartnerKycDocuments,
   effectivePartnerKycStatus,
   evaluatePartnerKycTransition,
   normalizePartnerKycMetadata,
@@ -13,10 +14,14 @@ import {
   validatePartnerKycDocumentDates,
 } from '../lib/partner/kycDocumentRules.ts';
 
-test('partner types receive shared and inventory-specific evidence requirements', () => {
-  assert.ok(requiredPartnerKycDocuments('HOTEL').includes('HOTEL_OPERATING_LICENCE'));
-  assert.ok(requiredPartnerKycDocuments('BUS').includes('VEHICLE_PERMIT'));
-  assert.ok(requiredPartnerKycDocuments('CAR').includes('DRIVER_LICENCE'));
+test('activation requires identity and signed contract while operating records remain auditable', () => {
+  assert.deepEqual(requiredPartnerKycDocuments('HOTEL'), [
+    'AUTHORIZED_REPRESENTATIVE_ID',
+    'PARTNER_CONTRACT',
+  ]);
+  assert.ok(auditablePartnerKycDocuments('HOTEL').includes('HOTEL_OPERATING_LICENCE'));
+  assert.ok(auditablePartnerKycDocuments('BUS').includes('VEHICLE_PERMIT'));
+  assert.ok(auditablePartnerKycDocuments('CAR').includes('DRIVER_LICENCE'));
   assert.equal(partnerKycDocumentPolicy('HOTEL_OPERATING_LICENCE').allowedPartnerTypes[0], 'HOTEL');
 });
 

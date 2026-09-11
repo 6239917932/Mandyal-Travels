@@ -9,16 +9,22 @@ import type { ApiErrorResponse } from '@/types/commerce';
 export function AdminPartnerReview({
   applicationId,
   approvalAllowed = true,
+  agreementEmailStatus,
+  signedAgreementStatus,
 }: {
   applicationId: string;
   approvalAllowed?: boolean;
+  agreementEmailStatus: string;
+  signedAgreementStatus: string;
 }) {
   const router = useRouter();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
-  async function review(action: 'APPROVE' | 'REJECT') {
+  async function review(
+    action: 'APPROVE' | 'REJECT' | 'RECORD_SIGNED_AGREEMENT' | 'RESEND_AGREEMENT',
+  ) {
     setBusy(true);
     setError(undefined);
     try {
@@ -49,10 +55,32 @@ export function AdminPartnerReview({
           id={`partner-review-note-${applicationId}`}
           maxLength={250}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="Required for rejection"
+          placeholder="Required for rejection or signed-agreement receipt"
           value={note}
         />
       </label>
+      {agreementEmailStatus === 'FAILED' || agreementEmailStatus === 'PENDING' ? (
+        <button
+          className="ui-button ui-button--secondary"
+          disabled={busy}
+          onClick={() => review('RESEND_AGREEMENT')}
+          type="button"
+        >
+          Retry agreement email
+        </button>
+      ) : null}
+      {signedAgreementStatus !== 'RECEIVED' ? (
+        <button
+          className="ui-button ui-button--secondary"
+          disabled={busy || agreementEmailStatus !== 'SENT' || note.trim().length < 5}
+          onClick={() => review('RECORD_SIGNED_AGREEMENT')}
+          type="button"
+        >
+          Record complete signed agreement received
+        </button>
+      ) : (
+        <small>Complete signed agreement recorded.</small>
+      )}
       <button
         className="ui-button ui-button--primary"
         disabled={busy || !approvalAllowed}
@@ -63,7 +91,7 @@ export function AdminPartnerReview({
       </button>
       {!approvalAllowed ? (
         <small>
-          Approval is locked until every required evidence item is verified and current.
+          Approval is locked until identity evidence and the complete signed agreement are verified.
         </small>
       ) : null}
       <button

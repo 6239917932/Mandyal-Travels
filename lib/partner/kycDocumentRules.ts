@@ -205,14 +205,19 @@ export function partnerKycDocumentPolicy(
 export function requiredPartnerKycDocuments(
   partnerType: PartnerKycPartnerType,
 ): readonly PartnerKycDocumentType[] {
+  void partnerType;
+  return ['AUTHORIZED_REPRESENTATIVE_ID', 'PARTNER_CONTRACT'];
+}
+
+export function auditablePartnerKycDocuments(
+  partnerType: PartnerKycPartnerType,
+): readonly PartnerKycDocumentType[] {
   const shared: PartnerKycDocumentType[] = [
     'BUSINESS_REGISTRATION',
     'PAN',
     'GST_REGISTRATION',
     'REGISTERED_ADDRESS_PROOF',
-    'AUTHORIZED_REPRESENTATIVE_ID',
     'BANK_ACCOUNT_PROOF',
-    'PARTNER_CONTRACT',
   ];
   if (partnerType === 'HOTEL') return [...shared, 'HOTEL_OPERATING_LICENCE'];
   return [

@@ -6,6 +6,7 @@ import {
 } from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
+import { sendPartnerAgreementEmail } from '@/services/partnerAgreementEmailService';
 
 type Context = { params: Promise<{ applicationId: string }> };
 const failure = (code: string, message: string, status: number) =>
@@ -17,12 +18,30 @@ export async function PATCH(request: Request, { params }: Context) {
   const body = await readJsonObject(request);
   const action = body?.action;
   const reviewNote = typeof body?.reviewNote === 'string' ? body.reviewNote.trim() : '';
-  if (action !== 'APPROVE' && action !== 'REJECT')
-    return failure('INVALID_DECISION', 'Choose approve or reject.', 400);
+  if (
+    action !== 'APPROVE' &&
+    action !== 'REJECT' &&
+    action !== 'RECORD_SIGNED_AGREEMENT' &&
+    action !== 'RESEND_AGREEMENT'
+  )
+    return failure('INVALID_DECISION', 'Choose a valid supplier review action.', 400);
   if (action === 'REJECT' && reviewNote.length < 3)
     return failure('REVIEW_NOTE_REQUIRED', 'Add a short rejection reason.', 400);
   try {
     const { applicationId } = await params;
+    if (action === 'RESEND_AGREEMENT') {
+      await sendPartnerAgreementEmail(applicationId);
+      return Response.json({ data: { applicationId } });
+    }
+    if (action === 'RECORD_SIGNED_AGREEMENT') {
+      return Response.json({
+        data: await partnerOperationsService.recordSignedAgreementReceipt({
+          applicationId,
+          note: reviewNote,
+          reviewerUserId: admin.id,
+        }),
+      });
+    }
     const [
       paidOnboardingEnabled,
       payoutOnboardingEnabled,

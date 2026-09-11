@@ -149,9 +149,27 @@ export default async function AdminPartnersPage() {
                     verified
                   </strong>
                 </p>
+                <p>
+                  <strong>Agreement v{item.agreementVersion || 'not assigned'}</strong>
+                  <br />
+                  Email: {item.agreementEmailStatus.replaceAll('_', ' ')} · Signed return:{' '}
+                  {item.signedAgreementStatus.replaceAll('_', ' ')}
+                  {item.agreementDocumentPath ? (
+                    <>
+                      <br />
+                      <a href={item.agreementDocumentPath} rel="noreferrer" target="_blank">
+                        Open issued agreement
+                      </a>
+                    </>
+                  ) : null}
+                </p>
                 <AdminPartnerReview
+                  agreementEmailStatus={item.agreementEmailStatus}
                   applicationId={item.id}
-                  approvalAllowed={summary?.complete === true}
+                  approvalAllowed={
+                    summary?.complete === true && item.signedAgreementStatus === 'RECEIVED'
+                  }
+                  signedAgreementStatus={item.signedAgreementStatus}
                 />
               </Card>
             );
