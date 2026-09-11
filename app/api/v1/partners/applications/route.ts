@@ -11,6 +11,12 @@ import {
   assertPartnerEnrollmentComplete,
   PartnerEnrollmentError,
 } from '@/services/partnerEnrollmentService';
+import { after } from 'next/server';
+import {
+  isPartnerAgreementType,
+  readPartnerApplicationAcknowledgements,
+} from '@/lib/partner/partnerAgreementPolicy';
+import { sendPartnerAgreementEmail } from '@/services/partnerAgreementEmailService';
 
 function failure(code: string, message: string, status: number) {
   return Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
@@ -68,11 +74,27 @@ export async function POST(request: Request) {
     'registrationId',
     'identityType',
     'identityReference',
+    'signingAuthority',
+    'operatingLicenceNumber',
+    'operatingLicenceIssuer',
+    'operatingLicenceExpiresOn',
+    'insurancePolicyNumber',
+    'insuranceProvider',
+    'insuranceExpiresOn',
   ] as const;
   if (required.some((key) => typeof body[key] !== 'string'))
     return failure('INVALID_APPLICATION', 'Complete every onboarding field.', 400);
   if (body.kycConsent !== 'on')
     return failure('KYC_CONSENT_REQUIRED', 'Supplier due-diligence consent is required.', 400);
+  if (!isPartnerAgreementType(body.partnerType))
+    return failure('INVALID_PARTNER_TYPE', 'Choose hotel, car, or bus supplier onboarding.', 400);
+  const acknowledgements = readPartnerApplicationAcknowledgements(body);
+  if (!acknowledgements)
+    return failure(
+      'AGREEMENT_ACKNOWLEDGEMENT_REQUIRED',
+      'Review and accept every supplier agreement and compliance acknowledgement.',
+      400,
+    );
   try {
     const data = await partnerOperationsService.createApplication({
       applicantUserId: user.id,
@@ -89,7 +111,16 @@ export async function POST(request: Request) {
       registrationId: String(body.registrationId),
       identityType: String(body.identityType),
       identityReference: String(body.identityReference),
+      signingAuthority: String(body.signingAuthority),
+      operatingLicenceNumber: String(body.operatingLicenceNumber),
+      operatingLicenceIssuer: String(body.operatingLicenceIssuer),
+      operatingLicenceExpiresOn: String(body.operatingLicenceExpiresOn),
+      insurancePolicyNumber: String(body.insurancePolicyNumber),
+      insuranceProvider: String(body.insuranceProvider),
+      insuranceExpiresOn: String(body.insuranceExpiresOn),
+      acknowledgements,
     });
+    after(() => sendPartnerAgreementEmail(data.id));
     return Response.json({ data }, { status: 201 });
   } catch (error) {
     return error instanceof PartnerOperationsError

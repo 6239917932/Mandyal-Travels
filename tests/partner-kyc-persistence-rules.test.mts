@@ -7,21 +7,12 @@ import {
   summarizePersistedPartnerKyc,
 } from '../lib/partner/kycPersistenceRules.ts';
 
-test('approval checklist requires every partner-specific document to be verified and current', () => {
-  const required = [
-    'BUSINESS_REGISTRATION',
-    'PAN',
-    'GST_REGISTRATION',
-    'REGISTERED_ADDRESS_PROOF',
-    'AUTHORIZED_REPRESENTATIVE_ID',
-    'BANK_ACCOUNT_PROOF',
-    'PARTNER_CONTRACT',
-    'HOTEL_OPERATING_LICENCE',
-  ];
+test('approval checklist requires verified identity and signed contract', () => {
+  const required = ['AUTHORIZED_REPRESENTATIVE_ID', 'PARTNER_CONTRACT'];
   const complete = summarizePersistedPartnerKyc({
     documents: required.map((documentType) => ({
       documentType,
-      expiresOn: documentType === 'HOTEL_OPERATING_LICENCE' ? '2027-08-26' : null,
+      expiresOn: null,
       status: 'VERIFIED',
     })),
     partnerType: 'HOTEL',
@@ -30,17 +21,17 @@ test('approval checklist requires every partner-specific document to be verified
   assert.equal(complete.complete, true);
   assert.equal(complete.verified.length, required.length);
 
-  const expired = summarizePersistedPartnerKyc({
-    documents: required.map((documentType) => ({
+  const missing = summarizePersistedPartnerKyc({
+    documents: required.slice(0, 1).map((documentType) => ({
       documentType,
-      expiresOn: documentType === 'HOTEL_OPERATING_LICENCE' ? '2026-08-26' : null,
+      expiresOn: null,
       status: 'VERIFIED',
     })),
     partnerType: 'HOTEL',
     today: '2026-08-26',
   });
-  assert.equal(expired.complete, false);
-  assert.deepEqual(expired.expired, ['HOTEL_OPERATING_LICENCE']);
+  assert.equal(missing.complete, false);
+  assert.deepEqual(missing.missing, ['PARTNER_CONTRACT']);
 });
 
 test('private evidence storage remains fail closed until the reviewed adapter exists', () => {

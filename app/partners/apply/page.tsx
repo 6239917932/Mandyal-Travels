@@ -133,6 +133,25 @@ export default async function PartnerApplicationPage() {
             Your {application.partnerType.toLowerCase()} supplier request is in the review queue. No
             inventory access has been granted yet.
           </p>
+          <p>
+            <strong>Agreement v{application.agreementVersion || 'not assigned'}</strong>
+            <br />
+            Delivery: {application.agreementEmailStatus.replaceAll('_', ' ')} · Signed return:{' '}
+            {application.signedAgreementStatus.replaceAll('_', ' ')}
+          </p>
+          {application.agreementDocumentPath ? (
+            <p>
+              <a href={application.agreementDocumentPath}>Download your issued agreement</a>, sign
+              or e-sign every required signature field, stamp it if available, and reply to the
+              agreement email with the complete copy.
+            </p>
+          ) : null}
+          {application.agreementEmailStatus === 'FAILED' ? (
+            <p className="booking-page__payment-error" role="alert">
+              Agreement email delivery needs administrator attention. Your application remains
+              safely pending.
+            </p>
+          ) : null}
           {kycSummary ? (
             <>
               <p>

@@ -1,0 +1,21 @@
+ALTER TABLE "PartnerApplication" ADD COLUMN "signingAuthority" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "operatingLicenceNumber" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "operatingLicenceIssuer" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "operatingLicenceExpiresOn" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "insurancePolicyNumber" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "insuranceProvider" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "insuranceExpiresOn" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "complianceDeclarationsJson" TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementVersion" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementDocumentPath" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementContentHash" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementAcceptedAt" DATETIME;
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementEmailStatus" TEXT NOT NULL DEFAULT 'PENDING';
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementEmailSentAt" DATETIME;
+ALTER TABLE "PartnerApplication" ADD COLUMN "agreementEmailError" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "signedAgreementStatus" TEXT NOT NULL DEFAULT 'AWAITING_RETURN';
+ALTER TABLE "PartnerApplication" ADD COLUMN "signedAgreementReceivedAt" DATETIME;
+ALTER TABLE "PartnerApplication" ADD COLUMN "signedAgreementReceivedByUserId" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "PartnerApplication" ADD COLUMN "signedAgreementNote" TEXT NOT NULL DEFAULT '';
+
+CREATE INDEX "PartnerApplication_signedAgreementStatus_createdAt_idx" ON "PartnerApplication"("signedAgreementStatus", "createdAt");

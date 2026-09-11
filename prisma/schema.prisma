@@ -565,6 +565,25 @@ model PartnerApplication {
   registrationId    String                    @default("")
   identityType      String                    @default("")
   identityReference String                    @default("")
+  signingAuthority  String                    @default("")
+  operatingLicenceNumber String               @default("")
+  operatingLicenceIssuer String               @default("")
+  operatingLicenceExpiresOn String            @default("")
+  insurancePolicyNumber String                @default("")
+  insuranceProvider String                    @default("")
+  insuranceExpiresOn String                   @default("")
+  complianceDeclarationsJson String           @default("{}")
+  agreementVersion String                     @default("")
+  agreementDocumentPath String                @default("")
+  agreementContentHash String                 @default("")
+  agreementAcceptedAt DateTime?
+  agreementEmailStatus String                 @default("PENDING")
+  agreementEmailSentAt DateTime?
+  agreementEmailError String                  @default("")
+  signedAgreementStatus String                @default("AWAITING_RETURN")
+  signedAgreementReceivedAt DateTime?
+  signedAgreementReceivedByUserId String      @default("")
+  signedAgreementNote String                  @default("")
   kycStatus         String                    @default("SUBMITTED")
   kycConsentAt      DateTime?
   status            String                    @default("PENDING")
@@ -581,6 +600,7 @@ model PartnerApplication {
   @@index([status, createdAt])
   @@index([applicantUserId, createdAt])
   @@index([kycStatus, createdAt])
+  @@index([signedAgreementStatus, createdAt])
 }
 
 model PartnerKycDocument {
