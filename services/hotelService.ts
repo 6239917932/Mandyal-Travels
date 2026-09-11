@@ -20,6 +20,7 @@ import type {
   Money,
 } from '@/types/hotel';
 import type { HotelRepository } from '@/repositories/hotelRepository';
+import { formatIndiaCalendarDate, isValidCalendarDate } from '@/utils/localDate';
 
 function calculateNights(checkInDate: string, checkOutDate: string): number {
   const checkIn = new Date(`${checkInDate}T00:00:00Z`);
@@ -94,6 +95,12 @@ export class HotelService {
     criteria: HotelSearchCriteria,
     filters: HotelSearchFilters,
   ): Promise<HotelSearchPage> {
+    if (!isValidCalendarDate(criteria.checkInDate) || !isValidCalendarDate(criteria.checkOutDate)) {
+      throw new Error('Enter valid check-in and check-out dates.');
+    }
+    if (criteria.checkInDate < formatIndiaCalendarDate()) {
+      throw new Error('Check-in date cannot be in the past.');
+    }
     const nights = calculateNights(criteria.checkInDate, criteria.checkOutDate);
 
     if (!Number.isFinite(nights) || nights < 1) {

@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { inventorySourceLabel } from '../lib/inventory/sourceLabels.ts';
-import { formatLocalCalendarDate, offsetLocalCalendarDate } from '../utils/localDate.ts';
+import {
+  formatIndiaCalendarDate,
+  formatLocalCalendarDate,
+  isValidCalendarDate,
+  offsetLocalCalendarDate,
+} from '../utils/localDate.ts';
 
 test('inventory provenance names the local PMS and external API paths explicitly', () => {
   assert.equal(inventorySourceLabel('direct'), 'Mandyal PMS/local inventory');
@@ -27,4 +32,7 @@ test('calendar formatting preserves positive-offset local dates without UTC roll
   const localMidnight = new Date(2026, 7, 23, 0, 30);
   assert.equal(formatLocalCalendarDate(localMidnight), '2026-08-23');
   assert.equal(offsetLocalCalendarDate('2026-08-23', 1), '2026-08-24');
+  assert.equal(formatIndiaCalendarDate(new Date('2026-09-10T20:00:00.000Z')), '2026-09-11');
+  assert.equal(isValidCalendarDate('2026-02-28'), true);
+  assert.equal(isValidCalendarDate('2026-02-30'), false);
 });

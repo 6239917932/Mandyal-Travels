@@ -1,8 +1,22 @@
+'use client';
+
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { CarSearchCriteria } from '@/types/car';
+import { formatIndiaCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
 export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
+  const today = formatIndiaCalendarDate();
+  const initialPickup = criteria.pickupDate >= today ? criteria.pickupDate : today;
+  const [pickupDate, setPickupDate] = useState(initialPickup);
+  const [dropoffDate, setDropoffDate] = useState(
+    criteria.dropoffDate > initialPickup
+      ? criteria.dropoffDate
+      : offsetLocalCalendarDate(initialPickup, 1),
+  );
+
   return (
     <form action="/cars" className="car-search-form">
       <Input
@@ -18,11 +32,19 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         required
       />
       <Input
-        defaultValue={criteria.pickupDate}
         label="Pickup date"
+        min={today}
         name="pickupDate"
+        onChange={(event) => {
+          const nextPickup = event.target.value;
+          setPickupDate(nextPickup);
+          if (dropoffDate <= nextPickup) {
+            setDropoffDate(offsetLocalCalendarDate(nextPickup, 1));
+          }
+        }}
         required
         type="date"
+        value={pickupDate}
       />
       <Input
         defaultValue={criteria.pickupTime}
@@ -32,11 +54,13 @@ export function CarSearchForm({ criteria }: { criteria: CarSearchCriteria }) {
         type="time"
       />
       <Input
-        defaultValue={criteria.dropoffDate}
         label="Drop-off date"
+        min={offsetLocalCalendarDate(pickupDate, 1)}
         name="dropoffDate"
+        onChange={(event) => setDropoffDate(event.target.value)}
         required
         type="date"
+        value={dropoffDate}
       />
       <Input
         defaultValue={criteria.dropoffTime}

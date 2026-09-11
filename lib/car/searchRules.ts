@@ -1,4 +1,5 @@
 import type { CarOffer, CarSearchCriteria } from '../../types/car.ts';
+import { isValidCalendarDate } from '../../utils/localDate.ts';
 
 const DAY_MS = 86_400_000;
 const MAX_DRIVERS = 4;
@@ -35,6 +36,9 @@ export function validateCarSearchCriteria(criteria: CarSearchCriteria, today: st
     criteria.drivers > MAX_DRIVERS
   ) {
     throw new Error(`Drivers must be between 1 and ${MAX_DRIVERS}.`);
+  }
+  if (!isValidCalendarDate(criteria.pickupDate) || !isValidCalendarDate(criteria.dropoffDate)) {
+    throw new Error('Enter valid pickup and drop-off dates.');
   }
   if (criteria.pickupDate < today) throw new Error('Pickup date cannot be in the past.');
   if (!TIME_PATTERN.test(criteria.pickupTime) || !TIME_PATTERN.test(criteria.dropoffTime)) {

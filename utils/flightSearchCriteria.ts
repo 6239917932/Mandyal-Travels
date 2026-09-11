@@ -1,31 +1,35 @@
 import type { FlightSearchCriteria } from '@/types/flight';
+import { formatIndiaCalendarDate } from './localDate.ts';
 
-export const defaultFlightSearchCriteria: FlightSearchCriteria = {
-  adults: 1,
-  cabinClass: 'economy',
-  departureDate: '2026-09-15',
-  destination: 'BOM',
-  origin: 'DEL',
-  tripType: 'one-way',
-};
+export function createDefaultFlightSearchCriteria(now: Date = new Date()): FlightSearchCriteria {
+  return {
+    adults: 1,
+    cabinClass: 'economy',
+    departureDate: formatIndiaCalendarDate(now),
+    destination: 'BOM',
+    origin: 'DEL',
+    tripType: 'one-way',
+  };
+}
+
+export const defaultFlightSearchCriteria = createDefaultFlightSearchCriteria();
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 export function createFlightSearchCriteria(
   params: Record<string, string | string[] | undefined>,
 ): FlightSearchCriteria {
+  const defaults = createDefaultFlightSearchCriteria();
   const adults = Number(first(params.adults));
   const cabin = first(params.cabinClass);
   const trip = first(params.tripType);
   const tripType = trip === 'return' || trip === 'multi-city' ? trip : 'one-way';
-  const origin = (first(params.origin) ?? defaultFlightSearchCriteria.origin).trim().toUpperCase();
-  const destination = (first(params.destination) ?? defaultFlightSearchCriteria.destination)
-    .trim()
-    .toUpperCase();
-  const departureDate = first(params.departureDate) ?? defaultFlightSearchCriteria.departureDate;
+  const origin = (first(params.origin) ?? defaults.origin).trim().toUpperCase();
+  const destination = (first(params.destination) ?? defaults.destination).trim().toUpperCase();
+  const departureDate = first(params.departureDate) ?? defaults.departureDate;
   const segment2Origin = (first(params.segment2Origin) ?? destination).trim().toUpperCase();
   const segment2Destination = (first(params.segment2Destination) ?? 'BLR').trim().toUpperCase();
-  const segment2Date = first(params.segment2Date) ?? '2026-09-18';
+  const segment2Date = first(params.segment2Date) ?? departureDate;
   const segment3Origin = first(params.segment3Origin)?.trim().toUpperCase();
   const segment3Destination = first(params.segment3Destination)?.trim().toUpperCase();
   const segment3Date = first(params.segment3Date)?.trim();
@@ -46,10 +50,7 @@ export function createFlightSearchCriteria(
         ]
       : undefined;
   return {
-    adults:
-      Number.isInteger(adults) && adults >= 1 && adults <= 9
-        ? adults
-        : defaultFlightSearchCriteria.adults,
+    adults: Number.isInteger(adults) && adults >= 1 && adults <= 9 ? adults : defaults.adults,
     cabinClass: cabin === 'business' || cabin === 'premium-economy' ? cabin : 'economy',
     departureDate,
     destination,

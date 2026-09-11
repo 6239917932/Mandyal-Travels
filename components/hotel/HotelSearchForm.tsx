@@ -1,7 +1,12 @@
+'use client';
+
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { searchableHotelAmenities } from '@/constants/hotelAmenities';
 import type { HotelSearchCriteria, HotelSearchFilters } from '@/types/hotel';
+import { formatIndiaCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
 interface HotelSearchFormProps {
   criteria: HotelSearchCriteria;
@@ -9,6 +14,15 @@ interface HotelSearchFormProps {
 }
 
 export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
+  const today = formatIndiaCalendarDate();
+  const initialCheckIn = criteria.checkInDate >= today ? criteria.checkInDate : today;
+  const [checkInDate, setCheckInDate] = useState(initialCheckIn);
+  const [checkOutDate, setCheckOutDate] = useState(
+    criteria.checkOutDate > initialCheckIn
+      ? criteria.checkOutDate
+      : offsetLocalCalendarDate(initialCheckIn, 1),
+  );
+
   return (
     <form action="/hotels" className="hotel-search-form">
       <Input
@@ -99,19 +113,29 @@ export function HotelSearchForm({ criteria, filters }: HotelSearchFormProps) {
       </label>
 
       <Input
-        defaultValue={criteria.checkInDate}
         label="Check-in"
+        min={today}
         name="checkInDate"
+        onChange={(event) => {
+          const nextCheckIn = event.target.value;
+          setCheckInDate(nextCheckIn);
+          if (checkOutDate <= nextCheckIn) {
+            setCheckOutDate(offsetLocalCalendarDate(nextCheckIn, 1));
+          }
+        }}
         required
         type="date"
+        value={checkInDate}
       />
 
       <Input
-        defaultValue={criteria.checkOutDate}
         label="Check-out"
+        min={offsetLocalCalendarDate(checkInDate, 1)}
         name="checkOutDate"
+        onChange={(event) => setCheckOutDate(event.target.value)}
         required
         type="date"
+        value={checkOutDate}
       />
 
       <Input

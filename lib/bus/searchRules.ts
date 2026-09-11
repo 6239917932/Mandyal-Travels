@@ -1,4 +1,5 @@
 import type { BusOffer, BusSearchCriteria } from '../../types/bus.ts';
+import { isValidCalendarDate } from '../../utils/localDate.ts';
 
 const MAX_PASSENGERS = 6;
 
@@ -21,6 +22,7 @@ export function validateBusSearchCriteria(criteria: BusSearchCriteria, today: st
   ) {
     throw new Error(`Passengers must be between 1 and ${MAX_PASSENGERS}.`);
   }
+  if (!isValidCalendarDate(criteria.travelDate)) throw new Error('Enter a valid travel date.');
   if (criteria.travelDate < today) throw new Error('Travel date cannot be in the past.');
 }
 

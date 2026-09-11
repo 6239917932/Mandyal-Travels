@@ -8,11 +8,12 @@ import {
   rentalDurationDays,
   validateCarSearchCriteria,
 } from '@/lib/car/searchRules';
+import { formatIndiaCalendarDate } from '@/utils/localDate';
 
 export class CarService {
   constructor(private readonly supplier: CarSupplierAdapter = new CompositeCarSupplierAdapter()) {}
   async search(criteria: CarSearchCriteria): Promise<CarOffer[]> {
-    validateCarSearchCriteria(criteria, new Date().toISOString().slice(0, 10));
+    validateCarSearchCriteria(criteria, formatIndiaCalendarDate());
     return (await this.supplier.search(criteria))
       .map((offer) => normalizeCarOffer(offer, criteria))
       .filter((offer): offer is CarOffer => offer !== undefined)

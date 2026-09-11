@@ -1,4 +1,5 @@
 import type { FlightOffer, FlightSearchCriteria, FlightSegment } from '../../types/flight.ts';
+import { isValidCalendarDate } from '../../utils/localDate.ts';
 
 const AIRPORT_CODE_PATTERN = /^[A-Z]{3}$/;
 const MAX_ADULTS_PER_SEARCH = 9;
@@ -27,12 +28,17 @@ export function validateFlightSearchCriteria(
   ) {
     throw new Error(`Adults must be between 1 and ${MAX_ADULTS_PER_SEARCH}.`);
   }
+  if (!isValidCalendarDate(criteria.departureDate)) {
+    throw new Error('Enter a valid departure date.');
+  }
   if (criteria.departureDate < clock.today) {
     throw new Error('Departure date cannot be in the past.');
   }
   if (
     criteria.tripType === 'return' &&
-    (!criteria.returnDate || criteria.returnDate <= criteria.departureDate)
+    (!criteria.returnDate ||
+      !isValidCalendarDate(criteria.returnDate) ||
+      criteria.returnDate <= criteria.departureDate)
   ) {
     throw new Error('Return date must be later than departure date.');
   }
@@ -50,6 +56,9 @@ export function validateFlightSearchCriteria(
       }
       if (journey.origin === journey.destination) {
         throw new Error(`Multi-city segment ${index + 1} must use different airports.`);
+      }
+      if (!isValidCalendarDate(journey.departureDate)) {
+        throw new Error(`Multi-city segment ${index + 1} requires a valid departure date.`);
       }
       if (journey.departureDate < clock.today) {
         throw new Error(`Multi-city segment ${index + 1} cannot depart in the past.`);

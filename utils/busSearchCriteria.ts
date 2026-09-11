@@ -1,26 +1,32 @@
 import type { BusSearchCriteria } from '@/types/bus';
+import { formatIndiaCalendarDate } from './localDate.ts';
 
-export const defaultBusSearchCriteria: BusSearchCriteria = {
-  destination: 'Delhi',
-  origin: 'Chandigarh',
-  passengers: 1,
-  travelDate: '2026-09-20',
-};
+export function createDefaultBusSearchCriteria(now: Date = new Date()): BusSearchCriteria {
+  return {
+    destination: 'Delhi',
+    origin: 'Chandigarh',
+    passengers: 1,
+    travelDate: formatIndiaCalendarDate(now),
+  };
+}
+
+export const defaultBusSearchCriteria = createDefaultBusSearchCriteria();
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 export function createBusSearchCriteria(
   params: Record<string, string | string[] | undefined>,
 ): BusSearchCriteria {
+  const defaults = createDefaultBusSearchCriteria();
   const passengers = Number(first(params.passengers));
   return {
-    destination: (first(params.destination) ?? defaultBusSearchCriteria.destination).trim(),
-    origin: (first(params.origin) ?? defaultBusSearchCriteria.origin).trim(),
+    destination: (first(params.destination) ?? defaults.destination).trim(),
+    origin: (first(params.origin) ?? defaults.origin).trim(),
     passengers:
       Number.isInteger(passengers) && passengers >= 1 && passengers <= 6
         ? passengers
-        : defaultBusSearchCriteria.passengers,
-    travelDate: first(params.travelDate) ?? defaultBusSearchCriteria.travelDate,
+        : defaults.passengers,
+    travelDate: first(params.travelDate) ?? defaults.travelDate,
   };
 }
 
