@@ -8,7 +8,7 @@ const readyInput = {
   activeRatePlans: 1,
   activeRoomTypes: 1,
   approvalStatus: 'APPROVED',
-  commissionBasisPoints: 2_000,
+  commissionBasisPoints: 1_800,
   hasApprovedApplication: true,
   hasContactDetails: true,
   hasDescription: true,

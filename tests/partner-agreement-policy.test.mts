@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
@@ -9,13 +10,15 @@ import {
   readPartnerApplicationAcknowledgements,
 } from '../lib/partner/partnerAgreementPolicy.ts';
 
-test('every supported supplier type has a versioned agreement document', () => {
+test('every supported supplier type has a versioned agreement document with the declared hash', async () => {
   assert.match(PARTNER_AGREEMENT_VERSION, /^\d+\.\d+$/);
   for (const type of ['HOTEL', 'CAR', 'BUS'] as const) {
     const agreement = agreementForPartnerType(type);
     assert.equal(agreement, PARTNER_AGREEMENTS[type]);
     assert.match(agreement?.documentPath ?? '', /^\/legal\/partner-agreements\/.+\.docx$/);
     assert.match(agreement?.contentSha256 ?? '', /^[a-f0-9]{64}$/);
+    const bytes = await readFile(`public${agreement!.documentPath}`);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), agreement?.contentSha256);
   }
   assert.equal(agreementForPartnerType('FLIGHT'), null);
 });

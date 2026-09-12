@@ -104,9 +104,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Terms of use and booking',
     summary:
       'The rules for accounts, referrals, platform-facilitated bookings, payments, and use of Mandyal Travels.',
-    version: 'terms-v2.0-pending-legal-approval',
+    version: 'terms-v2.1-pending-legal-approval',
     status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    lastUpdated: '2026-09-13',
     sections: [
       {
         heading: 'Agreement and eligibility',
@@ -134,7 +134,16 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Prices, taxes, payment, and confirmation',
         paragraphs: [
           'Before commitment, the customer should see the supplier, service, dates, total price, taxes and fees, currency, payment recipient, cancellation terms, material restrictions, and whether confirmation is immediate or subject to supplier acceptance. Preview, crossed-out, or demonstration prices are not final offers.',
-          'A request is not confirmed until a confirmation reference is issued by the responsible party. Mandyal Travels is responsible for correcting its own transmission or platform errors and for safeguarding funds it actually receives, subject to applicable law and payment-provider processing.',
+          'A payment-required Mandyal marketplace or PMS-direct online request is not confirmed until the approved payment provider reports a successful capture and the platform issues a confirmation reference. Failed, expired, pending, mismatched, reversed, or unverified payments do not confirm a booking. A hotel-recorded cash, hotel-UPI, or hotel-POS transaction is an offline payment to the named supplier and must be identified as such; it is not money received or safeguarded by Mandyal Travels.',
+          'Mandyal marketplace bookings, PMS-direct online bookings, PMS-direct offline bookings, and external-OTA imports are separately classified. The applicable total, taxes, payment recipient, supplier credit, refund route, and any disclosed platform fee shown at confirmation form the transaction record. External-OTA payments remain subject to that OTA and supplier agreement and must not be represented as collected by Mandyal Travels.',
+          'Mandyal Travels is responsible for correcting its own transmission or platform errors and for safeguarding funds it actually receives through an approved payment arrangement, subject to applicable law and payment-provider processing. Statutory GST TCS or income-tax TDS credits belong to the supplier and are not Mandyal Travels revenue.',
+        ],
+      },
+      {
+        heading: 'During-stay charges and checkout',
+        paragraphs: [
+          'A guest folio may distinguish accommodation already paid to an OTA or other channel from restaurant, laundry, room service, transport, extra-bed, tax, and other lawful during-stay charges. The folio must not charge the same item twice and must identify which party collected each payment.',
+          'Where an enabled Mandyal payment flow is mandatory for additional PMS charges, checkout remains payment-pending until successful capture or an authorized exception is recorded. Where the supplier is permitted to collect offline, the receipt must identify the supplier as recipient and the PMS must preserve the declared mode and amount. Consumer rights, emergency departure, and access to personal property must not be used as leverage in a payment dispute.',
         ],
       },
       {
@@ -332,9 +341,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Hotel and vehicle partner standards',
     summary:
       'Minimum onboarding, listing, safety, service, data, and refund duties for independent partners.',
-    version: 'partner-standards-v1.0-pending-legal-approval',
+    version: 'partner-standards-v1.1-pending-legal-approval',
     status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    lastUpdated: '2026-09-13',
     sections: [
       {
         heading: 'No public listing before approval and agreement',
@@ -372,6 +381,22 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Payments, refunds, and records',
         paragraphs: [
           'Partners must honour confirmed rates and lawful refunds, provide timely decisions and evidence, maintain sufficient settlement details, and authorize contractual recovery or set-off where applicable. They must retain and produce booking, service, tax, safety, complaint, cancellation, and refund records for the required period.',
+          'The booking source and payment recipient must be recorded accurately. A partner must not mark an external OTA payment as collected by Mandyal Travels, mark cash or its own UPI/POS as a gateway payment, split a booking off-platform to avoid a fee, or confirm a payment-required online booking before verified capture.',
+        ],
+      },
+      {
+        heading: 'PMS subscription and source-based fees',
+        paragraphs: [
+          'For the launch hotel plan, the first six months from workspace activation are free and months seven through twelve are charged at 50% of the applicable room tier. From month thirteen, the monthly room tiers are ₹1,999 for 1–10 rooms, ₹2,999 for 11–20, ₹4,499 for 21–35, ₹5,999 for 36–50, and ₹8,999 for 51–100, plus GST; larger properties require a written quote. A standard-rate 12-month term beginning in month thirteen or later is priced at the equivalent of ten monthly charges. Standard remote setup is ₹0; separately requested on-site work, hardware, messaging, or custom integration requires a written quote.',
+          'Transaction fees apply from day one: 18% of booking value with a ₹199 minimum for a Mandyal marketplace-acquired booking; 6% with a ₹99 minimum for a PMS-direct or walk-in booking paid through an enabled Mandyal payment flow; 3% with a ₹49 minimum for a PMS-direct or walk-in booking paid by cash, hotel UPI, or hotel POS; and 0% Mandyal booking commission for an external-OTA booking imported into PMS. These percentages are inclusive of GST on Mandyal’s fee. The OTA’s own charges remain governed by the hotel’s contract with that OTA.',
+          'A booking retains the commercial-policy version and calculation accepted at confirmation. Future changes apply prospectively after the notice and acceptance required by law and contract. Car and bus plans require their own accepted service schedule; hotel room tiers do not automatically apply to them.',
+        ],
+      },
+      {
+        heading: 'Settlement eligibility and holds',
+        paragraphs: [
+          'Funds collected through an approved Mandyal payment arrangement become eligible for supplier settlement only after successful capture, checkout, reconciliation, and clearance of refund, fraud, chargeback, compliance, tax, or legal holds. The operating target is two business days after eligibility, not a guarantee of 48 clock hours. Bank holidays, provider processing, missing payout verification, and lawful holds may extend the timeline.',
+          'Cash, hotel UPI, and hotel POS receipts are already held by the partner; they are not paid out again by Mandyal Travels. The related platform fee is a receivable that may be invoiced or set off only as authorized by the accepted agreement, with a statement and dispute route. Suspension or termination must protect active guests and does not erase accrued refunds, fees, taxes, records, or customer remedies.',
         ],
       },
       {

@@ -2,7 +2,7 @@ import { mockHotels } from '@/constants/hotelData';
 import { normalizeHotelAmenityList } from '@/lib/hotel/amenities';
 import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 import { prisma } from '@/lib/prisma';
-import { calculateMarketplaceHotelNight } from '@/lib/finance/marketplaceTax';
+import { MARKETPLACE_TAX_RULE, calculateMarketplaceHotelNight } from '@/lib/finance/marketplaceTax';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import type { Hotel } from '@/types/hotel';
 
@@ -55,7 +55,7 @@ export class InMemoryHotelRepository implements HotelRepository {
         (property) =>
           property.partner.status === 'ACTIVE' &&
           property.partner.applications.length > 0 &&
-          property.partner.commissionBasisPoints === 2_000 &&
+          property.partner.commissionBasisPoints === MARKETPLACE_TAX_RULE.commissionBasisPoints &&
           property.partner.taxProfile?.reviewStatus === 'VERIFIED' &&
           ['REGISTERED', 'UNREGISTERED'].includes(
             property.partner.taxProfile.gstRegistrationStatus,

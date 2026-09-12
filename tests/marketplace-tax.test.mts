@@ -19,23 +19,23 @@ test('registered hotel pricing keeps the vendor base and separates tax credits',
   });
 
   assert.deepEqual(result, {
-    commissionGstAmount: 38,
-    commissionGrossAmount: 250,
-    commissionTaxableAmount: 212,
-    customerTaxableAmount: 1_250,
-    customerTotalAmount: 1_400,
+    commissionGstAmount: 34,
+    commissionGrossAmount: 220,
+    commissionTaxableAmount: 186,
+    customerTaxableAmount: 1_220,
+    customerTotalAmount: 1_366,
     ecoGstLiabilityAmount: 0,
     gatewayFeeAmount: 27,
     gatewayFeeGstAmount: 5,
     gstTcsAmount: 6,
-    hotelGstAmount: 150,
+    hotelGstAmount: 146,
     hotelGstBasisPoints: 1_200,
     incomeTaxTdsAmount: 1,
-    platformContributionAmount: 180,
+    platformContributionAmount: 154,
     ruleVersion: MARKETPLACE_TAX_RULE.version,
     vendorBaseAmount: 1_000,
-    vendorGrossAmount: 1_150,
-    vendorSettlementAmount: 1_143,
+    vendorGrossAmount: 1_146,
+    vendorSettlementAmount: 1_139,
   });
 });
 
@@ -50,8 +50,8 @@ test('unregistered Section 9(5) hotel assigns service GST to the platform', () =
     vendorNightlyBaseAmount: 1_000,
   });
 
-  assert.equal(result.customerTotalAmount, 1_400);
-  assert.equal(result.ecoGstLiabilityAmount, 150);
+  assert.equal(result.customerTotalAmount, 1_366);
+  assert.equal(result.ecoGstLiabilityAmount, 146);
   assert.equal(result.gstTcsAmount, 0);
   assert.equal(result.incomeTaxTdsAmount, 0);
   assert.equal(result.vendorSettlementAmount, 1_000);
@@ -80,8 +80,8 @@ test('hotel GST moves to 18 percent when the public nightly value exceeds the th
       section194OExempt: true,
       section9FiveApplicable: false,
     },
-    vendorBaseAmount: 6_001,
-    vendorNightlyBaseAmount: 6_001,
+    vendorBaseAmount: 6_151,
+    vendorNightlyBaseAmount: 6_151,
   });
   assert.equal(result.customerTaxableAmount, 7_502);
   assert.equal(result.hotelGstBasisPoints, 1_800);

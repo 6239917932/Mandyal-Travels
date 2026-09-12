@@ -105,6 +105,8 @@ test('direct booking endpoints preserve origin, ownership, idempotency and audit
   assert.match(service, /listingSource: 'MANAGED', partnerId, status: 'ACTIVE'/);
   assert.match(service, /source: 'PARTNER_DIRECT'/);
   assert.match(service, /provider: 'PAY_AT_PROPERTY'/);
+  assert.match(service, /source: 'PMS_DIRECT_OFFLINE'/);
+  assert.match(service, /commercialFee/);
   assert.match(service, /status: 'pending'/);
   assert.match(service, /action: 'DIRECT_BOOKING_CREATED'/);
   assert.doesNotMatch(service, /financialJournal\.create/);

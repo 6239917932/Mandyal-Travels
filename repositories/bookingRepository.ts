@@ -2,7 +2,7 @@ import type { HotelBookingRecord } from '@/types/commerce';
 import type { Prisma } from '@/generated/prisma/client';
 import { normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
-import { calculateMarketplaceHotelTax } from '@/lib/finance/marketplaceTax';
+import { MARKETPLACE_TAX_RULE, calculateMarketplaceHotelTax } from '@/lib/finance/marketplaceTax';
 import {
   createCaptureAccounting,
   createMarketplaceCaptureAccounting,
@@ -419,7 +419,7 @@ export class PrismaBookingRepository implements BookingRepository {
       if (property?.listingSource === 'MANAGED') {
         const profile = property.partner.taxProfile;
         if (
-          property.partner.commissionBasisPoints !== 2_000 ||
+          property.partner.commissionBasisPoints !== MARKETPLACE_TAX_RULE.commissionBasisPoints ||
           profile?.reviewStatus !== 'VERIFIED' ||
           !['REGISTERED', 'UNREGISTERED'].includes(profile.gstRegistrationStatus) ||
           !quoteDetails ||
@@ -431,9 +431,12 @@ export class PrismaBookingRepository implements BookingRepository {
           throw new Error('MARKETPLACE_PRICE_SNAPSHOT_MISMATCH');
         }
         const serviceUnits = quoteDetails.nights * quoteDetails.rooms;
-        const vendorBaseAmount = Math.round(customerTaxableAmount * 0.8);
+        const vendorBaseAmount = Math.round(
+          (customerTaxableAmount * (10_000 - MARKETPLACE_TAX_RULE.commissionBasisPoints)) / 10_000,
+        );
         const vendorNightlyBaseAmount = Math.round(
-          (customerTaxableAmount / Math.max(1, serviceUnits)) * 0.8,
+          (customerTaxableAmount / Math.max(1, serviceUnits)) *
+            ((10_000 - MARKETPLACE_TAX_RULE.commissionBasisPoints) / 10_000),
         );
         taxBreakdown = calculateMarketplaceHotelTax({
           profile: {
@@ -509,7 +512,7 @@ export class PrismaBookingRepository implements BookingRepository {
           data: {
             bookingId: booking.id,
             calculationJson: JSON.stringify({
-              commissionBasisPoints: 2_000,
+              commissionBasisPoints: MARKETPLACE_TAX_RULE.commissionBasisPoints,
               hotelGstBasisPoints: taxBreakdown.hotelGstBasisPoints,
               section194OExempt: property.partner.taxProfile?.section194OExempt ?? false,
               section9FiveApplicable: property.partner.taxProfile?.section9FiveApplicable ?? false,

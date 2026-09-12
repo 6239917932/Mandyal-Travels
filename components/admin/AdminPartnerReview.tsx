@@ -74,8 +74,8 @@ export function AdminPartnerReview({
       ) : null}
       {!agreementVersion ? (
         <small>
-          This legacy application predates agreement v1.0. Reject it with a clear note and ask the
-          applicant to submit a new application under the current terms.
+          This legacy application predates the current agreement. Reject it with a clear note and
+          ask the applicant to submit a new application under the current terms.
         </small>
       ) : null}
       {signedAgreementStatus !== 'RECEIVED' ? (
