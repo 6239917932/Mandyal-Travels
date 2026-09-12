@@ -6,6 +6,7 @@ import {
   partnerOperationsService,
 } from '@/services/partnerOperationsService';
 import { prisma } from '@/lib/prisma';
+import { availabilityLockRepository } from '@/repositories/availabilityLockRepository';
 import { mergeManagedInventoryRecords } from '@/lib/pms/managedInventoryProjection';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -58,6 +59,17 @@ export async function GET(request: Request): Promise<Response> {
         stayDate: { gte: checkInDate, lte: checkOutDate },
       },
     });
+    const managedReservations = (
+      await Promise.all(
+        managedRooms.map((room) =>
+          availabilityLockRepository.findReservedByRoomType(
+            room.roomTypeId,
+            checkInDate,
+            checkOutDate,
+          ),
+        ),
+      )
+    ).flat();
     const roomNames = new Map(roomTypes.map((room) => [room.roomTypeId, room.name]));
     return Response.json({
       calendar: [
@@ -98,6 +110,7 @@ export async function GET(request: Request): Promise<Response> {
           roomTypeId: room.roomTypeId,
         })),
         calendarDays,
+        managedReservations,
       ),
       ratePlans: managedRooms.flatMap((room) =>
         room.ratePlans.map((ratePlan) => ({
@@ -240,6 +253,13 @@ export async function POST(request: Request): Promise<Response> {
       },
       summary: 'Room inventory limit updated.',
     });
+    const managedReservations = managedRoom
+      ? await availabilityLockRepository.findReservedByRoomType(
+          managedRoom.roomTypeId,
+          checkInDate,
+          checkOutDate,
+        )
+      : [];
     return Response.json(
       {
         data: mergeManagedInventoryRecords(
@@ -263,6 +283,7 @@ export async function POST(request: Request): Promise<Response> {
                 },
               ]
             : [],
+          managedReservations,
         ),
       },
       { status: 201 },

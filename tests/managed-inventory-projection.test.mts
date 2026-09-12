@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { mergeManagedInventoryRecords } from '../lib/pms/managedInventoryProjection.ts';
@@ -55,6 +56,28 @@ test('private PMS projection applies the most restrictive daily control', () => 
   assert.equal(record?.overrideApplied, true);
 });
 
+test('private PMS projection subtracts direct holds and confirmed reservations', () => {
+  const [record] = mergeManagedInventoryRecords(
+    [],
+    [
+      {
+        hotelName: 'Private Trial Hotel',
+        inventoryCount: 5,
+        roomName: 'Deluxe',
+        roomTypeId: 'private-deluxe',
+      },
+    ],
+    [],
+    [
+      { quantity: 1, roomTypeId: 'private-deluxe', status: 'active' },
+      { quantity: 2, roomTypeId: 'private-deluxe', status: 'converted' },
+    ],
+  );
+  assert.equal(record?.activeHolds, 1);
+  assert.equal(record?.allocatedRooms, 2);
+  assert.equal(record?.remainingRooms, 2);
+});
+
 test('public allocation evidence is retained instead of duplicated', () => {
   const publicRecord = {
     activeHolds: 1,
@@ -83,4 +106,13 @@ test('public allocation evidence is retained instead of duplicated', () => {
     ),
     [publicRecord],
   );
+});
+
+test('partner inventory projects reservation locks for private managed rooms', async () => {
+  const route = await readFile(
+    new URL('../app/api/v1/partner/inventory/route.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(route, /availabilityLockRepository\.findReservedByRoomType/);
+  assert.match(route, /calendarDays,\s*managedReservations/);
 });
