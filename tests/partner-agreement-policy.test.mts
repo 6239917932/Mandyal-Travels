@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -33,4 +34,11 @@ test('all agreement and compliance acknowledgements are mandatory', () => {
   };
   assert.ok(readPartnerApplicationAcknowledgements(complete));
   assert.equal(readPartnerApplicationAcknowledgements({ ...complete, ackIdentity: 'off' }), null);
+});
+
+test('legacy applications cannot be emailed as though they accepted the current agreement', async () => {
+  const service = await readFile('services/partnerAgreementEmailService.ts', 'utf8');
+  assert.match(service, /!application\.agreementVersion/);
+  assert.match(service, /!application\.agreementDocumentPath/);
+  assert.match(service, /!application\.agreementContentHash/);
 });

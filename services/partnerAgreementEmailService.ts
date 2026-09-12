@@ -19,6 +19,9 @@ export async function sendPartnerAgreementEmail(applicationId: string) {
   if (
     !application ||
     application.agreementEmailStatus === 'SENT' ||
+    !application.agreementVersion ||
+    !application.agreementDocumentPath ||
+    !application.agreementContentHash ||
     !['HOTEL', 'CAR', 'BUS'].includes(application.partnerType)
   ) {
     return;
