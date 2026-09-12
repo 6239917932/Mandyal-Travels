@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 test('private PMS trial grant is administrator-only, same-origin and safety-gated', async () => {
-  const [route, service, form, page] = await Promise.all([
+  const [route, service, form, page, partnerAuth] = await Promise.all([
     readFile(
       new URL('../app/api/v1/admin/partners/trial-workspaces/route.ts', import.meta.url),
       'utf8',
@@ -14,6 +14,7 @@ test('private PMS trial grant is administrator-only, same-origin and safety-gate
       'utf8',
     ),
     readFile(new URL('../app/admin/partners/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/partnerAuth.ts', import.meta.url), 'utf8'),
   ]);
   assert.match(route, /isSameOriginMutation/);
   assert.match(route, /getPlatformAdmin/);
@@ -24,11 +25,20 @@ test('private PMS trial grant is administrator-only, same-origin and safety-gate
   assert.match(service, /LIVE_MARKETPLACE_PAYMENTS/);
   assert.match(service, /CAR_MARKETPLACE/);
   assert.match(service, /emailVerifiedAt/);
-  assert.match(service, /role !== 'CUSTOMER'/);
+  assert.match(service, /user\.role === 'CUSTOMER'/);
+  assert.match(service, /user\.role === 'BUSINESS_ADMIN'/);
+  assert.match(service, /organizationMemberships\.some/);
+  assert.match(service, /if \(isCustomerAccount\)[\s\S]*role: 'PARTNER_ADMIN'/);
+  assert.match(service, /businessWorkspaceRetained/);
   assert.match(service, /PRIVATE_TRIAL_WORKSPACE_GRANTED/);
   assert.match(service, /partnerType: input\.partnerType/);
   assert.match(service, /type: input\.partnerType/);
   assert.match(service, /role: 'PARTNER_ADMIN'/);
+  assert.doesNotMatch(
+    partnerAuth,
+    /\['PARTNER_ADMIN', 'PARTNER_OPERATOR'\]\.includes\(user\.role\)/,
+  );
+  assert.match(partnerAuth, /supplyPartnerMember\.findUnique/);
   assert.match(form, /Car fleet operations/);
   assert.match(form, /does not approve KYC/);
   assert.match(page, /privateTrial\.enabled/);

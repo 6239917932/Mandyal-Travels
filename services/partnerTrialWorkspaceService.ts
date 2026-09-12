@@ -101,7 +101,12 @@ export async function grantPrivatePartnerTrialWorkspace(input: {
         'Private trial access is available only while paid onboarding, payouts, public listings, live payments, and the car marketplace are disabled.',
       );
     }
-    const user = await transaction.user.findUnique({ where: { email } });
+    const user = await transaction.user.findUnique({
+      include: {
+        organizationMemberships: { select: { role: true } },
+      },
+      where: { email },
+    });
     if (!user) {
       throw new PartnerTrialWorkspaceError(
         'ACCOUNT_NOT_FOUND',
@@ -120,10 +125,14 @@ export async function grantPrivatePartnerTrialWorkspace(input: {
         'Verify the trial account email before granting partner access.',
       );
     }
-    if (user.role !== 'CUSTOMER') {
+    const isCustomerAccount = user.role === 'CUSTOMER';
+    const isBusinessAdministrator =
+      user.role === 'BUSINESS_ADMIN' &&
+      user.organizationMemberships.some((membership) => membership.role === 'ADMIN');
+    if (!isCustomerAccount && !isBusinessAdministrator) {
       throw new PartnerTrialWorkspaceError(
         'ROLE_CONFLICT',
-        'Private partner trials must start from a separate customer account.',
+        'Private partner trials require a verified customer or business administrator account.',
       );
     }
     if (await transaction.supplyPartnerMember.findUnique({ where: { userId: user.id } })) {
@@ -155,10 +164,12 @@ export async function grantPrivatePartnerTrialWorkspace(input: {
     await transaction.supplyPartnerMember.create({
       data: { partnerId: partner.id, role: 'ADMIN', userId: user.id },
     });
-    await transaction.user.update({
-      data: { role: 'PARTNER_ADMIN' },
-      where: { id: user.id },
-    });
+    if (isCustomerAccount) {
+      await transaction.user.update({
+        data: { role: 'PARTNER_ADMIN' },
+        where: { id: user.id },
+      });
+    }
     await transaction.partnerAuditLog.create({
       data: {
         action: 'PRIVATE_TRIAL_WORKSPACE_GRANTED',
@@ -167,6 +178,8 @@ export async function grantPrivatePartnerTrialWorkspace(input: {
         entityType: 'USER',
         metadataJson: JSON.stringify({
           accountEmail: email,
+          accountRoleRetained: isBusinessAdministrator ? 'BUSINESS_ADMIN' : null,
+          businessWorkspaceRetained: isBusinessAdministrator,
           partnerType: input.partnerType,
           reason,
           safeguards: [
