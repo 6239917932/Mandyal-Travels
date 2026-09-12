@@ -50,7 +50,7 @@ export async function getPartnerAccess(request?: Request): Promise<PartnerAccess
   }
 
   const user = await getCurrentUser();
-  if (!user || !['PARTNER_ADMIN', 'PARTNER_OPERATOR'].includes(user.role)) return null;
+  if (!user) return null;
   const membership = await prisma.supplyPartnerMember.findUnique({
     include: {
       partner: {
