@@ -26,10 +26,31 @@ test('private PMS trial grant is administrator-only, same-origin and safety-gate
   assert.match(service, /emailVerifiedAt/);
   assert.match(service, /role !== 'CUSTOMER'/);
   assert.match(service, /PRIVATE_TRIAL_WORKSPACE_GRANTED/);
-  assert.match(service, /type: 'HOTEL'/);
+  assert.match(service, /partnerType: input\.partnerType/);
+  assert.match(service, /type: input\.partnerType/);
   assert.match(service, /role: 'PARTNER_ADMIN'/);
+  assert.match(form, /Car fleet operations/);
   assert.match(form, /does not approve KYC/);
   assert.match(page, /privateTrial\.enabled/);
+});
+
+test('private trial route accepts only hotel or car workspace types', async () => {
+  const [route, form] = await Promise.all([
+    readFile(
+      new URL('../app/api/v1/admin/partners/trial-workspaces/route.ts', import.meta.url),
+      'utf8',
+    ),
+    readFile(
+      new URL('../components/admin/AdminPrivateTrialWorkspaceForm.tsx', import.meta.url),
+      'utf8',
+    ),
+  ]);
+  assert.match(route, /body\.partnerType === 'CAR'/);
+  assert.match(route, /body\.partnerType === 'HOTEL'/);
+  assert.match(route, /grantPrivatePartnerTrialWorkspace/);
+  assert.match(form, /name="partnerType"/);
+  assert.match(form, /value="HOTEL"/);
+  assert.match(form, /value="CAR"/);
 });
 
 test('trial workspace grant refuses to consume or bypass a pending KYC application', async () => {
