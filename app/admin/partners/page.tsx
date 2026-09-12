@@ -165,6 +165,7 @@ export default async function AdminPartnersPage() {
                 </p>
                 <AdminPartnerReview
                   agreementEmailStatus={item.agreementEmailStatus}
+                  agreementVersion={item.agreementVersion}
                   applicationId={item.id}
                   approvalAllowed={
                     summary?.complete === true && item.signedAgreementStatus === 'RECEIVED'

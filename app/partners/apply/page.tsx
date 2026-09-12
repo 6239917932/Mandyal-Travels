@@ -152,6 +152,13 @@ export default async function PartnerApplicationPage() {
               safely pending.
             </p>
           ) : null}
+          {!application.agreementVersion ? (
+            <p className="booking-page__payment-error" role="alert">
+              This application was submitted before the current agreement workflow. It cannot be
+              converted into acceptance automatically. Please ask support to close it, then submit a
+              new application under the current terms.
+            </p>
+          ) : null}
           {kycSummary ? (
             <>
               <p>
