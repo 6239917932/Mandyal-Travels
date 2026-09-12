@@ -5,6 +5,9 @@ additive: no existing module is removed. A capability is labelled **Live** only 
 workflow exists in the portal. **Foundation** means reusable controls exist but an operational or
 provider gate remains. **Planned** means the workspace is visible while transactions stay disabled.
 
+As verified on 12 September 2026, the registry contains 46 unique workspaces: 42 live, 3 controlled
+foundations, and 1 planned external-provider workspace.
+
 ## Front desk and reservations
 
 - Live: reservations, walk-in booking, room rack and allotment, guest check-in/check-out, group
@@ -13,10 +16,12 @@ provider gate remains. **Planned** means the workspace is visible while transact
 ## Billing and payment processing
 
 - Live: append-only folios, operational service charges, deposits, corrections, cashier shifts,
-  and controlled GST preparation.
-- Foundation: multiple payment modes. Live card or digital tendering still requires certified
-  payment, webhook, reconciliation, refund, and chargeback controls.
-- Planned: split billing, routed charges, discounts, and statutory tax/accounting expansion.
+  split billing, routed charges, discounts, cash/card-at-property/UPI/bank tender recording, and
+  controlled GST preparation.
+- Foundation: certified external payment collection. Live card or digital collection still requires
+  approved payment credentials, webhooks, reconciliation, refund, and chargeback controls.
+- Statutory boundary: GST invoice issuance remains blocked until the legal GST profile, state code,
+  review, and tax-adviser approval are complete.
 
 ## Housekeeping and maintenance
 
@@ -26,8 +31,8 @@ provider gate remains. **Planned** means the workspace is visible while transact
 ## Restaurant and food service
 
 - Live: point-of-sale service orders, kitchen order tickets, controlled folio posting, cashier
-  evidence, outlet/table/menu management, and conflict-protected table reservations.
-- Planned: menu modifiers, QR ordering, and captain/mobile workflows.
+  evidence, outlet/table/menu management, conflict-protected table reservations, QR guest ordering,
+  and captain/mobile service workflows.
 
 ## Inventory and procurement
 
@@ -35,27 +40,29 @@ provider gate remains. **Planned** means the workspace is visible while transact
   worklists.
 - Live: property-scoped vendor registration, contact ownership, payment terms, reasoned pause or
   reactivation and immutable decision history.
-- Planned: purchase-order approvals, supplier performance scoring and vendor payment release.
+- Planned operational expansion: purchase-order approvals, supplier performance scoring, and vendor
+  payment release remain outside the current controlled workflow.
 
 ## Guest experience
 
 - Live: verified-stay feedback, moderated reviews, property responses and guest CRM.
 - Foundation: automated email and WhatsApp journeys. Email infrastructure exists; WhatsApp requires
-  approved sender, templates, consent/opt-out handling, delivery webhooks and production credentials.
+  an approved sender, templates, consent/opt-out handling, delivery webhooks and production
+  credentials.
 
 ## Security and compliance
 
-- Live: supplier-scoped role-based access, secure invitations, audit history and masked identity
-  references.
-- Foundation: dedicated privacy/data-rights operations. Legal sign-off remains required before any
-  claim of complete GDPR or statutory compliance.
+- Live: supplier-scoped role-based access, secure invitations, audit history, masked identity
+  references, and privacy/data-rights operations.
+- Legal boundary: these operational controls do not constitute a claim of complete GDPR or statutory
+  compliance; jurisdiction-specific legal and privacy sign-off remains required.
 
 ## Reporting and analytics
 
-- Live: occupancy, ADR, RevPAR, arrival/departure, folio, cashier, operational revenue and immutable
-  audit reporting.
-- Planned: approved expense capture and management profit-and-loss reporting. These will not be
-  described as statutory accounts until finance ownership and reconciliation are approved.
+- Live: occupancy, ADR, RevPAR, arrival/departure, folio, cashier, operational revenue, expense
+  capture, payroll registers, provisional management P&L, and immutable audit reporting.
+- Accounting boundary: management reports are not described as statutory accounts until finance
+  ownership, tax treatment, and reconciliation are approved.
 
 ## Channel manager
 
@@ -66,6 +73,8 @@ provider gate remains. **Planned** means the workspace is visible while transact
 
 ## Other integrations
 
-- Live: governed direct booking-engine readiness and mobile-responsive portal workflows.
-- Planned: captain/native mobile applications and versioned Tally-compatible XML export. Tally
-  activation requires an agreed schema, accounting review, reconciliation and secure delivery.
+- Live: governed direct booking-engine readiness, mobile-responsive web workflows, and reviewed,
+  balanced Tally-compatible XML export.
+- Foundation: telephone/EPABX connectivity requires approved external hardware/provider integration.
+- Native mobile applications remain a separate product decision; the responsive web application and
+  captain workflow are live.
