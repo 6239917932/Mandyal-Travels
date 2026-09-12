@@ -6,6 +6,7 @@ import {
   partnerOperationsService,
 } from '@/services/partnerOperationsService';
 import { prisma } from '@/lib/prisma';
+import { mergeManagedInventoryRecords } from '@/lib/pms/managedInventoryProjection';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 function errorResponse(code: string, message: string, status: number): Response {
@@ -43,7 +44,10 @@ export async function GET(request: Request): Promise<Response> {
         })
       : [];
     const managedRooms = await prisma.partnerRoomType.findMany({
-      include: { ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } } },
+      include: {
+        property: { select: { displayName: true } },
+        ratePlans: { orderBy: { createdAt: 'asc' }, where: { status: 'ACTIVE' } },
+      },
       where: { property: { partnerId: access.partnerId, status: 'ACTIVE' }, status: 'ACTIVE' },
     });
     const ratePlanDays = await prisma.partnerRatePlanInventoryDay.findMany({
@@ -85,7 +89,16 @@ export async function GET(request: Request): Promise<Response> {
           stopSell: false,
         })),
       ],
-      data,
+      data: mergeManagedInventoryRecords(
+        data,
+        managedRooms.map((room) => ({
+          hotelName: room.property.displayName,
+          inventoryCount: room.inventoryCount,
+          roomName: room.name,
+          roomTypeId: room.roomTypeId,
+        })),
+        calendarDays,
+      ),
       ratePlans: managedRooms.flatMap((room) =>
         room.ratePlans.map((ratePlan) => ({
           id: ratePlan.id,
@@ -159,51 +172,55 @@ export async function POST(request: Request): Promise<Response> {
   }
   const stopSell = values.stopSell === true || availableRooms === 0;
   try {
-    const data = await hotelBookingService.setPartnerInventoryOverride(
-      {
-        availableRooms,
-        checkInDate,
-        checkOutDate,
-        note,
+    const managedRoom = await prisma.partnerRoomType.findFirst({
+      include: { property: { select: { displayName: true, id: true } } },
+      where: {
+        property: { partnerId: access.partnerId, status: 'ACTIVE' },
         roomTypeId,
+        status: 'ACTIVE',
       },
+    });
+    if (managedRoom && availableRooms > managedRoom.inventoryCount) {
+      return errorResponse(
+        'INVALID_INVENTORY_LIMIT',
+        `Available rooms must be between 0 and ${managedRoom.inventoryCount}.`,
+        409,
+      );
+    }
+    const publicInventory = await hotelBookingService.getPartnerInventory(
+      checkInDate,
+      checkOutDate,
       access.allowedHotelSlugs,
     );
-    if (access.partnerId) {
-      const hotels = await Promise.all(
-        (access.allowedHotelSlugs ?? []).map((slug) =>
-          hotelBookingService
-            .getPartnerInventory(checkInDate, checkOutDate, [slug])
-            .then((rooms) => ({ rooms, slug })),
-        ),
-      );
-      const assigned = hotels.find((hotel) =>
-        hotel.rooms.some((room) => room.roomTypeId === roomTypeId),
-      );
-      const property = assigned
-        ? await prisma.partnerProperty.findFirst({
-            where: { hotelSlug: assigned.slug, partnerId: access.partnerId, status: 'ACTIVE' },
-          })
-        : null;
-      if (property) {
-        await partnerOperationsService.setHotelCalendar({
-          availableRooms,
-          closedToArrival,
-          closedToDeparture,
-          clearNightlyRate,
-          endDate: checkOutDate,
-          nightlyRate,
-          maximumStayNights,
-          minimumStayNights,
-          note,
-          partnerId: access.partnerId,
-          propertyId: property.id,
-          ratePlanRecordId,
-          roomTypeId,
-          startDate: checkInDate,
-          stopSell,
-        });
+    const publicRoomExists = publicInventory.some((room) => room.roomTypeId === roomTypeId);
+    const data = publicRoomExists
+      ? await hotelBookingService.setPartnerInventoryOverride(
+          { availableRooms, checkInDate, checkOutDate, note, roomTypeId },
+          access.allowedHotelSlugs,
+        )
+      : publicInventory;
+    if (!managedRoom) {
+      if (!publicRoomExists) {
+        return errorResponse('ROOM_NOT_FOUND', 'The active room type was not found.', 409);
       }
+    } else {
+      await partnerOperationsService.setHotelCalendar({
+        availableRooms,
+        closedToArrival,
+        closedToDeparture,
+        clearNightlyRate,
+        endDate: checkOutDate,
+        nightlyRate,
+        maximumStayNights,
+        minimumStayNights,
+        note,
+        partnerId: access.partnerId,
+        propertyId: managedRoom.property.id,
+        ratePlanRecordId,
+        roomTypeId,
+        startDate: checkInDate,
+        stopSell,
+      });
     }
     await recordPartnerAudit(access, {
       action: 'INVENTORY_OVERRIDE_UPDATED',
@@ -223,7 +240,33 @@ export async function POST(request: Request): Promise<Response> {
       },
       summary: 'Room inventory limit updated.',
     });
-    return Response.json({ data }, { status: 201 });
+    return Response.json(
+      {
+        data: mergeManagedInventoryRecords(
+          data,
+          managedRoom
+            ? [
+                {
+                  hotelName: managedRoom.property.displayName,
+                  inventoryCount: managedRoom.inventoryCount,
+                  roomName: managedRoom.name,
+                  roomTypeId: managedRoom.roomTypeId,
+                },
+              ]
+            : [],
+          managedRoom
+            ? [
+                {
+                  availableRooms,
+                  roomTypeId: managedRoom.roomTypeId,
+                  stopSell,
+                },
+              ]
+            : [],
+        ),
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return error instanceof HotelBookingRuleError || error instanceof PartnerOperationsError
       ? errorResponse(error.code, error.message, 409)
