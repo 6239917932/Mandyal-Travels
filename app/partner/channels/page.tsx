@@ -3,11 +3,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { ChannelSyncManager } from '@/components/partner/ChannelSyncManager';
-import { channelConnectionReadiness } from '@/lib/hotel/channelRules';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
-export const metadata: Metadata = { title: 'Hotel channel synchronization' };
+export const metadata: Metadata = { title: 'Distribution command centre' };
 
 export default async function PartnerChannelsPage() {
   const access = await getPartnerAccess();
@@ -30,7 +29,6 @@ export default async function PartnerChannelsPage() {
   const connections = records.map((record) => ({
     ...record,
     createdAt: record.createdAt.toISOString(),
-    dispatchReady: channelConnectionReadiness(record).ready,
     lastHealthAt: record.lastHealthAt?.toISOString() ?? null,
     syncRuns: record.syncRuns.map((run) => ({
       ...run,
@@ -51,11 +49,11 @@ export default async function PartnerChannelsPage() {
     <section className="account-page">
       <div className="partner-page__heading">
         <div>
-          <p className="hotel-page__eyebrow">PMS and channel distribution</p>
-          <h1>Channel synchronization</h1>
+          <p className="hotel-page__eyebrow">PMS-only distribution workspace</p>
+          <h1>Distribution command centre</h1>
           <p>
-            Review governed provider configuration, property mapping, dispatch readiness and
-            reconciliation evidence. A connection shell does not mean a provider is live.
+            Control the hotel&apos;s master rates, availability and restrictions in one place, then
+            prepare a precise manual update sheet for every recorded external sales portal.
           </p>
         </div>
         <Link className="ui-button ui-button--secondary" href="/partner">

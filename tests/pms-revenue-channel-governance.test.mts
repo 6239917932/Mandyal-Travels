@@ -114,8 +114,10 @@ test('channel mutations are scoped, origin protected, readiness gated and audite
   assert.match(mapping, /transaction\.partnerAuditLog\.create/);
   assert.match(dispatch, /transaction\.partnerAuditLog\.create/);
   assert.match(reconciliation, /transaction\.partnerAuditLog\.create/);
-  assert.match(page, /A connection shell does not mean a provider is live/);
-  assert.match(manager, /Controlled dispatch only/);
+  assert.match(page, /Distribution command centre/);
+  assert.match(manager, /PMS-ONLY · MANUAL MODE/);
+  assert.match(manager, /No automatic OTA transmission/);
+  assert.match(manager, /Export channel action sheet/);
   assert.match(manager, /canAdminister/);
   assert.match(outbox, /setChannelSyncRunStatus\(transaction, event, 'DISPATCHED'\)/);
   assert.match(

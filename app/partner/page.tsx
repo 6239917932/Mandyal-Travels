@@ -164,8 +164,11 @@ export default async function PartnerWorkspacePage() {
           </Card>
           <Card>
             <p className="hotel-page__eyebrow">Distribution</p>
-            <h2>PMS and channel sync</h2>
-            <p>Connect provider accounts, map properties, and reconcile synchronization runs.</p>
+            <h2>Distribution command centre</h2>
+            <p>
+              Set master rates and availability once, then export the portals requiring a manual
+              update.
+            </p>
             <Link className="home-card__link" href="/partner/channels">
               Manage channels
             </Link>

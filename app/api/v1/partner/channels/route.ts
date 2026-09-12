@@ -56,7 +56,7 @@ export async function POST(request: Request): Promise<Response> {
           entityId: created.id,
           entityType: 'HOTEL_CHANNEL_CONNECTION',
           partnerId,
-          summary: `Created ${providerName} channel connection shell.`,
+          summary: `Added ${providerName} to the manual sales-channel directory.`,
         },
       });
       return created;

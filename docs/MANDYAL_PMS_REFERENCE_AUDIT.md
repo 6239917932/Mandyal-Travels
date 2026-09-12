@@ -49,7 +49,8 @@ inventory, booking or identity database.
 
 ### Revenue, finance and control
 
-- rates, restrictions, inventory, channel mapping and booking-engine settings;
+- rates, restrictions, inventory, a PMS-only distribution command centre, manual sales-channel
+  mappings and booking-engine settings;
 - GST invoice preparation, credit/debit notes and tax reports;
 - double-entry journals, ledgers, receivables and daily collections;
 - stock ledger, requisitions, vendors, quotations, purchase orders and goods receipt;
@@ -84,7 +85,8 @@ checkout, invoice, room cleaning and next-day opening without manual database wo
 1. POS, room service and kitchen display.
 2. Laundry and minibar posting.
 3. GST invoice outputs and operational reports.
-4. Revenue dashboard and controlled channel synchronization.
+4. Revenue dashboard and a manual distribution command centre with exportable channel action
+   sheets. Automated external synchronization remains excluded without certified provider access.
 
 Exit criteria: every guest charge reaches one auditable folio and the hotel's daily totals reconcile.
 
