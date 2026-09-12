@@ -6,7 +6,7 @@ import { siteConfig } from '../config/site.ts';
 
 test('public contact details are centralized and complete', () => {
   assert.equal(siteConfig.legalName, 'Mandyal Travels Services Private Limited');
-  assert.equal(siteConfig.supportEmail, 'contact@mandyaltravels.com');
+  assert.equal(siteConfig.supportEmail, 'support@mandyaltravels.com');
   assert.equal(siteConfig.supportPhone.href, '+918069377940');
   assert.match(siteConfig.supportPhone.href, /^\+\d{10,15}$/);
   assert.equal(siteConfig.officeLocations.length, 2);
