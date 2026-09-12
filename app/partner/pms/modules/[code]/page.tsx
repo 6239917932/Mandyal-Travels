@@ -22,7 +22,7 @@ const relatedDestinations: Readonly<
   ],
   'Revenue and distribution': [
     { href: '/partner/inventory', label: 'Inventory and rates' },
-    { href: '/partner/channels', label: 'Channel distribution' },
+    { href: '/partner/channels', label: 'Distribution command centre' },
   ],
   'Finance and back office': [
     { href: '/partner/tax', label: 'Tax and billing' },

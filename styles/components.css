@@ -2239,6 +2239,104 @@
   margin-top: 1.5rem;
 }
 
+.partner-channel-mode {
+  align-items: start;
+  background: linear-gradient(135deg, #eaf4ff, #f4fbf7 55%, #fff8e8);
+  border: 1px solid #bdd7ec;
+  border-radius: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 0.8fr);
+  padding: 1.25rem;
+}
+
+.partner-channel-mode h2,
+.partner-channel-mode p,
+.partner-channel-calendar h2,
+.partner-channel-calendar h3,
+.partner-channel-directory h2,
+.partner-channel-directory h3 {
+  margin: 0;
+}
+
+.partner-channel-mode > p {
+  background: #fff;
+  border-left: 4px solid #e7a21a;
+  border-radius: 0.65rem;
+  padding: 0.9rem;
+}
+
+.partner-channel-calendar,
+.partner-channel-directory,
+.partner-channel-master-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.partner-channel-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.partner-channel-master-form {
+  background: #f7faff;
+  border: 1px solid #d6e4f2;
+  border-radius: 0.85rem;
+  padding: 1rem;
+}
+
+.partner-channel-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.partner-channel-flags label {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.partner-channel-table-wrap {
+  overflow-x: auto;
+}
+
+.partner-channel-table {
+  border-collapse: collapse;
+  min-width: 52rem;
+  width: 100%;
+}
+
+.partner-channel-table th,
+.partner-channel-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.partner-channel-table th {
+  background: #eef5fb;
+  color: #31465c;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.partner-channel-table td small {
+  color: #64768a;
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.partner-channel-directory-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
 .partner-channel-card {
   padding: 1.25rem;
 }
@@ -2294,6 +2392,15 @@
 }
 
 @media (max-width: 720px) {
+  .partner-channel-mode {
+    grid-template-columns: 1fr;
+  }
+
+  .partner-channel-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .partner-property-manager__property-heading {
     display: grid;
   }

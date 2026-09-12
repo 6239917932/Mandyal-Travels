@@ -235,17 +235,18 @@ export const pmsModules: readonly PmsModule[] = [
   },
   {
     code: 'CH',
-    description: 'Provider connections, property mapping and synchronization review.',
+    description:
+      'One PMS calendar for rates, rooms and restrictions with manual external-channel action sheets.',
     group: 'Revenue and distribution',
     href: '/partner/channels',
-    name: 'Channel distribution',
+    name: 'Distribution command centre',
     phase: 2,
     status: 'LIVE',
   },
   {
     code: 'ON',
     description:
-      'Contracted OTA connectivity at scale with certified adapters, reconciliation and monitored synchronization.',
+      'Optional future OTA automation; unavailable unless the hotel later obtains certified provider access.',
     group: 'Revenue and distribution',
     name: 'External OTA network',
     phase: 4,

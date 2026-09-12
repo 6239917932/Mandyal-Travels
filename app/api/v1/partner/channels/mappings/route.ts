@@ -43,7 +43,7 @@ export async function POST(request: Request): Promise<Response> {
           entityId: saved.id,
           entityType: 'HOTEL_CHANNEL_MAPPING',
           partnerId: access.partnerId!,
-          summary: `Mapped ${property.displayName} to an external property reference.`,
+          summary: `Mapped ${property.displayName} to a manual sales-channel reference.`,
         },
       });
       return saved;
