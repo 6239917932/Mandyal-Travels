@@ -1,5 +1,5 @@
-export const PARTNER_AGREEMENT_VERSION = '1.0';
-export const PARTNER_AGREEMENT_EFFECTIVE_DATE = '2026-09-11';
+export const PARTNER_AGREEMENT_VERSION = '1.1';
+export const PARTNER_AGREEMENT_EFFECTIVE_DATE = '2026-09-13';
 
 export type PartnerAgreementType = 'HOTEL' | 'CAR' | 'BUS';
 
@@ -8,18 +8,18 @@ export const PARTNER_AGREEMENTS: Record<
   { contentSha256: string; documentPath: string; title: string }
 > = {
   HOTEL: {
-    contentSha256: 'ec3777982d93d5adf37afac00dbac773a4cc09f0729d767993cfb05222a3ee65',
-    documentPath: '/legal/partner-agreements/Mandyal_Hotel_Partner_Agreement_v1.0.docx',
+    contentSha256: 'b9223f0404b33f28f93049208ef89669816a0e9ad9a6041ee6d08124e5b0c73d',
+    documentPath: '/legal/partner-agreements/Mandyal_Hotel_Partner_Agreement_v1.1.docx',
     title: 'Hotel Partner Agreement',
   },
   CAR: {
-    contentSha256: 'd750f9ea3017333384f18a4a3312f427e18025f1298040a7985f4207de6ad81c',
-    documentPath: '/legal/partner-agreements/Mandyal_Car_Partner_Agreement_v1.0.docx',
+    contentSha256: '28e082f24e9247d6c1f848a533c0fc757ecd15e299ce8f6f0052b1430c370aa2',
+    documentPath: '/legal/partner-agreements/Mandyal_Car_Partner_Agreement_v1.1.docx',
     title: 'Car Partner Agreement',
   },
   BUS: {
-    contentSha256: '6ebcd7620f4fc924f8f9a5182da0e6db67bb814fc93b56043a33a889f8ca13bd',
-    documentPath: '/legal/partner-agreements/Mandyal_Bus_Partner_Agreement_v1.0.docx',
+    contentSha256: 'f5ff7c5260277c84b036a051f430e12349d2caac38d283732d30b46bdad229ff',
+    documentPath: '/legal/partner-agreements/Mandyal_Bus_Partner_Agreement_v1.1.docx',
     title: 'Bus Partner Agreement',
   },
 };

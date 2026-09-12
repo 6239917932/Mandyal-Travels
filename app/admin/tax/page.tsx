@@ -61,7 +61,7 @@ export default async function AdminTaxPage() {
           </Link>
         </div>
         <div className="admin-hero__posture">
-          <span className="admin-hero__secure">20% all-inclusive commission</span>
+          <span className="admin-hero__secure">18% marketplace commission</span>
           <strong>Live payments remain separately gated</strong>
           <span>No tax rate can be entered by a supplier.</span>
           <span>All totals are estimates until returns and input credits are reconciled.</span>

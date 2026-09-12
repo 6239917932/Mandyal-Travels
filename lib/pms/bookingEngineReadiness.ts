@@ -1,3 +1,5 @@
+import { MARKETPLACE_TAX_RULE } from '../finance/marketplaceTax.ts';
+
 export type BookingEngineReadinessInput = Readonly<{
   activeRatePlans: number;
   activeRoomTypes: number;
@@ -34,10 +36,13 @@ export function assessBookingEngineReadiness(input: BookingEngineReadinessInput)
     {
       label: 'Tax and commission',
       message:
-        input.taxProfileReady && input.commissionBasisPoints === 2_000
+        input.taxProfileReady &&
+        input.commissionBasisPoints === MARKETPLACE_TAX_RULE.commissionBasisPoints
           ? 'Verified tax classification and the governed marketplace commission are recorded.'
           : 'Complete administrator-reviewed tax classification and commission setup.',
-      ready: input.taxProfileReady && input.commissionBasisPoints === 2_000,
+      ready:
+        input.taxProfileReady &&
+        input.commissionBasisPoints === MARKETPLACE_TAX_RULE.commissionBasisPoints,
     },
     {
       label: 'Public content',

@@ -1,7 +1,9 @@
+import { BOOKING_FEE_RULES } from './partnerCommercialPolicy.ts';
+
 export const MARKETPLACE_TAX_RULE = {
-  commissionBasisPoints: 2_000,
+  commissionBasisPoints: BOOKING_FEE_RULES.MANDYAL_MARKETPLACE.basisPoints,
   commissionGstBasisPoints: 1_800,
-  effectiveFrom: '2026-08-31',
+  effectiveFrom: '2026-09-13',
   gatewayFeeBasisPoints: 195,
   gatewayFeeGstBasisPoints: 1_800,
   gstTcsBasisPoints: 50,
@@ -12,7 +14,7 @@ export const MARKETPLACE_TAX_RULE = {
     'https://cbic-gst.gov.in/pdf/01072020-CGST-Rules-2017-Part-A-Rules.pdf',
     'https://incometaxindia.gov.in/Pages/acts/income-tax-act.aspx',
   ],
-  version: 'IN-MARKETPLACE-2026-08-31-v1',
+  version: 'IN-MARKETPLACE-2026-09-13-v2',
 } as const;
 
 export type MarketplaceTaxProfile = {

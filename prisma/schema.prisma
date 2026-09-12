@@ -224,7 +224,7 @@ model SupplyPartner {
   status                   String                        @default("ACTIVE")
   contactEmail             String?
   contactPhone             String?
-  commissionBasisPoints    Int                           @default(2000)
+  commissionBasisPoints    Int                           @default(1800)
   settlementDelayDays      Int                           @default(2)
   payoutDestinationVersion Int                           @default(0)
   createdAt                DateTime                      @default(now())
