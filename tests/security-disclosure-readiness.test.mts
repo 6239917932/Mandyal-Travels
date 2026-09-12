@@ -5,7 +5,7 @@ import test from 'node:test';
 test('public security disclosure publishes a monitored contact and canonical URL', () => {
   const disclosure = readFileSync('public/.well-known/security.txt', 'utf8');
 
-  assert.match(disclosure, /^Contact: mailto:contact@mandyaltravels\.com$/m);
+  assert.match(disclosure, /^Contact: mailto:support@mandyaltravels\.com$/m);
   assert.match(
     disclosure,
     /^Canonical: https:\/\/www\.mandyaltravels\.com\/\.well-known\/security\.txt$/m,

@@ -29,7 +29,7 @@ export interface PolicyDocument {
 export const PRIVACY_CONSENT_VERSION = 'privacy-v3.0-pending-legal-approval';
 
 const commonContact =
-  'Contact Mandyal Travels Services Private Limited at contact@mandyaltravels.com or +91 80693 77940. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.';
+  'Contact Mandyal Travels Services Private Limited at support@mandyaltravels.com or +91 80693 77940. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.';
 
 const policyDocuments: Record<PolicyKind, PolicyDocument> = {
   privacy: {
