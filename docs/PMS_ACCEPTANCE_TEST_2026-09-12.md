@@ -42,9 +42,9 @@ controls are append-only.
 
 ## Automated verification
 
-- Domain and security suite: 762/762 passing.
+- Domain and security suite: 775/775 passing.
 - Focused mobile-readiness, mobile-workspace, registry, and provider-gate tests: 12/12 passing.
-- Static route verification: 541/541 internal links resolve.
+- Static route verification: 543/543 internal links resolve.
 - Production build: 265 application routes.
 
 ## Remaining controlled gates
