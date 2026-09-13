@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
 import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
@@ -188,6 +188,9 @@ async function concurrentTripResponse(
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return errorResponse('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels portal.', 403);
+  }
   const user = await getCurrentUser();
   if (!user) return errorResponse('AUTH_REQUIRED', 'Sign in to save this trip.', 401);
 
