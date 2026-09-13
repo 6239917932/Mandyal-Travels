@@ -7,6 +7,7 @@ import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
 import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
   BusinessCheckoutError,
   revalidateTravelSelection,
@@ -569,7 +570,64 @@ export async function POST(request: Request) {
 
   try {
     if (!businessCheckout) {
-      const result = await prisma.$transaction(async (transaction) => {
+      const result = await prisma.$transaction(
+        async (transaction) => {
+          const existing = await transaction.customerTrip.findUnique({
+            select: CUSTOMER_TRIP_INTEGRITY_SELECT,
+            where: { confirmationCode },
+          });
+          const existingResponse = resolveExistingTrip(existing, immutableContext, owner);
+          if (existingResponse) return { created: false, trip: existingResponse };
+
+          const createdTrip = await transaction.customerTrip.create({
+            data: { confirmationCode, ...tripData },
+          });
+          if (promotionReservationToken) {
+            await redeemPromotion(transaction, {
+              authorizedAt: promotionAuthorizedAt,
+              claimKey: promotionReservationToken,
+              customerTripId: createdTrip.id,
+              finalTotal: totalAmount as number,
+            });
+          }
+          if (carOfferId?.startsWith('direct-')) {
+            await partnerOperationsService.reserveDirectVehicle(transaction, {
+              confirmationCode,
+              customerEmail: user.email,
+              customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+              customerTripId: createdTrip.id,
+              dropoffDate: endDate ?? startDate,
+              offerId: carOfferId,
+              pickupDate: startDate,
+              totalAmount: totalAmount as number,
+            });
+          }
+          if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
+            await partnerOperationsService.reserveDirectBus(transaction, {
+              confirmationCode,
+              customerEmail: user.email,
+              customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
+              customerTripId: createdTrip.id,
+              holdId: busSeatHoldId as string,
+              offerId: busOfferId,
+              passengerCount: busPassengers,
+              seats: parsedBusSeats,
+              serviceDate: startDate,
+              totalAmount: totalAmount as number,
+              userId: user.id,
+            });
+          }
+          const response = customerTripResponse(createdTrip);
+          if (!response) throw new Error('Created trip failed its public response contract.');
+          return { created: true, trip: response };
+        },
+        { isolationLevel: 'Serializable' },
+      );
+      return NextResponse.json({ data: result.trip }, { status: result.created ? 201 : 200 });
+    }
+
+    const result = await prisma.$transaction(
+      async (transaction) => {
         const existing = await transaction.customerTrip.findUnique({
           select: CUSTOMER_TRIP_INTEGRITY_SELECT,
           where: { confirmationCode },
@@ -577,14 +635,30 @@ export async function POST(request: Request) {
         const existingResponse = resolveExistingTrip(existing, immutableContext, owner);
         if (existingResponse) return { created: false, trip: existingResponse };
 
-        const createdTrip = await transaction.customerTrip.create({
-          data: { confirmationCode, ...tripData },
+        const completed = await transaction.businessTravelRequest.updateMany({
+          data: {
+            bookedAt: new Date(),
+            bookingTotalAmount: totalAmount as number,
+            status: 'BOOKED',
+          },
+          where: { id: businessCheckout.requestId, requesterId: user.id, status: 'APPROVED' },
+        });
+        if (completed.count !== 1) {
+          throw new BusinessCheckoutError(
+            'BUSINESS_REQUEST_ALREADY_USED',
+            'This company request is no longer available for booking.',
+          );
+        }
+
+        const data = { ...tripData, businessTravelRequestId: businessCheckout.requestId };
+        const completedTrip = await transaction.customerTrip.create({
+          data: { confirmationCode, ...data },
         });
         if (promotionReservationToken) {
           await redeemPromotion(transaction, {
             authorizedAt: promotionAuthorizedAt,
             claimKey: promotionReservationToken,
-            customerTripId: createdTrip.id,
+            customerTripId: completedTrip.id,
             finalTotal: totalAmount as number,
           });
         }
@@ -593,7 +667,7 @@ export async function POST(request: Request) {
             confirmationCode,
             customerEmail: user.email,
             customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
-            customerTripId: createdTrip.id,
+            customerTripId: completedTrip.id,
             dropoffDate: endDate ?? startDate,
             offerId: carOfferId,
             pickupDate: startDate,
@@ -605,7 +679,7 @@ export async function POST(request: Request) {
             confirmationCode,
             customerEmail: user.email,
             customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
-            customerTripId: createdTrip.id,
+            customerTripId: completedTrip.id,
             holdId: busSeatHoldId as string,
             offerId: busOfferId,
             passengerCount: busPassengers,
@@ -615,90 +689,23 @@ export async function POST(request: Request) {
             userId: user.id,
           });
         }
-        const response = customerTripResponse(createdTrip);
+        await transaction.businessAuditLog.create({
+          data: createBusinessAuditData({
+            action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
+            actorUserId: user.id,
+            entityId: businessCheckout.requestId,
+            entityType: 'TRAVEL_REQUEST',
+            metadata: { confirmationCode, productType, totalAmount: totalAmount as number },
+            organizationId: businessCheckout.organizationId,
+            summary: `${productType.toLowerCase()} company travel booked.`,
+          }),
+        });
+        const response = customerTripResponse(completedTrip);
         if (!response) throw new Error('Created trip failed its public response contract.');
         return { created: true, trip: response };
-      });
-      return NextResponse.json({ data: result.trip }, { status: result.created ? 201 : 200 });
-    }
-
-    const result = await prisma.$transaction(async (transaction) => {
-      const existing = await transaction.customerTrip.findUnique({
-        select: CUSTOMER_TRIP_INTEGRITY_SELECT,
-        where: { confirmationCode },
-      });
-      const existingResponse = resolveExistingTrip(existing, immutableContext, owner);
-      if (existingResponse) return { created: false, trip: existingResponse };
-
-      const completed = await transaction.businessTravelRequest.updateMany({
-        data: {
-          bookedAt: new Date(),
-          bookingTotalAmount: totalAmount as number,
-          status: 'BOOKED',
-        },
-        where: { id: businessCheckout.requestId, requesterId: user.id, status: 'APPROVED' },
-      });
-      if (completed.count !== 1) {
-        throw new BusinessCheckoutError(
-          'BUSINESS_REQUEST_ALREADY_USED',
-          'This company request is no longer available for booking.',
-        );
-      }
-
-      const data = { ...tripData, businessTravelRequestId: businessCheckout.requestId };
-      const completedTrip = await transaction.customerTrip.create({
-        data: { confirmationCode, ...data },
-      });
-      if (promotionReservationToken) {
-        await redeemPromotion(transaction, {
-          authorizedAt: promotionAuthorizedAt,
-          claimKey: promotionReservationToken,
-          customerTripId: completedTrip.id,
-          finalTotal: totalAmount as number,
-        });
-      }
-      if (carOfferId?.startsWith('direct-')) {
-        await partnerOperationsService.reserveDirectVehicle(transaction, {
-          confirmationCode,
-          customerEmail: user.email,
-          customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
-          customerTripId: completedTrip.id,
-          dropoffDate: endDate ?? startDate,
-          offerId: carOfferId,
-          pickupDate: startDate,
-          totalAmount: totalAmount as number,
-        });
-      }
-      if (busOfferId?.startsWith('direct-bus-trip-') && parsedBusSeats && busPassengers) {
-        await partnerOperationsService.reserveDirectBus(transaction, {
-          confirmationCode,
-          customerEmail: user.email,
-          customerName: readCustomerName(details as Record<string, unknown>, user.firstName),
-          customerTripId: completedTrip.id,
-          holdId: busSeatHoldId as string,
-          offerId: busOfferId,
-          passengerCount: busPassengers,
-          seats: parsedBusSeats,
-          serviceDate: startDate,
-          totalAmount: totalAmount as number,
-          userId: user.id,
-        });
-      }
-      await transaction.businessAuditLog.create({
-        data: createBusinessAuditData({
-          action: BUSINESS_AUDIT_ACTIONS.TRAVEL_BOOKED,
-          actorUserId: user.id,
-          entityId: businessCheckout.requestId,
-          entityType: 'TRAVEL_REQUEST',
-          metadata: { confirmationCode, productType, totalAmount: totalAmount as number },
-          organizationId: businessCheckout.organizationId,
-          summary: `${productType.toLowerCase()} company travel booked.`,
-        }),
-      });
-      const response = customerTripResponse(completedTrip);
-      if (!response) throw new Error('Created trip failed its public response contract.');
-      return { created: true, trip: response };
-    });
+      },
+      { isolationLevel: 'Serializable' },
+    );
 
     return NextResponse.json({ data: result.trip }, { status: result.created ? 201 : 200 });
   } catch (error) {
@@ -708,6 +715,13 @@ export async function POST(request: Request) {
     }
     const completedRetry = await concurrentTripResponse(confirmationCode, immutableContext, owner);
     if (completedRetry) return completedRetry;
+    if (hasPrismaErrorCode(error, 'P2034')) {
+      return errorResponse(
+        'TRIP_INVENTORY_CHANGED',
+        'The selected inventory changed while this booking was being completed. Please review availability and try again.',
+        409,
+      );
+    }
     if (error instanceof PartnerOperationsError) {
       return errorResponse(error.code, error.message, 409);
     }
