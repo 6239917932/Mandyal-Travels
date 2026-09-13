@@ -5,7 +5,7 @@ additive: no existing module is removed. A capability is labelled **Live** only 
 workflow exists in the portal. **Foundation** means reusable controls exist but an operational or
 provider gate remains. **Planned** means the workspace is visible while transactions stay disabled.
 
-As verified on 12 September 2026, the registry contains 46 unique workspaces: 42 live, 3 controlled
+As verified on 14 September 2026, the registry contains 47 unique workspaces: 43 live, 3 controlled
 foundations, and 1 planned external-provider workspace.
 
 ## Front desk and reservations
@@ -27,6 +27,8 @@ foundations, and 1 planned external-provider workspace.
 
 - Live: cleaning/readiness status, attendant work, inspections, housekeeping controls, laundry,
   minibar services, maintenance requests, downtime, and stock movements.
+- Live: privacy-minimized lost-and-found registration, secure custody, claimant matching, controlled
+  return or administrator-authorized disposal, and immutable evidence history.
 
 ## Restaurant and food service
 
