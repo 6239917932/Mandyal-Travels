@@ -17,9 +17,9 @@ export default function MarketplacePricingPage() {
         <p className="legal-eyebrow">CLEAR PRICES BEFORE PAYMENT</p>
         <h1>How marketplace pricing works</h1>
         <p>
-          Hotels and vehicle operators set their own base price. For approved marketplace listings,
-          Mandyal Travels converts that base into a public price that includes its 20% commercial
-          commission. Applicable government taxes are then shown separately before payment.
+          Every booking is classified by source before money is collected. Mandyal marketplace
+          bookings use an 18% all-inclusive commercial fee; direct PMS bookings and external OTA
+          imports follow separate rules. Applicable government taxes are shown before payment.
         </p>
         <div className="legal-draft-notice" role="note">
           Live marketplace payments and public partner listings remain disabled until GST,
@@ -28,42 +28,53 @@ export default function MarketplacePricingPage() {
       </section>
 
       <section className="legal-content">
-        <p className="legal-eyebrow">ILLUSTRATIVE HOTEL PRICE</p>
-        <h2>A supplier base of ₹1,000</h2>
+        <p className="legal-eyebrow">LAUNCH COMMERCIAL SCHEDULE</p>
+        <h2>One source, one disclosed rule</h2>
         <div className="legal-card-grid">
           <Card>
-            <h3>Public room price</h3>
+            <h3>Mandyal marketplace</h3>
             <p>
-              ₹1,250 before accommodation GST. The ₹250 difference is Mandyal Travels&apos; gross
-              commission, inclusive of GST on that commission and standard payment processing.
+              18% of booking value, minimum ₹199, inclusive of GST on Mandyal&apos;s fee and
+              standard gateway processing. The customer sees the total before payment.
             </p>
           </Card>
           <Card>
-            <h3>Government tax</h3>
+            <h3>PMS direct · online</h3>
             <p>
-              At an illustrative 12% hotel GST rate, ₹150 is added and the customer total is ₹1,400.
-              The applicable rate is selected by the server from reviewed rules, not by the
-              supplier.
+              6% of booking value, minimum ₹99, when a hotel-created direct or walk-in booking is
+              paid through an enabled Mandyal payment flow.
             </p>
           </Card>
           <Card>
-            <h3>Supplier settlement</h3>
+            <h3>PMS direct · offline</h3>
             <p>
-              The supplier&apos;s base and any GST due to a registered supplier are settled after
-              the stay, less statutory GST TCS or income-tax TDS where applicable. Those deductions
-              are credited to the supplier through government reporting; they are not Mandyal
-              revenue.
+              3% of booking value, minimum ₹49, when the hotel records cash, its own UPI, or its own
+              POS. The fee remains payable to Mandyal; the PMS must record the actual payment mode.
             </p>
           </Card>
           <Card>
-            <h3>Refunds</h3>
+            <h3>External OTA import</h3>
             <p>
-              Refund eligibility follows the rate and supplier cancellation policy shown before
-              booking. An approved refund reverses the corresponding commission, tax, and supplier
-              amounts in the settlement record.
+              0% Mandyal booking commission. The OTA&apos;s own contract and charges remain between
+              the hotel and that OTA. Imported payments must never be represented as collected by
+              Mandyal.
             </p>
           </Card>
         </div>
+        <h2>PMS subscription</h2>
+        <p>
+          Months 1–6 are free. Months 7–12 are charged at 50% of the applicable room tier. From
+          month 13, monthly prices are ₹1,999 for 1–10 rooms, ₹2,999 for 11–20, ₹4,499 for 21–35,
+          ₹5,999 for 36–50, and ₹8,999 for 51–100, plus GST. Larger properties require a written
+          quote. A standard-rate annual term beginning in month 13 or later charges the equivalent
+          of 10 months. Transaction fees apply from day one.
+        </p>
+        <p>
+          Supplier settlement becomes eligible only after successful capture, checkout,
+          reconciliation, and clearance of refund, fraud, chargeback, compliance, or legal holds.
+          The operating target is two business days after eligibility, not a guaranteed 48-hour
+          clock.
+        </p>
         <p>
           <strong>No hidden payment surcharge:</strong> standard gateway processing is included in
           the commercial commission. A clearly identified exceptional fee can be charged only when

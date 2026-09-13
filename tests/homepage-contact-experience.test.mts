@@ -6,8 +6,12 @@ import { siteConfig } from '../config/site.ts';
 
 test('public contact details are centralized and complete', () => {
   assert.equal(siteConfig.legalName, 'Mandyal Travels Services Private Limited');
-  assert.equal(siteConfig.supportEmail, 'contact@mandyaltravels.com');
+  assert.equal(siteConfig.supportEmail, 'support@mandyaltravels.com');
   assert.equal(siteConfig.supportPhone.href, '+918069377940');
+  assert.equal(
+    siteConfig.socialLinks.facebook,
+    'https://www.facebook.com/profile.php?id=61594331641440',
+  );
   assert.match(siteConfig.supportPhone.href, /^\+\d{10,15}$/);
   assert.equal(siteConfig.officeLocations.length, 2);
   assert.deepEqual(
@@ -34,6 +38,8 @@ test('homepage and footer direct customers to the centralized contact experience
   assert.match(footer, /siteConfig\.supportPhone\.display/);
   assert.match(footer, /siteConfig\.legalName/);
   assert.match(footer, /siteConfig\.registeredOffice\.lines/);
+  assert.match(footer, /siteConfig\.socialLinks\.facebook/);
+  assert.match(footer, /Follow us on Facebook/);
 });
 
 test('contact page offers a persisted, protected public message flow', async () => {

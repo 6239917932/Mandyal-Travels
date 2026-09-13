@@ -40,7 +40,7 @@ test('homepage hero provides a focused hotel-and-car-first booking widget', asyn
   assert.match(page, /mandyal-travel-hero-v2\.png/);
   assert.match(page, /<HomeBookingWidget \/>/);
   assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /Stay, drive, and grow with us\./);
+  assert.match(page, /Mandyal Travels: stay, drive, and grow with us\./);
   assert.match(
     page,
     /Rooted in Himachal, we promise clear choices, dependable service, and human support—\s+so every journey feels cared for from the first search to your safe return home/,

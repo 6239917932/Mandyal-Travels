@@ -14,6 +14,7 @@ const PRIVATE_TRIAL_FEATURES = [
 ] as const satisfies readonly PlatformFeatureKey[];
 
 type TrialFeatureKey = (typeof PRIVATE_TRIAL_FEATURES)[number];
+type PrivateTrialPartnerType = 'CAR' | 'HOTEL';
 
 export class PartnerTrialWorkspaceError extends Error {
   constructor(
@@ -61,10 +62,11 @@ export async function getPrivateTrialWorkspaceState() {
   return { enabled: await readPrivateTrialMode() };
 }
 
-export async function grantPrivateHotelTrialWorkspace(input: {
+export async function grantPrivatePartnerTrialWorkspace(input: {
   actorUserId: string;
   confirmation: string;
   email: string;
+  partnerType: PrivateTrialPartnerType;
   reason: string;
   workspaceName: string;
 }) {
@@ -72,6 +74,7 @@ export async function grantPrivateHotelTrialWorkspace(input: {
   const workspaceName = input.workspaceName.trim().replace(/\s+/g, ' ');
   const reason = input.reason.trim().replace(/\s+/g, ' ');
   if (
+    !['CAR', 'HOTEL'].includes(input.partnerType) ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
     email.length > 254 ||
     workspaceName.length < 2 ||
@@ -98,29 +101,38 @@ export async function grantPrivateHotelTrialWorkspace(input: {
         'Private trial access is available only while paid onboarding, payouts, public listings, live payments, and the car marketplace are disabled.',
       );
     }
-    const user = await transaction.user.findUnique({ where: { email } });
+    const user = await transaction.user.findUnique({
+      include: {
+        organizationMemberships: { select: { role: true } },
+      },
+      where: { email },
+    });
     if (!user) {
       throw new PartnerTrialWorkspaceError(
         'ACCOUNT_NOT_FOUND',
-        'Create and verify the dedicated trial account before granting PMS access.',
+        'Create and verify the dedicated trial account before granting partner access.',
       );
     }
     if (user.accessStatus !== 'ACTIVE') {
       throw new PartnerTrialWorkspaceError(
         'ACCOUNT_UNAVAILABLE',
-        'The trial account must be active before PMS access can be granted.',
+        'The trial account must be active before partner access can be granted.',
       );
     }
     if (!user.emailVerifiedAt) {
       throw new PartnerTrialWorkspaceError(
         'ACCOUNT_NOT_VERIFIED',
-        'Verify the trial account email before granting PMS access.',
+        'Verify the trial account email before granting partner access.',
       );
     }
-    if (user.role !== 'CUSTOMER') {
+    const isCustomerAccount = user.role === 'CUSTOMER';
+    const isBusinessAdministrator =
+      user.role === 'BUSINESS_ADMIN' &&
+      user.organizationMemberships.some((membership) => membership.role === 'ADMIN');
+    if (!isCustomerAccount && !isBusinessAdministrator) {
       throw new PartnerTrialWorkspaceError(
         'ROLE_CONFLICT',
-        'Private PMS trials must start from a separate customer account.',
+        'Private partner trials require a verified customer or business administrator account.',
       );
     }
     if (await transaction.supplyPartnerMember.findUnique({ where: { userId: user.id } })) {
@@ -146,16 +158,18 @@ export async function grantPrivateHotelTrialWorkspace(input: {
         contactEmail: email,
         name: workspaceName,
         status: 'ACTIVE',
-        type: 'HOTEL',
+        type: input.partnerType,
       },
     });
     await transaction.supplyPartnerMember.create({
       data: { partnerId: partner.id, role: 'ADMIN', userId: user.id },
     });
-    await transaction.user.update({
-      data: { role: 'PARTNER_ADMIN' },
-      where: { id: user.id },
-    });
+    if (isCustomerAccount) {
+      await transaction.user.update({
+        data: { role: 'PARTNER_ADMIN' },
+        where: { id: user.id },
+      });
+    }
     await transaction.partnerAuditLog.create({
       data: {
         action: 'PRIVATE_TRIAL_WORKSPACE_GRANTED',
@@ -164,6 +178,9 @@ export async function grantPrivateHotelTrialWorkspace(input: {
         entityType: 'USER',
         metadataJson: JSON.stringify({
           accountEmail: email,
+          accountRoleRetained: isBusinessAdministrator ? 'BUSINESS_ADMIN' : null,
+          businessWorkspaceRetained: isBusinessAdministrator,
+          partnerType: input.partnerType,
           reason,
           safeguards: [
             'NO_PUBLIC_LISTINGS',
@@ -173,9 +190,20 @@ export async function grantPrivateHotelTrialWorkspace(input: {
           ],
         }),
         partnerId: partner.id,
-        summary: 'Private hotel PMS trial workspace granted without KYC or publication rights.',
+        summary: `Private ${input.partnerType === 'HOTEL' ? 'hotel PMS' : 'car fleet'} trial workspace granted without KYC or publication rights.`,
       },
     });
-    return { accountEmail: email, partnerId: partner.id, workspaceName: partner.name };
+    return {
+      accountEmail: email,
+      partnerId: partner.id,
+      partnerType: input.partnerType,
+      workspaceName: partner.name,
+    };
   });
+}
+
+export async function grantPrivateHotelTrialWorkspace(
+  input: Omit<Parameters<typeof grantPrivatePartnerTrialWorkspace>[0], 'partnerType'>,
+) {
+  return grantPrivatePartnerTrialWorkspace({ ...input, partnerType: 'HOTEL' });
 }

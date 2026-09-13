@@ -55,6 +55,9 @@ export const siteConfig = {
     display: '+91 80693 77940',
     href: '+918069377940',
   },
-  supportEmail: 'contact@mandyaltravels.com',
+  supportEmail: 'support@mandyaltravels.com',
+  socialLinks: {
+    facebook: 'https://www.facebook.com/profile.php?id=61594331641440',
+  },
   tagline: 'From the heart of the Himalayas to everywhere.',
 } as const;

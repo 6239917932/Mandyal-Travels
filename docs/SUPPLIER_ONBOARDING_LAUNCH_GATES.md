@@ -8,9 +8,12 @@ Status: implementation and legal review checklist. This is not legal advice or a
 
 ## Commercial configuration
 
-- One-time setup fee: ₹25,000 (2,500,000 paise).
-- Monthly subscription: ₹999 (99,900 paise).
-- First checkout snapshot: ₹25,999 unless an approved campaign changes the commercial offer.
+- Standard remote setup fee: ₹0.
+- PMS months 1–6: free from workspace activation.
+- PMS months 7–12: 50% of the applicable room-tier price.
+- PMS month 13 onward: ₹1,999 / ₹2,999 / ₹4,499 / ₹5,999 / ₹8,999 plus GST for the 1–10 / 11–20 / 21–35 / 36–50 / 51–100 room tiers; larger properties require a written quote.
+- Annual billing: the equivalent of ten monthly charges.
+- Source-based transaction fees apply from day one under commercial policy `IN-PARTNER-COMMERCIAL-2026-09-13-v1`.
 - A valid platform-created waiver coupon may reduce the first checkout to ₹0. Coupon claims must be bounded, auditable, and server validated.
 - A ₹0 waiver is an explicit entitlement; it is not a fake payment transaction.
 - Recurring collection must not start until a separate PayU mandate and supplier consent are recorded.

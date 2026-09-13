@@ -8,7 +8,7 @@ credits.
 ## Commercial model
 
 - A hotel supplier enters its own base price.
-- The public taxable price is grossed up so the platform's 20% gross commission is included in that
+- The public taxable price is grossed up so the platform's 18% gross commission is included in that
   public price. The commission includes GST on the commission and standard payment processing.
 - Accommodation GST is shown separately to the customer and is never treated as platform revenue.
 - A supplier cannot select a tax rate. The server selects the configured rate from the reviewed tax

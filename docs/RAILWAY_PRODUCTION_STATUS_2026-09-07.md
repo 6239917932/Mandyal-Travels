@@ -1,4 +1,4 @@
-# Railway production status — updated 12 September 2026
+# Railway production status — updated 13 September 2026
 
 ## Verified platform state
 
@@ -19,10 +19,10 @@
 
 ## Quality evidence
 
-- 762 domain and security tests pass.
-- All 104 SQLite migrations and the 132-model PostgreSQL parity contract pass.
+- 775 domain and security tests pass.
+- All 108 SQLite migrations and the 137-model PostgreSQL parity contract pass.
 - The production build completes with 265 application routes.
-- Static verification confirms 541 internal links resolve to registered application routes.
+- Static verification confirms 543 internal links resolve to registered application routes.
 - Twelve focused mobile-readiness, mobile-workspace, registry, and provider-gate tests pass.
 - The additive PMS registry contains 46 unique workspaces: 42 live, 3 controlled foundations, and
   1 clearly labelled planned workspace. Existing modules remain available; unfinished or
@@ -34,6 +34,23 @@
 - Restaurant POS, kitchen tickets, QR ordering, captain/mobile service, split billing, expense and
   payroll registers, provisional P&L, and reviewed Tally XML export are live governed workflows.
 - Next.js 16.3.4 was merged only after the refreshed branch passed the complete CI matrix.
+
+## Live hotel and car acceptance — 13 September 2026
+
+- The public hotel discovery page loaded with destination, live-inventory, rating, amenity, price,
+  refundable-rate, occupancy, and date controls. With no verified public supply, it returned a safe
+  zero-result state and did not fabricate availability.
+- The public car discovery page loaded with pickup/drop-off, date/time, driver, rental-mode,
+  provider, category, transmission, seat, price, and sorting controls. With no verified public
+  supply, it returned a safe zero-result state and did not fabricate availability.
+- Both hotel and car search forms rejected a date before the operational date through native form
+  validation and did not issue a search request with the invalid date.
+- The supplier application exposed hotel, car, and bus onboarding, commercial-plan disclosure,
+  required compliance acknowledgements, identity/evidence fields, and agreement download. An empty
+  application could not be submitted.
+- Pull request #229 added same-origin protection to authenticated customer trip creation. Its full
+  GitHub check matrix passed, Railway deployment `6417456674` succeeded, and the warmed production
+  synthetic monitor passed all eight checks at 1.856 seconds p95.
 
 ## Acceptance evidence — 12 September 2026
 

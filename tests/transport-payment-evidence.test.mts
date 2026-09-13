@@ -54,6 +54,8 @@ test('transport demo checkout requires explicit non-production opt in', () => {
 
 test('transport trip creation fails closed before reservation persistence', () => {
   const route = readFileSync('app/api/v1/account/trips/route.ts', 'utf8');
+  assert.match(route, /isSameOriginMutation\(request\)/);
+  assert.match(route, /FORBIDDEN_ORIGIN/);
   const confirmation = route.indexOf('confirmTransportPayment({');
   const persistence = route.indexOf('if (!businessCheckout) {', confirmation);
   assert.ok(confirmation > 0);

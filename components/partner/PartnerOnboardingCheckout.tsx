@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { readJsonResponse } from '@/lib/api/clientResponse';
 import type { ApiErrorResponse } from '@/types/commerce';
 
@@ -28,11 +27,9 @@ export function PartnerOnboardingCheckout() {
     event.preventDefault();
     setError(undefined);
     setSaving(true);
-    const form = new FormData(event.currentTarget);
     try {
       const response = await fetch('/api/v1/partners/onboarding/checkout', {
         body: JSON.stringify({
-          couponCode: form.get('couponCode'),
           idempotencyKey: crypto.randomUUID(),
         }),
         headers: { 'Content-Type': 'application/json' },
@@ -61,32 +58,29 @@ export function PartnerOnboardingCheckout() {
 
   return (
     <form className="auth-form ui-card ui-card--padded" onSubmit={submit}>
-      <p className="hotel-page__eyebrow">Step 1 of 3 · enrollment</p>
-      <h2>Activate your supplier workspace</h2>
+      <p className="hotel-page__eyebrow">Step 1 of 3 · protected enrollment</p>
+      <h2>Activate the six-month PMS trial</h2>
       <dl className="booking-summary__totals">
         <div>
-          <dt>One-time setup</dt>
-          <dd>₹25,000</dd>
+          <dt>Standard remote setup</dt>
+          <dd>₹0</dd>
         </div>
         <div>
-          <dt>First monthly subscription</dt>
-          <dd>₹999</dd>
+          <dt>Months 1–6</dt>
+          <dd>Free</dd>
         </div>
         <div>
-          <dt>Due now</dt>
-          <dd>₹25,999</dd>
+          <dt>Months 7–12 · up to 10 rooms</dt>
+          <dd>₹999.50 + GST/month</dd>
+        </div>
+        <div>
+          <dt>Month 13 onward · up to 10 rooms</dt>
+          <dd>₹1,999 + GST/month</dd>
         </div>
       </dl>
-      <Input
-        autoComplete="off"
-        label="Launch coupon (optional)"
-        maxLength={40}
-        name="couponCode"
-        placeholder="Enter coupon code"
-      />
       <small>
-        A valid full-waiver coupon reduces the amount due to ₹0. It does not bypass phone OTP,
-        agreement acceptance, identity checks, or Mandyal Travels review.
+        Transaction fees apply from day one under the accepted fee schedule. The free trial does not
+        bypass phone OTP, agreement acceptance, identity checks, or Mandyal Travels review.
       </small>
       {error ? (
         <p className="booking-page__payment-error" role="alert">
@@ -94,7 +88,7 @@ export function PartnerOnboardingCheckout() {
         </p>
       ) : null}
       <Button fullWidth isLoading={saving} type="submit" variant="accent">
-        Continue to secure payment
+        Activate free trial
       </Button>
     </form>
   );

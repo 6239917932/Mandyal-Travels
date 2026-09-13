@@ -85,8 +85,8 @@ export default async function AdminPartnersPage() {
         </Card>
       </div>
       <section>
-        <p className="hotel-page__eyebrow">Private PMS trial</p>
-        <h2>Grant a dedicated trial account</h2>
+        <p className="hotel-page__eyebrow">Private partner trial</p>
+        <h2>Grant a dedicated hotel or car trial account</h2>
         <Card>
           {privateTrial.enabled ? (
             <AdminPrivateTrialWorkspaceForm />

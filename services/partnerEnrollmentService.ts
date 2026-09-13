@@ -133,9 +133,7 @@ export async function createPartnerOnboardingCheckout(input: {
           provider,
           providerRef: hosted?.providerRef,
           status: quote.waived ? 'WAIVED' : 'CREATED',
-          subtotalAmount:
-            PARTNER_ONBOARDING_PRICE.oneTimeSetupAmount +
-            PARTNER_ONBOARDING_PRICE.monthlySubscriptionAmount,
+          subtotalAmount: PARTNER_ONBOARDING_PRICE.oneTimeSetupAmount,
           userId: input.userId,
         },
       });

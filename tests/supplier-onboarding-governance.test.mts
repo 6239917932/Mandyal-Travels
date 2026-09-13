@@ -13,17 +13,18 @@ import {
   vehicleMayBePublished,
 } from '../lib/partner/listingRiskRules.ts';
 
-test('supplier commercial quote is server-owned and supports an explicit zero-value waiver', () => {
+test('supplier commercial quote is server-owned and activates the standard free trial', () => {
   const paid = quotePartnerOnboarding();
-  assert.equal(paid.oneTimeSetupAmount, 2_500_000);
-  assert.equal(paid.monthlySubscriptionAmount, 99_900);
-  assert.equal(paid.dueNow, 2_599_900);
+  assert.equal(paid.oneTimeSetupAmount, 0);
+  assert.equal(paid.monthlySubscriptionAmount, 199_900);
+  assert.equal(paid.dueNow, 0);
+  assert.equal(paid.waived, true);
   const waived = quotePartnerOnboarding({
     approvedWaiverCodes: new Set(['LAUNCH100']),
     couponCode: 'launch100',
   });
   assert.equal(waived.dueNow, 0);
-  assert.equal(waived.discountAmount, 2_599_900);
+  assert.equal(waived.discountAmount, 0);
   assert.equal(waived.waived, true);
 });
 

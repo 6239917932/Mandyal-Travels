@@ -8,7 +8,7 @@ import { siteConfig } from '@/config/site';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
 const description =
-  'Mandyal Travels Services Private Limited offers hotel discovery, car rentals and trip planning from Mandi and Kangra, Himachal Pradesh.';
+  'Official website of Mandyal Travels, operated by Mandyal Travels Services Private Limited, for hotel discovery, car rentals, trip planning and partner management in Himachal Pradesh, India.';
 
 export const metadata = createPublicMetadata({
   absoluteTitle: true,
@@ -81,7 +81,7 @@ export default function Home() {
         <div className="home-container home-search-hero__content">
           <div className="home-search-hero__copy">
             <p>Hotels and cars, thoughtfully connected</p>
-            <h1 id="home-search-title">Stay, drive, and grow with us.</h1>
+            <h1 id="home-search-title">Mandyal Travels: stay, drive, and grow with us.</h1>
             <span>
               Rooted in Himachal, we promise clear choices, dependable service, and human support—
               so every journey feels cared for from the first search to your safe return home.

@@ -21,6 +21,7 @@ export function AdminPrivateTrialWorkspaceForm() {
         body: JSON.stringify({
           confirmation: formData.get('confirmation'),
           email: formData.get('email'),
+          partnerType: formData.get('partnerType'),
           reason: formData.get('reason'),
           workspaceName: formData.get('workspaceName'),
         }),
@@ -28,7 +29,8 @@ export function AdminPrivateTrialWorkspaceForm() {
         method: 'POST',
       });
       const result = await readJsonResponse<
-        { data: { accountEmail: string; workspaceName: string } } | ApiErrorResponse
+        | { data: { accountEmail: string; partnerType: 'CAR' | 'HOTEL'; workspaceName: string } }
+        | ApiErrorResponse
       >(response);
       if (!response.ok || !result || 'error' in result) {
         setError(result && 'error' in result ? result.error.message : 'Trial access grant failed.');
@@ -47,11 +49,18 @@ export function AdminPrivateTrialWorkspaceForm() {
     <form action={grant} className="supplier-form">
       <div className="supplier-form__grid">
         <label>
+          Trial workspace type
+          <select defaultValue="HOTEL" name="partnerType" required>
+            <option value="HOTEL">Hotel PMS</option>
+            <option value="CAR">Car fleet operations</option>
+          </select>
+        </label>
+        <label>
           Verified trial account email
           <input autoComplete="off" maxLength={254} name="email" required type="email" />
         </label>
         <label>
-          PMS workspace name
+          Workspace name
           <input maxLength={120} minLength={2} name="workspaceName" required />
         </label>
       </div>
@@ -64,11 +73,11 @@ export function AdminPrivateTrialWorkspaceForm() {
         <input autoComplete="off" maxLength={254} name="confirmation" required type="email" />
       </label>
       <p>
-        This grants a private hotel PMS workspace only. It does not approve KYC, publish inventory,
-        collect payments, or enable payouts.
+        This grants a private hotel PMS or car fleet workspace only. It does not approve KYC,
+        publish inventory, collect payments, or enable payouts.
       </p>
       <button className="ui-button ui-button--primary" disabled={busy}>
-        {busy ? 'Granting private access…' : 'Grant private PMS trial'}
+        {busy ? 'Granting private access…' : 'Grant private partner trial'}
       </button>
       {success ? (
         <span className="auth-form__success" role="status">

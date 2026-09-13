@@ -1,7 +1,7 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
-  grantPrivateHotelTrialWorkspace,
+  grantPrivatePartnerTrialWorkspace,
   PartnerTrialWorkspaceError,
 } from '@/services/partnerTrialWorkspaceService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -19,14 +19,20 @@ export async function POST(request: Request) {
   }
   const body = await readJsonObject(request, 4096);
   if (!body) return failure('INVALID_REQUEST', 'Enter the private trial details.', 400);
+  const partnerType =
+    body.partnerType === 'CAR' || body.partnerType === 'HOTEL' ? body.partnerType : null;
+  if (!partnerType) {
+    return failure('INVALID_REQUEST', 'Choose a hotel or car trial workspace.', 400);
+  }
 
   try {
     return Response.json(
       {
-        data: await grantPrivateHotelTrialWorkspace({
+        data: await grantPrivatePartnerTrialWorkspace({
           actorUserId: administrator.id,
           confirmation: typeof body.confirmation === 'string' ? body.confirmation : '',
           email: typeof body.email === 'string' ? body.email : '',
+          partnerType,
           reason: typeof body.reason === 'string' ? body.reason : '',
           workspaceName: typeof body.workspaceName === 'string' ? body.workspaceName : '',
         }),
@@ -43,10 +49,10 @@ export async function POST(request: Request) {
             : 409;
       return failure(error.code, error.message, status);
     }
-    console.error('Private PMS trial provisioning failed.', error);
+    console.error('Private partner trial provisioning failed.', error);
     return failure(
       'TRIAL_PROVISIONING_FAILED',
-      'Private PMS trial access could not be granted.',
+      'Private partner trial access could not be granted.',
       500,
     );
   }

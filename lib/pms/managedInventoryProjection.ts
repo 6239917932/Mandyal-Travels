@@ -13,10 +13,17 @@ type ManagedDay = {
   stopSell: boolean;
 };
 
+type ManagedReservation = {
+  quantity: number;
+  roomTypeId: string;
+  status: 'active' | 'converted' | 'expired' | 'released';
+};
+
 export function mergeManagedInventoryRecords(
   publicRecords: PartnerInventoryRecord[],
   managedRooms: ManagedRoom[],
   calendarDays: ManagedDay[],
+  managedReservations: ManagedReservation[] = [],
 ): PartnerInventoryRecord[] {
   const records = [...publicRecords];
   const knownRoomIds = new Set(publicRecords.map((record) => record.roomTypeId));
@@ -29,15 +36,24 @@ export function mergeManagedInventoryRecords(
           ...controls.map((day) => (day.stopSell ? 0 : day.availableRooms)),
         )
       : room.inventoryCount;
+    const roomReservations = managedReservations.filter(
+      (reservation) => reservation.roomTypeId === room.roomTypeId,
+    );
+    const activeHolds = roomReservations
+      .filter((reservation) => reservation.status === 'active')
+      .reduce((total, reservation) => total + reservation.quantity, 0);
+    const allocatedRooms = roomReservations
+      .filter((reservation) => reservation.status === 'converted')
+      .reduce((total, reservation) => total + reservation.quantity, 0);
     records.push({
-      activeHolds: 0,
-      allocatedRooms: 0,
+      activeHolds,
+      allocatedRooms,
       baseInventory: room.inventoryCount,
       effectiveInventory,
       hotelName: room.hotelName,
       inventorySource: 'MANAGED_PMS',
       overrideApplied: controls.length > 0,
-      remainingRooms: effectiveInventory,
+      remainingRooms: Math.max(0, effectiveInventory - activeHolds - allocatedRooms),
       roomName: room.roomName,
       roomTypeId: room.roomTypeId,
     });

@@ -1,6 +1,7 @@
 import { normalizeEmail } from '@/lib/auth/validation';
 import { createBookingAccessToken, hashBookingAccessToken } from '@/lib/bookingAccessToken';
 import { createBookingReference } from '@/lib/confirmationCode';
+import { calculatePartnerBookingFee } from '@/lib/finance/partnerCommercialPolicy';
 import { prisma } from '@/lib/prisma';
 import { availabilityLockRepository } from '@/repositories/availabilityLockRepository';
 import { inventoryOverrideRepository } from '@/repositories/inventoryOverrideRepository';
@@ -324,6 +325,13 @@ export async function confirmPartnerDirectBooking(
 
   const bookingId = crypto.randomUUID();
   const confirmationCode = createBookingReference('MT');
+  const taxableBookingValue = quote.components
+    .filter((component) => component.type === 'room-charge')
+    .reduce((total, component) => total + component.amount, 0);
+  const commercialFee = calculatePartnerBookingFee({
+    bookingValueRupees: taxableBookingValue,
+    source: 'PMS_DIRECT_OFFLINE',
+  });
   try {
     const created = await prisma.$transaction(async (transaction) => {
       const booking = await transaction.booking.create({
@@ -343,8 +351,7 @@ export async function confirmPartnerDirectBooking(
               environment: 'LIVE',
               provider: 'PAY_AT_PROPERTY',
               providerRef: `pay-at-property-${bookingId}`,
-              reconciliationNote:
-                'Payment is due at the property and has not been captured by Mandyal Travels.',
+              reconciliationNote: `Payment is due at the property and has not been captured by Mandyal Travels. Partner platform fee: INR ${commercialFee.grossFeeRupees} under ${commercialFee.policyVersion}.`,
               reconciliationStatus: 'UNRECONCILED',
               status: 'pending',
             },
@@ -366,6 +373,8 @@ export async function confirmPartnerDirectBooking(
             confirmationCode,
             hotelSlug: quote.hotelSlug,
             paymentArrangement: 'PAY_AT_PROPERTY',
+            commercialFee,
+            taxableBookingValue,
             totalAmount: quote.totalAmount,
           }),
           partnerId,

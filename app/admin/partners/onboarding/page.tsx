@@ -88,8 +88,8 @@ export default async function AdminPartnerOnboardingPage() {
           <p className="admin-hero__eyebrow">Controlled supplier enrollment</p>
           <h1>Enrollment operations</h1>
           <p>
-            Monitor the ₹25,000 setup and ₹999 monthly enrollment offer, agreement evidence, and
-            deliberately bounded launch waivers.
+            Monitor the six-month free trial, room-tier subscription schedule, agreement evidence,
+            and deliberately bounded launch waivers.
           </p>
           <div className="admin-hero__actions">
             <Link className="ui-button ui-button--secondary" href="/admin/partners">

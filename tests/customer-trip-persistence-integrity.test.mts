@@ -171,7 +171,10 @@ test('write and lookup routes keep private fields internal and resolve inside tr
   assert.match(createRoute, /reference\.productType !== productType/);
   assert.match(createRoute, /customerTripContextsMatch\(existing, requested\)/);
   assert.match(createRoute, /customerOwnsTrip\(existing, owner\)/);
-  assert.match(createRoute, /prisma\.\$transaction\(async \(transaction\)/);
+  assert.match(createRoute, /prisma\.\$transaction\(\s*async \(transaction\)/);
+  assert.equal((createRoute.match(/isolationLevel: 'Serializable'/g) ?? []).length, 2);
+  assert.match(createRoute, /hasPrismaErrorCode\(error, 'P2034'\)/);
+  assert.match(createRoute, /TRIP_INVENTORY_CHANGED/);
   assert.match(createRoute, /select: CUSTOMER_TRIP_INTEGRITY_SELECT/);
   assert.match(createRoute, /status: result\.created \? 201 : 200/);
   assert.match(createRoute, /action: 'CUSTOMER_TRIP_CREATE'/);
