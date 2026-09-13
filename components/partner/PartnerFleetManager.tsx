@@ -83,68 +83,89 @@ export function PartnerFleetManager({
   }, []);
   async function createVehicle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setBusy(true);
     setError(undefined);
     setMessage(undefined);
-    const form = new FormData(event.currentTarget);
-    const response = await fetch('/api/v1/partner/vehicles', {
-      body: JSON.stringify(Object.fromEntries(form)),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
-    const result = await readJsonResponse<{ data: Vehicle } | ApiErrorResponse>(response);
-    if (!response.ok)
-      setError(result && 'error' in result ? result.error.message : 'Vehicle could not be added.');
-    else {
-      event.currentTarget.reset();
-      setMessage('Vehicle submitted for administrator review. It is not yet visible to customers.');
-      setVehicles(await fetchVehicles());
+    try {
+      const form = new FormData(formElement);
+      const response = await fetch('/api/v1/partner/vehicles', {
+        body: JSON.stringify(Object.fromEntries(form)),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const result = await readJsonResponse<{ data: Vehicle } | ApiErrorResponse>(response);
+      if (!response.ok) {
+        setError(
+          result && 'error' in result ? result.error.message : 'Vehicle could not be added.',
+        );
+      } else {
+        formElement.reset();
+        setMessage(
+          'Vehicle submitted for administrator review. It is not yet visible to customers.',
+        );
+        setVehicles(await fetchVehicles());
+      }
+    } catch {
+      setError('The fleet service could not be reached.');
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
   async function saveCalendar(event: FormEvent<HTMLFormElement>, vehicleId: string) {
     event.preventDefault();
     setBusy(true);
     setError(undefined);
     setMessage(undefined);
-    const data = Object.fromEntries(new FormData(event.currentTarget));
-    const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/availability`, {
-      body: JSON.stringify({ ...data, stopSell: data.stopSell === 'on' }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
-    const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
-    if (!response.ok)
-      setError(
-        result && 'error' in result ? result.error.message : 'Calendar could not be updated.',
-      );
-    else {
-      setMessage('Availability and pricing calendar saved.');
-      setVehicles(await fetchVehicles());
+    try {
+      const data = Object.fromEntries(new FormData(event.currentTarget));
+      const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/availability`, {
+        body: JSON.stringify({ ...data, stopSell: data.stopSell === 'on' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+      if (!response.ok) {
+        setError(
+          result && 'error' in result ? result.error.message : 'Calendar could not be updated.',
+        );
+      } else {
+        setMessage('Availability and pricing calendar saved.');
+        setVehicles(await fetchVehicles());
+      }
+    } catch {
+      setError('The fleet calendar service could not be reached.');
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
   async function saveMaintenance(event: FormEvent<HTMLFormElement>, vehicleId: string) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setBusy(true);
     setError(undefined);
     setMessage(undefined);
-    const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/maintenance`, {
-      body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    });
-    const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
-    if (!response.ok) {
-      setError(
-        result && 'error' in result ? result.error.message : 'Maintenance could not be recorded.',
-      );
-    } else {
-      event.currentTarget.reset();
-      setMessage('Maintenance recorded. Active work dates are stopped from sale.');
-      setVehicles(await fetchVehicles());
+    try {
+      const response = await fetch(`/api/v1/partner/vehicles/${vehicleId}/maintenance`, {
+        body: JSON.stringify(Object.fromEntries(new FormData(formElement))),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      const result = await readJsonResponse<{ data: unknown } | ApiErrorResponse>(response);
+      if (!response.ok) {
+        setError(
+          result && 'error' in result ? result.error.message : 'Maintenance could not be recorded.',
+        );
+      } else {
+        formElement.reset();
+        setMessage('Maintenance recorded. Active work dates are stopped from sale.');
+        setVehicles(await fetchVehicles());
+      }
+    } catch {
+      setError('The maintenance service could not be reached.');
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
   async function saveCompliance(event: FormEvent<HTMLFormElement>, vehicleId: string) {
     event.preventDefault();
@@ -195,7 +216,7 @@ export function PartnerFleetManager({
       } else {
         setMessage(
           status === 'ACTIVE'
-            ? 'Vehicle restored to customer search.'
+            ? 'Vehicle restored to active supplier inventory. Customer visibility still requires approval and publication.'
             : 'Vehicle paused. Existing reservations remain unchanged.',
         );
         setVehicles(await fetchVehicles());
@@ -403,7 +424,7 @@ export function PartnerFleetManager({
             {vehicle.inventoryDays.length ? (
               <small>{vehicle.inventoryDays.length} upcoming daily controls loaded.</small>
             ) : (
-              <small>Base fleet availability is active.</small>
+              <small>Base fleet availability is recorded.</small>
             )}
             <form
               className="supplier-form"
