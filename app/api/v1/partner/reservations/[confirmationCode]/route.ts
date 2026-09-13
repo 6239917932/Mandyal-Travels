@@ -1,4 +1,4 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
   nextCarReservationState,
   type CarReservationAction,
@@ -17,6 +17,8 @@ export async function PATCH(
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'CAR')
     return failure('CAR_PARTNER_REQUIRED', 'Car partner access is required.', 403);
+  if (access.mode !== 'integration-key' && !isSameOriginMutation(request))
+    return failure('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels portal.', 403);
   const body = await readJsonObject(request);
   if (!body) return failure('INVALID_JSON', 'Enter a valid rental action.', 400);
   const action = ['COMPLETE', 'MARK_NO_SHOW', 'PICK_UP'].includes(String(body.action))
