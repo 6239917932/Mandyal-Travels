@@ -142,4 +142,5 @@ test('homepage presents one consistent official company identity to crawlers', (
   assert.match(structuredDataSource, /mainEntity: \{ '@id': organizationId \}/);
   assert.match(structuredDataSource, /propertyID: 'CIN'/);
   assert.match(structuredDataSource, /U49221HP2026PTC012778/);
+  assert.match(structuredDataSource, /sameAs: \[siteConfig\.socialLinks\.facebook\]/);
 });
