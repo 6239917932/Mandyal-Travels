@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import nextConfig, { noIndexHeaderSources } from '../next.config.ts';
@@ -126,4 +127,19 @@ test('absolute sitemap URLs remain on the canonical portal origin', () => {
     () => absolutePublicUrl('https://www.mandyaltravels.com', '//attacker.example/path'),
     /PUBLIC_SITEMAP_PATH_INVALID/,
   );
+});
+
+test('homepage presents one consistent official company identity to crawlers', () => {
+  const homepageSource = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  const structuredDataSource = readFileSync(
+    new URL('../components/seo/OrganizationStructuredData.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(homepageSource, /Official website of Mandyal Travels/);
+  assert.match(homepageSource, /Mandyal Travels: stay, drive, and grow with us\./);
+  assert.match(structuredDataSource, /'@type': 'WebPage'/);
+  assert.match(structuredDataSource, /mainEntity: \{ '@id': organizationId \}/);
+  assert.match(structuredDataSource, /propertyID: 'CIN'/);
+  assert.match(structuredDataSource, /U49221HP2026PTC012778/);
 });
