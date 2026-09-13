@@ -207,6 +207,16 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'LF',
+    description:
+      'Secure found-property custody, claimant matching, controlled return and disposal evidence.',
+    group: 'Front office and operations',
+    href: '/partner/pms/lost-found',
+    name: 'Lost and found',
+    phase: 2,
+    status: 'LIVE',
+  },
+  {
     code: 'RM',
     description: 'Rates, minimum stays, arrival/departure restrictions and stop-sells.',
     group: 'Revenue and distribution',
