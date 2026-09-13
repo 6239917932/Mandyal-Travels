@@ -56,5 +56,8 @@ export const siteConfig = {
     href: '+918069377940',
   },
   supportEmail: 'support@mandyaltravels.com',
+  socialLinks: {
+    facebook: 'https://www.facebook.com/profile.php?id=61594331641440',
+  },
   tagline: 'From the heart of the Himalayas to everywhere.',
 } as const;

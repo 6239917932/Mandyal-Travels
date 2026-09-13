@@ -67,6 +67,9 @@ export function SiteFooter() {
             <a href="https://wa.me/918069377940" rel="noreferrer" target="_blank">
               Chat on WhatsApp
             </a>
+            <a href={siteConfig.socialLinks.facebook} rel="noreferrer" target="_blank">
+              Follow us on Facebook
+            </a>
           </div>
         </div>
       </div>

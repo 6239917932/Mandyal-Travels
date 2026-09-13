@@ -49,6 +49,7 @@ const structuredData = {
       mainEntityOfPage: { '@id': webpageId },
       name: siteConfig.name,
       alternateName: siteConfig.legalName,
+      sameAs: [siteConfig.socialLinks.facebook],
       slogan: siteConfig.tagline,
       telephone: siteConfig.supportPhone.href,
       url: PUBLIC_SITE_ORIGIN,
