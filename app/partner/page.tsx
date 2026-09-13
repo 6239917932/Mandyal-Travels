@@ -238,7 +238,7 @@ export default async function PartnerWorkspacePage() {
       <div className="partner-workspace__columns">
         <section>
           <p className="hotel-page__eyebrow">Property scope</p>
-          <h2>{partner.type === 'CAR' ? 'Published fleet' : 'Hotel catalogue'}</h2>
+          <h2>{partner.type === 'CAR' ? 'Fleet inventory' : 'Hotel catalogue'}</h2>
           <div className="partner-workspace__properties">
             {partner.type === 'HOTEL'
               ? partner.properties.map((property) => (
@@ -265,12 +265,16 @@ export default async function PartnerWorkspacePage() {
                 ))}
             {partner.properties.length === 0 && partner.vehicles.length === 0 ? (
               <Card>
-                <strong>No inventory has been published.</strong>
+                <strong>No inventory has been added.</strong>
                 {partner.type === 'HOTEL' ? (
                   <Link className="home-card__link" href="/partner/properties">
                     Create the first property
                   </Link>
-                ) : null}
+                ) : (
+                  <Link className="home-card__link" href="/partner/fleet">
+                    Add the first vehicle
+                  </Link>
+                )}
               </Card>
             ) : null}
           </div>
