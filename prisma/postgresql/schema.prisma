@@ -263,6 +263,9 @@ model SupplyPartner {
   lostFoundEvents          HotelLostFoundEvent[]
   vendors                  HotelVendor[]
   vendorEvents             HotelVendorEvent[]
+  purchaseOrders           HotelPurchaseOrder[]
+  purchaseOrderEvents      HotelPurchaseOrderEvent[]
+  goodsReceipts            HotelGoodsReceipt[]
   restaurantOutlets        HotelRestaurantOutlet[]
   restaurantTables         HotelRestaurantTable[]
   restaurantMenuItems      HotelRestaurantMenuItem[]
@@ -374,6 +377,9 @@ model PartnerProperty {
   lostFoundEvents         HotelLostFoundEvent[]
   vendors                 HotelVendor[]
   vendorEvents            HotelVendorEvent[]
+  purchaseOrders          HotelPurchaseOrder[]
+  purchaseOrderEvents     HotelPurchaseOrderEvent[]
+  goodsReceipts           HotelGoodsReceipt[]
   restaurantOutlets       HotelRestaurantOutlet[]
   restaurantTables        HotelRestaurantTable[]
   restaurantMenuItems     HotelRestaurantMenuItem[]
@@ -1889,7 +1895,9 @@ model HotelStockItem {
   updatedAt      DateTime             @updatedAt
   partner        SupplyPartner        @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   property       PartnerProperty      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  movements      HotelStockMovement[]
+  movements          HotelStockMovement[]
+  purchaseOrderLines HotelPurchaseOrderLine[]
+  goodsReceipts      HotelGoodsReceipt[]
 
   @@unique([propertyId, sku])
   @@index([partnerId, status, updatedAt])
@@ -1911,7 +1919,8 @@ model HotelStockMovement {
   createdAt          DateTime        @default(now())
   item               HotelStockItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
   partner            SupplyPartner   @relation(fields: [partnerId], references: [id], onDelete: Restrict)
-  property           PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  property           PartnerProperty    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  goodsReceipt       HotelGoodsReceipt?
 
   @@index([itemId, createdAt])
   @@index([partnerId, createdAt])
@@ -2038,6 +2047,7 @@ model HotelVendor {
   partner          SupplyPartner      @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   property         PartnerProperty    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   events           HotelVendorEvent[]
+  purchaseOrders   HotelPurchaseOrder[]
 
   @@unique([propertyId, vendorCode])
   @@index([partnerId, status, updatedAt])
@@ -2065,6 +2075,110 @@ model HotelVendorEvent {
   @@unique([vendorId, version])
   @@index([partnerId, createdAt])
   @@index([propertyId, createdAt])
+}
+
+model HotelPurchaseOrder {
+  id                   String                    @id @default(cuid())
+  partnerId            String
+  propertyId           String
+  vendorId             String
+  purchaseOrderNumber  String
+  orderDate            String
+  expectedDeliveryDate String
+  currency             String                    @default("INR")
+  status               String                    @default("DRAFT")
+  note                 String                    @default("")
+  subtotalMinor        Int
+  taxMinor             Int
+  totalMinor           Int
+  version              Int                       @default(1)
+  createdByUserId      String
+  submittedAt          DateTime?
+  approvedAt           DateTime?
+  approvedByUserId     String?
+  cancelledAt          DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  partner              SupplyPartner             @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property             PartnerProperty           @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  vendor               HotelVendor               @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  lines                HotelPurchaseOrderLine[]
+  events               HotelPurchaseOrderEvent[]
+  receipts             HotelGoodsReceipt[]
+
+  @@unique([propertyId, purchaseOrderNumber])
+  @@index([partnerId, status, updatedAt])
+  @@index([propertyId, vendorId, status])
+}
+
+model HotelPurchaseOrderLine {
+  id                 String              @id @default(cuid())
+  purchaseOrderId    String
+  stockItemId        String
+  quantityOrdered    Int
+  quantityReceived   Int                 @default(0)
+  unitPriceMinor     Int
+  taxRateBasisPoints Int                 @default(0)
+  lineSubtotalMinor  Int
+  lineTaxMinor       Int
+  lineTotalMinor     Int
+  purchaseOrder      HotelPurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  stockItem          HotelStockItem      @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+  receipts           HotelGoodsReceipt[]
+
+  @@unique([purchaseOrderId, stockItemId])
+  @@index([stockItemId])
+}
+
+model HotelPurchaseOrderEvent {
+  id                 String             @id @default(cuid())
+  purchaseOrderId    String
+  partnerId          String
+  propertyId         String
+  action             String
+  fromStatus         String
+  toStatus           String
+  note               String
+  version            Int
+  actorUserId        String
+  idempotencyKey     String             @unique
+  requestFingerprint String
+  createdAt          DateTime           @default(now())
+  purchaseOrder      HotelPurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  partner            SupplyPartner      @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property           PartnerProperty    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@unique([purchaseOrderId, version])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, createdAt])
+}
+
+model HotelGoodsReceipt {
+  id                  String                 @id @default(cuid())
+  purchaseOrderId     String
+  purchaseOrderLineId String
+  stockItemId         String
+  stockMovementId     String                 @unique
+  partnerId           String
+  propertyId          String
+  deliveryReference   String
+  receivedOn          String
+  quantity            Int
+  note                String
+  actorUserId         String
+  idempotencyKey      String                 @unique
+  requestFingerprint  String
+  createdAt           DateTime               @default(now())
+  purchaseOrder       HotelPurchaseOrder     @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  purchaseOrderLine   HotelPurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id], onDelete: Restrict)
+  stockItem           HotelStockItem         @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+  stockMovement       HotelStockMovement     @relation(fields: [stockMovementId], references: [id], onDelete: Restrict)
+  partner             SupplyPartner          @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  property            PartnerProperty        @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseOrderId, createdAt])
+  @@index([partnerId, createdAt])
+  @@index([propertyId, receivedOn])
 }
 
 model HotelReview {

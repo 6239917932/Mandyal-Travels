@@ -22,8 +22,8 @@ test('remaining PMS modules use dedicated governed routes without duplicate oper
   ]) {
     assert.match(registry, new RegExp(route.replaceAll('/', '\\/')));
   }
-  assert.match(procurement, /getPartnerStockInventory/);
-  assert.match(procurement, /No duplicate inventory balance/);
+  assert.match(procurement, /getPartnerProcurementWorkspace/);
+  assert.match(procurement, /without duplicating inventory/);
   assert.doesNotMatch(procurement, /prisma\./);
   assert.match(fixedAssets, /getPartnerFixedAssetWorkspace/);
   assert.match(fixedAssets, /Depreciation[\s\S]*remains?\s+disabled/);

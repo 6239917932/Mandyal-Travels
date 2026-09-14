@@ -38,12 +38,12 @@ foundations, and 1 planned external-provider workspace.
 
 ## Inventory and procurement
 
-- Live: property SKUs, receipts, issues, reorder controls, goods-receipt evidence and procurement
-  worklists.
+- Live: property SKUs, receipts, issues, reorder controls, purchase orders, recorded submission and
+  approval decisions, partial goods-receipt matching, and immutable stock evidence.
 - Live: property-scoped vendor registration, contact ownership, payment terms, reasoned pause or
   reactivation and immutable decision history.
-- Planned operational expansion: purchase-order approvals, supplier performance scoring, and vendor
-  payment release remain outside the current controlled workflow.
+- Planned operational expansion: supplier performance scoring and vendor payment release remain
+  outside the current controlled workflow.
 
 ## Guest experience
 
