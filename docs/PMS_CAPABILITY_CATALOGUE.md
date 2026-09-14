@@ -40,6 +40,8 @@ foundations, and 1 planned external-provider workspace.
 
 - Live: property SKUs, receipts, issues, reorder controls, purchase orders, recorded submission and
   approval decisions, partial goods-receipt matching, and immutable stock evidence.
+- Live: property store locations, expiry-controlled batch balances, atomic inter-store transfers,
+  wastage posting against the main SKU ledger, and administrator-only compensating reversals.
 - Live: property-scoped vendor registration, contact ownership, payment terms, reasoned pause or
   reactivation and immutable decision history.
 - Planned operational expansion: supplier performance scoring and vendor payment release remain
@@ -93,6 +95,8 @@ Zotel and Hotel-Spider identified two provider-independent additions to the gove
   forecast accuracy after sufficient production history exists;
 - configurable pre-arrival packages, upgrades and add-ons are live with immutable quote, tax,
   payment, cancellation/refund and folio evidence;
+- store transfers, expiry-lot monitoring and reversible wastage are live on the existing immutable
+  stock ledger;
 
 External OTA/GDS/metasearch publication, Google Hotels, competitor-rate shopping, automated external
 rate updates, WhatsApp delivery and live currency conversion remain under their existing commercial,

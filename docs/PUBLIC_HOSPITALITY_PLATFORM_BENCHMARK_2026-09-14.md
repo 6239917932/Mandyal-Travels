@@ -115,8 +115,9 @@ certified.
 2. Booking add-ons and packages — delivered: property catalogue, availability window, tax
    treatment, immutable quote snapshot, payment allocation, cancellation/refund handling and
    folio presentation without duplicate charges.
-3. Store transfer, expiry lots and reversible wastage controls from the earlier authenticated
-   reference audit.
+3. Store transfer, expiry lots and reversible wastage controls — delivered: property store master,
+   batch/location balances, thirty-day expiry posture, atomic internal transfers, main-ledger
+   reconciliation and compensating reversals without rewriting event history.
 4. Configurable operational documents without weakening statutory numbering or invoice controls.
 5. Provider activation work only when Mandyal or a hotel has the necessary commercial access.
 
