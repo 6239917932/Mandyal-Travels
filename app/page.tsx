@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
@@ -69,24 +68,26 @@ export default function Home() {
     <div className="home-page">
       <OrganizationStructuredData />
       <section aria-labelledby="home-search-title" className="home-search-hero">
-        <Image
-          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
-          className="home-search-hero__image"
-          fill
-          priority
-          sizes="100vw"
-          src="/home/mandyal-travel-hero-v2.png"
-        />
-        <div className="home-search-hero__shade" />
         <div className="home-container home-search-hero__content">
           <div className="home-search-hero__copy">
-            <p>Hotels and cars, thoughtfully connected</p>
-            <h1 id="home-search-title">Mandyal Travels: stay, drive, and grow with us.</h1>
+            <p>Hotels, cars and thoughtful trip planning</p>
+            <h1 id="home-search-title">One place to plan the whole journey.</h1>
             <span>
-              Rooted in Himachal, we promise clear choices, dependable service, and human support—
-              so every journey feels cared for from the first search to your safe return home.
+              Discover owner-managed stays and cars, build your itinerary, and get human support
+              from first search to safe return.
             </span>
           </div>
+
+          <Link className="home-smart-planner" href="/trip-planner">
+            <span aria-hidden="true" className="home-smart-planner__icon">
+              ✦
+            </span>
+            <span className="home-smart-planner__prompt">Tell us where you want to go</span>
+            <strong>
+              Plan with Mandyal <span aria-hidden="true">→</span>
+            </strong>
+          </Link>
+
           <HomeBookingWidget />
         </div>
       </section>
