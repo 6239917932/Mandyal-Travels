@@ -42,6 +42,16 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'RI',
+    description:
+      'Thirty-day confirmed demand, capacity exceptions and explainable review-only revenue prompts.',
+    group: 'Overview',
+    href: '/partner/pms/revenue-intelligence',
+    name: 'Revenue intelligence',
+    phase: 2,
+    status: 'LIVE',
+  },
+  {
     code: 'FD',
     description: 'Room assignment, arrival, check-in, in-house, departure and no-show control.',
     group: 'Front office and operations',
