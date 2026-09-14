@@ -180,6 +180,14 @@ export default async function PartnerPmsBillingPage({ searchParams }: BillingPag
 
             <Card>
               <p className="hotel-page__eyebrow">Folio ledger</p>
+              <div className="manage-booking__document-actions">
+                <Link
+                  className="ui-button ui-button--secondary"
+                  href={`/partner/pms/billing/${encodeURIComponent(folio.confirmationCode)}/print`}
+                >
+                  Print operational folio
+                </Link>
+              </div>
               <ul className="pms-room-rack__queue-list">
                 <li>
                   <strong>

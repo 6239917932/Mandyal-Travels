@@ -453,6 +453,16 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'DT',
+    description:
+      'Property-branded booking and operating documents with protected financial and statutory evidence.',
+    group: 'System and administration',
+    href: '/partner/pms/document-templates',
+    name: 'Operational documents',
+    phase: 3,
+    status: 'LIVE',
+  },
+  {
     code: 'AC',
     description:
       'Supplier-scoped roles, secure invitations, least-privilege permissions and audit history.',

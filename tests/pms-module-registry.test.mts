@@ -32,9 +32,9 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 49);
+  assert.equal(pmsModules.length, 50);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 45);
+  assert.equal(countPmsModules('LIVE'), 46);
   assert.equal(countPmsModules('FOUNDATION'), 3);
   assert.equal(countPmsModules('PLANNED'), 1);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
@@ -83,6 +83,7 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Automated email and WhatsApp',
     'Expenses and profit/loss',
     'Privacy and data rights',
+    'Operational documents',
     'Tally/XML integration',
   ]) {
     assert.ok(names.has(required), `${required} must remain visible in the PMS catalogue`);

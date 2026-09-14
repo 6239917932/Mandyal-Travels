@@ -1,0 +1,7 @@
+ALTER TABLE "PartnerProperty"
+  ADD COLUMN "documentTemplate" TEXT NOT NULL DEFAULT 'CLASSIC',
+  ADD COLUMN "documentTheme" TEXT NOT NULL DEFAULT 'OCEAN',
+  ADD COLUMN "documentHeaderText" TEXT NOT NULL DEFAULT '',
+  ADD COLUMN "documentFooterText" TEXT NOT NULL DEFAULT '',
+  ADD COLUMN "documentShowContact" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN "documentVersion" INTEGER NOT NULL DEFAULT 0;

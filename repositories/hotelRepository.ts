@@ -144,6 +144,16 @@ export class InMemoryHotelRepository implements HotelRepository {
             childrenAllowed: property.childrenAllowed,
             contactEmail: property.contactEmail,
             contactPhone: property.contactPhone,
+            documentProfile: {
+              footerText: property.documentFooterText,
+              headerText: property.documentHeaderText,
+              showPropertyContact: property.documentShowContact,
+              template: property.documentTemplate === 'COMPACT' ? 'COMPACT' : 'CLASSIC',
+              theme: ['EMERALD', 'SUNSET', 'PLUM'].includes(property.documentTheme)
+                ? (property.documentTheme as 'EMERALD' | 'SUNSET' | 'PLUM')
+                : 'OCEAN',
+              version: property.documentVersion,
+            },
             languages: parseList(property.languagesJson),
             landmarks: parseList(property.landmarksJson),
             locationAliases: parseList(property.locationAliasesJson),

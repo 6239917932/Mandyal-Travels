@@ -118,7 +118,10 @@ certified.
 3. Store transfer, expiry lots and reversible wastage controls — delivered: property store master,
    batch/location balances, thirty-day expiry posture, atomic internal transfers, main-ledger
    reconciliation and compensating reversals without rewriting event history.
-4. Configurable operational documents without weakening statutory numbering or invoice controls.
+4. Configurable operational documents — delivered: property-scoped closed layouts, approved colour
+   themes, bounded guest messages and verified contact display for booking vouchers and operational
+   folios. Booking references, values, payment evidence, tax warnings and statutory numbering remain
+   system controlled.
 5. Provider activation work only when Mandyal or a hotel has the necessary commercial access.
 
 No public competitor claim changes Mandyal's legal, payment, tax, privacy, security or provider

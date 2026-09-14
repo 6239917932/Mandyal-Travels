@@ -358,6 +358,12 @@ model PartnerProperty {
   childrenAllowed         Boolean                       @default(true)
   petsAllowed             Boolean                       @default(false)
   smokingAllowed          Boolean                       @default(false)
+  documentTemplate        String                        @default("CLASSIC")
+  documentTheme           String                        @default("OCEAN")
+  documentHeaderText      String                        @default("")
+  documentFooterText      String                        @default("")
+  documentShowContact     Boolean                       @default(true)
+  documentVersion         Int                           @default(0)
   imageUrl                String                        @default("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80")
   createdAt               DateTime                      @default(now())
   updatedAt               DateTime                      @updatedAt
