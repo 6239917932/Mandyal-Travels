@@ -9,6 +9,7 @@ import {
 } from '@/lib/notifications/delivery';
 import { prisma } from '@/lib/prisma';
 import { sendTransactionalEmail } from '@/services/emailProviderService';
+import { isEmailRecipientSuppressed } from '@/services/emailSuppressionService';
 import { sendMobileMessage } from '@/services/mobileMessagingProviderService';
 import { sendPushNotification } from '@/services/pushProviderService';
 
@@ -110,6 +111,20 @@ export async function deliverPendingNotifications(
     if (claim.count !== 1) continue;
 
     try {
+      if (delivery.channel === 'EMAIL' && (await isEmailRecipientSuppressed(delivery.recipient))) {
+        await prisma.notificationDelivery.updateMany({
+          where: { id: delivery.id, status: 'PROCESSING' },
+          data: {
+            attempts: { increment: 1 },
+            lastError: 'EMAIL_RECIPIENT_SUPPRESSED',
+            nextAttemptAt: now,
+            status: 'DEAD_LETTER',
+          },
+        });
+        summary.failed += 1;
+        summary.deadLettered += 1;
+        continue;
+      }
       const providerRef = await sendDelivery({
         body: delivery.template.body,
         channel: delivery.channel,

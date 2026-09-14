@@ -90,7 +90,12 @@ const GATES: readonly GateDefinition[] = [
   {
     category: 'OPERATIONS',
     evaluate: (evidence) =>
-      configured(evidence, 'EMAIL_DOMAIN_AUTH_VERIFIED_AT', 'EMAIL_BOUNCE_WEBHOOK_SECRET'),
+      configured(
+        evidence,
+        'EMAIL_DOMAIN_AUTH_VERIFIED_AT',
+        'EMAIL_BOUNCE_WEBHOOK_SECRET',
+        'EMAIL_SUPPRESSION_HASH_SECRET',
+      ),
     id: 'email-deliverability',
     owner: 'ENGINEERING',
     runbook: 'docs/EMAIL_PROVIDER_ACTIVATION.md',
