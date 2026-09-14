@@ -860,7 +860,7 @@ body {
   }
 
   .workspace-topbar {
-    top: 4rem;
+    top: 0;
   }
 
   .workspace-topbar__menu {
