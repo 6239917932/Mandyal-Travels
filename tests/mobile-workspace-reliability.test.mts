@@ -24,6 +24,10 @@ test('protected workspaces expose one unambiguous mobile navigation control', as
   );
   assert.match(shell, /window\.addEventListener\('popstate', closeOnHistoryNavigation\)/);
   assert.match(shell, /workspace-navigation-open/);
+  assert.match(
+    shell,
+    /navigationOpen \? 'workspace-shell workspace-shell--nav-open' : 'workspace-shell'/,
+  );
   assert.match(shell, /id="workspace-navigation-toggle"/);
   assert.match(shell, /htmlFor="workspace-navigation-toggle"/);
   assert.match(components, /workspace-shell__nav-toggle:checked ~ \.workspace-sidebar/);
