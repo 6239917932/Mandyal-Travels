@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
@@ -33,6 +34,45 @@ type WorkspaceShellProps = Readonly<{
   title: string;
 }>;
 
+type WorkspaceThemePreference = 'light' | 'dark' | 'system';
+type ResolvedWorkspaceTheme = Exclude<WorkspaceThemePreference, 'system'>;
+
+const WORKSPACE_THEME_STORAGE_KEY = 'mandyal-workspace-theme';
+const WORKSPACE_THEME_CHANGE_EVENT = 'mandyal-workspace-theme-change';
+
+function isWorkspaceThemePreference(value: string | null): value is WorkspaceThemePreference {
+  return value === 'light' || value === 'dark' || value === 'system';
+}
+
+function getWorkspaceThemePreference(): WorkspaceThemePreference {
+  const savedPreference = window.localStorage.getItem(WORKSPACE_THEME_STORAGE_KEY);
+  return isWorkspaceThemePreference(savedPreference) ? savedPreference : 'system';
+}
+
+function subscribeToWorkspaceThemePreference(notify: () => void) {
+  window.addEventListener('storage', notify);
+  window.addEventListener(WORKSPACE_THEME_CHANGE_EVENT, notify);
+  return () => {
+    window.removeEventListener('storage', notify);
+    window.removeEventListener(WORKSPACE_THEME_CHANGE_EVENT, notify);
+  };
+}
+
+function setWorkspaceThemePreference(preference: WorkspaceThemePreference) {
+  window.localStorage.setItem(WORKSPACE_THEME_STORAGE_KEY, preference);
+  window.dispatchEvent(new Event(WORKSPACE_THEME_CHANGE_EVENT));
+}
+
+function preferredDeviceTheme(): ResolvedWorkspaceTheme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function subscribeToDeviceTheme(notify: () => void) {
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  media.addEventListener('change', notify);
+  return () => media.removeEventListener('change', notify);
+}
+
 export function WorkspaceShell({
   children,
   groups,
@@ -43,6 +83,17 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const pathname = usePathname();
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const themePreference = useSyncExternalStore(
+    subscribeToWorkspaceThemePreference,
+    getWorkspaceThemePreference,
+    () => 'system',
+  );
+  const deviceTheme = useSyncExternalStore(
+    subscribeToDeviceTheme,
+    preferredDeviceTheme,
+    () => 'light',
+  );
+  const resolvedTheme = themePreference === 'system' ? deviceTheme : themePreference;
   const navigationToggleRef = useRef<HTMLInputElement>(null);
   const isPublicPath = publicPaths.includes(pathname);
   const activeNavigationKey = getWorkspaceActiveNavigationKey(pathname, groups);
@@ -92,7 +143,10 @@ export function WorkspaceShell({
   if (isPublicPath) return children;
 
   return (
-    <div className={`workspace-shell${navigationOpen ? 'workspace-shell--nav-open' : ''}`}>
+    <div
+      className={navigationOpen ? 'workspace-shell workspace-shell--nav-open' : 'workspace-shell'}
+      data-workspace-theme={resolvedTheme}
+    >
       <input
         aria-hidden="true"
         className="workspace-shell__nav-toggle"
@@ -195,6 +249,20 @@ export function WorkspaceShell({
             </div>
           </div>
           <div className="workspace-topbar__status">
+            <label className="workspace-theme-control">
+              <span>Theme</span>
+              <select
+                aria-label="Workspace colour theme"
+                onChange={(event) =>
+                  setWorkspaceThemePreference(event.currentTarget.value as WorkspaceThemePreference)
+                }
+                value={themePreference}
+              >
+                <option value="system">Device</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </label>
             <span className="workspace-topbar__secure">
               <i /> Secure workspace
             </span>
