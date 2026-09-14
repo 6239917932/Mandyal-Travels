@@ -15,6 +15,10 @@ import {
   payuTransactionId,
   type PayuVerifiedTransaction,
 } from '@/lib/payments/payu';
+import {
+  assertPaymentProviderCapability,
+  selectedPaymentProvider,
+} from '@/lib/payments/providerSelection';
 
 let cachedPayuToken: { expiresAt: number; value: string } | undefined;
 
@@ -168,7 +172,9 @@ export async function createHostedPaymentIntent(input: {
   reference: string;
   returnUrl: string;
 }) {
-  if (process.env.PAYMENT_PROVIDER_ID === 'payu') {
+  const provider = selectedPaymentProvider(process.env.PAYMENT_PROVIDER_ID);
+  assertPaymentProviderCapability(provider, 'hostedCheckout');
+  if (provider === 'payu') {
     return createPayuPaymentLink(input);
   }
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
@@ -214,6 +220,8 @@ export async function dispatchProviderRefund(input: {
   providerPaymentRef: string;
   reason: string;
 }) {
+  const provider = selectedPaymentProvider(process.env.PAYMENT_PROVIDER_ID);
+  assertPaymentProviderCapability(provider, 'refunds');
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
   if (!apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
   const { endpoint } = paymentProviderConfiguration(process.env.PAYMENT_GATEWAY_REFUND_ENDPOINT);

@@ -24,7 +24,7 @@
 - The production build completes with 265 application routes.
 - Static verification confirms 543 internal links resolve to registered application routes.
 - Twelve focused mobile-readiness, mobile-workspace, registry, and provider-gate tests pass.
-- The additive PMS registry contains 46 unique workspaces: 42 live, 3 controlled foundations, and
+- The additive PMS registry contains 51 unique workspaces: 47 live, 3 controlled foundations, and
   1 clearly labelled planned workspace. Existing modules remain available; unfinished or
   provider-dependent transactions are not presented as live.
 - Live Railway smoke, accessibility, internal-link, and bounded-load checks pass.

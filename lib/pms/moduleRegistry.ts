@@ -295,11 +295,20 @@ export const pmsModules: readonly PmsModule[] = [
   {
     code: 'MP',
     description:
-      'Controlled cash, card, bank and approved digital payment tendering with reconciliation evidence.',
+      'Append-only cash, card, UPI and bank-transfer recording with reversals, cashier controls and reconciliation evidence.',
     group: 'Finance and back office',
     href: '/partner/pms/payment-modes',
     name: 'Multiple payment modes',
     phase: 2,
+    status: 'LIVE',
+  },
+  {
+    code: 'PG',
+    description:
+      'Future hosted payment, refund and split-settlement automation after provider approval and certification.',
+    group: 'Finance and back office',
+    name: 'Payment gateway automation',
+    phase: 4,
     status: 'FOUNDATION',
   },
   {

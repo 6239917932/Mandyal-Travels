@@ -116,6 +116,10 @@ if (process.env.PAYMENT_PROVIDER_ID === 'payu') {
     failures.push('PAYU_CLIENT_SECRET must contain at least 16 characters.');
   if ((process.env.PAYU_MERCHANT_SALT ?? '').length < 8)
     failures.push('PAYU_MERCHANT_SALT must contain at least 8 characters.');
+} else if (process.env.PAYMENT_PROVIDER_ID === 'razorpay') {
+  failures.push(
+    'Razorpay remains disabled until Route approval and the dedicated checkout, webhook, refund, transfer, reversal, and reconciliation adapters pass certification.',
+  );
 } else {
   for (const name of [
     'PAYMENT_GATEWAY_ENDPOINT',

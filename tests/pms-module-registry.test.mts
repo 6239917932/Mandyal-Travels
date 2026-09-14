@@ -32,9 +32,9 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 50);
+  assert.equal(pmsModules.length, 51);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 46);
+  assert.equal(countPmsModules('LIVE'), 47);
   assert.equal(countPmsModules('FOUNDATION'), 3);
   assert.equal(countPmsModules('PLANNED'), 1);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
@@ -77,6 +77,7 @@ test('PMS registry contains every approved operational navigation area', () => {
     'Captain and mobile operations',
     'External OTA network',
     'Multiple payment modes',
+    'Payment gateway automation',
     'Split billing and discounts',
     'Vendor management',
     'Guest feedback',
@@ -91,7 +92,13 @@ test('PMS registry contains every approved operational navigation area', () => {
 });
 
 test('provider dependencies are never presented as operational', () => {
-  for (const code of ['ON', 'NM', 'MP', 'TP']) {
+  for (const code of ['ON', 'NM', 'PG', 'TP']) {
     assert.notEqual(getPmsModule(code)?.status, 'LIVE');
   }
+});
+
+test('provider-independent payment recording is operational', () => {
+  const paymentModes = getPmsModule('MP');
+  assert.equal(paymentModes?.status, 'LIVE');
+  assert.equal(paymentModes?.href, '/partner/pms/payment-modes');
 });
