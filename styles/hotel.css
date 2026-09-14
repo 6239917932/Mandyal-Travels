@@ -1623,6 +1623,60 @@
   margin-top: var(--space-4);
 }
 
+.hotel-room-card__addons {
+  margin-block: 0.85rem;
+  text-align: left;
+}
+
+.hotel-room-card__addons summary {
+  color: var(--color-brand-700);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.hotel-room-card__addon-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.hotel-room-card__addon {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem;
+}
+
+.hotel-room-card__addon > label:first-child,
+.hotel-room-card__addon > label:first-child span {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hotel-room-card__addon > label:first-child span {
+  flex-direction: column;
+}
+
+.hotel-room-card__addon small {
+  color: var(--color-text-muted);
+  line-height: 1.35;
+}
+
+.hotel-room-card__addon > label:last-child {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hotel-room-card__addon input[type='number'] {
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  max-width: 4.5rem;
+  padding: 0.35rem;
+}
+
 .hotel-room-card__error {
   margin: var(--space-2) 0 0;
   color: var(--color-danger);

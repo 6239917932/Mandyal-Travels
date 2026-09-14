@@ -385,6 +385,7 @@ model PartnerProperty {
   restaurantMenuItems     HotelRestaurantMenuItem[]
   restaurantEvents        HotelRestaurantEvent[]
   restaurantReservations  HotelRestaurantReservation[]
+  bookingAddons           HotelBookingAddon[]
   payrollRecords          HotelPayrollRecord[]
   accountingMappings      PartnerAccountingMapping[]
 
@@ -1405,6 +1406,30 @@ model PaymentCheckoutIntent {
   @@index([status, expiresAt])
 }
 
+model HotelBookingAddon {
+  id          String          @id @default(cuid())
+  propertyId  String
+  name        String
+  description String          @default("")
+  category    String
+  pricingMode String          @default("PER_BOOKING")
+  unitAmount  Int
+  currency    String          @default("INR")
+  taxRateBps  Int             @default(0)
+  startsOn    String          @default("")
+  endsOn      String          @default("")
+  minQuantity Int             @default(1)
+  maxQuantity Int             @default(1)
+  status      String          @default("ACTIVE")
+  version     Int             @default(1)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  property    PartnerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, name])
+  @@index([propertyId, status, startsOn, endsOn])
+}
+
 model PaymentProviderEvent {
   id              String    @id @default(cuid())
   provider        String
@@ -1473,8 +1498,13 @@ model PriceComponent {
   type     String
   label    String
   amount   Int
-  currency String
-  quote    HotelQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  currency   String
+  sourceId   String     @default("")
+  quantity   Int        @default(1)
+  unitAmount Int        @default(0)
+  taxRateBps Int        @default(0)
+  pricingMode String    @default("")
+  quote      HotelQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   @@index([quoteId])
 }

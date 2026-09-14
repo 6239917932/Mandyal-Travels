@@ -12,6 +12,7 @@ import { inventorySourceLabel } from '@/lib/inventory/sourceLabels';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 import { hotelService } from '@/services/hotelService';
 import { hotelReviewService } from '@/services/hotelReviewService';
+import { listAvailableHotelBookingAddons } from '@/services/partnerBookingAddonService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 
 interface HotelDetailsPageProps {
@@ -50,9 +51,10 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
     notFound();
   }
 
-  const [platformAdmin, reviewData] = await Promise.all([
+  const [platformAdmin, reviewData, bookingAddons] = await Promise.all([
     getPlatformAdmin(),
     hotelReviewService.getHotelReviews(slug),
+    listAvailableHotelBookingAddons(slug, criteria.checkInDate, criteria.checkOutDate),
   ]);
   const reviewSummary =
     reviewData.summary.reviewCount > 0 ? reviewData.summary : hotel.reviewSummary;
@@ -175,6 +177,7 @@ export default async function HotelDetailsPage({ params, searchParams }: HotelDe
                         <small>{ratePlan.cancellationPolicy.description}</small>
                         <RoomSelectionButton
                           adults={criteria.adults}
+                          addons={bookingAddons}
                           checkInDate={criteria.checkInDate}
                           checkOutDate={criteria.checkOutDate}
                           childGuests={criteria.children}

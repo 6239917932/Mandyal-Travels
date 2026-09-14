@@ -30,6 +30,11 @@ import {
   type InventoryOverrideRepository,
 } from '@/repositories/inventoryOverrideRepository';
 import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
+import {
+  listAvailableHotelBookingAddons,
+  PartnerBookingAddonError,
+  quoteHotelBookingAddons,
+} from '@/services/partnerBookingAddonService';
 import type {
   BookingAmendmentRecord,
   CreateHotelBookingRequest,
@@ -244,6 +249,24 @@ export class HotelBookingService {
         type: 'tax-and-fee',
       },
     ];
+    try {
+      components.push(
+        ...(await quoteHotelBookingAddons({
+          adults: request.adults,
+          checkInDate: request.checkInDate,
+          checkOutDate: request.checkOutDate,
+          children: request.children,
+          hotelSlug: request.hotelSlug,
+          nights,
+          rooms: request.rooms,
+          selections: request.addons,
+        })),
+      );
+    } catch (error) {
+      if (error instanceof PartnerBookingAddonError)
+        throw new HotelBookingRuleError(error.code, error.message);
+      throw error;
+    }
 
     const availabilityLock = await this.locks.create({
       checkInDate: request.checkInDate,
@@ -268,7 +291,7 @@ export class HotelBookingService {
       quotedAt,
       ratePlanId: request.ratePlanId,
       rooms: request.rooms,
-      totalAmount: roomChargeAmount + taxAndFeeAmount,
+      totalAmount: components.reduce((total, component) => total + component.amount, 0),
     };
 
     await this.quotes.save(quote);
@@ -867,6 +890,45 @@ export class HotelBookingService {
 
     const roomChargeAmount = ratePlan.nightlyRate.amount * nights * quote.rooms;
     const taxAndFeeAmount = ratePlan.taxesAndFees.amount * nights * quote.rooms;
+    const existingAddonCharges = quote.components.filter(
+      (component) => component.type === 'addon-charge',
+    );
+    if (existingAddonCharges.length) {
+      const availableAddons = await listAvailableHotelBookingAddons(
+        booking.hotelSlug,
+        pending.requestedCheckInDate,
+        pending.requestedCheckOutDate,
+      );
+      const availableIds = new Set(availableAddons.map((addon) => addon.id));
+      if (
+        existingAddonCharges.some(
+          (component) => !component.sourceId || !availableIds.has(component.sourceId),
+        )
+      )
+        throw new HotelBookingRuleError(
+          'ADDON_NOT_AVAILABLE',
+          'A selected package is unavailable for the requested dates. Contact the property before changing this stay.',
+        );
+    }
+    const amendedAddonComponents = existingAddonCharges.flatMap((component) => {
+      const amount = component.pricingMode?.endsWith('PER_NIGHT')
+        ? Math.round((component.amount * nights) / quote.nights)
+        : component.amount;
+      const taxAmount = Math.round((amount * (component.taxRateBps ?? 0)) / 10_000);
+      return [
+        { ...component, amount },
+        ...(taxAmount > 0
+          ? [
+              {
+                ...component,
+                amount: taxAmount,
+                label: `${component.label.split(' · ')[0]} tax (${((component.taxRateBps ?? 0) / 100).toFixed(2)}%)`,
+                type: 'addon-tax' as const,
+              },
+            ]
+          : []),
+      ];
+    });
     const priceComponents: PriceComponent[] = [
       {
         amount: roomChargeAmount,
@@ -880,6 +942,7 @@ export class HotelBookingService {
         label: 'Taxes and fees',
         type: 'tax-and-fee',
       },
+      ...amendedAddonComponents,
     ];
     return this.amendments.approve(id, {
       checkInDate: pending.requestedCheckInDate,
@@ -887,7 +950,7 @@ export class HotelBookingService {
       nights,
       priceComponents,
       reviewNote,
-      totalAmount: roomChargeAmount + taxAndFeeAmount,
+      totalAmount: priceComponents.reduce((total, component) => total + component.amount, 0),
     });
   }
 }

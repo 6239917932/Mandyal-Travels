@@ -1,5 +1,5 @@
 import type { Hotel, HotelRatePlan, HotelRoom, Money } from '@/types/hotel';
-import type { AvailabilityLock } from '@/types/commerce';
+import type { AvailabilityLock, PriceComponent } from '@/types/commerce';
 
 export type BookingStatus =
   'room-selected' | 'guest-details' | 'payment-pending' | 'confirmed' | 'cancelled';
@@ -13,6 +13,8 @@ export interface BookingGuest {
 }
 
 export interface BookingPricing {
+  addonComponents: PriceComponent[];
+  addons: Money;
   roomCharges: Money;
   taxesAndFees: Money;
   total: Money;

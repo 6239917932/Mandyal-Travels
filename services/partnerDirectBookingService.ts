@@ -7,6 +7,10 @@ import { availabilityLockRepository } from '@/repositories/availabilityLockRepos
 import { inventoryOverrideRepository } from '@/repositories/inventoryOverrideRepository';
 import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
 import { quoteRepository } from '@/repositories/quoteRepository';
+import {
+  PartnerBookingAddonError,
+  quoteHotelBookingAddons,
+} from '@/services/partnerBookingAddonService';
 import type {
   CreatePartnerDirectBookingRequest,
   CreatedHotelBooking,
@@ -228,6 +232,23 @@ export async function createPartnerDirectQuote(
   const roomCharge =
     (stayControl.nightlyCharge ?? selectedRate.nightlyRate * nights) * request.rooms;
   const taxesAndFees = selectedRate.taxesAndFees * nights * request.rooms;
+  let addonComponents;
+  try {
+    addonComponents = await quoteHotelBookingAddons({
+      adults: request.adults,
+      checkInDate: request.checkInDate,
+      checkOutDate: request.checkOutDate,
+      children: request.children,
+      hotelSlug: request.hotelSlug,
+      nights,
+      rooms: request.rooms,
+      selections: request.addons,
+    });
+  } catch (error) {
+    if (error instanceof PartnerBookingAddonError)
+      throw new PartnerDirectBookingError(error.code, error.message);
+    throw error;
+  }
   const availabilityLock = await availabilityLockRepository.create({
     checkInDate: request.checkInDate,
     checkOutDate: request.checkOutDate,
@@ -237,19 +258,21 @@ export async function createPartnerDirectQuote(
     ttlMilliseconds: HOLD_TTL_MILLISECONDS,
   });
   const quotedAt = new Date();
+  const components: HotelQuote['components'] = [
+    {
+      amount: roomCharge,
+      currency: 'INR',
+      label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
+      type: 'room-charge',
+    },
+    { amount: taxesAndFees, currency: 'INR', label: 'Taxes and fees', type: 'tax-and-fee' },
+    ...addonComponents,
+  ];
   const quote: HotelQuote = {
     availabilityLock,
     checkInDate: request.checkInDate,
     checkOutDate: request.checkOutDate,
-    components: [
-      {
-        amount: roomCharge,
-        currency: 'INR',
-        label: `${request.rooms} room${request.rooms === 1 ? '' : 's'} × ${nights} night${nights === 1 ? '' : 's'}`,
-        type: 'room-charge',
-      },
-      { amount: taxesAndFees, currency: 'INR', label: 'Taxes and fees', type: 'tax-and-fee' },
-    ],
+    components,
     currency: 'INR',
     expiresAt: availabilityLock.expiresAt,
     hotelSlug: request.hotelSlug,
@@ -258,7 +281,7 @@ export async function createPartnerDirectQuote(
     quotedAt: quotedAt.toISOString(),
     ratePlanId: request.ratePlanId,
     rooms: request.rooms,
-    totalAmount: roomCharge + taxesAndFees,
+    totalAmount: components.reduce((total, component) => total + component.amount, 0),
   };
   await quoteRepository.save(quote);
   return quote;

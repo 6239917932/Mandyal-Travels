@@ -91,8 +91,8 @@ Zotel and Hotel-Spider identified two provider-independent additions to the gove
 
 - extend the live revenue-intelligence workspace with longer prior-period comparisons and measured
   forecast accuracy after sufficient production history exists;
-- configurable pre-arrival packages, upgrades and add-ons with immutable quote, tax, payment,
-  cancellation/refund and folio evidence.
+- configurable pre-arrival packages, upgrades and add-ons are live with immutable quote, tax,
+  payment, cancellation/refund and folio evidence;
 
 External OTA/GDS/metasearch publication, Google Hotels, competitor-rate shopping, automated external
 rate updates, WhatsApp delivery and live currency conversion remain under their existing commercial,
