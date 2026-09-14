@@ -1,0 +1,535 @@
+/*
+ * Mandyal Nexa visual system
+ *
+ * A presentation-only layer inspired by modern hospitality SaaS interfaces.
+ * It deliberately preserves Mandyal branding, content, routes and behaviour.
+ */
+
+:root {
+  --color-brand-950: #07100e;
+  --color-brand-900: #0b1916;
+  --color-brand-800: #10352d;
+  --color-brand-700: #147c67;
+  --color-brand-600: #1db995;
+  --color-brand-500: #43ddb8;
+  --color-brand-200: #a8efdd;
+  --color-brand-100: #dff9f2;
+  --color-brand-50: #f0fcf8;
+  --color-accent-700: #c66a0b;
+  --color-accent-600: #ed8a19;
+  --color-accent-100: #ffedd2;
+  --color-accent-50: #fff8eb;
+  --color-success: #14805f;
+  --color-info: #2878c8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f7f6;
+  --color-surface-raised: #ffffff;
+  --color-border: #dce6e2;
+  --color-border-strong: #bdcec8;
+  --color-text-primary: #10201c;
+  --color-text-secondary: #4f625c;
+  --color-text-muted: #75847f;
+  --container-max-width: 88rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --shadow-sm: 0 1px 2px rgb(5 19 15 / 5%), 0 8px 24px rgb(5 19 15 / 4%);
+  --shadow-md: 0 18px 45px rgb(5 19 15 / 10%);
+  --shadow-lg: 0 28px 70px rgb(5 19 15 / 16%);
+}
+
+html {
+  background: var(--color-surface-muted);
+  font-size: 93.75%;
+}
+
+body {
+  background:
+    radial-gradient(circle at 6% 5%, rgb(67 221 184 / 7%), transparent 26rem),
+    var(--color-surface-muted);
+  font-weight: 450;
+  letter-spacing: -0.006em;
+}
+
+:where(h1, h2, h3, h4) {
+  color: var(--color-text-primary);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline-color: rgb(67 221 184 / 58%);
+}
+
+/* Public navigation */
+.site-header {
+  border-bottom-color: rgb(255 255 255 / 9%);
+  background: rgb(5 10 9 / 94%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 4%);
+  backdrop-filter: blur(18px);
+}
+
+.site-header__inner {
+  min-height: 4.4rem;
+}
+
+.site-logo {
+  border-radius: 0.7rem;
+  background: rgb(255 255 255 / 96%);
+  padding: 0.24rem 0.5rem;
+}
+
+.site-header .mandyal-logo__artwork {
+  width: 12.4rem;
+}
+
+.site-navigation {
+  gap: 0.35rem;
+}
+
+.site-navigation__link {
+  border-radius: 0.6rem;
+  color: #b9c8c3;
+  padding: 0.58rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.site-navigation__link:hover,
+.site-navigation__link[aria-current='page'] {
+  background: rgb(67 221 184 / 9%);
+  color: #61e5c3;
+  text-decoration: none;
+}
+
+.site-navigation__cta {
+  border: 1px solid #43ddb8;
+  border-radius: 0.7rem;
+  background: #43ddb8;
+  color: #07100e;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  box-shadow: 0 0 28px rgb(67 221 184 / 16%);
+}
+
+.site-header__menu-button {
+  border-color: rgb(255 255 255 / 16%);
+  background: rgb(255 255 255 / 6%);
+  color: #dff9f2;
+}
+
+.back-navigation {
+  border-bottom-color: #20312c;
+  background: #0a1210;
+}
+
+.back-navigation button {
+  min-height: 2.45rem;
+  color: #9eead7;
+  font-size: 0.78rem;
+}
+
+/* Shared controls and content surfaces */
+.ui-button {
+  min-height: 2.65rem;
+  border-radius: 0.75rem;
+  padding-inline: 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 780;
+}
+
+.ui-button--primary,
+.ui-button--accent {
+  border-color: #43ddb8;
+  background: #43ddb8;
+  color: #07100e;
+  box-shadow: 0 8px 24px rgb(29 185 149 / 18%);
+}
+
+.ui-button--primary:hover:not(:disabled):not([aria-disabled='true']),
+.ui-button--accent:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: #6be8c9;
+  background: #6be8c9;
+  color: #07100e;
+  box-shadow: 0 12px 30px rgb(29 185 149 / 24%);
+}
+
+.ui-button--secondary {
+  border-color: #a8c0b8;
+  background: transparent;
+  color: #155b4d;
+}
+
+.ui-button--secondary:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: #1db995;
+  background: #f0fcf8;
+  color: #0b493d;
+}
+
+.ui-card {
+  border-color: var(--color-border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-card--padded {
+  padding: 1.25rem;
+}
+
+.ui-card--elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.ui-field__label {
+  color: #354a43;
+  font-size: 0.8rem;
+}
+
+.ui-input,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+  border-color: var(--color-border-strong);
+  border-radius: 0.72rem;
+  background: #fff;
+}
+
+.ui-input:hover,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover {
+  border-color: #63bba4;
+}
+
+.ui-input:focus-visible,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):focus-visible {
+  border-color: #1db995;
+  box-shadow: 0 0 0 0.22rem rgb(67 221 184 / 16%);
+  outline: none;
+}
+
+/* Public page rhythm */
+:where(.auth-page, .coming-soon-page, .legal-page, .hotel-page, .offers-page) {
+  isolation: isolate;
+}
+
+.auth-page__intro h1,
+.coming-soon-page__card h1,
+.coming-soon-page__card h2 {
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-weight: 850;
+}
+
+.auth-page .ui-card,
+.coming-soon-page__card {
+  border-color: #cfddd8;
+  box-shadow: 0 24px 60px rgb(5 19 15 / 10%);
+}
+
+.hotel-page__eyebrow,
+.admin-hero__eyebrow,
+.dashboard-chart header > div > span,
+.dashboard-chart__donut-copy > span {
+  color: #168a70;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+}
+
+.home-search-hero__copy h1 {
+  color: #fff;
+}
+
+.home-search-hero__shade {
+  background:
+    linear-gradient(180deg, rgb(3 9 8 / 26%), rgb(3 9 8 / 78%)),
+    linear-gradient(90deg, rgb(3 12 10 / 66%), transparent 58%);
+}
+
+.home-booking-widget {
+  border-color: rgb(67 221 184 / 26%);
+  box-shadow: 0 1.75rem 4rem rgb(2 12 9 / 34%);
+}
+
+.home-booking-widget__tabs button.is-active::after {
+  background: #43ddb8;
+}
+
+.home-booking-widget__field:focus-within {
+  border-color: #1db995;
+  box-shadow: 0 0 0 3px rgb(67 221 184 / 14%);
+}
+
+.home-booking-widget__submit {
+  background: #43ddb8;
+  color: #07100e;
+  box-shadow: 0 10px 26px rgb(29 185 149 / 20%);
+}
+
+.home-booking-widget__submit:hover,
+.home-booking-widget__submit:focus-visible {
+  background: #6be8c9;
+  box-shadow: 0 14px 32px rgb(29 185 149 / 28%);
+}
+
+/* Protected workspaces */
+.workspace-shell {
+  width: 100%;
+  max-width: none;
+  border: 0;
+  background: #f3f6f5;
+}
+
+.workspace-shell__stage {
+  background:
+    linear-gradient(rgb(18 54 46 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(18 54 46 / 3%) 1px, transparent 1px),
+    radial-gradient(circle at 100% 0, rgb(67 221 184 / 9%), transparent 28rem), #f3f6f5;
+  background-size:
+    3.5rem 3.5rem,
+    3.5rem 3.5rem,
+    auto,
+    auto;
+}
+
+.workspace-sidebar {
+  border-right: 1px solid rgb(67 221 184 / 12%);
+  background: radial-gradient(circle at 25% 0, rgb(67 221 184 / 13%), transparent 18rem), #070c0a;
+  box-shadow: 12px 0 40px rgb(5 19 15 / 10%);
+}
+
+.workspace-sidebar__brand {
+  border-bottom-color: rgb(255 255 255 / 9%);
+}
+
+.workspace-sidebar__brand > span {
+  border-color: rgb(67 221 184 / 42%);
+  background: linear-gradient(145deg, #43ddb8, #168a70);
+  color: #07100e;
+  box-shadow: 0 8px 24px rgb(67 221 184 / 18%);
+}
+
+.workspace-sidebar__brand div > small,
+.workspace-sidebar__group summary {
+  color: #76aa9d;
+}
+
+.workspace-sidebar__brand div > span,
+.workspace-sidebar__account {
+  color: #95aaa4;
+}
+
+.workspace-sidebar__links > a,
+.workspace-sidebar__disabled {
+  border-radius: 0.65rem;
+  color: #c7d4d0;
+}
+
+.workspace-sidebar__links > a:hover,
+.workspace-sidebar__links > a:focus-visible {
+  border-color: rgb(67 221 184 / 14%);
+  background: rgb(67 221 184 / 8%);
+  color: #f2fffb;
+}
+
+.workspace-sidebar__links > a[aria-current='page'] {
+  border-color: rgb(67 221 184 / 25%);
+  background: linear-gradient(90deg, rgb(67 221 184 / 20%), rgb(67 221 184 / 6%));
+  box-shadow: inset 3px 0 0 #43ddb8;
+  color: #fff;
+}
+
+.workspace-sidebar__links > a > span,
+.workspace-sidebar__disabled > span {
+  border-color: rgb(67 221 184 / 18%);
+  background: rgb(67 221 184 / 7%);
+  color: #9eead7;
+}
+
+.workspace-topbar {
+  border-bottom-color: #d9e5e1;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 8px 28px rgb(5 19 15 / 5%);
+  backdrop-filter: blur(20px);
+}
+
+.workspace-topbar__context > div > strong {
+  color: #0b1916;
+  font-weight: 820;
+}
+
+.workspace-topbar__secure {
+  border-color: #bfe8da;
+  background: #edfbf6;
+  color: #11664f;
+}
+
+.workspace-topbar__avatar {
+  background: #dff9f2;
+  color: #125e4e;
+}
+
+.workspace-topbar__signout {
+  border-color: #bcd5cd;
+  background: #fff;
+  color: #164f43;
+}
+
+.workspace-topbar__signout:hover,
+.workspace-topbar__signout:focus-visible {
+  border-color: #43ddb8;
+  background: #e9fbf6;
+  color: #0c4a3d;
+}
+
+.workspace-shell__content .ui-card,
+.dashboard-chart {
+  border-color: #d9e5e1;
+  background: rgb(255 255 255 / 96%);
+  box-shadow:
+    0 1px 2px rgb(5 19 15 / 4%),
+    0 10px 28px rgb(5 19 15 / 4%);
+}
+
+.workspace-shell__content table tbody tr:hover {
+  background: #effbf7;
+}
+
+.workspace-shell__content table th {
+  color: #566b64;
+}
+
+.admin-hero {
+  border: 1px solid rgb(67 221 184 / 19%);
+  border-left: 0;
+  border-radius: 1rem;
+  background:
+    linear-gradient(rgb(67 221 184 / 6%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(67 221 184 / 6%) 1px, transparent 1px),
+    radial-gradient(circle at 92% 18%, rgb(67 221 184 / 18%), transparent 19rem), #08100e;
+  background-size:
+    2.8rem 2.8rem,
+    2.8rem 2.8rem,
+    auto,
+    auto;
+  color: #d8e7e2;
+  box-shadow: 0 18px 42px rgb(5 19 15 / 14%);
+}
+
+.admin-hero h1 {
+  color: #fff;
+  font-weight: 850;
+}
+
+.admin-hero__eyebrow,
+.admin-hero__secure {
+  color: #6be8c9;
+}
+
+.admin-hero__content > p:not(.admin-hero__eyebrow),
+.admin-hero__posture span:not(.admin-hero__secure) {
+  color: #afc2bc;
+}
+
+.admin-hero__posture {
+  border-color: rgb(67 221 184 / 24%);
+  background: rgb(67 221 184 / 8%);
+}
+
+.admin-hero__posture strong {
+  color: #7aebcf;
+}
+
+.admin-hero .ui-button--secondary,
+.admin-hero__actions .ui-button--secondary {
+  border-color: rgb(255 255 255 / 22%);
+  background: rgb(255 255 255 / 5%);
+  color: #e7f5f1;
+}
+
+.admin-overview-grid .ui-card::before,
+.partner-bookings__summary .ui-card::before {
+  background: linear-gradient(90deg, #1db995, #6be8c9) !important;
+}
+
+.dashboard-chart__track {
+  background: #e4edea;
+}
+
+.dashboard-chart__track i,
+.dashboard-chart__bar:nth-child(n) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #168a70, #43ddb8);
+}
+
+.dashboard-chart__donut {
+  background: conic-gradient(#1db995 var(--donut-value), #e4edea 0);
+}
+
+/* Footer */
+.site-footer {
+  background: #070b0a;
+  color: #d8e7e2;
+}
+
+.site-footer__trust {
+  border-color: rgb(67 221 184 / 12%);
+  background: #050807;
+}
+
+.site-footer__description,
+.site-footer__bottom,
+.site-footer__trust-inner > small,
+.site-footer__secure-mark small {
+  color: #91a59f;
+}
+
+.site-footer a {
+  color: #b8cbc5;
+}
+
+.site-footer a:hover {
+  color: #6be8c9;
+}
+
+.site-footer__newsletter button {
+  background: #43ddb8;
+  color: #07100e;
+}
+
+@media (max-width: 70rem) {
+  .site-navigation--open {
+    border-bottom-color: rgb(255 255 255 / 10%);
+    background: #080d0b;
+  }
+
+  .workspace-shell--nav-open .workspace-shell__backdrop,
+  .workspace-shell__nav-toggle:checked + .workspace-shell__backdrop {
+    background: rgb(3 8 6 / 72%);
+  }
+}
+
+@media (max-width: 46rem) {
+  html {
+    font-size: 93.75%;
+  }
+
+  .site-header__inner {
+    min-height: 4rem;
+  }
+
+  .site-header .mandyal-logo__artwork {
+    width: 10.75rem;
+  }
+
+  .workspace-topbar {
+    top: 4rem;
+  }
+
+  .workspace-topbar__menu {
+    border-color: #bcd5cd;
+    background: #f4fffb;
+    color: #115746;
+  }
+
+  .admin-hero {
+    padding: 1rem;
+  }
+}
