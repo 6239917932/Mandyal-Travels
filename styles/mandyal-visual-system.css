@@ -52,7 +52,7 @@ html {
 
 body {
   /* Scale the complete interface, including controls, spacing and artwork. */
-  zoom: 1.2;
+  zoom: 0.85;
   background:
     radial-gradient(circle at 3% 2%, rgb(37 99 201 / 6%), transparent 28rem),
     radial-gradient(circle at 98% 18%, rgb(15 157 139 / 5%), transparent 24rem),
