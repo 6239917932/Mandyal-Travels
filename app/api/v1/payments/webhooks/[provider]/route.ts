@@ -31,6 +31,9 @@ export async function POST(request: Request, context: Context) {
   const { provider } = await context.params;
   if (!PROVIDER_PATTERN.test(provider))
     return NextResponse.json({ error: { code: 'WEBHOOK_PROVIDER_INVALID' } }, { status: 400 });
+  if (provider === 'razorpay') {
+    return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
+  }
   const payload = await readTextBody(request);
   if (payload === null)
     return NextResponse.json({ error: { code: 'WEBHOOK_PAYLOAD_TOO_LARGE' } }, { status: 413 });

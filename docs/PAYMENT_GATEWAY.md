@@ -56,3 +56,9 @@ PayU Split & Transfer is a separate product and is not activated by this collect
 all supplier payouts disabled until PayU approves the application, every supplier is onboarded as a
 sub-account, and split/refund/reversal/reconciliation testing is complete. Cashfree remains only a
 backup candidate while its merchant review is pending.
+
+Razorpay is a prepared future provider, not an active fallback. Setting `PAYMENT_PROVIDER_ID` to
+`razorpay` fails closed: checkout creation, generic webhook processing and refunds remain disabled.
+Do not replace PayU production configuration until Razorpay approves Route and the dedicated
+checkout, signature-verification, refund, linked-account, transfer, reversal and reconciliation
+adapters pass the activation checklist in `docs/RAZORPAY_ROUTE_ACTIVATION.md`.
