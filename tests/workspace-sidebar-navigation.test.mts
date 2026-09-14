@@ -54,6 +54,19 @@ test('workspace sign out remains available in the sticky top bar without sidebar
   assert.doesNotMatch(shell, /workspace-sidebar__account/);
 });
 
+test('workspace chrome pins to the viewport after the public header scrolls away', async () => {
+  const [components, visualSystem] = await Promise.all([
+    readFile(new URL('../styles/components.css', import.meta.url), 'utf8'),
+    readFile(new URL('../styles/mandyal-visual-system.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(components, /\.site-header--workspace\s*\{[\s\S]*?position:\s*relative;[\s\S]*?\}/);
+  assert.match(components, /\.workspace-topbar\s*\{[\s\S]*?position:\s*sticky;[\s\S]*?top:\s*0;/);
+  assert.match(components, /\.workspace-sidebar\s*\{[\s\S]*?top:\s*0;/);
+  assert.doesNotMatch(components, /top:\s*4\.(?:25|75)rem;/);
+  assert.doesNotMatch(visualSystem, /\.workspace-topbar\s*\{\s*top:\s*4rem;/);
+});
+
 test('administrator navigation is grouped and covers every control-center destination', async () => {
   const [navigation, page] = await Promise.all([
     readFile(new URL('../lib/navigation/workspaceNavigation.ts', import.meta.url), 'utf8'),
