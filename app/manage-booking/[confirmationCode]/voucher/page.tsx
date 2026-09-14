@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BookingDocumentAccessDenied } from '@/components/booking/BookingDocumentAccessDenied';
 import { PrintDocumentButton } from '@/components/booking/PrintDocumentButton';
 import { getAuthorizedManagedBooking } from '@/lib/managedBooking';
+import { defaultHotelOperationalDocumentProfile } from '@/lib/pms/operationalDocuments';
 
 interface VoucherPageProps {
   params: Promise<{ confirmationCode: string }>;
@@ -23,6 +24,7 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
   if (!booking) {
     return <BookingDocumentAccessDenied />;
   }
+  const documentProfile = booking.documentProfile ?? defaultHotelOperationalDocumentProfile();
 
   return (
     <div className="booking-document-page">
@@ -30,11 +32,16 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
         <Link href="/manage-booking">Back to Manage Booking</Link>
         <PrintDocumentButton label="Print or save voucher" />
       </div>
-      <article className="booking-document">
+      <article
+        className="booking-document hotel-operational-document"
+        data-document-template={documentProfile.template}
+        data-document-theme={documentProfile.theme}
+      >
         <header className="booking-document__header">
           <div>
-            <span className="booking-document__brand">Mandyal Travels</span>
+            <span className="booking-document__brand">Mandyal Travels · {booking.hotelName}</span>
             <h1>Hotel booking voucher</h1>
+            {documentProfile.headerText ? <p>{documentProfile.headerText}</p> : null}
           </div>
           <div
             className={`booking-document__status ${
@@ -96,8 +103,16 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
         </section>
 
         <footer className="booking-document__footer">
-          Present this voucher with government-issued photo identification at check-in. Contact
-          support@mandyaltravels.com and quote the booking reference if you need assistance.
+          {documentProfile.footerText ? <p>{documentProfile.footerText}</p> : null}
+          {documentProfile.showPropertyContact && booking.propertyContact ? (
+            <p>
+              Property contact: {booking.propertyContact.email} · {booking.propertyContact.phone}
+            </p>
+          ) : null}
+          <p>
+            Present this voucher with government-issued photo identification at check-in. Contact
+            support@mandyaltravels.com and quote the booking reference if you need assistance.
+          </p>
         </footer>
       </article>
     </div>

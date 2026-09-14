@@ -77,7 +77,21 @@ function cashEntries(entries: StoredFolioEntry[]) {
 async function ownedProperties(client: Pick<typeof prisma, 'partnerProperty'>, partnerId: string) {
   return client.partnerProperty.findMany({
     orderBy: { displayName: 'asc' },
-    select: { displayName: true, hotelSlug: true, id: true, operationalDate: true, timezone: true },
+    select: {
+      contactEmail: true,
+      contactPhone: true,
+      displayName: true,
+      documentFooterText: true,
+      documentHeaderText: true,
+      documentShowContact: true,
+      documentTemplate: true,
+      documentTheme: true,
+      documentVersion: true,
+      hotelSlug: true,
+      id: true,
+      operationalDate: true,
+      timezone: true,
+    },
     take: MAX_PROPERTIES + 1,
     where: { listingSource: 'MANAGED', partnerId, status: 'ACTIVE' },
   });
@@ -186,6 +200,14 @@ export async function getPartnerHotelFolioWorkspace(input: {
             checkOutDate: selectedBooking.quote.checkOutDate,
             confirmationCode: selectedBooking.confirmationCode,
             currency: selectedBooking.currency,
+            documentProfile: {
+              footerText: selectedProperty.documentFooterText,
+              headerText: selectedProperty.documentHeaderText,
+              showPropertyContact: selectedProperty.documentShowContact,
+              template: selectedProperty.documentTemplate,
+              theme: selectedProperty.documentTheme,
+              version: selectedProperty.documentVersion,
+            },
             entries: selectedEntries.map(presentEntry),
             guestName: selectedBooking.guest
               ? `${selectedBooking.guest.firstName} ${selectedBooking.guest.lastName}`
@@ -204,6 +226,10 @@ export async function getPartnerHotelFolioWorkspace(input: {
             payments: totals.payments,
             propertyId: selectedProperty.id,
             propertyName: selectedProperty.displayName,
+            propertyContact: {
+              email: selectedProperty.contactEmail,
+              phone: selectedProperty.contactPhone,
+            },
           }
         : undefined,
     stays: boundedBookings.map((booking) => ({

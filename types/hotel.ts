@@ -119,6 +119,16 @@ export interface HotelPropertyProfile {
   propertyType: string;
   smokingAllowed: boolean;
   timezone: string;
+  documentProfile?: HotelOperationalDocumentProfile;
+}
+
+export interface HotelOperationalDocumentProfile {
+  footerText: string;
+  headerText: string;
+  showPropertyContact: boolean;
+  template: 'CLASSIC' | 'COMPACT';
+  theme: 'OCEAN' | 'EMERALD' | 'SUNSET' | 'PLUM';
+  version: number;
 }
 
 export interface Hotel {

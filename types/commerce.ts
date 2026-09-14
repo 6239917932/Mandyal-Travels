@@ -1,4 +1,4 @@
-import type { CurrencyCode } from '@/types/hotel';
+import type { CurrencyCode, HotelOperationalDocumentProfile } from '@/types/hotel';
 
 export type PriceComponentType = 'room-charge' | 'tax-and-fee' | 'addon-charge' | 'addon-tax';
 
@@ -231,6 +231,8 @@ export interface ManagedHotelBooking extends HotelBookingRecord {
   refundable?: boolean;
   roomName?: string;
   rooms?: number;
+  documentProfile?: HotelOperationalDocumentProfile;
+  propertyContact?: { email: string; phone: string };
 }
 
 export interface CreateHotelBookingRequest {

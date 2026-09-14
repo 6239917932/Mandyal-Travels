@@ -17,6 +17,180 @@
     transform 160ms ease;
 }
 
+/* Property-controlled operational documents. Financial and statutory content remains system-owned. */
+.operational-document-settings {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.operational-document-settings__property {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.9fr);
+  gap: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.operational-document-settings__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.operational-document-settings__check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.12rem;
+  accent-color: var(--color-brand-700);
+}
+
+.operational-document-preview,
+.hotel-operational-document {
+  --operational-document-accent: #1768a3;
+  --operational-document-tint: #edf7ff;
+}
+
+.operational-document-preview[data-document-theme='EMERALD'],
+.hotel-operational-document[data-document-theme='EMERALD'] {
+  --operational-document-accent: #087f67;
+  --operational-document-tint: #eaf8f3;
+}
+
+.operational-document-preview[data-document-theme='SUNSET'],
+.hotel-operational-document[data-document-theme='SUNSET'] {
+  --operational-document-accent: #c45319;
+  --operational-document-tint: #fff3e9;
+}
+
+.operational-document-preview[data-document-theme='PLUM'],
+.hotel-operational-document[data-document-theme='PLUM'] {
+  --operational-document-accent: #7540a8;
+  --operational-document-tint: #f5effb;
+}
+
+.operational-document-preview {
+  align-self: start;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--operational-document-accent) 30%, white);
+  border-top: 0.45rem solid var(--operational-document-accent);
+  border-radius: 0.9rem;
+  background: white;
+  padding: var(--space-5);
+  color: #10243b;
+  box-shadow: 0 16px 40px rgb(16 36 59 / 10%);
+}
+
+.operational-document-preview header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid #d8e2ec;
+  padding-bottom: var(--space-4);
+}
+
+.operational-document-preview header small {
+  color: var(--operational-document-accent);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operational-document-preview h3,
+.operational-document-preview p {
+  margin: 0.35rem 0 0;
+}
+
+.operational-document-preview header > strong,
+.operational-document-preview__notice {
+  border-radius: 999px;
+  background: var(--operational-document-tint);
+  color: var(--operational-document-accent);
+  padding: 0.4rem 0.65rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.operational-document-preview dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+
+.operational-document-preview dl > div {
+  border-radius: 0.6rem;
+  background: #f7f9fc;
+  padding: var(--space-3);
+}
+
+.operational-document-preview dt {
+  color: #60748b;
+  font-size: 0.72rem;
+}
+
+.operational-document-preview dd {
+  margin: 0.25rem 0 0;
+  font-weight: 750;
+}
+
+.operational-document-preview footer {
+  margin-top: var(--space-4);
+  border-top: 1px solid #d8e2ec;
+  padding-top: var(--space-3);
+  color: #52677d;
+}
+
+.operational-document-preview[data-document-template='COMPACT'] {
+  padding: var(--space-4);
+}
+
+.operational-document-preview[data-document-template='COMPACT'] dl {
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.hotel-operational-document {
+  border-top: 0.5rem solid var(--operational-document-accent);
+}
+
+.hotel-operational-document .booking-document__brand,
+.hotel-operational-document .booking-document__reference strong {
+  color: var(--operational-document-accent);
+}
+
+.hotel-operational-document .booking-document__reference {
+  background: var(--operational-document-tint);
+}
+
+.hotel-operational-document[data-document-template='COMPACT'] {
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+@media (max-width: 70rem) {
+  .operational-document-settings__property {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 46rem) {
+  .operational-document-settings__property {
+    gap: var(--space-4);
+    border-radius: 0.8rem;
+    padding: var(--space-4);
+  }
+
+  .operational-document-preview dl {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Customer-owned hotel payment activity */
 .customer-payments__notice {
   margin: 1rem 0 1.4rem;

@@ -27,7 +27,7 @@ The comparison is additive. Existing Mandyal modules remain unchanged.
 | Stock transfer, manufacturing receipt, recipe consumption and expiry         | Immutable receipt/issue ledger and reorder controls are live         | Add as separate governed workstreams; avoid silently rewriting stock or auto-consuming without approved recipes and reversal rules                                                |
 | Manual journals, contra, opening balances, cash/bank books and balance sheet | System-generated balanced journals and management P&L are live       | Keep manual/statutory accounting gated until finance ownership, period locks, reversals, bank reconciliation and tax review are approved                                          |
 | Credit notes and GST e-invoicing                                             | GST preparation statement is live and clearly non-statutory          | Keep blocked pending GST profile, numbering, place-of-supply, IRP/provider and tax-adviser approval                                                                               |
-| Configurable invoice/folio print layouts and bill prefixes                   | Safe existing booking/GST documents are available                    | Candidate enhancement; statutory numbering must remain immutable and legally reviewed                                                                                             |
+| Configurable invoice/folio print layouts and bill prefixes                   | Property-branded booking vouchers and operational folios are live    | Delivered through closed layouts and themes; statutory numbering, tax evidence, booking references and payment records remain system controlled                                   |
 | Multi-currency conversion                                                    | Currency-conflict fail-closed controls exist                         | Keep conversion gated until a contracted rate source, timestamping, spread, rounding and settlement policy exist                                                                  |
 | KOT printer and electronic door-lock interfaces                              | KDS is live; hardware adapters are absent                            | Keep provider-gated; never claim device integration without certified hardware and monitoring                                                                                     |
 | Email, WhatsApp and automated reminders                                      | Email infrastructure exists; journeys are a controlled foundation    | Retain consent, suppression, sender approval and delivery-evidence gates                                                                                                          |
@@ -45,9 +45,11 @@ provider-purchase controls were also not treated as evidence of production readi
 
 1. Lost and Found — delivered by this review.
 2. Purchase-order approval and partial goods-receipt matching — delivered after this review.
-3. Store-to-store transfer, expiry lots and reversible wastage controls.
-4. Forecasting with explicit data sufficiency and accuracy labels.
-5. Configurable operational document templates, without weakening statutory controls.
+3. Store-to-store transfer, expiry lots and reversible wastage controls — delivered.
+4. Forecasting with explicit data sufficiency and accuracy labels — delivered as governed,
+   review-only revenue intelligence.
+5. Configurable operational document templates — delivered for booking vouchers and operational
+   guest folios without weakening statutory controls.
 
 Manual statutory accounting, GST e-invoicing, currency conversion, WhatsApp, payment collection,
 external OTA synchronization, printer and lock hardware remain dependent on their existing legal,

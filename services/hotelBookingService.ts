@@ -525,9 +525,16 @@ export class HotelBookingService {
       cancellationPolicy: ratePlan?.cancellationPolicy.description,
       checkInDate: quote?.checkInDate ?? booking.checkInDate,
       checkOutDate: quote?.checkOutDate ?? booking.checkOutDate,
+      documentProfile: hotel?.propertyProfile?.documentProfile,
       hotelName: hotel?.name ?? booking.hotelSlug,
       latestAmendment,
       priceComponents: quote?.components,
+      propertyContact: hotel?.propertyProfile
+        ? {
+            email: hotel.propertyProfile.contactEmail,
+            phone: hotel.propertyProfile.contactPhone,
+          }
+        : undefined,
       ratePlanName: ratePlan?.name,
       refundable,
       roomName: room?.name,
