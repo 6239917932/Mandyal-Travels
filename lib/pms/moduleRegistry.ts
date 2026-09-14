@@ -254,6 +254,16 @@ export const pmsModules: readonly PmsModule[] = [
     status: 'LIVE',
   },
   {
+    code: 'BA',
+    description:
+      'Guest-selectable packages and add-ons with date, quantity, tax and immutable quote controls.',
+    group: 'Revenue and distribution',
+    href: '/partner/pms/booking-addons',
+    name: 'Booking packages and add-ons',
+    phase: 3,
+    status: 'LIVE',
+  },
+  {
     code: 'CH',
     description:
       'One PMS calendar for rates, rooms and restrictions with manual external-channel action sheets.',

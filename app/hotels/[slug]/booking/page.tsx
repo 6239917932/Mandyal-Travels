@@ -104,6 +104,16 @@ export default function HotelBookingPage() {
                   )}
                 </dd>
               </div>
+              {booking.pricing.addons.amount > 0 ? (
+                <>
+                  {booking.pricing.addonComponents.map((component, index) => (
+                    <div key={`${component.sourceId}-${component.type}-${index}`}>
+                      <dt>{component.label}</dt>
+                      <dd>{formatCurrency(component.amount, component.currency)}</dd>
+                    </div>
+                  ))}
+                </>
+              ) : null}
               <div className="booking-page__total">
                 <dt>Total</dt>
                 <dd>

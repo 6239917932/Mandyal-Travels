@@ -17,7 +17,16 @@ function isHotelQuoteRequest(value: unknown): value is HotelQuoteRequest {
     typeof request.hotelSlug === 'string' &&
     typeof request.ratePlanId === 'string' &&
     typeof request.rooms === 'number' &&
-    typeof request.roomTypeId === 'string'
+    typeof request.roomTypeId === 'string' &&
+    (request.addons === undefined ||
+      (Array.isArray(request.addons) &&
+        request.addons.every(
+          (addon) =>
+            addon &&
+            typeof addon === 'object' &&
+            typeof (addon as Record<string, unknown>).addonId === 'string' &&
+            typeof (addon as Record<string, unknown>).quantity === 'number',
+        )))
   );
 }
 

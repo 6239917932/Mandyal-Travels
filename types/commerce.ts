@@ -1,12 +1,43 @@
 import type { CurrencyCode } from '@/types/hotel';
 
-export type PriceComponentType = 'room-charge' | 'tax-and-fee';
+export type PriceComponentType = 'room-charge' | 'tax-and-fee' | 'addon-charge' | 'addon-tax';
 
 export interface PriceComponent {
   amount: number;
   currency: CurrencyCode;
   label: string;
+  pricingMode?: HotelBookingAddonPricingMode;
+  quantity?: number;
+  sourceId?: string;
+  taxRateBps?: number;
   type: PriceComponentType;
+  unitAmount?: number;
+}
+
+export type HotelBookingAddonPricingMode =
+  | 'PER_BOOKING'
+  | 'PER_NIGHT'
+  | 'PER_ROOM'
+  | 'PER_ROOM_PER_NIGHT'
+  | 'PER_GUEST'
+  | 'PER_GUEST_PER_NIGHT';
+
+export interface HotelBookingAddonOption {
+  category: string;
+  currency: CurrencyCode;
+  description: string;
+  id: string;
+  maxQuantity: number;
+  minQuantity: number;
+  name: string;
+  pricingMode: HotelBookingAddonPricingMode;
+  taxRateBps: number;
+  unitAmount: number;
+}
+
+export interface HotelBookingAddonSelection {
+  addonId: string;
+  quantity: number;
 }
 
 export interface HotelQuoteRequest {
@@ -18,6 +49,7 @@ export interface HotelQuoteRequest {
   ratePlanId: string;
   rooms: number;
   roomTypeId: string;
+  addons?: HotelBookingAddonSelection[];
 }
 
 export interface AvailabilityLock {
