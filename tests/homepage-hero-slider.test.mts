@@ -31,20 +31,24 @@ test('homepage moves every supplied Bir Billing photograph into the travel galle
 });
 
 test('homepage hero provides a focused hotel-and-car-first booking widget', async () => {
-  const [page, widget, styles] = await Promise.all([
+  const [page, widget, styles, visualSystem] = await Promise.all([
     readFile(new URL('../app/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../components/home/HomeBookingWidget.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../styles/home.css', import.meta.url), 'utf8'),
+    readFile(new URL('../styles/mandyal-visual-system.css', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(page, /mandyal-travel-hero-v2\.png/);
+  assert.doesNotMatch(page, /home-search-hero__image/);
+  assert.doesNotMatch(page, /mandyal-travel-hero-v2\.png/);
   assert.match(page, /<HomeBookingWidget \/>/);
   assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /Mandyal Travels: stay, drive, and grow with us\./);
+  assert.match(page, /One place to plan the whole journey\./);
   assert.match(
     page,
-    /Rooted in Himachal, we promise clear choices, dependable service, and human support—\s+so every journey feels cared for from the first search to your safe return home/,
+    /Discover owner-managed stays and cars, build your itinerary, and get human support\s+from first search to safe return/,
   );
+  assert.match(page, /className="home-smart-planner" href="\/trip-planner"/);
+  assert.match(page, /Plan with Mandyal/);
   assert.doesNotMatch(page, /supplier integrations are verified/);
   assert.doesNotMatch(page, /<HomeHeroSlider \/>/);
   assert.match(page, /<h2 className="home-intro__title" id="home-intro-title">/);
@@ -60,8 +64,8 @@ test('homepage hero provides a focused hotel-and-car-first booking widget', asyn
   assert.match(styles, /\.home-search-hero\s*\{/);
   assert.match(styles, /\.home-booking-widget\s*\{/);
   assert.match(styles, /\.home-gallery__rail\s*\{[\s\S]*?overflow-x:\s*auto;/);
-  assert.ok(
-    (await stat(new URL('../public/home/mandyal-travel-hero-v2.png', import.meta.url))).size > 0,
-    'the new professional hero artwork must be a non-empty image asset',
-  );
+  assert.match(visualSystem, /body\s*\{[\s\S]*?zoom:\s*0\.9;/);
+  assert.match(visualSystem, /\.home-search-hero\s*\{[\s\S]*?radial-gradient/);
+  assert.match(visualSystem, /\.home-smart-planner\s*\{/);
+  assert.match(visualSystem, /\.home-booking-widget__benefits\s*\{[\s\S]*?repeat\(4/);
 });

@@ -190,8 +190,9 @@ export function HomeBookingWidget() {
       )}
 
       <div className="home-booking-widget__benefits" aria-label="Booking benefits">
+        <span>Secure booking journey</span>
         <span>Clear prices</span>
-        <span>Owner-managed inventory</span>
+        <span>Managed inventory</span>
         <span>Human support</span>
       </div>
     </div>
