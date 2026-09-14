@@ -10,6 +10,12 @@ import {
   type OwnerOverviewBooking,
 } from '@/lib/pms/ownerOverview';
 import { resolveOperationalDate } from '@/lib/pms/operationalDate';
+import {
+  assessRevenueDataQuality,
+  buildRevenueDemandCalendar,
+  buildRevenueReviewQueue,
+  summarizeRevenueDemand,
+} from '@/lib/pms/revenueIntelligence';
 
 const DAY_MS = 86_400_000;
 const MAX_PROPERTIES = 100;
@@ -210,6 +216,16 @@ export async function getPartnerOwnerOverview(input: {
       total + (booking.quote.checkOutDate === businessDate ? booking.quote.rooms : 0),
     0,
   );
+  const revenueDemandCalendar = buildRevenueDemandCalendar({
+    activeRooms,
+    bookings: financialBookings,
+    businessDate,
+  });
+  const revenueDataQuality = assessRevenueDataQuality({
+    activeRooms,
+    bookings: financialBookings,
+    businessDate,
+  });
 
   return {
     businessDate,
@@ -252,6 +268,15 @@ export async function getPartnerOwnerOverview(input: {
       name: selectedProperty.displayName,
     },
     sourceMix: buildOwnerSourceMix(financialBookings),
+    revenueIntelligence: {
+      calendar: revenueDemandCalendar,
+      dataQuality: revenueDataQuality,
+      reviewQueue: buildRevenueReviewQueue({
+        calendar: revenueDemandCalendar,
+        dataQuality: revenueDataQuality.quality,
+      }),
+      summary: summarizeRevenueDemand(revenueDemandCalendar),
+    },
     currencyConflict,
   } as const;
 }
