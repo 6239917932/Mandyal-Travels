@@ -1,0 +1,605 @@
+/*
+ * Mandyal visual system
+ *
+ * A presentation-only layer for the public marketplace and protected workspaces.
+ * It preserves application behaviour while unifying hierarchy, spacing, colour,
+ * accessibility and responsive presentation across the portal.
+ */
+
+:root {
+  --color-brand-950: #071a33;
+  --color-brand-900: #0b2748;
+  --color-brand-800: #113b67;
+  --color-brand-700: #17558d;
+  --color-brand-600: #2172b5;
+  --color-brand-500: #3b8fd1;
+  --color-brand-200: #b9daf2;
+  --color-brand-100: #ddecf8;
+  --color-brand-50: #f0f7fc;
+  --color-accent-700: #c35e0a;
+  --color-accent-600: #e87b17;
+  --color-accent-100: #ffead2;
+  --color-accent-50: #fff8ef;
+  --color-success: #087f6f;
+  --color-info: #2563c9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f7fb;
+  --color-surface-raised: #ffffff;
+  --color-border: #d9e3ee;
+  --color-border-strong: #bdccdc;
+  --color-text-primary: #13243a;
+  --color-text-secondary: #4c6078;
+  --color-text-muted: #718198;
+  --mandyal-blue: #2563c9;
+  --mandyal-teal: #0f9d8b;
+  --mandyal-orange: #ed7d1a;
+  --mandyal-violet: #7556cf;
+  --mandyal-rose: #d84b72;
+  --container-max-width: 90rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.4rem;
+  --shadow-sm: 0 1px 2px rgb(13 39 69 / 5%), 0 7px 22px rgb(13 39 69 / 5%);
+  --shadow-md: 0 16px 42px rgb(13 39 69 / 10%);
+  --shadow-lg: 0 26px 65px rgb(13 39 69 / 15%);
+}
+
+html {
+  background: var(--color-surface-muted);
+  font-size: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at 3% 2%, rgb(37 99 201 / 6%), transparent 28rem),
+    radial-gradient(circle at 98% 18%, rgb(15 157 139 / 5%), transparent 24rem),
+    var(--color-surface-muted);
+  color: var(--color-text-primary);
+  font-weight: 440;
+  letter-spacing: -0.004em;
+}
+
+:where(h1, h2, h3, h4) {
+  color: var(--color-text-primary);
+  font-weight: 780;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline-color: rgb(37 99 201 / 65%);
+}
+
+/* Public navigation */
+.site-header {
+  border-bottom-color: rgb(11 39 72 / 10%);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 6px 24px rgb(13 39 69 / 5%);
+  backdrop-filter: blur(18px);
+}
+
+.site-header__inner {
+  min-height: 4.5rem;
+}
+
+.site-logo {
+  border-radius: 0.7rem;
+  padding: 0.15rem 0;
+}
+
+.site-header .mandyal-logo__artwork {
+  width: 12.4rem;
+}
+
+.site-navigation {
+  gap: 0.25rem;
+}
+
+.site-navigation__link {
+  border-radius: 0.65rem;
+  color: #40566f;
+  padding: 0.6rem 0.72rem;
+  font-size: 0.82rem;
+  font-weight: 680;
+  text-decoration: none;
+}
+
+.site-navigation__link:hover,
+.site-navigation__link[aria-current='page'] {
+  background: #eef6fc;
+  color: #165991;
+  text-decoration: none;
+}
+
+.site-navigation__link[aria-current='page'] {
+  box-shadow: inset 0 -2px 0 var(--mandyal-orange);
+}
+
+.site-navigation__cta {
+  border: 1px solid #175b96;
+  border-radius: 0.72rem;
+  background: linear-gradient(135deg, #175b96, #287fc0);
+  color: #fff;
+  padding: 0.68rem 1rem;
+  font-weight: 780;
+  box-shadow: 0 8px 22px rgb(23 91 150 / 20%);
+}
+
+.site-navigation__cta:hover {
+  background: linear-gradient(135deg, #124b7e, #1c6fae);
+  color: #fff;
+}
+
+.site-header__menu-button {
+  border-color: #c8d7e6;
+  background: #f7fafd;
+  color: #174b78;
+}
+
+.back-navigation {
+  border-bottom-color: #d8e3ee;
+  background: rgb(249 251 254 / 96%);
+}
+
+.back-navigation button {
+  min-height: 2.55rem;
+  color: #17639f;
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+/* Shared controls and content surfaces */
+.ui-button {
+  min-height: 2.75rem;
+  border-radius: 0.72rem;
+  padding-inline: 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.ui-button--primary,
+.ui-button--accent {
+  border-color: #1e69a7;
+  background: linear-gradient(135deg, #175b96, #2681c4);
+  color: #fff;
+  box-shadow: 0 8px 22px rgb(23 91 150 / 18%);
+}
+
+.ui-button--primary:hover:not(:disabled):not([aria-disabled='true']),
+.ui-button--accent:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: #14568f;
+  background: linear-gradient(135deg, #124d81, #1f71af);
+  color: #fff;
+  box-shadow: 0 11px 27px rgb(23 91 150 / 24%);
+}
+
+.ui-button--secondary {
+  border-color: #aebfd1;
+  background: #fff;
+  color: #175887;
+}
+
+.ui-button--secondary:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: #5795c3;
+  background: #eff7fc;
+  color: #104c7b;
+}
+
+.ui-card {
+  border-color: var(--color-border);
+  border-radius: 0.95rem;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-card--padded {
+  padding: 1.25rem;
+}
+
+.ui-card--elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.ui-field__label {
+  color: #394f67;
+  font-size: 0.81rem;
+}
+
+.ui-input,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+  border-color: var(--color-border-strong);
+  border-radius: 0.7rem;
+  background: #fff;
+}
+
+.ui-input:hover,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover {
+  border-color: #78a6c9;
+}
+
+.ui-input:focus-visible,
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):focus-visible {
+  border-color: #2879b8;
+  box-shadow: 0 0 0 0.22rem rgb(37 99 201 / 14%);
+  outline: none;
+}
+
+/* Public pages */
+:where(.auth-page, .coming-soon-page, .legal-page, .hotel-page, .offers-page) {
+  isolation: isolate;
+}
+
+.auth-page__intro h1,
+.coming-soon-page__card h1,
+.coming-soon-page__card h2 {
+  font-size: clamp(2rem, 5vw, 3.45rem);
+  font-weight: 800;
+}
+
+.auth-page .ui-card,
+.coming-soon-page__card {
+  border-color: #cedbe8;
+  box-shadow: 0 22px 56px rgb(13 39 69 / 10%);
+}
+
+.hotel-page__eyebrow,
+.admin-hero__eyebrow,
+.dashboard-chart header > div > span,
+.dashboard-chart__donut-copy > span {
+  color: #1768a4;
+  font-weight: 820;
+  letter-spacing: 0.1em;
+}
+
+.home-search-hero__copy h1 {
+  color: #fff;
+  font-size: clamp(2.15rem, 4.35vw, 3.9rem);
+}
+
+.home-search-hero__shade {
+  background:
+    linear-gradient(180deg, rgb(5 22 42 / 18%), rgb(5 22 42 / 70%)),
+    linear-gradient(90deg, rgb(5 30 56 / 68%), transparent 64%);
+}
+
+.home-booking-widget {
+  border-color: rgb(255 255 255 / 55%);
+  box-shadow: 0 1.65rem 3.8rem rgb(4 23 43 / 30%);
+}
+
+.home-booking-widget__tabs button.is-active::after {
+  background: linear-gradient(90deg, var(--mandyal-orange), #f4aa32);
+}
+
+.home-booking-widget__field:focus-within {
+  border-color: #2b79b5;
+  box-shadow: 0 0 0 3px rgb(37 99 201 / 13%);
+}
+
+.home-booking-widget__submit {
+  background: linear-gradient(135deg, #e56e13, #f29a2d);
+  color: #fff;
+  box-shadow: 0 10px 26px rgb(229 110 19 / 22%);
+}
+
+.home-booking-widget__submit:hover,
+.home-booking-widget__submit:focus-visible {
+  background: linear-gradient(135deg, #cb5d0c, #e4861d);
+  box-shadow: 0 14px 32px rgb(229 110 19 / 28%);
+}
+
+/* Protected workspaces */
+.workspace-shell {
+  width: 100%;
+  max-width: none;
+  border: 0;
+  background: #f3f7fb;
+}
+
+.workspace-shell__stage {
+  background:
+    linear-gradient(rgb(22 73 117 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(22 73 117 / 2.5%) 1px, transparent 1px),
+    radial-gradient(circle at 100% 0, rgb(15 157 139 / 7%), transparent 27rem), #f3f7fb;
+  background-size:
+    3.75rem 3.75rem,
+    3.75rem 3.75rem,
+    auto,
+    auto;
+}
+
+.workspace-sidebar {
+  border-right: 1px solid rgb(255 255 255 / 9%);
+  background:
+    radial-gradient(circle at 20% 0, rgb(41 120 184 / 30%), transparent 20rem),
+    linear-gradient(180deg, #0a2b50, #071d37 72%);
+  box-shadow: 10px 0 32px rgb(7 29 55 / 12%);
+}
+
+.workspace-sidebar__brand {
+  border-bottom-color: rgb(255 255 255 / 10%);
+}
+
+.workspace-sidebar__brand > span {
+  border-color: rgb(255 255 255 / 20%);
+  background: linear-gradient(145deg, #ee8525, #f4aa34);
+  color: #fff;
+  box-shadow: 0 8px 22px rgb(237 125 26 / 25%);
+}
+
+.workspace-sidebar__brand div > small,
+.workspace-sidebar__group summary {
+  color: #92b8d9;
+}
+
+.workspace-sidebar__brand div > span,
+.workspace-sidebar__account {
+  color: #a9bfd4;
+}
+
+.workspace-sidebar__links > a,
+.workspace-sidebar__disabled {
+  border-radius: 0.65rem;
+  color: #d0dfec;
+}
+
+.workspace-sidebar__links > a:hover,
+.workspace-sidebar__links > a:focus-visible {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+}
+
+.workspace-sidebar__links > a[aria-current='page'] {
+  border-color: rgb(90 169 226 / 28%);
+  background: linear-gradient(90deg, rgb(45 126 190 / 38%), rgb(32 93 145 / 17%));
+  box-shadow: inset 3px 0 0 #f0982e;
+  color: #fff;
+}
+
+.workspace-sidebar__links > a > span,
+.workspace-sidebar__disabled > span {
+  border-color: rgb(158 198 230 / 22%);
+  background: rgb(102 164 211 / 9%);
+  color: #c0def4;
+}
+
+.workspace-topbar {
+  border-bottom-color: #d7e2ed;
+  background: rgb(255 255 255 / 91%);
+  box-shadow: 0 8px 26px rgb(13 39 69 / 5%);
+  backdrop-filter: blur(20px);
+}
+
+.workspace-topbar__context > div > strong {
+  color: #102a45;
+  font-weight: 790;
+}
+
+.workspace-topbar__secure {
+  border-color: #bde4d9;
+  background: #edf9f5;
+  color: #08705f;
+}
+
+.workspace-topbar__avatar {
+  background: #e5f0f9;
+  color: #195f96;
+}
+
+.workspace-topbar__signout {
+  border-color: #bdccdc;
+  background: #fff;
+  color: #174f7b;
+}
+
+.workspace-topbar__signout:hover,
+.workspace-topbar__signout:focus-visible {
+  border-color: #4b8fbe;
+  background: #eef7fc;
+  color: #0e4775;
+}
+
+.workspace-shell__content .ui-card,
+.dashboard-chart {
+  border-color: #d8e3ee;
+  background: rgb(255 255 255 / 97%);
+  box-shadow:
+    0 1px 2px rgb(13 39 69 / 4%),
+    0 9px 25px rgb(13 39 69 / 4%);
+}
+
+.workspace-shell__content table tbody tr:hover {
+  background: #f0f7fc;
+}
+
+.workspace-shell__content table th {
+  color: #52677e;
+}
+
+/* Compact workspace introductions: informative without dominating the page. */
+.admin-hero {
+  border: 1px solid #cbdbe9;
+  border-left: 4px solid #2b78b4;
+  border-radius: 0.95rem;
+  background:
+    radial-gradient(circle at 94% 10%, rgb(15 157 139 / 10%), transparent 18rem),
+    linear-gradient(135deg, #ffffff, #f4f9fd 68%);
+  color: var(--color-text-secondary);
+  box-shadow: 0 12px 32px rgb(13 39 69 / 7%);
+}
+
+.admin-hero h1 {
+  color: #102a45;
+  font-size: clamp(1.75rem, 3vw, 2.55rem);
+  font-weight: 800;
+}
+
+.admin-hero__eyebrow {
+  color: #1b6ca8;
+}
+
+.admin-hero__secure {
+  color: #087969;
+}
+
+.admin-hero__content > p:not(.admin-hero__eyebrow),
+.admin-hero__posture span:not(.admin-hero__secure) {
+  color: #536980;
+}
+
+.admin-hero__posture {
+  border-color: #c8e4dc;
+  background: #f0faf7;
+}
+
+.admin-hero__posture strong {
+  color: #0b6f61;
+}
+
+.admin-hero .ui-button--secondary,
+.admin-hero__actions .ui-button--secondary {
+  border-color: #aebfd1;
+  background: #fff;
+  color: #175887;
+}
+
+/* Multicolour is used as meaningful scan guidance, not as decoration. */
+.admin-overview-grid .ui-card::before,
+.partner-bookings__summary .ui-card::before {
+  background: var(--mandyal-blue) !important;
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 2)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 2)::before {
+  background: var(--mandyal-teal) !important;
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 3)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 3)::before {
+  background: var(--mandyal-orange) !important;
+}
+
+.admin-overview-grid .ui-card:nth-child(5n + 4)::before,
+.partner-bookings__summary .ui-card:nth-child(5n + 4)::before {
+  background: var(--mandyal-violet) !important;
+}
+
+.admin-overview-grid .ui-card:nth-child(5n)::before,
+.partner-bookings__summary .ui-card:nth-child(5n)::before {
+  background: var(--mandyal-rose) !important;
+}
+
+.dashboard-chart__track {
+  background: #e8eef5;
+}
+
+.dashboard-chart__track i {
+  background: linear-gradient(90deg, #2563c9, #459ce0);
+}
+
+.dashboard-chart__bar:nth-child(4n + 2) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #0f8879, #21b19e);
+}
+
+.dashboard-chart__bar:nth-child(4n + 3) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #d66b12, #f19a32);
+}
+
+.dashboard-chart__bar:nth-child(4n) .dashboard-chart__track i {
+  background: linear-gradient(90deg, #6845bf, #8a6ddd);
+}
+
+.dashboard-chart__donut {
+  background: conic-gradient(
+    #2563c9 0 28%,
+    #0f9d8b 28% 55%,
+    #ed7d1a 55% 76%,
+    #7556cf 76% var(--donut-value),
+    #e8eef5 0
+  );
+}
+
+/* Footer */
+.site-footer {
+  background:
+    radial-gradient(circle at 8% 8%, rgb(39 120 184 / 18%), transparent 24rem),
+    linear-gradient(145deg, #081f3a, #06172c);
+  color: #dce8f3;
+}
+
+.site-footer__trust {
+  border-color: rgb(255 255 255 / 9%);
+  background: rgb(3 16 31 / 50%);
+}
+
+.site-footer__description,
+.site-footer__bottom,
+.site-footer__trust-inner > small,
+.site-footer__secure-mark small {
+  color: #9fb5c9;
+}
+
+.site-footer a {
+  color: #c2d4e4;
+}
+
+.site-footer a:hover {
+  color: #72c9bc;
+}
+
+.site-footer__newsletter button {
+  background: linear-gradient(135deg, #df6d18, #ef9630);
+  color: #fff;
+}
+
+@media (max-width: 70rem) {
+  .site-navigation--open {
+    border-bottom-color: #dbe5ef;
+    background: #fff;
+    box-shadow: 0 16px 30px rgb(13 39 69 / 10%);
+  }
+
+  .workspace-shell--nav-open .workspace-shell__backdrop,
+  .workspace-shell__nav-toggle:checked + .workspace-shell__backdrop {
+    background: rgb(4 20 38 / 68%);
+  }
+}
+
+@media (max-width: 46rem) {
+  html {
+    font-size: 100%;
+  }
+
+  .site-header__inner {
+    min-height: 4rem;
+  }
+
+  .site-header .mandyal-logo__artwork {
+    width: 10.75rem;
+  }
+
+  .workspace-topbar {
+    top: 4rem;
+  }
+
+  .workspace-topbar__menu {
+    min-height: 2.75rem;
+    border-color: #b9cada;
+    background: #f5f9fd;
+    color: #164f7a;
+  }
+
+  .admin-hero {
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
