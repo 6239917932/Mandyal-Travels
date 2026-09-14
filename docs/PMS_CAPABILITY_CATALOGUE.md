@@ -5,7 +5,7 @@ additive: no existing module is removed. A capability is labelled **Live** only 
 workflow exists in the portal. **Foundation** means reusable controls exist but an operational or
 provider gate remains. **Planned** means the workspace is visible while transactions stay disabled.
 
-As verified on 14 September 2026, the registry contains 47 unique workspaces: 43 live, 3 controlled
+As verified on 14 September 2026, the registry contains 48 unique workspaces: 44 live, 3 controlled
 foundations, and 1 planned external-provider workspace.
 
 ## Front desk and reservations
@@ -63,6 +63,8 @@ foundations, and 1 planned external-provider workspace.
 
 - Live: occupancy, ADR, RevPAR, arrival/departure, folio, cashier, operational revenue, expense
   capture, payroll registers, provisional management P&L, and immutable audit reporting.
+- Live: thirty-day confirmed demand calendar, capacity exceptions, booking-history sufficiency and
+  explainable review-only revenue prompts. No rate or restriction is changed automatically.
 - Accounting boundary: management reports are not described as statutory accounts until finance
   ownership, tax treatment, and reconciliation are approved.
 
@@ -80,3 +82,19 @@ foundations, and 1 planned external-provider workspace.
 - Foundation: telephone/EPABX connectivity requires approved external hardware/provider integration.
 - Native mobile applications remain a separate product decision; the responsive web application and
   captain workflow are live.
+
+## Public-platform benchmark additions
+
+The 14 September 2026
+[public comparison](PUBLIC_HOSPITALITY_PLATFORM_BENCHMARK_2026-09-14.md) with AxisRooms, Roomnexa,
+Zotel and Hotel-Spider identified two provider-independent additions to the governed delivery queue:
+
+- extend the live revenue-intelligence workspace with longer prior-period comparisons and measured
+  forecast accuracy after sufficient production history exists;
+- configurable pre-arrival packages, upgrades and add-ons with immutable quote, tax, payment,
+  cancellation/refund and folio evidence.
+
+External OTA/GDS/metasearch publication, Google Hotels, competitor-rate shopping, automated external
+rate updates, WhatsApp delivery and live currency conversion remain under their existing commercial,
+provider, consent, reconciliation and monitoring gates. Public competitor claims are not treated as
+evidence that Mandyal can activate those integrations without the required access.

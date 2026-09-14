@@ -7,16 +7,26 @@ type MetricBarItem = Readonly<{
 
 export function MetricBars({
   description,
+  eyebrow = 'Live distribution',
   items,
+  maximumValue,
   title,
-}: Readonly<{ description: string; items: readonly MetricBarItem[]; title: string }>) {
-  const maximum = Math.max(1, ...items.map((item) => item.value));
+  valueSuffix = '',
+}: Readonly<{
+  description: string;
+  eyebrow?: string;
+  items: readonly MetricBarItem[];
+  maximumValue?: number;
+  title: string;
+  valueSuffix?: string;
+}>) {
+  const maximum = Math.max(1, maximumValue ?? 0, ...items.map((item) => item.value));
 
   return (
     <section aria-label={title} className="dashboard-chart dashboard-chart--bars">
       <header>
         <div>
-          <span>Live distribution</span>
+          <span>{eyebrow}</span>
           <h2>{title}</h2>
         </div>
         <p>{description}</p>
@@ -28,7 +38,10 @@ export function MetricBars({
             <div className="dashboard-chart__bar" key={item.label}>
               <div>
                 <span>{item.label}</span>
-                <strong>{item.value.toLocaleString('en-IN')}</strong>
+                <strong>
+                  {item.value.toLocaleString('en-IN')}
+                  {valueSuffix}
+                </strong>
               </div>
               <span aria-hidden="true" className="dashboard-chart__track">
                 <i style={{ '--bar-value': `${percentage}%` } as CSSProperties} />

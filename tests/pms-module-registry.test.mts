@@ -32,9 +32,9 @@ test('every non-live PMS module resolves to its controlled workspace', () => {
 });
 
 test('PMS registry exposes a controlled multi-phase rollout', () => {
-  assert.equal(pmsModules.length, 47);
+  assert.equal(pmsModules.length, 48);
   assert.equal(pmsModuleGroups.length, 7);
-  assert.equal(countPmsModules('LIVE'), 43);
+  assert.equal(countPmsModules('LIVE'), 44);
   assert.equal(countPmsModules('FOUNDATION'), 3);
   assert.equal(countPmsModules('PLANNED'), 1);
   assert.deepEqual([...new Set(pmsModules.map((module) => module.phase))], [1, 2, 3, 4]);
@@ -44,6 +44,7 @@ test('PMS registry contains every approved operational navigation area', () => {
   const names = new Set(pmsModules.map((module) => module.name));
   for (const required of [
     'Owner overview',
+    'Revenue intelligence',
     'Room rack',
     'Walk-in booking',
     'Guest registration',
