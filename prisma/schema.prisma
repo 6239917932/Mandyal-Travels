@@ -1863,6 +1863,37 @@ model NotificationDelivery {
   @@index([channel, status, createdAt])
 }
 
+model EmailSuppression {
+  id              String   @id @default(cuid())
+  recipientHash   String   @unique
+  recipientDomain String   @default("")
+  reason          String
+  source          String
+  firstObservedAt DateTime
+  lastObservedAt  DateTime
+  eventCount      Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([reason, lastObservedAt])
+}
+
+model EmailProviderEvent {
+  id                String   @id @default(cuid())
+  provider           String
+  providerEventId    String
+  eventType          String
+  recipientHash      String
+  providerMessageId String   @default("")
+  payloadHash        String
+  occurredAt         DateTime
+  receivedAt         DateTime @default(now())
+
+  @@unique([provider, providerEventId])
+  @@index([recipientHash, occurredAt])
+  @@index([eventType, receivedAt])
+}
+
 model PartnerPhysicalRoom {
   id                      String                        @id @default(cuid())
   propertyId              String

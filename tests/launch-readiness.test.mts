@@ -36,6 +36,7 @@ test('technical evidence marks only matching gates ready', () => {
       configuredEnvironmentKeys: new Set([
         'EMAIL_BOUNCE_WEBHOOK_SECRET',
         'EMAIL_DOMAIN_AUTH_VERIFIED_AT',
+        'EMAIL_SUPPRESSION_HASH_SECRET',
       ]),
       verifiedSupplierCount: 1,
     }),
