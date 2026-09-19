@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { partnerKycStorageReadiness } from '@/lib/partner/kycPersistenceRules';
 
 type TargetStatus = 'CHANGES_REQUESTED' | 'REJECTED' | 'REVOKED' | 'UNDER_REVIEW' | 'VERIFIED';
 
@@ -49,6 +50,7 @@ export function AdminPartnerKycReview(props: {
   }
 
   const firstReview = props.status === 'SUBMITTED';
+  const verificationReady = partnerKycStorageReadiness({}).ready;
   return (
     <div className="partner-review__controls">
       <label className="ui-field">
@@ -74,12 +76,18 @@ export function AdminPartnerKycReview(props: {
         <>
           <button
             className="ui-button ui-button--primary"
-            disabled={busy || note.trim().length < 10}
+            disabled={busy || !verificationReady || note.trim().length < 10}
             onClick={() => transition('VERIFIED')}
             type="button"
           >
             Verify
           </button>
+          {!verificationReady ? (
+            <small>
+              Verify is locked until secure evidence storage, scanning and audited document access
+              are activated. Enter a note of at least 10 characters to request changes or reject.
+            </small>
+          ) : null}
           <button
             className="ui-button ui-button--secondary"
             disabled={busy || note.trim().length < 10}
@@ -97,6 +105,22 @@ export function AdminPartnerKycReview(props: {
             Reject
           </button>
         </>
+      ) : null}
+      {props.status === 'VERIFIED' ? (
+        <button
+          className="ui-button ui-button--secondary"
+          disabled={busy || note.trim().length < 10}
+          onClick={() => transition('REVOKED')}
+          type="button"
+        >
+          Revoke verification
+        </button>
+      ) : null}
+      {!['SUBMITTED', 'UNDER_REVIEW', 'VERIFIED'].includes(props.status) ? (
+        <small>
+          This record is {props.status.toLowerCase().replaceAll('_', ' ')}. The applicant must
+          submit a new document version before further review.
+        </small>
       ) : null}
       {error ? (
         <small className="booking-page__payment-error" role="alert">

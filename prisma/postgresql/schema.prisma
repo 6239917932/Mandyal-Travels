@@ -85,6 +85,7 @@ model User {
   updatedPartnerAgreementReleases PartnerAgreementRelease[]      @relation("PartnerAgreementReleaseUpdater")
   reviewedPartnerPayoutAccounts   PartnerPayoutAccount[]         @relation("PartnerPayoutAccountReviewer")
   partnerPayoutAccountEvents      PartnerPayoutAccountEvent[]    @relation("PartnerPayoutAccountEventActor")
+  contactInquiryReviewEvents     ContactInquiryReviewEvent[]
 
   @@index([role, accessStatus])
 }
@@ -3286,11 +3287,33 @@ model ContactInquiry {
   category  String
   message   String
   status    String   @default("OPEN")
+  version   Int      @default(1)
+  reviewNote String  @default("")
+  reviewedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  reviewEvents ContactInquiryReviewEvent[]
 
   @@index([status, createdAt])
   @@index([email, createdAt])
+}
+
+model ContactInquiryReviewEvent {
+  id          String   @id @default(cuid())
+  inquiryId   String
+  actorUserId String
+  action      String
+  fromStatus  String
+  toStatus    String
+  reason      String
+  version     Int
+  createdAt   DateTime @default(now())
+  inquiry     ContactInquiry @relation(fields: [inquiryId], references: [id], onDelete: Restrict)
+  actor       User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([inquiryId, version])
+  @@index([inquiryId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model NewsletterSubscription {

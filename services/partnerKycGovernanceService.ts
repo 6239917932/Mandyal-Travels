@@ -8,6 +8,7 @@ import {
 } from '@/lib/partner/kycDocumentRules';
 import {
   publicPartnerKycProjection,
+  partnerKycStorageReadiness,
   summarizePersistedPartnerKyc,
 } from '@/lib/partner/kycPersistenceRules';
 
@@ -138,6 +139,12 @@ export async function transitionPartnerKycDocument(input: {
   reviewNote?: string | null;
   targetStatus: PartnerKycDocumentStatus;
 }) {
+  if (input.targetStatus === 'VERIFIED' && !partnerKycStorageReadiness({}).ready) {
+    throw new PartnerKycGovernanceError(
+      'KYC_STORAGE_NOT_CONFIGURED',
+      'Identity verification is unavailable until private evidence storage, malware scanning and audited document access are activated. You can still request changes or reject invalid evidence.',
+    );
+  }
   return prisma.$transaction(async (transaction) => {
     const current = await transaction.partnerKycDocument.findUnique({
       where: { id: input.documentId },

@@ -281,6 +281,20 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       }
     : { id: '__disabled__' };
 
+  const inquiryWhere = enabled('SUPPORT')
+    ? {
+        ...(createdAt ? { createdAt } : {}),
+        ...(filters.query
+          ? {
+              OR: [
+                { reason: { contains: filters.query } },
+                { action: { contains: filters.query } },
+                { inquiry: { is: { reference: { contains: filters.query } } } },
+              ],
+            }
+          : {}),
+      }
+    : { id: '__disabled__' };
   const [
     partnerCount,
     partnerEvents,
@@ -310,6 +324,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     operationsEvents,
     searchProjectionCount,
     searchProjectionEvents,
+    inquiryCount,
+    inquiryEvents,
   ] = await Promise.all([
     prisma.partnerAuditLog.count({ where: partnerWhere }),
     prisma.partnerAuditLog.findMany({
@@ -439,9 +455,29 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
       take,
       where: searchProjectionWhere,
     }),
+    prisma.contactInquiryReviewEvent.count({ where: inquiryWhere }),
+    prisma.contactInquiryReviewEvent.findMany({
+      where: inquiryWhere,
+      include: {
+        actor: { select: actorSelect },
+        inquiry: { select: { reference: true, category: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+    }),
   ]);
 
   const records: AuditRecord[] = [
+    ...inquiryEvents.map((event) => ({
+      action: `INQUIRY_${event.action}`,
+      actor: actorLabel(event.actor),
+      context: `${event.fromStatus} → ${event.toStatus}`,
+      createdAt: event.createdAt,
+      detail: event.reason,
+      domain: 'SUPPORT' as const,
+      id: `inquiry-${event.id}`,
+      subject: `${event.inquiry.reference} · ${event.inquiry.category}`,
+    })),
     ...partnerEvents.map((event) => ({
       action: event.action,
       actor: actorLabel(event.actor),
@@ -598,7 +634,8 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
     financeCount +
     payoutCount +
     operationsCount +
-    searchProjectionCount;
+    searchProjectionCount +
+    inquiryCount;
   const availablePages = Math.max(1, Math.ceil(totalCount / ADMIN_AUDIT_PAGE_SIZE));
   const pageCount = Math.min(availablePages, ADMIN_AUDIT_MAX_PAGE);
   const page = Math.min(filters.page, pageCount);

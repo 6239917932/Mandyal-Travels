@@ -20,11 +20,14 @@ const ACTIONS: Record<string, Array<{ action: string; label: string }>> = {
 
 export function AdminPrivacyRequestAction({ requestId, status, version }: Props) {
   const router = useRouter();
-  const [action, setAction] = useState(ACTIONS[status]?.[0]?.action ?? '');
+  const [selectedAction, setAction] = useState(ACTIONS[status]?.[0]?.action ?? '');
   const [error, setError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [note, setNote] = useState('');
   const actions = ACTIONS[status] ?? [];
+  const action = actions.some((item) => item.action === selectedAction)
+    ? selectedAction
+    : (actions[0]?.action ?? '');
 
   async function updateRequest() {
     setError('');
