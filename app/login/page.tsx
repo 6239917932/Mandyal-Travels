@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { AuthForm } from '@/components/auth/AuthForm';
 import { Card } from '@/components/ui/Card';
-import { getAccountHomePath, getSafeReturnTo } from '@/lib/auth/redirect';
+import { getSafeReturnTo, getSignedInReturnTo } from '@/lib/auth/redirect';
 import {
   inferLoginAudience,
   normalizeLoginAudience,
@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     inferLoginAudience(returnTo) ??
     (values.passwordReset === '1' || values.passwordChanged === '1' ? 'customer' : null);
   const user = await getCurrentUser();
-  if (user) redirect(returnTo ?? getAccountHomePath(user.role));
+  if (user) redirect(getSignedInReturnTo(returnTo, user.role));
 
   if (!audience) {
     const portals: Array<{

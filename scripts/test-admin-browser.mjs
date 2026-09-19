@@ -118,7 +118,7 @@ try {
   });
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
-    pass: new URL(customerPage.url()).pathname === '/login',
+    pass: new URL(customerPage.url()).pathname === '/account',
   });
   await customer.close();
   // Every admin route, including nested records, plus every rendered GET filter form.
@@ -129,7 +129,7 @@ try {
   ]) {
     try {
       await navigate(route);
-      const record = await page.locator('main').evaluate((main) => ({
+      const record = await page.locator('#workspace-main').evaluate((main) => ({
         headings: [...main.querySelectorAll('h1,h2,h3')].map((node) => node.textContent.trim()),
         buttons: [...main.querySelectorAll('button')].map((node) => ({
           text: node.textContent.trim(),
@@ -397,7 +397,7 @@ try {
       '/api/v1/admin/hotel-reviews/audit-review',
     );
     await page.reload({ waitUntil: 'networkidle' });
-    assert.match(await page.locator('main').innerText(), /PUBLISHED/i);
+    assert.match(await page.locator('#workspace-main').innerText(), /PUBLISHED/i);
   });
   await action('Mobile request page remains readable with reachable actions', async () => {
     await page.setViewportSize({ width: 390, height: 844 });
