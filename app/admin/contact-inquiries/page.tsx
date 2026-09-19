@@ -68,7 +68,7 @@ export default async function AdminContactInquiriesPage({
       </header>
 
       <Card>
-        <form className="admin-filter-form" method="get">
+        <form className="business-report__filters" method="get">
           <label className="ui-field">
             <span className="ui-field__label">Search requests</span>
             <input
@@ -101,15 +101,17 @@ export default async function AdminContactInquiriesPage({
               ))}
             </select>
           </label>
-          <button className="ui-button ui-button--primary" type="submit">
-            Filter requests
-          </button>
-          <Link href="/admin/contact-inquiries">Clear filters</Link>
+          <div className="business-report__filter-actions">
+            <button className="ui-button ui-button--primary" type="submit">
+              Filter requests
+            </button>
+            <Link href="/admin/contact-inquiries">Clear filters</Link>
+          </div>
         </form>
       </Card>
       <Card className="business-report__table-card">
         <div className="business-report__table-scroll">
-          <table>
+          <table className="business-report__table">
             <thead>
               <tr>
                 <th>Received</th>

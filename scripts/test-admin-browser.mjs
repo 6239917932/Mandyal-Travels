@@ -188,14 +188,17 @@ try {
       await navigate('/admin/contact-inquiries');
       assert.equal(await page.locator('tbody tr').count(), 30);
       await page.getByRole('link', { name: 'Next page', exact: true }).click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForURL((url) => url.searchParams.get('page') === '2');
+      await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 2);
       assert.equal(await page.locator('tbody tr').count(), 2);
       await page.getByLabel('Search requests').fill('AUDIT-000');
       await page.getByRole('button', { name: 'Filter requests' }).click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForURL((url) => url.searchParams.get('q') === 'AUDIT-000');
+      await page.waitForFunction(() => document.querySelectorAll('tbody tr').length === 1);
       assert.equal(await page.locator('tbody tr').count(), 1);
       await page.getByRole('link', { name: 'Open request', exact: true }).click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForURL('**/admin/contact-inquiries/audit-inquiry-0');
+      await page.getByLabel('Internal decision note (required)').waitFor();
       assert.match(page.url(), /audit-inquiry-0/);
       assert.equal(
         await page.getByRole('button', { name: 'Accept request', exact: true }).isDisabled(),
@@ -341,7 +344,11 @@ try {
       () => controls.getByRole('button', { name: 'Reopen review', exact: true }).click(),
       '/api/v1/admin/privacy/requests/audit-privacy',
     );
-    await controls.getByRole('button', { name: 'Start review', exact: true }).waitFor();
+    // Reopening returns to IN_REVIEW, not OPEN; either valid review outcome is allowed.
+    await controls.getByLabel('Review outcome').waitFor();
+    assert.ok(
+      ['COMPLETE', 'REJECT'].includes(await controls.getByLabel('Review outcome').inputValue()),
+    );
   });
   await action('Customer support close/reopen is functional', async () => {
     await navigate('/admin/support?type=CUSTOMER&status=ALL');
@@ -519,9 +526,13 @@ try {
   const unauthPage = await anonymous.newPage();
   for (const route of routes) {
     await unauthPage.goto(`${origin}${route}`, { waitUntil: 'domcontentloaded' });
+    // App Router can deliver redirect metadata in a streamed response after DOMContentLoaded.
+    await unauthPage.waitForURL((url) => url.pathname === '/login');
     results.authorization.push({
       page: route,
-      pass: new URL(unauthPage.url()).pathname === '/login',
+      pass:
+        new URL(unauthPage.url()).pathname === '/login' &&
+        (await unauthPage.locator('#workspace-main').count()) === 0,
     });
   }
   await anonymous.close();

@@ -43,7 +43,7 @@ export default async function AdminPartnerApplicationsPage({
   const pageHref = (next: number) =>
     `/admin/partner-applications?${new URLSearchParams({ q, status, page: String(next) })}`;
   return (
-    <section className="account-page admin-workspace">
+    <section className="account-page business-report admin-workspace">
       <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Supplier governance</p>
@@ -55,7 +55,7 @@ export default async function AdminPartnerApplicationsPage({
         </Link>
       </header>
       <Card>
-        <form className="admin-filter-form" method="get">
+        <form className="business-report__filters" method="get">
           <label className="ui-field">
             <span className="ui-field__label">Search applications</span>
             <input
@@ -75,15 +75,17 @@ export default async function AdminPartnerApplicationsPage({
               ))}
             </select>
           </label>
-          <button className="ui-button ui-button--primary" type="submit">
-            Filter applications
-          </button>
-          <Link href="/admin/partner-applications">Clear filters</Link>
+          <div className="business-report__filter-actions">
+            <button className="ui-button ui-button--primary" type="submit">
+              Filter applications
+            </button>
+            <Link href="/admin/partner-applications">Clear filters</Link>
+          </div>
         </form>
       </Card>
       <Card className="business-report__table-card">
         <div className="business-report__table-scroll">
-          <table>
+          <table className="business-report__table">
             <thead>
               <tr>
                 <th>Submitted</th>
