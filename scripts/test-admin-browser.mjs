@@ -356,6 +356,81 @@ try {
       '/api/v1/admin/customer-support/audit-support',
     );
   });
+  await action('Business support close/reopen is functional', async () => {
+    await navigate('/admin/support?type=BUSINESS&status=ALL');
+    for (const name of ['Close case', 'Reopen case']) {
+      await expectMutation(
+        () => page.getByRole('button', { name, exact: true }).click(),
+        '/api/v1/admin/support/audit-business-support',
+      );
+      await page
+        .getByRole('button', {
+          name: name === 'Close case' ? 'Reopen case' : 'Close case',
+          exact: true,
+        })
+        .waitFor();
+    }
+  });
+  await action('Release control pauses and restores a synthetic feature with history', async () => {
+    await navigate('/admin/configuration');
+    const form = page.locator('#workspace-main form').first();
+    for (const name of ['Pause feature', 'Restore feature']) {
+      await form
+        .getByLabel('Required change reason')
+        .fill('Isolated feature toggle regression test');
+      await expectMutation(
+        () => form.getByRole('button', { name, exact: true }).click(),
+        '/api/v1/admin/configuration/features/',
+      );
+      await form
+        .getByRole('button', {
+          name: name === 'Pause feature' ? 'Restore feature' : 'Pause feature',
+          exact: true,
+        })
+        .waitFor();
+    }
+    assert.ok(
+      (await page
+        .locator('tbody tr')
+        .filter({ hasText: 'Isolated feature toggle regression test' })
+        .count()) >= 2,
+    );
+  });
+  await action('Search projection maintenance runs against isolated draft inventory', async () => {
+    await navigate('/admin/search');
+    await page.getByLabel('Operational reason').fill('Isolated search maintenance regression');
+    await page.getByLabel('Type REBUILD HOTEL SEARCH to confirm').fill('REBUILD HOTEL SEARCH');
+    await expectMutation(
+      () => page.getByRole('button', { name: 'Rebuild search projections', exact: true }).click(),
+      '/api/v1/admin/search-projections',
+    );
+    await page.getByRole('status').filter({ hasText: 'Rebuilt' }).waitFor();
+  });
+  await action('Destination editor saves a synthetic draft', async () => {
+    await navigate('/admin/content');
+    await page.locator('details').evaluateAll((nodes) =>
+      nodes.forEach((node) => {
+        node.open = true;
+      }),
+    );
+    const form = page
+      .locator('form')
+      .filter({ has: page.locator('[name="slug"]') })
+      .first();
+    await form.getByLabel('Destination name', { exact: true }).fill('Isolated Audit Destination');
+    await form.getByLabel('URL slug').fill('isolated-audit-destination');
+    await form.getByLabel('State or region').fill('Himachal Pradesh');
+    await form
+      .getByLabel('Card summary')
+      .fill('Synthetic editorial content for isolated browser checks only.');
+    await form.getByLabel('Required change reason').fill('Verify synthetic destination draft save');
+    await expectMutation(
+      () => form.getByRole('button', { name: 'Save content', exact: true }).click(),
+      '/api/v1/admin/content/destinations',
+      201,
+    );
+    await page.getByRole('heading', { name: 'Isolated Audit Destination', exact: true }).waitFor();
+  });
   await action('Account suspend and restore controls work on a synthetic customer', async () => {
     await navigate('/admin/users/audit-customer');
     await page.getByLabel('Operational reason').fill('Isolated account suspension test only');
