@@ -58,6 +58,15 @@ export default async function AdminPartnersPage() {
           </p>
         </div>
         <div className="admin-hero__actions">
+          <Link
+            className="ui-button ui-button--secondary"
+            href="/admin/contact-inquiries?category=HOTEL_OWNER"
+          >
+            PMS enquiries
+          </Link>
+          <Link className="ui-button ui-button--secondary" href="/admin/partner-applications">
+            Application history
+          </Link>
           <Link className="ui-button ui-button--secondary" href="/admin/partners/onboarding">
             Enrollment operations
           </Link>
@@ -127,6 +136,12 @@ export default async function AdminPartnersPage() {
                   {item.contactEmail} · {item.contactPhone}
                 </p>
                 <p>{item.inventorySummary}</p>
+                <Link
+                  className="ui-button ui-button--secondary"
+                  href={`/admin/partner-applications/${item.id}`}
+                >
+                  Open application and review evidence
+                </Link>
                 <p>
                   <strong>KYC: {item.kycStatus.replaceAll('_', ' ')}</strong>
                   <br />

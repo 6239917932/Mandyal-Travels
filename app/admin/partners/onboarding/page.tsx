@@ -113,8 +113,8 @@ export default async function AdminPartnerOnboardingPage() {
         <Card className="admin-metric admin-metric--attention">
           <strong>Production enrollment remains intentionally disabled.</strong>
           <p>
-            Do not enable it until PayU, legal, OTP/DLT, KYC storage, tax, and applicable transport
-            approvals are recorded.
+            Do not enable it until the approved payment provider, legal, OTP/DLT, KYC storage, tax,
+            and applicable transport approvals are recorded.
           </p>
         </Card>
       ) : null}

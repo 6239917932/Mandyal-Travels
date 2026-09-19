@@ -16,7 +16,7 @@ export const adminWorkspaceNavigation = [
       { code: 'OR', href: '/admin/organizations', label: 'Organizations' },
       { code: 'BK', href: '/admin/bookings', label: 'Bookings' },
       { code: 'CS', href: '/admin/support', label: 'Customer support' },
-      { code: 'CI', href: '/admin/contact-inquiries', label: 'Contact inquiries' },
+      { code: 'CI', href: '/admin/contact-inquiries', label: 'Contact and PMS requests' },
       { code: 'RV', href: '/admin/reviews', label: 'Hotel reviews' },
       { code: 'DC', href: '/admin/documents', label: 'Documents' },
     ],
@@ -25,6 +25,7 @@ export const adminWorkspaceNavigation = [
     label: 'Suppliers and inventory',
     items: [
       { code: 'SP', href: '/admin/partners', label: 'Suppliers' },
+      { code: 'AP', href: '/admin/partner-applications', label: 'Supplier applications' },
       { code: 'EN', href: '/admin/partners/onboarding', label: 'Partner enrollment' },
       { code: 'CA', href: '/admin/catalog', label: 'Supply catalog' },
       { code: 'IN', href: '/admin/inventory', label: 'Inventory and rates' },

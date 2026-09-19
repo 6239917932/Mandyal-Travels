@@ -50,6 +50,35 @@ jobs:
       - name: Verify live routes, accessibility, and bounded load
         run: npm run test:runtime
 
+      - name: Install isolated administrator browser-test tools
+        run: |
+          npm install --prefix .gh-task-cache/browser-tools --no-package-lock --no-save playwright@1.58.2
+          PLAYWRIGHT_BROWSERS_PATH=.gh-task-cache/browsers node .gh-task-cache/browser-tools/node_modules/playwright/cli.js install --with-deps chromium
+
+      - name: Prepare isolated administrator fixtures and server
+        run: |
+          node --experimental-strip-types scripts/seed-admin-audit.mts
+          DATABASE_URL="file:${GITHUB_WORKSPACE}/prisma/admin-audit-e2e.db" PUBLIC_APP_ORIGIN=https://localhost:3019 npm run start -- --hostname 127.0.0.1 --port 3019 > admin-audit-runtime.log 2>&1 &
+          node --input-type=module -e "for(let i=0;i<60;i++){try{if((await fetch('http://localhost:3019/login')).ok)process.exit(0);}catch{} await new Promise(r=>setTimeout(r,1000));}process.exit(1);"
+
+      - name: Verify every administrator route and core decision workflows
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .gh-task-cache/browsers
+          PLAYWRIGHT_MODULE: ${{ github.workspace }}/.gh-task-cache/browser-tools/node_modules/playwright/index.mjs
+        run: node scripts/test-admin-browser.mjs
+
+      - name: Retain administrator audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: administrator-browser-audit
+          retention-days: 7
+          path: |
+            .gh-task-cache/admin-browser-results.json
+            .gh-task-cache/admin-request-desktop.png
+            .gh-task-cache/admin-request-mobile.png
+            admin-audit-runtime.log
+
       - name: Show runtime log after failure
         if: failure()
         run: cat portal-runtime.log || true
