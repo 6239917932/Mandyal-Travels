@@ -44,6 +44,7 @@ export function emailEventPayloadHash(payload: string): string {
 export function verifyEmailEventWebhook(input: {
   now?: number;
   payload: string;
+  provider: string;
   secret: string;
   signature: string;
   timestamp: string;
@@ -52,13 +53,15 @@ export function verifyEmailEventWebhook(input: {
   const now = input.now ?? Date.now();
   if (
     input.secret.length < 32 ||
+    !/^[a-z0-9][a-z0-9_-]{0,49}$/.test(input.provider) ||
+    !/^\d{1,12}$/.test(input.timestamp) ||
     !Number.isSafeInteger(timestamp) ||
     Math.abs(now - timestamp * 1_000) > EMAIL_EVENT_MAXIMUM_AGE_MS
   ) {
     return false;
   }
   const expected = createHmac('sha256', input.secret)
-    .update(`${input.timestamp}.${input.payload}`)
+    .update(`${input.timestamp}.${input.provider}.${input.payload}`)
     .digest('hex');
   const received = input.signature.replace(/^sha256=/i, '').toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(received)) return false;

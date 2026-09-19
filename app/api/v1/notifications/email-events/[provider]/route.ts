@@ -31,7 +31,7 @@ export async function POST(request: Request, context: Context): Promise<Response
     return NextResponse.json({ error: { code: 'EMAIL_EVENT_PAYLOAD_TOO_LARGE' } }, { status: 413 });
   }
   const secret = process.env.EMAIL_BOUNCE_WEBHOOK_SECRET?.trim() ?? '';
-  if (secret.length < 32 || !(process.env.EMAIL_SUPPRESSION_HASH_SECRET?.trim() ?? '')) {
+  if (secret.length < 32 || (process.env.EMAIL_SUPPRESSION_HASH_SECRET?.trim() ?? '').length < 32) {
     return NextResponse.json(
       { error: { code: 'EMAIL_EVENT_WEBHOOK_NOT_CONFIGURED' } },
       { status: 503 },
@@ -40,6 +40,7 @@ export async function POST(request: Request, context: Context): Promise<Response
   if (
     !verifyEmailEventWebhook({
       payload,
+      provider,
       secret,
       signature: request.headers.get('x-email-event-signature') ?? '',
       timestamp: request.headers.get('x-email-event-timestamp') ?? '',
@@ -56,6 +57,12 @@ export async function POST(request: Request, context: Context): Promise<Response
       { status: result.duplicate ? 200 : 202 },
     );
   } catch (error) {
+    if (error instanceof Error && error.message === 'EMAIL_EVENT_ID_CONFLICT') {
+      return NextResponse.json({ error: { code: error.message } }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === 'EMAIL_RECIPIENT_INVALID') {
+      return NextResponse.json({ error: { code: 'EMAIL_EVENT_PAYLOAD_INVALID' } }, { status: 400 });
+    }
     if (error instanceof Error && error.message.startsWith('EMAIL_EVENT_')) {
       return NextResponse.json({ error: { code: error.message } }, { status: 400 });
     }

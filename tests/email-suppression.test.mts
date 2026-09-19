@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaClient } from '../generated/prisma/client.ts';
+import { storeEmailProviderEvent } from '../lib/notifications/emailSuppressionStore.ts';
 
 import {
   emailRecipientHash,
@@ -22,21 +25,22 @@ test('email recipients are normalized and keyed hashes do not disclose addresses
   assert.throws(() => emailRecipientHash('guest@example.com', 'short'), /NOT_CONFIGURED/);
 });
 
-test('email event signatures are time-bound and body-bound', () => {
+test('email event signatures bind the provider, body, and timestamp', () => {
   const payload = '{"eventId":"evt-1"}';
+  const provider = 'test-mail';
   const timestamp = '1789376400';
-  const signature = createHmac('sha256', secret).update(`${timestamp}.${payload}`).digest('hex');
+  const signature = createHmac('sha256', secret)
+    .update(`${timestamp}.${provider}.${payload}`)
+    .digest('hex');
   const now = Number(timestamp) * 1_000;
+  const signed = { now, payload, provider, secret, signature, timestamp };
 
-  assert.equal(verifyEmailEventWebhook({ now, payload, secret, signature, timestamp }), true);
-  assert.equal(
-    verifyEmailEventWebhook({ now, payload: `${payload} `, secret, signature, timestamp }),
-    false,
-  );
-  assert.equal(
-    verifyEmailEventWebhook({ now: now + 6 * 60_000, payload, secret, signature, timestamp }),
-    false,
-  );
+  assert.equal(verifyEmailEventWebhook(signed), true);
+  assert.equal(verifyEmailEventWebhook({ ...signed, provider: 'another-mail' }), false);
+  assert.equal(verifyEmailEventWebhook({ ...signed, secret: 'short' }), false);
+  assert.equal(verifyEmailEventWebhook({ ...signed, signature: 'invalid' }), false);
+  assert.equal(verifyEmailEventWebhook({ ...signed, payload: `${payload} ` }), false);
+  assert.equal(verifyEmailEventWebhook({ ...signed, now: now + 6 * 60_000 }), false);
 });
 
 test('only bounded permanent bounce and complaint events are accepted', () => {
@@ -84,9 +88,65 @@ test('delivery worker enforces suppression and webhook is authenticated and repl
   assert.match(route, /verifyEmailEventWebhook/);
   assert.match(route, /EMAIL_BOUNCE_WEBHOOK_SECRET/);
   assert.match(service, /EMAIL_SUPPRESSION_HASH_SECRET/);
-  assert.match(service, /emailProviderEvent\.create/);
-  assert.match(service, /hasPrismaErrorCode\(error, 'P2002'\)/);
+  assert.match(service, /storeEmailProviderEvent/);
   assert.match(delivery, /isEmailRecipientSuppressed/);
   assert.match(delivery, /EMAIL_RECIPIENT_SUPPRESSED/);
   assert.match(delivery, /status: 'DEAD_LETTER'/);
+});
+
+test('email events persist atomically, reject conflicting replays, and preserve complaint history', async (t) => {
+  const database = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: 'file::memory:' }) });
+  t.after(async () => database.$disconnect());
+  const migration = fs.readFileSync(
+    'prisma/migrations/20260915110000_add_email_suppression_controls/migration.sql',
+    'utf8',
+  );
+  for (const statement of migration.split(';').filter((value) => value.trim())) {
+    await database.$executeRawUnsafe(statement);
+  }
+  const now = new Date('2026-09-20T10:00:00.000Z');
+  const receive = (
+    eventId: string,
+    type: string,
+    occurredAt: string,
+    recipient = 'guest@example.com',
+  ) => {
+    const payload = JSON.stringify({ eventId, type, occurredAt, recipient });
+    return storeEmailProviderEvent(database, {
+      event: parseEmailProviderEvent(payload, now),
+      payload,
+      provider: 'test-mail',
+      hashSecret: secret,
+    });
+  };
+  assert.deepEqual(await receive('event-1', 'COMPLAINT', '2026-09-20T09:00:00.000Z'), {
+    duplicate: false,
+  });
+  assert.deepEqual(await receive('event-1', 'COMPLAINT', '2026-09-20T09:00:00.000Z'), {
+    duplicate: true,
+  });
+  await assert.rejects(
+    receive('event-1', 'COMPLAINT', '2026-09-20T09:00:00.000Z', 'other@example.com'),
+    /EMAIL_EVENT_ID_CONFLICT/,
+  );
+  await receive('event-2', 'BOUNCE', '2026-09-19T10:00:00.000Z');
+  await receive('event-3', 'BOUNCE', '2026-09-20T09:30:00.000Z');
+  const suppression = await database.emailSuppression.findUniqueOrThrow({
+    where: { recipientHash: emailRecipientHash('guest@example.com', secret) },
+  });
+  assert.equal(suppression.eventCount, 3);
+  assert.equal(suppression.reason, 'COMPLAINT');
+  assert.equal(suppression.firstObservedAt.toISOString(), '2026-09-19T10:00:00.000Z');
+  assert.equal(suppression.lastObservedAt.toISOString(), '2026-09-20T09:30:00.000Z');
+  assert.equal(await database.emailSuppression.count(), 1);
+  assert.equal(await database.emailProviderEvent.count(), 3);
+
+  await database.$executeRawUnsafe(`CREATE TRIGGER reject_suppression_update
+    BEFORE UPDATE ON "EmailSuppression" BEGIN SELECT RAISE(ABORT, 'test rollback'); END`);
+  await assert.rejects(receive('event-4', 'BOUNCE', '2026-09-20T09:45:00.000Z'));
+  assert.equal(
+    await database.emailProviderEvent.count(),
+    3,
+    'failed suppression must roll back its event',
+  );
 });
