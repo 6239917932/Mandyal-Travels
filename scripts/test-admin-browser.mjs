@@ -223,7 +223,7 @@ try {
           '/api/v1/admin/contact-inquiries/audit-inquiry-0',
         );
         await page.getByRole('status').filter({ hasText: 'Decision recorded.' }).waitFor();
-        await page.reload({ waitUntil: 'networkidle' });
+        await page.reload({ waitUntil: 'domcontentloaded' });
       }
       assert.equal(await page.locator('li').filter({ hasText: 'Isolated test:' }).count(), 5);
       const stale = await context.request.patch(
@@ -478,7 +478,7 @@ try {
       () => page.getByRole('button', { name: 'Publish', exact: true }).click(),
       '/api/v1/admin/hotel-reviews/audit-review',
     );
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     assert.match(await page.locator('#workspace-main').innerText(), /PUBLISHED/i);
   });
   await action('Mobile request page remains readable with reachable actions', async () => {
