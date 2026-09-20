@@ -1980,8 +1980,12 @@
 
 .pms-room-rack__table {
   width: 100%;
-  min-width: 78rem;
+  min-width: 52rem;
   border-collapse: collapse;
+}
+
+.pms-room-rack .pms-room-rack__table {
+  min-width: 78rem;
 }
 
 .pms-room-rack__table caption {
@@ -2066,6 +2070,55 @@
 
 .pms-room-rack__queues li span {
   color: var(--color-text-muted);
+}
+
+/* Shared operational lists used across the PMS workspaces. */
+.pms-room-rack__queue-list {
+  display: grid;
+  gap: 0;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pms-room-rack__queue-list li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.3fr);
+  align-items: start;
+  gap: var(--space-2) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) 0;
+}
+
+.pms-room-rack__queue-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pms-room-rack__queue-list strong {
+  color: var(--color-brand-950);
+  line-height: 1.45;
+}
+
+.pms-room-rack__queue-list span {
+  min-width: 0;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.pms-room-rack__queue-list a {
+  color: var(--color-brand-700);
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: rgb(37 99 235 / 28%);
+  text-underline-offset: 0.2rem;
+}
+
+@media (max-width: 46rem) {
+  .pms-room-rack__queue-list li {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
 }
 
 .partner-status--live {

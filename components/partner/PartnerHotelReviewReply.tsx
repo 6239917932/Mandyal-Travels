@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 export function PartnerHotelReviewReply({ reviewId }: { reviewId: string }) {
+  const replyId = `partner-review-reply-${reviewId}`;
   const [reply, setReply] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,9 +32,14 @@ export function PartnerHotelReviewReply({ reviewId }: { reviewId: string }) {
 
   return (
     <div className="review-governance__action">
+      <label className="sr-only" htmlFor={replyId}>
+        Property response to this guest review
+      </label>
       <textarea
+        id={replyId}
         maxLength={1000}
         minLength={10}
+        name="partnerReply"
         onChange={(event) => setReply(event.target.value)}
         placeholder="Write a professional property response"
         value={reply}

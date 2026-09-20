@@ -18,6 +18,7 @@ const results = {
   origin,
   startedAt: new Date().toISOString(),
   pages: [],
+  responsivePages: [],
   internalLinks: [],
   errors: [],
 };
@@ -109,6 +110,24 @@ try {
       headings: [...main.querySelectorAll('h1,h2,h3')].map(
         (node) => node.textContent?.trim() ?? '',
       ),
+      controlsWithoutLabels: [...main.querySelectorAll('input, select, textarea')]
+        .filter(
+          (node) =>
+            !(node instanceof HTMLInputElement && node.type === 'hidden') &&
+            !node.labels?.length &&
+            !node.getAttribute('aria-label')?.trim() &&
+            !node.getAttribute('aria-labelledby')?.trim() &&
+            !node.getAttribute('title')?.trim(),
+        )
+        .map((node) => `${node.tagName.toLowerCase()}[name="${node.getAttribute('name') ?? ''}"]`),
+      tablesWithoutScrollContainer: [...main.querySelectorAll('table')]
+        .filter(
+          (table) =>
+            !table.closest(
+              '.pms-room-rack__table-wrap, .business-report__table-scroll, [role="region"][tabindex]',
+            ),
+        )
+        .map((table) => table.querySelector('caption')?.textContent?.trim() || 'uncaptioned table'),
       links: [...main.querySelectorAll('a[href]')].map((node) => ({
         accessibleName:
           node.getAttribute('aria-label')?.trim() ||
@@ -138,6 +157,16 @@ try {
       record.forms.some((form) => form.submitControls === 0),
       false,
       `${route}: form without a submit control`,
+    );
+    assert.deepEqual(
+      record.controlsWithoutLabels,
+      [],
+      `${route}: form controls without programmatic labels`,
+    );
+    assert.deepEqual(
+      record.tablesWithoutScrollContainer,
+      [],
+      `${route}: table without a responsive scroll container`,
     );
     assert.equal(
       record.links.some(
@@ -184,11 +213,33 @@ try {
     );
     results.internalLinks.push({ href, status: response.status() });
   }
+
+  const mobilePage = await context.newPage();
+  await mobilePage.setViewportSize({ height: 844, width: 390 });
+  for (const route of routes) {
+    const response = await mobilePage.goto(`${origin}${route}`, {
+      timeout: 60_000,
+      waitUntil: 'domcontentloaded',
+    });
+    assert.equal(response.status(), 200, `${route}: mobile HTTP ${response.status()}`);
+    await mobilePage.locator('h1').first().waitFor({ state: 'visible', timeout: 10_000 });
+    const layout = await mobilePage.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    assert.ok(
+      layout.scrollWidth <= layout.clientWidth + 2,
+      `${route}: mobile page overflows viewport (${layout.scrollWidth}px > ${layout.clientWidth}px)`,
+    );
+    results.responsivePages.push({ pass: true, route, ...layout });
+  }
+  await mobilePage.close();
   assert.equal(results.errors.length, 0, JSON.stringify(results.errors));
   results.completedAt = new Date().toISOString();
   results.summary = {
     failed: 0,
     internalLinksChecked: results.internalLinks.length,
+    mobilePagesChecked: results.responsivePages.length,
     passed: results.pages.length,
     total: routes.length,
   };
