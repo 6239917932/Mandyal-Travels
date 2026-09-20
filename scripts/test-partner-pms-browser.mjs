@@ -144,6 +144,7 @@ try {
         (link) =>
           link.href?.startsWith('javascript:') ||
           link.href?.startsWith('data:') ||
+          link.href?.startsWith('vbscript:') ||
           link.href?.startsWith('//'),
       ),
       false,
