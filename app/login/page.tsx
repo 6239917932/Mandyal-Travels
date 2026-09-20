@@ -5,11 +5,7 @@ import { redirect } from 'next/navigation';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { Card } from '@/components/ui/Card';
 import { getSafeReturnTo, getSignedInReturnTo } from '@/lib/auth/redirect';
-import {
-  inferLoginAudience,
-  normalizeLoginAudience,
-  type LoginAudience,
-} from '@/lib/auth/loginAudience';
+import { inferLoginAudience, normalizeLoginAudience } from '@/lib/auth/loginAudience';
 import { getCurrentUser } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -34,56 +30,154 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   if (user) redirect(getSignedInReturnTo(returnTo, user.role));
 
   if (!audience) {
-    const portals: Array<{
-      audience: LoginAudience;
-      description: string;
-      href: string;
-      title: string;
-    }> = [
+    const portals = [
       {
         audience: 'customer',
-        description: 'For travellers booking personal hotels, cars, and journeys.',
+        description: 'Book personal travel and keep every journey in one secure account.',
+        features: [
+          'Hotel and car bookings',
+          'Trips, confirmations, and support',
+          'Traveller profile and preferences',
+        ],
         href: '/login?portal=customer',
-        title: 'Customer login',
+        label: 'Traveller',
+        monogram: 'TR',
+        primaryLabel: 'Traveller sign in',
+        secondaryActions: [{ href: '/register', label: 'Create traveller account' }],
+        title: 'Plan and manage personal travel',
       },
       {
         audience: 'partner',
-        description: 'For approved hotel and car owners, suppliers, and partner applicants.',
+        description: 'Operate an approved hotel, property, car fleet, or supplier account.',
+        features: [
+          'PMS, listings, rates, and inventory',
+          'Reservations and guest operations',
+          'Applications, compliance, and settlements',
+        ],
         href: '/login?portal=partner&returnTo=%2Fpartner',
-        title: 'Partner login',
+        label: 'Hotel & car partner',
+        learnHref: '/partners',
+        learnLabel: 'Explore partner solutions',
+        monogram: 'PR',
+        primaryLabel: 'Partner sign in',
+        secondaryActions: [
+          { href: '/register?returnTo=%2Fpartners%2Fapply', label: 'Apply as a partner' },
+        ],
+        title: 'Run supplier operations',
       },
       {
         audience: 'corporate',
-        description: 'For corporate clients and employees invited to company travel accounts.',
+        description: 'Coordinate company or agency travel through an organization workspace.',
+        features: [
+          'Travellers, policies, and approvals',
+          'Bookings, invoices, and reporting',
+          'Corporate and travel-agent access',
+        ],
         href: '/login?portal=corporate&returnTo=%2Fbusiness%2Fdashboard',
-        title: 'Corporate login',
+        label: 'Business & agency',
+        learnHref: '/business',
+        learnLabel: 'Explore business travel',
+        monogram: 'CO',
+        primaryLabel: 'Business or agent sign in',
+        secondaryActions: [
+          { href: '/register?account=business', label: 'Create company account' },
+          { href: '/register?account=agent', label: 'Create agency account' },
+        ],
+        title: 'Manage organization travel',
       },
       {
         audience: 'admin',
-        description: 'Restricted operations access for the sole Mandyal Travels administrator.',
+        description: 'Restricted internal access for authorized Mandyal Travels administration.',
+        features: [
+          'Platform and supplier governance',
+          'Support and operational reviews',
+          'Audit and security controls',
+        ],
         href: '/login?portal=admin&returnTo=%2Fadmin',
-        title: 'Administrator login',
+        label: 'Mandyal administration',
+        monogram: 'AD',
+        notice: 'No public registration. Authorized personnel only.',
+        primaryLabel: 'Administrator sign in',
+        secondaryActions: [],
+        title: 'Control platform operations',
       },
-    ];
+    ] as const;
 
     return (
       <section className="auth-page auth-page--portal-hub">
-        <div className="auth-page__intro">
-          <p className="hotel-page__eyebrow">Choose your secure portal</p>
-          <h1>Sign in to the right workspace.</h1>
-          <p>Customer, partner, corporate, and administrator access remain separated.</p>
+        <div className="auth-page__intro auth-portal-intro">
+          <p className="hotel-page__eyebrow">Mandyal Travels account access</p>
+          <h1>Choose your Mandyal workspace.</h1>
+          <p>
+            Select how you use Mandyal Travels. Each workspace has its own tools, permissions, and
+            protected sign-in flow.
+          </p>
         </div>
         <div className="auth-portal-grid">
           {portals.map((portal) => (
-            <Card className="auth-portal-card" key={portal.audience}>
-              <p className="hotel-page__eyebrow">{portal.audience}</p>
-              <h2>{portal.title}</h2>
+            <Card
+              className={`auth-portal-card auth-portal-card--${portal.audience}`}
+              key={portal.audience}
+            >
+              <div className="auth-portal-card__heading">
+                <span aria-hidden="true" className="auth-portal-card__monogram">
+                  {portal.monogram}
+                </span>
+                <div>
+                  <p className="hotel-page__eyebrow">{portal.label}</p>
+                  <h2>{portal.title}</h2>
+                </div>
+              </div>
               <p>{portal.description}</p>
-              <Link className="ui-button ui-button--secondary" href={portal.href}>
-                Continue
-              </Link>
+              <ul className="auth-portal-card__features">
+                {portal.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+              {'notice' in portal ? (
+                <p className="auth-portal-card__notice">{portal.notice}</p>
+              ) : null}
+              <div className="auth-portal-card__actions">
+                <Link className="ui-button ui-button--primary" href={portal.href}>
+                  {portal.primaryLabel}
+                </Link>
+                {portal.secondaryActions.map((action) => (
+                  <Link
+                    className="auth-portal-card__secondary"
+                    href={action.href}
+                    key={action.href}
+                  >
+                    {action.label}
+                  </Link>
+                ))}
+              </div>
+              {'learnHref' in portal ? (
+                <Link className="auth-portal-card__learn" href={portal.learnHref}>
+                  {portal.learnLabel} <span aria-hidden="true">→</span>
+                </Link>
+              ) : null}
             </Card>
           ))}
+        </div>
+        <aside className="auth-portal-help" aria-labelledby="login-help-title">
+          <div>
+            <p className="hotel-page__eyebrow">Account assistance</p>
+            <h2 id="login-help-title">Not sure where to sign in?</h2>
+            <p>
+              Travellers use the personal account. Hotel and car owners use Partner. Companies and
+              travel agencies use Business &amp; Agency.
+            </p>
+          </div>
+          <div className="auth-portal-help__links">
+            <Link href="/forgot-password">Reset password</Link>
+            <Link href="/manage-booking">Manage a booking</Link>
+            <Link href="/contact">Contact support</Link>
+          </div>
+        </aside>
+        <div className="auth-portal-trust" aria-label="Account protection">
+          <span>Encrypted connection</span>
+          <span>Role-separated access</span>
+          <span>Protected account controls</span>
         </div>
       </section>
     );
