@@ -14,7 +14,13 @@ const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).h
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { height: 1000, width: 1440 } });
 await context.addCookies([{ name: 'mandyal_session', value: fixture.partnerToken, url: origin }]);
-const results = { origin, startedAt: new Date().toISOString(), pages: [], errors: [] };
+const results = {
+  origin,
+  startedAt: new Date().toISOString(),
+  pages: [],
+  internalLinks: [],
+  errors: [],
+};
 await context.route('**/*', (route) => {
   const url = new URL(route.request().url());
   return url.origin === origin || ['data:', 'blob:'].includes(url.protocol)
@@ -77,18 +83,38 @@ try {
     );
     const contentRoot = (await page.locator('#workspace-main').count())
       ? page.locator('#workspace-main')
-      : page.locator('body');
+      : (await page.locator('main').count())
+        ? page.locator('main')
+        : (await page.locator('.booking-document-page').count())
+          ? page.locator('.booking-document-page')
+          : page.locator('body');
     const record = await contentRoot.evaluate((main) => ({
       buttons: [...main.querySelectorAll('button')].map((node) => ({
+        accessibleName:
+          node.getAttribute('aria-label')?.trim() ||
+          node.getAttribute('title')?.trim() ||
+          node.textContent?.trim() ||
+          '',
         disabled: node.disabled,
         text: node.textContent?.trim() ?? '',
         type: node.type,
       })),
-      forms: main.querySelectorAll('form').length,
+      forms: [...main.querySelectorAll('form')].map((form) => ({
+        action: form.getAttribute('action') ?? '',
+        method: (form.getAttribute('method') ?? 'get').toLowerCase(),
+        submitControls: form.querySelectorAll(
+          'button[type="submit"], input[type="submit"], button:not([type])',
+        ).length,
+      })),
       headings: [...main.querySelectorAll('h1,h2,h3')].map(
         (node) => node.textContent?.trim() ?? '',
       ),
       links: [...main.querySelectorAll('a[href]')].map((node) => ({
+        accessibleName:
+          node.getAttribute('aria-label')?.trim() ||
+          node.getAttribute('title')?.trim() ||
+          node.textContent?.trim() ||
+          '',
         href: node.getAttribute('href'),
         text: node.textContent?.trim() ?? '',
       })),
@@ -98,9 +124,34 @@ try {
       false,
       `${route}: placeholder link`,
     );
+    assert.equal(
+      record.buttons.some((button) => !button.accessibleName),
+      false,
+      `${route}: button without an accessible name`,
+    );
+    assert.equal(
+      record.links.some((link) => !link.accessibleName),
+      false,
+      `${route}: link without an accessible name`,
+    );
+    assert.equal(
+      record.forms.some((form) => form.submitControls === 0),
+      false,
+      `${route}: form without a submit control`,
+    );
+    assert.equal(
+      record.links.some(
+        (link) =>
+          link.href?.startsWith('javascript:') ||
+          link.href?.startsWith('data:') ||
+          link.href?.startsWith('//'),
+      ),
+      false,
+      `${route}: unsafe or protocol-relative link`,
+    );
     results.pages.push({ pass: true, route, ...record });
     console.log(
-      `PAGE ${route}: OK (${record.buttons.length} buttons, ${record.links.length} links, ${record.forms} forms)`,
+      `PAGE ${route}: OK (${record.buttons.length} buttons, ${record.links.length} links, ${record.forms.length} forms)`,
     );
   }
   await page.goto(`${origin}/partner`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
@@ -109,9 +160,37 @@ try {
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
   const duplicates = sidebarLinks.filter((href, index) => sidebarLinks.indexOf(href) !== index);
   assert.deepEqual(duplicates, [], `Duplicate PMS sidebar destinations: ${duplicates.join(', ')}`);
+
+  const internalHrefs = [
+    ...new Set(
+      results.pages.flatMap((entry) =>
+        entry.links
+          .map((link) => link.href)
+          .filter(
+            (href) =>
+              typeof href === 'string' &&
+              href.startsWith('/partner') &&
+              !href.includes('[object Object]'),
+          ),
+      ),
+    ),
+  ].toSorted();
+  for (const href of internalHrefs) {
+    const response = await context.request.get(`${origin}${href}`, { maxRedirects: 0 });
+    assert.ok(
+      response.status() >= 200 && response.status() < 400,
+      `${href}: linked destination returned HTTP ${response.status()}`,
+    );
+    results.internalLinks.push({ href, status: response.status() });
+  }
   assert.equal(results.errors.length, 0, JSON.stringify(results.errors));
   results.completedAt = new Date().toISOString();
-  results.summary = { failed: 0, passed: results.pages.length, total: routes.length };
+  results.summary = {
+    failed: 0,
+    internalLinksChecked: results.internalLinks.length,
+    passed: results.pages.length,
+    total: routes.length,
+  };
   fs.writeFileSync(
     '.gh-task-cache/partner-pms-browser-audit.json',
     JSON.stringify(results, null, 2),
