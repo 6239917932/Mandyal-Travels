@@ -83,9 +83,9 @@ try {
       `${route}: rendered an application error`,
     );
     const contentRoot = (await page.locator('#workspace-main').count())
-      ? page.locator('#workspace-main')
+      ? page.locator('#workspace-main').first()
       : (await page.locator('main').count())
-        ? page.locator('main')
+        ? page.locator('main').first()
         : (await page.locator('.booking-document-page').count())
           ? page.locator('.booking-document-page')
           : page.locator('body');
