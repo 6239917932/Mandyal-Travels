@@ -83,3 +83,24 @@ rejected with HTTP 409. The admin console displays only numeric delivery totals 
 reference, never recipients, message content, provider references, or provider errors.
 
 Use a managed scheduler and queue in production. Each job requires a service identity, timeout, batch limit, dead-letter path, correlation ID, health metric, manual replay procedure, and documented owner. Never run critical recurring work only from a web request or a developer laptop.
+
+## Railway one-shot services
+
+Three reviewed config files are provided under `deploy/` so the recurring jobs can run as isolated
+one-shot Railway services instead of sharing the web process:
+
+| Service               | Config file                               | Schedule (UTC)      | Required shared variables                         |
+| --------------------- | ----------------------------------------- | ------------------- | ------------------------------------------------- |
+| Notification delivery | `deploy/railway.notification-worker.json` | Every five minutes  | `PUBLIC_APP_ORIGIN`, `NOTIFICATION_WORKER_SECRET` |
+| Safe maintenance      | `deploy/railway.maintenance-worker.json`  | Hourly at minute 17 | `PUBLIC_APP_ORIGIN`, `AUTOPILOT_WORKER_SECRET`    |
+| Search maintenance    | `deploy/railway.search-worker.json`       | Daily at 02:43      | `PUBLIC_APP_ORIGIN`, `AUTOPILOT_WORKER_SECRET`    |
+
+Create each service from the same repository and select its matching config-file path in Railway.
+Reference the existing secrets as shared variables; never copy their values into source control or a
+browser message. Keep restart policy set to `NEVER`, because each command is intentionally one-shot
+and Railway Cron starts the next scheduled execution. After deployment, verify one successful run of
+each job in `/admin/automation` before treating the corresponding launch gate as ready. Alert on any
+non-zero exit, repeated HTTP 409 lease conflict, or terminal failure.
+
+Do not attach payment, Hotelbeds, payout, maps, KYC, media, or messaging-provider credentials to
+these services until the associated external launch gate has been approved.
