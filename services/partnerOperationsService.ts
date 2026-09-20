@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { resolveOperationalDate } from '@/lib/pms/operationalDate';
+import { calendarDateInTimezone, resolveOperationalDate } from '@/lib/pms/operationalDate';
 import {
   assertHotelFolioSettledForCheckout,
   PartnerHotelFolioError,
@@ -251,11 +251,12 @@ export const partnerOperationsService = {
         'The assigned property was not found.',
       );
     }
-    const localDate = resolveOperationalDate(property.operationalDate, property.timezone);
+    const operationalDate = resolveOperationalDate(property.operationalDate, property.timezone);
     const timingViolation = evaluateStayTiming({
+      calendarDate: calendarDateInTimezone(property.timezone),
       checkInDate: booking.quote.checkInDate,
       checkOutDate: booking.quote.checkOutDate,
-      localDate,
+      operationalDate,
       nextStatus,
     });
     if (timingViolation)
