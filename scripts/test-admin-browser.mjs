@@ -116,6 +116,7 @@ try {
   await customerPage.goto(`${origin}/admin/contact-inquiries/audit-inquiry-2`, {
     waitUntil: 'domcontentloaded',
   });
+  await customerPage.waitForURL(`${origin}/account`);
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
     pass: new URL(customerPage.url()).pathname === '/account',
@@ -318,9 +319,7 @@ try {
       );
       await page.getByText('Decision: REJECTED', { exact: true }).waitFor();
       await navigate('/admin/partner-applications?status=REJECTED');
-      assert.ok(
-        await page.getByRole('link', { name: 'Audit Application PENDING', exact: true }).count(),
-      );
+      await page.getByRole('link', { name: 'Audit Application PENDING', exact: true }).waitFor();
     },
   );
   await action('Privacy review advances to the next action without full-page reload', async () => {
