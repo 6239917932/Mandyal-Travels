@@ -8,7 +8,7 @@ type MfaState = { enabled: boolean; recoveryCodesRemaining: number };
 
 export function MfaSecurityManager() {
   const [state, setState] = useState<MfaState | null>(null);
-  const [setupUri, setSetupUri] = useState('');
+  const [setupKey, setSetupKey] = useState('');
   const [code, setCode] = useState('');
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [message, setMessage] = useState('');
@@ -28,11 +28,20 @@ export function MfaSecurityManager() {
   async function beginEnrollment() {
     setMessage('');
     const response = await fetch('/api/v1/account/mfa', { method: 'POST' });
-    const result = await readJsonResponse<{ data?: { setupUri: string }; error?: string }>(
+    const result = await readJsonResponse<{ data?: { setupKey: string }; error?: string }>(
       response,
     );
     if (!response.ok || !result?.data) return setMessage(result?.error ?? 'Enrollment failed.');
-    setSetupUri(result.data.setupUri);
+    setSetupKey(result.data.setupKey);
+  }
+
+  async function copySetupKey() {
+    try {
+      await navigator.clipboard.writeText(setupKey);
+      setMessage('Setup key copied. Paste it only into your authenticator app.');
+    } catch {
+      setMessage('Copy was unavailable. Select the setup key and copy it manually.');
+    }
   }
 
   async function confirmEnrollment() {
@@ -46,7 +55,7 @@ export function MfaSecurityManager() {
     );
     if (!response.ok || !result?.data) return setMessage(result?.error ?? 'Verification failed.');
     setRecoveryCodes(result.data.recoveryCodes);
-    setSetupUri('');
+    setSetupKey('');
     setMessage(
       'Two-step verification is enabled. Save every recovery code now; they are shown once.',
     );
@@ -76,14 +85,35 @@ export function MfaSecurityManager() {
           : 'Protect sign-in with a standards-based authenticator app.'}
       </p>
       {message ? <p role="status">{message}</p> : null}
-      {setupUri ? (
+      {setupKey ? (
         <div className="account-security__mfa-setup">
-          <p>Import this setup URI into your authenticator app, then enter its six-digit code:</p>
-          <code>{setupUri}</code>
+          <p>
+            In your authenticator app, choose <strong>Enter a setup key</strong>, use a time-based
+            key, and enter the key below. Never paste it into search, email, or chat.
+          </p>
+          <label htmlFor="mfa-setup-key">Authenticator setup key</label>
+          <input
+            aria-describedby="mfa-setup-key-help"
+            className="ui-input"
+            id="mfa-setup-key"
+            readOnly
+            spellCheck={false}
+            value={setupKey}
+          />
+          <p id="mfa-setup-key-help">This key is shown only while you complete enrollment.</p>
+          <button
+            className="ui-button ui-button--secondary"
+            onClick={() => void copySetupKey()}
+            type="button"
+          >
+            Copy setup key
+          </button>
+          <label htmlFor="mfa-authenticator-code">Six-digit authenticator code</label>
           <input
             aria-label="Authenticator code"
             autoComplete="one-time-code"
             className="ui-input"
+            id="mfa-authenticator-code"
             inputMode="numeric"
             maxLength={6}
             onChange={(event) => setCode(event.target.value)}

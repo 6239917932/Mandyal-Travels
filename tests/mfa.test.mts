@@ -31,6 +31,7 @@ test('enabled MFA must be verified before enrollment can replace its secret', ()
 
 test('MFA mutations require portal origin and bounded per-account attempts', () => {
   const route = readFileSync('app/api/v1/account/mfa/route.ts', 'utf8');
+  const manager = readFileSync('components/account/MfaSecurityManager.tsx', 'utf8');
   const securityPage = readFileSync('app/admin/security/page.tsx', 'utf8');
 
   assert.match(route, /isTrustedPortalMutation\(request, resolvePublicPortalOrigin\(\)\)/);
@@ -38,5 +39,10 @@ test('MFA mutations require portal origin and bounded per-account attempts', () 
   assert.match(route, /const MFA_MUTATION_LIMIT = 10/);
   assert.match(route, /const MFA_MUTATION_WINDOW_MS = 10 \* 60 \* 1000/);
   assert.match(route, /'Retry-After'/);
+  assert.match(route, /data: \{ setupKey: secret \}/);
+  assert.doesNotMatch(route, /data: \{ setupUri:/);
+  assert.match(manager, /Copy setup key/);
+  assert.match(manager, /navigator\.clipboard\.writeText\(setupKey\)/);
+  assert.doesNotMatch(manager, /setupUri/);
   assert.match(securityPage, /value="MFA_MUTATION"/);
 });

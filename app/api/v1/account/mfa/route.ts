@@ -9,7 +9,6 @@ import {
   decryptTotpSecret,
   encryptTotpSecret,
   requiresMfaEnrollmentVerification,
-  totpUri,
   verifyTotp,
 } from '@/lib/auth/mfa';
 import { getCurrentSession } from '@/lib/auth/session';
@@ -95,7 +94,7 @@ export async function POST(request: Request) {
       create: { userId: session.user.id, secretCiphertext: encryptTotpSecret(secret) },
       update: { secretCiphertext: encryptTotpSecret(secret), enabledAt: null },
     });
-    return NextResponse.json({ data: { setupUri: totpUri(session.user.email, secret) } });
+    return NextResponse.json({ data: { setupKey: secret } });
   } catch (error) {
     console.error('MFA enrollment failed.', error);
     return NextResponse.json({ error: 'MFA enrollment is not configured.' }, { status: 503 });
