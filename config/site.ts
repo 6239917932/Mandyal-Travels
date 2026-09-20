@@ -19,8 +19,7 @@ export const siteConfig = {
     { href: '/trip-planner', label: 'Trip planner' },
     { href: '/destinations', label: 'Destinations' },
     { href: '/offers', label: 'Offers' },
-    { href: '/business', label: 'Business' },
-    { href: '/partners', label: 'Partners' },
+    { href: '/login', label: 'Workspaces' },
     { href: '/manage-booking', label: 'Manage booking' },
     { href: '/contact', label: 'Contact us' },
   ] satisfies NavigationItem[],
@@ -29,7 +28,7 @@ export const siteConfig = {
     { href: '/cars', label: 'Cars' },
     { href: '/flights', label: 'Flights — coming soon' },
     { href: '/buses', label: 'Buses — coming soon' },
-    { href: '/partners', label: 'List your hotel or car' },
+    { href: '/login#partner', label: 'List your hotel or car' },
     { href: '/manage-booking', label: 'Manage booking' },
   ] satisfies NavigationItem[],
   officeLocations: [

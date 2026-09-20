@@ -178,7 +178,7 @@ export default async function PartnerApplicationPage() {
               </small>
             </>
           ) : null}
-          <Link className="ui-button ui-button--secondary" href="/partners">
+          <Link className="ui-button ui-button--secondary" href="/login#partner">
             Back to partner network
           </Link>
         </Card>

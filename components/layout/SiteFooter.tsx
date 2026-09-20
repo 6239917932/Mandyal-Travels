@@ -28,8 +28,8 @@ export function SiteFooter() {
           <nav aria-label="Company information" className="site-footer__links">
             <Link href="/about">About us</Link>
             <Link href="/contact">Contact us and office locations</Link>
-            <Link href="/business">Business travel</Link>
-            <Link href="/partners">Hotel and car partners</Link>
+            <Link href="/login#business">Business travel workspace</Link>
+            <Link href="/login#partner">Hotel and car partner workspace</Link>
           </nav>
         </div>
 

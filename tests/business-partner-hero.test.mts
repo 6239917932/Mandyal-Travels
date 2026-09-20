@@ -8,8 +8,6 @@ const publicNavigationPages = [
   'trip-planner',
   'destinations',
   'offers',
-  'business',
-  'partners',
   'manage-booking',
 ] as const;
 
@@ -31,6 +29,16 @@ test('public navigation pages share one optimized mountain hero', async () => {
     assert.match(page, /import \{ PublicPageHero \}/);
     assert.match(page, /<PublicPageHero/);
   }
+});
+
+test('retired public business and partner pages preserve permanent workspace redirects', async () => {
+  const [business, partners] = await Promise.all([
+    readFile(new URL('../app/business/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/partners/page.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(business, /permanentRedirect\('\/login#business'\)/);
+  assert.match(partners, /permanentRedirect\('\/login#partner'\)/);
 });
 
 test('future flight and bus pages inherit the shared hero through the launch-status component', async () => {

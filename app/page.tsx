@@ -143,7 +143,7 @@ export default function Home() {
           </div>
 
           <div className="travel-options-grid travel-options-grid--launch">
-            <Link className="travel-option" href="/partners">
+            <Link className="travel-option" href="/login#partner">
               <span className="travel-option__number">01</span>
               <span className="travel-option__status">Hotel PMS</span>
               <h3>List and manage your hotel</h3>
@@ -154,7 +154,7 @@ export default function Home() {
                 <ArrowIcon />
               </span>
             </Link>
-            <Link className="travel-option" href="/partners">
+            <Link className="travel-option" href="/login#partner">
               <span className="travel-option__number">02</span>
               <span className="travel-option__status">Car fleet</span>
               <h3>List and manage your cars</h3>
@@ -260,7 +260,7 @@ export default function Home() {
               <Link className="home-link-button home-link-button--primary" href="/hotels">
                 Search hotels
               </Link>
-              <Link className="home-link-button home-link-button--outline" href="/partners">
+              <Link className="home-link-button home-link-button--outline" href="/login#partner">
                 List your hotel or car
               </Link>
             </div>
