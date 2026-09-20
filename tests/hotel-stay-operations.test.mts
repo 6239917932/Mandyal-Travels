@@ -13,7 +13,7 @@ test('future arrivals cannot be checked in or marked no-show', () => {
     evaluateStayTiming({
       checkInDate: '2026-10-18',
       checkOutDate: '2026-10-21',
-      localDate: '2026-10-17',
+      operationalDate: '2026-10-17',
       nextStatus: 'CHECKED_IN',
     })?.code,
     'ARRIVAL_NOT_DUE',
@@ -22,11 +22,24 @@ test('future arrivals cannot be checked in or marked no-show', () => {
     evaluateStayTiming({
       checkInDate: '2026-10-18',
       checkOutDate: '2026-10-21',
-      localDate: '2026-10-17',
+      operationalDate: '2026-10-17',
       nextStatus: 'NO_SHOW',
     })?.code,
     'ARRIVAL_NOT_DUE',
   );
+});
+
+test('a lagging operational date directs staff to night audit instead of blaming timezone', () => {
+  const violation = evaluateStayTiming({
+    calendarDate: '2026-09-21',
+    checkInDate: '2026-09-21',
+    checkOutDate: '2026-09-22',
+    operationalDate: '2026-09-20',
+    nextStatus: 'CHECKED_IN',
+  });
+  assert.equal(violation?.code, 'OPERATIONAL_DATE_BEHIND');
+  assert.match(violation?.message ?? '', /Complete night audit/);
+  assert.match(violation?.message ?? '', /2026-09-20/);
 });
 
 test('expired stays cannot be checked in', () => {
@@ -34,7 +47,7 @@ test('expired stays cannot be checked in', () => {
     evaluateStayTiming({
       checkInDate: '2026-10-18',
       checkOutDate: '2026-10-21',
-      localDate: '2026-10-21',
+      operationalDate: '2026-10-21',
       nextStatus: 'CHECKED_IN',
     })?.code,
     'STAY_DATE_PASSED',
