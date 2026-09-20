@@ -38,17 +38,19 @@ test('homepage hero provides a focused hotel-first booking widget', async () => 
     readFile(new URL('../styles/mandyal-visual-system.css', import.meta.url), 'utf8'),
   ]);
 
-  assert.doesNotMatch(page, /home-search-hero__image/);
-  assert.doesNotMatch(page, /mandyal-travel-hero-v2\.png/);
+  assert.match(page, /home-search-hero__image/);
+  assert.match(page, /mandyal-travel-hero-v2\.png/);
+  assert.match(page, /home-search-hero__shade/);
   assert.match(page, /<HomeBookingWidget \/>/);
   assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /A better place to find your stay\./);
+  assert.match(page, /Find your stay\. We’ll help with the rest\./);
   assert.match(
     page,
-    /Discover owner-managed stays, compare rooms and policies, and get human support from\s+first search through checkout/,
+    /Search trusted hotel inventory with clear room details, secure booking, and human\s+support when you need it/,
   );
-  assert.match(page, /className="home-smart-planner" href="\/trip-planner"/);
-  assert.match(page, /Plan with Mandyal/);
+  assert.match(page, /className="home-search-hero__quick-links"/);
+  assert.match(page, /Plan a hotel trip/);
+  assert.match(page, /List your hotel/);
   assert.doesNotMatch(page, /supplier integrations are verified/);
   assert.doesNotMatch(page, /<HomeHeroSlider \/>/);
   assert.match(page, /<h2 className="home-intro__title" id="home-intro-title">/);
@@ -65,7 +67,8 @@ test('homepage hero provides a focused hotel-first booking widget', async () => 
   assert.match(styles, /\.home-booking-widget\s*\{/);
   assert.match(styles, /\.home-gallery__rail\s*\{[\s\S]*?overflow-x:\s*auto;/);
   assert.match(visualSystem, /body\s*\{[\s\S]*?zoom:\s*0\.9;/);
-  assert.match(visualSystem, /\.home-search-hero\s*\{[\s\S]*?radial-gradient/);
-  assert.match(visualSystem, /\.home-smart-planner\s*\{/);
+  assert.match(visualSystem, /\.home-search-hero__image\s*\{[\s\S]*?object-fit:\s*cover/);
+  assert.match(visualSystem, /\.home-search-hero__shade\s*\{[\s\S]*?linear-gradient/);
+  assert.match(visualSystem, /\.home-search-hero__quick-links\s*\{/);
   assert.match(visualSystem, /\.home-booking-widget__benefits\s*\{[\s\S]*?repeat\(4/);
 });
