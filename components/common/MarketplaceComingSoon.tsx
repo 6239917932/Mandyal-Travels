@@ -34,7 +34,7 @@ export function MarketplaceComingSoon({ product }: { product: 'Buses' | 'Flights
             prepared.
           </p>
           <div className="home-hero__actions">
-            <Link className="ui-button ui-button--primary" href="/partners">
+            <Link className="ui-button ui-button--primary" href="/login#partner">
               List a hotel or car
             </Link>
             <Link className="ui-button ui-button--secondary" href="/manage-booking">

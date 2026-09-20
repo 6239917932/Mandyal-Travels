@@ -547,6 +547,41 @@
 .auth-portal-intro {
   max-width: 48rem;
 }
+.auth-portal-hero {
+  display: grid;
+  align-items: end;
+  grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 0.65fr);
+  gap: var(--space-8);
+}
+.auth-portal-overview {
+  display: grid;
+  margin-bottom: var(--space-6);
+  border: 1px solid #cddbeb;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, #0b315c, #175ca2);
+  box-shadow: 0 1rem 2.5rem rgb(5 40 78 / 14%);
+  color: #e7f3ff;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+.auth-portal-overview strong {
+  margin-bottom: var(--space-1);
+  color: white;
+  font-size: 1.05rem;
+}
+.auth-portal-overview span {
+  position: relative;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  padding-left: 1.25rem;
+}
+.auth-portal-overview span::before {
+  position: absolute;
+  left: 0;
+  color: #7ee6c7;
+  content: '✓';
+  font-weight: 900;
+}
 .auth-portal-intro h1 {
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   letter-spacing: -0.045em;
@@ -796,6 +831,10 @@
   font-weight: 700;
 }
 @media (max-width: 699px) {
+  .auth-portal-hero {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
   .auth-portal-grid {
     grid-template-columns: 1fr;
   }

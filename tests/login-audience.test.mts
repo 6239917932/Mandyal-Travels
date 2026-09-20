@@ -99,7 +99,9 @@ test('public sign-in presents four distinct portals with no administrator regist
   assert.match(route, /isReturnToAllowedForAudience\(loginAudience, returnTo\)/);
   assert.match(footer, /login\?portal=partner/);
   assert.match(footer, /login\?portal=corporate/);
-  assert.match(business, /login\?portal=corporate/);
+  assert.match(business, /permanentRedirect\('\/login#business'\)/);
+  assert.match(page, /id: 'business'/);
+  assert.match(page, /Business or agent sign in/);
 });
 
 test('unapproved supplier accounts are routed into applications, not partner operations', async () => {

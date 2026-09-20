@@ -40,6 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           'Traveller profile and preferences',
         ],
         href: '/login?portal=customer',
+        id: 'traveller',
         label: 'Traveller',
         monogram: 'TR',
         primaryLabel: 'Traveller sign in',
@@ -55,9 +56,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           'Applications, compliance, and settlements',
         ],
         href: '/login?portal=partner&returnTo=%2Fpartner',
+        id: 'partner',
         label: 'Hotel & car partner',
-        learnHref: '/partners',
-        learnLabel: 'Explore partner solutions',
         monogram: 'PR',
         primaryLabel: 'Partner sign in',
         secondaryActions: [
@@ -74,9 +74,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           'Corporate and travel-agent access',
         ],
         href: '/login?portal=corporate&returnTo=%2Fbusiness%2Fdashboard',
+        id: 'business',
         label: 'Business & agency',
-        learnHref: '/business',
-        learnLabel: 'Explore business travel',
         monogram: 'CO',
         primaryLabel: 'Business or agent sign in',
         secondaryActions: [
@@ -94,6 +93,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           'Audit and security controls',
         ],
         href: '/login?portal=admin&returnTo=%2Fadmin',
+        id: 'administration',
         label: 'Mandyal administration',
         monogram: 'AD',
         notice: 'No public registration. Authorized personnel only.',
@@ -105,18 +105,27 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
     return (
       <section className="auth-page auth-page--portal-hub">
-        <div className="auth-page__intro auth-portal-intro">
-          <p className="hotel-page__eyebrow">Mandyal Travels account access</p>
-          <h1>Choose your Mandyal workspace.</h1>
-          <p>
-            Select how you use Mandyal Travels. Each workspace has its own tools, permissions, and
-            protected sign-in flow.
-          </p>
+        <div className="auth-portal-hero">
+          <div className="auth-page__intro auth-portal-intro">
+            <p className="hotel-page__eyebrow">Mandyal Travels account access</p>
+            <h1>Everything you need, in the right workspace.</h1>
+            <p>
+              Book travel, operate hotel or car inventory, manage organization journeys, or run the
+              platform—all through one clear and secure account gateway.
+            </p>
+          </div>
+          <div className="auth-portal-overview" aria-label="Workspace overview">
+            <strong>One connected travel platform</strong>
+            <span>4 purpose-built workspaces</span>
+            <span>Separate tools and permissions</span>
+            <span>One place for access and support</span>
+          </div>
         </div>
         <div className="auth-portal-grid">
           {portals.map((portal) => (
             <Card
               className={`auth-portal-card auth-portal-card--${portal.audience}`}
+              id={portal.id}
               key={portal.audience}
             >
               <div className="auth-portal-card__heading">
@@ -151,11 +160,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   </Link>
                 ))}
               </div>
-              {'learnHref' in portal ? (
-                <Link className="auth-portal-card__learn" href={portal.learnHref}>
-                  {portal.learnLabel} <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
             </Card>
           ))}
         </div>

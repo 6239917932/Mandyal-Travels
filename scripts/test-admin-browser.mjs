@@ -56,7 +56,7 @@ const routes = walk('app/admin')
 
 async function navigate(route) {
   const response = await page.goto(`${origin}${route}`, {
-    waitUntil: 'networkidle',
+    waitUntil: 'domcontentloaded',
     timeout: 60000,
   });
   assert.equal(response.status(), 200, `${route}: HTTP ${response.status()}`);
@@ -78,7 +78,7 @@ async function expectMutation(trigger, urlPart, expected = 200) {
   await trigger();
   const response = await reply;
   assert.equal(response.status(), expected, `${urlPart}: ${await response.text()}`);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 }
 async function action(name, work) {
   try {
@@ -114,8 +114,9 @@ try {
   });
   const customerPage = await customer.newPage();
   await customerPage.goto(`${origin}/admin/contact-inquiries/audit-inquiry-2`, {
-    waitUntil: 'networkidle',
+    waitUntil: 'domcontentloaded',
   });
+  await customerPage.waitForURL(`${origin}/account`);
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
     pass: new URL(customerPage.url()).pathname === '/account',
@@ -166,8 +167,8 @@ try {
           .locator('button[type="submit"],button:not([type]),input[type="submit"]')
           .first();
         if (await submit.count()) {
-          await Promise.all([page.waitForLoadState('networkidle'), submit.click()]);
-          await page.waitForLoadState('networkidle');
+          await Promise.all([page.waitForLoadState('domcontentloaded'), submit.click()]);
+          await page.waitForLoadState('domcontentloaded');
           assert.doesNotMatch(
             await page.locator('body').innerText(),
             /Application error:|Internal Server Error/,
@@ -223,7 +224,7 @@ try {
           '/api/v1/admin/contact-inquiries/audit-inquiry-0',
         );
         await page.getByRole('status').filter({ hasText: 'Decision recorded.' }).waitFor();
-        await page.reload({ waitUntil: 'networkidle' });
+        await page.reload({ waitUntil: 'domcontentloaded' });
       }
       assert.equal(await page.locator('li').filter({ hasText: 'Isolated test:' }).count(), 5);
       const stale = await context.request.patch(
@@ -318,9 +319,7 @@ try {
       );
       await page.getByText('Decision: REJECTED', { exact: true }).waitFor();
       await navigate('/admin/partner-applications?status=REJECTED');
-      assert.ok(
-        await page.getByRole('link', { name: 'Audit Application PENDING', exact: true }).count(),
-      );
+      await page.getByRole('link', { name: 'Audit Application PENDING', exact: true }).waitFor();
     },
   );
   await action('Privacy review advances to the next action without full-page reload', async () => {
@@ -478,7 +477,7 @@ try {
       () => page.getByRole('button', { name: 'Publish', exact: true }).click(),
       '/api/v1/admin/hotel-reviews/audit-review',
     );
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     assert.match(await page.locator('#workspace-main').innerText(), /PUBLISHED/i);
   });
   await action('Mobile request page remains readable with reachable actions', async () => {
