@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -10,6 +11,7 @@ import {
 } from '../lib/pms/moduleRegistry.ts';
 
 test('PMS module names are unique and every live module has a destination', () => {
+  assert.equal(new Set(pmsModules.map((module) => module.code)).size, pmsModules.length);
   assert.equal(new Set(pmsModules.map((module) => module.name)).size, pmsModules.length);
   assert.ok(pmsModules.filter((module) => module.status === 'LIVE').every((module) => module.href));
   assert.ok(pmsModules.every((module) => getPmsModuleHref(module).startsWith('/partner/')));
@@ -18,6 +20,20 @@ test('PMS module names are unique and every live module has a destination', () =
     .map((module) => module.href);
   assert.equal(new Set(liveDestinations).size, liveDestinations.length);
   assert.equal(getPmsModule('RS')?.href, '/partner/pms/reservations');
+});
+
+test('every configured PMS destination is backed by an application page', () => {
+  for (const pmsModule of pmsModules) {
+    const href = getPmsModuleHref(pmsModule);
+    const directPage = `app${href}/page.tsx`;
+    const controlledModulePage = 'app/partner/pms/modules/[code]/page.tsx';
+
+    assert.ok(
+      fs.existsSync(directPage) ||
+        (href.startsWith('/partner/pms/modules/') && fs.existsSync(controlledModulePage)),
+      `${pmsModule.code} (${pmsModule.name}) points to a missing page: ${href}`,
+    );
+  }
 });
 
 test('every non-live PMS module resolves to its controlled workspace', () => {
