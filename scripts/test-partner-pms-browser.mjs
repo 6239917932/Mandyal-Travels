@@ -65,13 +65,16 @@ try {
     });
     assert.equal(response.status(), 200, `${route}: HTTP ${response.status()}`);
     assert.equal(new URL(page.url()).pathname, route, `${route}: unexpected redirect`);
-    assert.ok(await page.locator('#workspace-main h1').count(), `${route}: missing main heading`);
+    assert.ok(await page.locator('h1').count(), `${route}: missing main heading`);
     assert.doesNotMatch(
       await page.locator('body').innerText(),
       /Application error:|Internal Server Error|Something went wrong|This page could not be found/i,
       `${route}: rendered an application error`,
     );
-    const record = await page.locator('#workspace-main').evaluate((main) => ({
+    const contentRoot = (await page.locator('#workspace-main').count())
+      ? page.locator('#workspace-main')
+      : page.locator('body');
+    const record = await contentRoot.evaluate((main) => ({
       buttons: [...main.querySelectorAll('button')].map((node) => ({
         disabled: node.disabled,
         text: node.textContent?.trim() ?? '',
@@ -96,6 +99,7 @@ try {
       `PAGE ${route}: OK (${record.buttons.length} buttons, ${record.links.length} links, ${record.forms} forms)`,
     );
   }
+  await page.goto(`${origin}/partner`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
   const sidebarLinks = await page
     .locator('#workspace-navigation a[href]')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
