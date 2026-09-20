@@ -65,7 +65,11 @@ try {
     });
     assert.equal(response.status(), 200, `${route}: HTTP ${response.status()}`);
     assert.equal(new URL(page.url()).pathname, route, `${route}: unexpected redirect`);
-    assert.ok(await page.locator('h1').count(), `${route}: missing main heading`);
+    await page
+      .locator('h1')
+      .first()
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .catch(() => assert.fail(`${route}: missing main heading`));
     assert.doesNotMatch(
       await page.locator('body').innerText(),
       /Application error:|Internal Server Error|Something went wrong|This page could not be found/i,
