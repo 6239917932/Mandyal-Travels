@@ -56,7 +56,7 @@ const routes = walk('app/admin')
 
 async function navigate(route) {
   const response = await page.goto(`${origin}${route}`, {
-    waitUntil: 'networkidle',
+    waitUntil: 'domcontentloaded',
     timeout: 60000,
   });
   assert.equal(response.status(), 200, `${route}: HTTP ${response.status()}`);
@@ -78,7 +78,7 @@ async function expectMutation(trigger, urlPart, expected = 200) {
   await trigger();
   const response = await reply;
   assert.equal(response.status(), expected, `${urlPart}: ${await response.text()}`);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 }
 async function action(name, work) {
   try {
@@ -114,7 +114,7 @@ try {
   });
   const customerPage = await customer.newPage();
   await customerPage.goto(`${origin}/admin/contact-inquiries/audit-inquiry-2`, {
-    waitUntil: 'networkidle',
+    waitUntil: 'domcontentloaded',
   });
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
@@ -166,8 +166,8 @@ try {
           .locator('button[type="submit"],button:not([type]),input[type="submit"]')
           .first();
         if (await submit.count()) {
-          await Promise.all([page.waitForLoadState('networkidle'), submit.click()]);
-          await page.waitForLoadState('networkidle');
+          await Promise.all([page.waitForLoadState('domcontentloaded'), submit.click()]);
+          await page.waitForLoadState('domcontentloaded');
           assert.doesNotMatch(
             await page.locator('body').innerText(),
             /Application error:|Internal Server Error/,
