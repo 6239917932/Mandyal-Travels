@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
@@ -68,27 +69,33 @@ export default function Home() {
     <div className="home-page">
       <OrganizationStructuredData />
       <section aria-labelledby="home-search-title" className="home-search-hero">
+        <Image
+          alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
+          className="home-search-hero__image"
+          fill
+          priority
+          sizes="100vw"
+          src="/home/mandyal-travel-hero-v2.png"
+        />
+        <div aria-hidden="true" className="home-search-hero__shade" />
         <div className="home-container home-search-hero__content">
           <div className="home-search-hero__copy">
-            <p>Hotels and thoughtful trip planning</p>
-            <h1 id="home-search-title">A better place to find your stay.</h1>
+            <p>Hotels in Himachal and beyond</p>
+            <h1 id="home-search-title">Find your stay. We’ll help with the rest.</h1>
             <span>
-              Discover owner-managed stays, compare rooms and policies, and get human support from
-              first search through checkout.
+              Search trusted hotel inventory with clear room details, secure booking, and human
+              support when you need it.
             </span>
           </div>
 
-          <Link className="home-smart-planner" href="/trip-planner">
-            <span aria-hidden="true" className="home-smart-planner__icon">
-              ✦
-            </span>
-            <span className="home-smart-planner__prompt">Tell us where you want to go</span>
-            <strong>
-              Plan with Mandyal <span aria-hidden="true">→</span>
-            </strong>
-          </Link>
-
           <HomeBookingWidget />
+
+          <div className="home-search-hero__quick-links" aria-label="Helpful hotel links">
+            <Link href="/trip-planner">Plan a hotel trip</Link>
+            <Link href="/destinations">Explore destinations</Link>
+            <Link href="/manage-booking">Manage booking</Link>
+            <Link href="/login#partner">List your hotel</Link>
+          </div>
         </div>
       </section>
 
