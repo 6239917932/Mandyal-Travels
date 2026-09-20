@@ -36,10 +36,8 @@ export function TripPlanner() {
           checkInDate: form.get('checkInDate'),
           checkOutDate: form.get('checkOutDate'),
           destination: form.get('destination'),
-          destinationAirport: form.get('destinationAirport'),
           interests,
           origin: form.get('origin'),
-          originAirport: form.get('originAirport'),
         }),
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
@@ -96,20 +94,6 @@ export function TripPlanner() {
             required
             type="number"
           />
-          <div className="trip-planner__airports">
-            <Input
-              label="Origin airport (optional)"
-              maxLength={3}
-              name="originAirport"
-              placeholder="DEL"
-            />
-            <Input
-              label="Destination airport (optional)"
-              maxLength={3}
-              name="destinationAirport"
-              placeholder="DHM"
-            />
-          </div>
         </div>
         <fieldset className="trip-planner__interests">
           <legend>What interests you?</legend>

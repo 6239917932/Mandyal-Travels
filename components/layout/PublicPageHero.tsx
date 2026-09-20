@@ -5,6 +5,9 @@ interface PublicPageHeroProps {
   actions?: ReactNode;
   description: ReactNode;
   eyebrow: string;
+  imageAlt?: string;
+  imagePosition?: string;
+  imageSrc?: string;
   size?: 'default' | 'large';
   title: ReactNode;
 }
@@ -13,6 +16,9 @@ export function PublicPageHero({
   actions,
   description,
   eyebrow,
+  imageAlt = 'A welcoming Himalayan hotel setting',
+  imagePosition,
+  imageSrc = '/home/mandyal-travel-hero-v2.png',
   size = 'default',
   title,
 }: PublicPageHeroProps) {
@@ -23,12 +29,13 @@ export function PublicPageHero({
         .join(' ')}
     >
       <Image
-        alt="Himalayan mountain ridges, a winding road, and a hillside lodge at sunrise"
+        alt={imageAlt}
         className="public-page-hero__image"
         fill
         priority
         sizes="100vw"
-        src="/home/mandyal-travel-hero-v2.png"
+        src={imageSrc}
+        style={imagePosition ? { objectPosition: imagePosition } : undefined}
       />
       <div aria-hidden="true" className="public-page-hero__shade" />
       <div className="public-page-hero__content">

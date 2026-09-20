@@ -24,25 +24,33 @@ function formatCurrency(amount: number) {
 
 export default async function OffersPage() {
   const catalogue = await getCustomerOfferCatalogue();
+  const hotelOffers = catalogue.offers
+    .map((offer) => ({
+      ...offer,
+      products: offer.products.filter((product) => product.product === 'HOTEL'),
+    }))
+    .filter((offer) => offer.products.length > 0);
 
   return (
     <div className={`home-page ${styles.page}`}>
       <PublicPageHero
-        description="Only promotions currently available under Mandyal Travels campaign controls appear here. Eligibility and final pricing are always rechecked during booking."
-        eyebrow="Offers and promotions"
-        title="Find governed offers for your next journey."
+        description="Only eligible hotel promotions currently available under Mandyal Travels campaign controls appear here; final pricing is always rechecked during booking."
+        eyebrow="Hotel offers and promotions"
+        imageAlt="A refined Himalayan hotel room prepared for a guest"
+        imageSrc="/marketing/offers-hero-v1.png"
+        title="A better hotel stay, with a clear offer."
       />
 
       <section className="home-section">
         <div className="home-container">
           <div className="home-section__heading">
             <p className="home-section__eyebrow">Available now</p>
-            <h2 className="home-section__title">Choose an eligible travel service.</h2>
+            <h2 className="home-section__title">Choose an eligible hotel offer.</h2>
           </div>
 
-          {catalogue.offers.length > 0 ? (
+          {hotelOffers.length > 0 ? (
             <div className={styles.grid}>
-              {catalogue.offers.map((offer) => (
+              {hotelOffers.map((offer) => (
                 <Card className={styles.offer} key={offer.code}>
                   <div className={styles.offerHeading}>
                     <span className={styles.code}>{offer.code}</span>
@@ -81,7 +89,7 @@ export default async function OffersPage() {
           ) : (
             <Card className={styles.empty}>
               <h3>No governed offers are available right now.</h3>
-              <p>You can still compare live travel options without entering a promotion code.</p>
+              <p>You can still compare available hotel stays without entering a promotion code.</p>
               <Link className="home-link-button home-link-button--primary" href="/hotels">
                 Search hotels
               </Link>
@@ -95,9 +103,9 @@ export default async function OffersPage() {
             </p>
           ) : null}
           <p className={styles.notice} role="note">
-            Promotion codes do not reserve inventory or guarantee a discount. Product eligibility,
-            booking value, availability, campaign status, and the final payable price are validated
-            again before payment.
+            Promotion codes do not reserve rooms or guarantee a discount. Hotel eligibility, stay
+            value, availability, campaign status, and the final payable price are validated again
+            before payment.
           </p>
         </div>
       </section>

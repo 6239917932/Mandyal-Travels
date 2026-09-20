@@ -83,6 +83,6 @@ test('public projection excludes campaign operations and stale hard-coded claims
     /createdByUserId|updatedByUserId|campaignId|actorUserId|reason/,
   );
   assert.doesNotMatch(pageSource, /STAYMORE|FLYSMART|ROADTRIP|12%|10%|8%/);
-  assert.match(pageSource, /final pricing are always rechecked during booking/);
+  assert.match(pageSource, /final pricing is always rechecked during booking/);
   assert.doesNotMatch(pageSource, /fetch\(|method=|<form/);
 });

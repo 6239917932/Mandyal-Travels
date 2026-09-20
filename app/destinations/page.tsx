@@ -20,8 +20,10 @@ export default async function DestinationsPage() {
   return (
     <main className="destination-index">
       <PublicPageHero
-        description="Explore human-reviewed destination context, then confirm current availability, timing, and prices through the live travel search journeys."
-        eyebrow="Reviewed travel inspiration"
+        description="Explore human-reviewed destination context, then confirm current hotel availability and prices before booking."
+        eyebrow="Himachal hotel inspiration"
+        imageAlt="A Himalayan hill town and boutique hotels at sunrise"
+        imageSrc="/marketing/destinations-hero-v1.png"
         title="Destination guides"
       />
       <section aria-label="Published destination guides" className="destination-index__grid">

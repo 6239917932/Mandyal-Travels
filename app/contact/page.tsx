@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { ContactInquiryForm } from '@/components/contact/ContactInquiryForm';
 import { siteConfig } from '@/config/site';
@@ -30,6 +31,15 @@ export default function ContactPage() {
   return (
     <div className="contact-page">
       <section className="contact-hero">
+        <Image
+          alt="A Mandyal Travels support advisor helping a customer"
+          className="contact-hero__image"
+          fill
+          priority
+          sizes="100vw"
+          src="/marketing/contact-hero-v1.png"
+        />
+        <div aria-hidden="true" className="contact-hero__shade" />
         <div className="home-container contact-hero__grid">
           <div>
             <p className="home-section__eyebrow">Contact Mandyal Travels</p>

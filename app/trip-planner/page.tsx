@@ -23,9 +23,11 @@ export default async function TripPlannerPage() {
   return (
     <div>
       <PublicPageHero
-        description="Create an editable itinerary, then verify real availability and final prices in each live product search."
-        eyebrow="Explainable guided planning"
-        title="Build a trip around what matters to you."
+        description="Create an editable hotel-stay plan, then confirm real room availability and the final price in hotel search."
+        eyebrow="Hotel-first guided planning"
+        imageAlt="Travellers planning a Himalayan hotel stay beside a mountain view"
+        imageSrc="/marketing/trip-planner-hero-v1.png"
+        title="Plan a stay around what matters to you."
       />
       <div className="trip-planner-page">
         <TripPlanner />

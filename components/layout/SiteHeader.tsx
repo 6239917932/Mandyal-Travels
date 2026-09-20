@@ -46,31 +46,33 @@ export function SiteHeader({ user }: SiteHeaderProps) {
           </button>
         ) : null}
 
-        <nav
-          aria-label="Primary navigation"
-          className={`site-navigation ${isMenuOpen ? 'site-navigation--open' : ''}`}
-          id="primary-navigation"
-        >
-          {siteConfig.navigation.map((item) => (
+        {!isWorkspacePath ? (
+          <nav
+            aria-label="Primary navigation"
+            className={`site-navigation ${isMenuOpen ? 'site-navigation--open' : ''}`}
+            id="primary-navigation"
+          >
+            {siteConfig.navigation.map((item) => (
+              <Link
+                aria-current={isActivePage(item.href) ? 'page' : undefined}
+                className="site-navigation__link"
+                href={item.href}
+                key={item.href}
+                onClick={closeMenu}
+              >
+                {item.label}
+              </Link>
+            ))}
+
             <Link
-              aria-current={isActivePage(item.href) ? 'page' : undefined}
-              className="site-navigation__link"
-              href={item.href}
-              key={item.href}
+              className="site-navigation__cta"
+              href={user ? getAccountHomePath(user.role) : '/login'}
               onClick={closeMenu}
             >
-              {item.label}
+              {user ? `Hi, ${user.firstName}` : 'Sign in'}
             </Link>
-          ))}
-
-          <Link
-            className="site-navigation__cta"
-            href={user ? getAccountHomePath(user.role) : '/login'}
-            onClick={closeMenu}
-          >
-            {user ? `Hi, ${user.firstName}` : 'Sign in'}
-          </Link>
-        </nav>
+          </nav>
+        ) : null}
       </div>
     </header>
   );
