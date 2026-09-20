@@ -2091,19 +2091,29 @@
   margin: var(--space-5) 0;
 }
 
+.partner-inventory__metrics > .ui-card,
 .partner-inventory__metrics div {
   display: grid;
-  gap: var(--space-1);
+  align-content: start;
+  gap: var(--space-2);
 }
 
-.partner-inventory__metrics span,
+.partner-inventory__metrics > .ui-card span,
+.partner-inventory__metrics div span,
 .partner-inventory__room small {
   color: var(--color-text-muted);
   font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  line-height: 1.4;
 }
 
-.partner-inventory__metrics strong {
-  font-size: 1.25rem;
+.partner-inventory__metrics > .ui-card strong,
+.partner-inventory__metrics div strong {
+  color: var(--color-brand-950);
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
 }
 
 .partner-inventory__available {
