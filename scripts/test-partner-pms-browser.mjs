@@ -36,7 +36,9 @@ const pmsRoutes = walk('app/partner/pms')
     `/${file
       .replaceAll('\\', '/')
       .replace(/^app\//, '')
-      .replace(/\/page.tsx$/, '')}`.replace('/[code]', '/pg'),
+      .replace(/\/page.tsx$/, '')}`
+      .replace('/[code]', '/pg')
+      .replace('/[confirmationCode]', '/AUDIT-HOTEL-BOOKING'),
   );
 const routes = [
   '/partner',

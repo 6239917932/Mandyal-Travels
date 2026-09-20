@@ -270,66 +270,58 @@ body {
 
 /* Public marketplace refresh: a light, product-led travel surface using Mandyal branding. */
 .home-search-hero {
-  min-height: clamp(37rem, 70vh, 45rem);
-  color: var(--color-text-primary);
-  background:
-    radial-gradient(circle at 8% 24%, rgb(68 142 255 / 18%), transparent 27rem),
-    radial-gradient(circle at 90% 18%, rgb(244 137 103 / 16%), transparent 27rem),
-    radial-gradient(circle at 72% 90%, rgb(117 86 207 / 12%), transparent 23rem),
-    linear-gradient(135deg, #f5f9ff 0%, #fbfaff 48%, #fff8f4 100%);
+  min-height: clamp(35rem, 68vh, 43rem);
+  color: #fff;
+  background: #0c2b47;
+  isolation: isolate;
 }
 
-.home-search-hero::after {
+.home-search-hero__image {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center 47%;
+}
+
+.home-search-hero__shade {
   position: absolute;
-  z-index: -1;
-  content: '';
-  pointer-events: none;
-}
-
-.home-search-hero::after {
-  top: 7rem;
-  left: 7%;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: #7aa8ff;
-  box-shadow:
-    12rem 8rem 0 rgb(117 86 207 / 42%),
-    48rem 1rem 0 rgb(237 125 26 / 38%),
-    70rem 13rem 0 rgb(37 99 201 / 28%);
+  z-index: -2;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(5 23 40 / 52%) 0%, rgb(5 26 47 / 26%) 42%, rgb(4 23 42 / 64%) 100%),
+    linear-gradient(90deg, rgb(4 25 46 / 42%), transparent 55%, rgb(4 25 46 / 20%));
 }
 
 .home-search-hero__content {
   position: relative;
   z-index: 1;
-  gap: 1rem;
-  padding: clamp(3rem, 6vw, 5.25rem) 0 clamp(3.5rem, 7vw, 5.75rem);
+  gap: 1.2rem;
+  padding: clamp(2.4rem, 5vw, 4rem) 0 clamp(3rem, 6vw, 4.5rem);
 }
 
 .home-search-hero__copy {
-  max-width: 58rem;
-  margin-inline: auto;
-  text-align: center;
-  text-shadow: none;
+  max-width: 49rem;
+  margin-inline: 0;
+  text-align: left;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 42%);
 }
 
 .home-search-hero__copy p {
-  color: #376bd4;
+  color: #ffb04f;
 }
 
 .home-search-hero__copy h1 {
-  max-width: 58rem;
-  margin-top: 0.75rem;
-  color: #111b34;
-  font-size: clamp(2.35rem, 4.5vw, 4.25rem);
-  line-height: 1.02;
+  max-width: 49rem;
+  margin-top: 0.55rem;
+  color: #fff;
+  font-size: clamp(2.2rem, 4.1vw, 3.8rem);
+  line-height: 1.04;
 }
 
 .home-search-hero__copy span {
-  max-width: 45rem;
-  margin: 0.9rem auto 0;
-  color: #536177;
-  font-size: clamp(0.98rem, 1.45vw, 1.12rem);
+  max-width: 43rem;
+  margin: 0.8rem 0 0;
+  color: rgb(255 255 255 / 88%);
+  font-size: clamp(0.96rem, 1.35vw, 1.08rem);
   line-height: 1.6;
 }
 
@@ -384,10 +376,11 @@ body {
 
 .home-booking-widget {
   overflow: visible;
-  border-color: rgb(168 183 211 / 52%);
-  border-radius: 1.55rem;
-  background: rgb(255 255 255 / 96%);
-  box-shadow: 0 24px 58px rgb(30 51 96 / 16%);
+  margin-top: 0.35rem;
+  border-color: rgb(255 255 255 / 64%);
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 26px 65px rgb(4 22 42 / 34%);
 }
 
 .home-booking-widget__tabs {
@@ -395,8 +388,8 @@ body {
   flex-wrap: wrap;
   gap: 0.45rem;
   border-bottom-color: #e5eaf3;
-  border-radius: 1.55rem 1.55rem 0 0;
-  background: rgb(255 255 255 / 92%);
+  border-radius: 0.9rem 0.9rem 0 0;
+  background: #fff;
   padding: 0.7rem 0.85rem;
 }
 
@@ -405,7 +398,7 @@ body {
   min-height: 3.15rem;
   flex: 0 1 auto;
   border: 1px solid #dce4ef;
-  border-radius: 999px;
+  border-radius: 0.65rem;
   padding: 0.35rem 1rem;
   color: #344056;
 }
@@ -426,10 +419,43 @@ body {
 }
 
 .home-booking-widget__tabs button.is-active {
-  border-color: #2f68eb;
-  background: linear-gradient(135deg, #2e69ed, #526ff0);
+  border-color: #1767ad;
+  background: #1767ad;
   color: #fff;
   box-shadow: 0 8px 18px rgb(47 104 235 / 20%);
+}
+
+.home-search-hero__quick-links {
+  display: flex;
+  width: min(60rem, calc(100% - 2rem));
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  align-self: center;
+  overflow: hidden;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 14px 34px rgb(4 22 42 / 24%);
+}
+
+.home-search-hero__quick-links a {
+  flex: 1 1 12rem;
+  border-right: 1px solid #e0e7ef;
+  padding: 0.9rem 1.15rem;
+  color: #173c61;
+  font-size: 0.82rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+.home-search-hero__quick-links a:last-child {
+  border-right: 0;
+}
+
+.home-search-hero__quick-links a:hover,
+.home-search-hero__quick-links a:focus-visible {
+  background: #edf5fc;
+  color: #0d5b9e;
 }
 
 .home-booking-widget__tabs small {
