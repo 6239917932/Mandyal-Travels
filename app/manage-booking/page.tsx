@@ -9,9 +9,11 @@ export default function ManageBookingPage() {
   return (
     <div>
       <PublicPageHero
-        description="Enter the booking reference from your confirmation to review and service your journey securely."
-        eyebrow="Your trip"
-        title="Manage your booking"
+        description="Enter the reference from your hotel confirmation to review your stay and available servicing options securely."
+        eyebrow="Your hotel stay"
+        imageAlt="An organised hotel reception prepared to assist a guest"
+        imageSrc="/marketing/manage-booking-hero-v1.png"
+        title="Manage your hotel booking"
       />
       <ManageBookingLookup />
     </div>

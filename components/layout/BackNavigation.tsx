@@ -6,7 +6,22 @@ export function BackNavigation() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (pathname === '/') return null;
+  const isWorkspacePath =
+    /^\/(account|admin|agent|partner)(\/|$)/.test(pathname) ||
+    /^\/business\/(audit|dashboard|members|reports|requests|statements|support)(\/|$)/.test(
+      pathname,
+    );
+  const isPrimaryPublicPage = [
+    '/',
+    '/contact',
+    '/destinations',
+    '/login',
+    '/manage-booking',
+    '/offers',
+    '/trip-planner',
+  ].includes(pathname);
+
+  if (isWorkspacePath || isPrimaryPublicPage) return null;
 
   function goBack() {
     const previousPage = document.referrer;
