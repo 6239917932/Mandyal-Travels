@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     'India travel booking',
   ],
   title: {
-    default: 'Mandyal Travels | Himachal Hotels, Cars and Trip Planning',
+    default: 'Mandyal Travels | Himachal Hotels and Trip Planning',
     template: '%s | Mandyal Travels',
   },
   twitter: {

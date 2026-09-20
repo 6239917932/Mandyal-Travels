@@ -20,17 +20,17 @@ test('public navigation removes duplicate product links while the footer preserv
   );
   assert.deepEqual(
     siteConfig.footerNavigation.slice(0, 4).map((item) => item.label),
-    ['Hotels', 'Cars', 'Flights — coming soon', 'Buses — coming soon'],
+    ['Hotels', 'Cars — coming soon', 'Flights — coming soon', 'Buses — coming soon'],
   );
 });
 
-test('home widget launches hotels and cars first and labels flight and bus honestly', async () => {
+test('home widget launches hotels first and labels future products honestly', async () => {
   const widget = await readFile(
     new URL('../components/home/HomeBookingWidget.tsx', import.meta.url),
     'utf8',
   );
   assert.match(widget, /available: true, href: '\/hotels'/);
-  assert.match(widget, /available: true, href: '\/cars'/);
+  assert.match(widget, /available: false, href: '\/cars'/);
   assert.match(widget, /available: false, href: '\/flights'/);
   assert.match(widget, /available: false, href: '\/buses'/);
   assert.match(widget, /No demonstration fare will be presented as live inventory/);

@@ -13,7 +13,7 @@ const PRODUCTS: ReadonlyArray<{
   value: BookingProduct;
 }> = [
   { available: true, href: '/hotels', label: 'Hotels', value: 'hotels' },
-  { available: true, href: '/cars', label: 'Cars', value: 'cars' },
+  { available: false, href: '/cars', label: 'Cars', value: 'cars' },
   { available: false, href: '/flights', label: 'Flights', value: 'flights' },
   { available: false, href: '/buses', label: 'Buses', value: 'buses' },
 ];
@@ -55,8 +55,6 @@ export function HomeBookingWidget() {
   const [activeProduct, setActiveProduct] = useState<BookingProduct>('hotels');
   const [hotelCheckIn, setHotelCheckIn] = useState(today);
   const [hotelCheckOut, setHotelCheckOut] = useState(offsetLocalCalendarDate(today, 1));
-  const [carPickup, setCarPickup] = useState(today);
-  const [carDropoff, setCarDropoff] = useState(offsetLocalCalendarDate(today, 1));
   const active = PRODUCTS.find((product) => product.value === activeProduct) ?? PRODUCTS[0];
 
   return (
@@ -129,39 +127,6 @@ export function HomeBookingWidget() {
               </label>
               <input name="children" type="hidden" value="0" />
               <input name="rooms" type="hidden" value="1" />
-            </>
-          ) : null}
-
-          {activeProduct === 'cars' ? (
-            <>
-              <Field label="Pickup" name="pickupLocation" placeholder="Mandi" />
-              <Field label="Drop-off" name="dropoffLocation" placeholder="Manali" />
-              <Field
-                label="Pickup date"
-                min={today}
-                name="pickupDate"
-                onChange={(event) => {
-                  const nextPickup = event.target.value;
-                  setCarPickup(nextPickup);
-                  if (carDropoff <= nextPickup) {
-                    setCarDropoff(offsetLocalCalendarDate(nextPickup, 1));
-                  }
-                }}
-                type="date"
-                value={carPickup}
-              />
-              <Field
-                label="Drop-off date"
-                min={offsetLocalCalendarDate(carPickup, 1)}
-                name="dropoffDate"
-                onChange={(event) => setCarDropoff(event.target.value)}
-                type="date"
-                value={carDropoff}
-              />
-              <input name="pickupTime" type="hidden" value="10:00" />
-              <input name="dropoffTime" type="hidden" value="10:00" />
-              <input name="drivers" type="hidden" value="1" />
-              <input name="rentalMode" type="hidden" value="self-drive" />
             </>
           ) : null}
 

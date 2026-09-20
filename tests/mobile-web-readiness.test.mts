@@ -85,11 +85,11 @@ test('installed mobile experience exposes only safe customer shortcuts', () => {
 
   assert.deepEqual(
     shortcuts.map((shortcut) => shortcut.url),
-    ['/hotels', '/cars', '/trip-planner', '/manage-booking'],
+    ['/hotels', '/trip-planner', '/manage-booking'],
   );
   assert.ok(shortcuts.every((shortcut) => shortcut.name && shortcut.short_name));
   assert.ok(shortcuts.every((shortcut) => shortcut.url.startsWith('/')));
   assert.ok(shortcuts.every((shortcut) => !shortcut.url.startsWith('/admin')));
   assert.ok(shortcuts.every((shortcut) => !shortcut.url.startsWith('/partner')));
-  assert.ok(shortcuts.every((shortcut) => !['/flights', '/buses'].includes(shortcut.url)));
+  assert.ok(shortcuts.every((shortcut) => !['/cars', '/flights', '/buses'].includes(shortcut.url)));
 });

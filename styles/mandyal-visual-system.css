@@ -279,22 +279,11 @@ body {
     linear-gradient(135deg, #f5f9ff 0%, #fbfaff 48%, #fff8f4 100%);
 }
 
-.home-search-hero::before,
 .home-search-hero::after {
   position: absolute;
   z-index: -1;
   content: '';
   pointer-events: none;
-}
-
-.home-search-hero::before {
-  top: 11rem;
-  right: -7rem;
-  width: 64%;
-  height: 21rem;
-  border-top: 2px dashed rgb(73 112 244 / 25%);
-  border-radius: 50%;
-  transform: rotate(-7deg);
 }
 
 .home-search-hero::after {
@@ -876,12 +865,6 @@ body {
 
   .home-search-hero {
     min-height: auto;
-  }
-
-  .home-search-hero::before {
-    top: 13rem;
-    right: -11rem;
-    width: 125%;
   }
 
   .home-search-hero__content {

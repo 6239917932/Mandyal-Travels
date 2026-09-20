@@ -6,7 +6,7 @@ import { siteConfig } from '@/config/site';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
 const description =
-  'Learn about Mandyal Travels Services Private Limited, a Himachal Pradesh travel company building transparent hotel, car and trip-planning services.';
+  'Learn about Mandyal Travels Services Private Limited, a Himachal Pradesh travel company launching transparent hotel booking and property-management services.';
 
 export const metadata = createPublicMetadata({
   absoluteTitle: true,
@@ -34,8 +34,8 @@ export default function AboutPage() {
             </div>
             <p className="home-section__description">
               Mandyal Travels is the customer-facing brand of {siteConfig.legalName}. The company
-              was incorporated in India on 17 June 2026 and is developing hotel discovery, car
-              rentals, guided trip planning and partner-management services.
+              was incorporated in India on 17 June 2026 and is developing hotel discovery, booking,
+              guided trip planning and hotel property-management services.
             </p>
           </div>
 

@@ -180,11 +180,8 @@ test('car result sorting is deterministic for price and vehicle name ties', () =
   );
 });
 
-test('car results keep error, source-empty, and filter-empty states distinct', () => {
+test('public car route stays unavailable until the future launch', () => {
   const page = readFileSync('app/cars/page.tsx', 'utf8');
-  assert.match(page, /\{!error \? \(/);
-  assert.match(page, /availableOffers\.length > 0/);
-  assert.match(page, /No cars match the active filters\./);
-  assert.match(page, /Clear filters/);
-  assert.match(page, /No verified cars are available for this search\./);
+  assert.match(page, /MarketplaceComingSoon product="Cars"/);
+  assert.doesNotMatch(page, /CarSearchForm|CarResultsFilters/);
 });

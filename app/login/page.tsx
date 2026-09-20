@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         audience: 'customer',
         description: 'Book personal travel and keep every journey in one secure account.',
         features: [
-          'Hotel and car bookings',
+          'Hotel bookings and stay management',
           'Trips, confirmations, and support',
           'Traveller profile and preferences',
         ],
@@ -49,7 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       },
       {
         audience: 'partner',
-        description: 'Operate an approved hotel, property, car fleet, or supplier account.',
+        description: 'Operate an approved hotel or property-management account.',
         features: [
           'PMS, listings, rates, and inventory',
           'Reservations and guest operations',
@@ -57,7 +57,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         ],
         href: '/login?portal=partner&returnTo=%2Fpartner',
         id: 'partner',
-        label: 'Hotel & car partner',
+        label: 'Hotel partner',
         monogram: 'PR',
         primaryLabel: 'Partner sign in',
         secondaryActions: [
@@ -110,7 +110,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <p className="hotel-page__eyebrow">Mandyal Travels account access</p>
             <h1>Everything you need, in the right workspace.</h1>
             <p>
-              Book travel, operate hotel or car inventory, manage organization journeys, or run the
+              Book hotel stays, operate property inventory, manage organization journeys, or run the
               platform—all through one clear and secure account gateway.
             </p>
           </div>
@@ -168,8 +168,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <p className="hotel-page__eyebrow">Account assistance</p>
             <h2 id="login-help-title">Not sure where to sign in?</h2>
             <p>
-              Travellers use the personal account. Hotel and car owners use Partner. Companies and
-              travel agencies use Business &amp; Agency.
+              Travellers use the personal account. Hotel owners use Partner. Companies and travel
+              agencies use Business &amp; Agency.
             </p>
           </div>
           <div className="auth-portal-help__links">
@@ -204,7 +204,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       title: 'Customer login',
     },
     partner: {
-      description: 'Sign in to apply or manage your approved hotel or car business.',
+      description: 'Sign in to apply or manage your approved hotel business.',
       eyebrow: 'Supplier network',
       title: 'Partner login',
     },

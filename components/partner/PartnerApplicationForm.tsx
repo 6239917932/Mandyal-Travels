@@ -23,7 +23,7 @@ export function PartnerApplicationForm({
   const router = useRouter();
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
-  const [partnerType, setPartnerType] = useState<PartnerAgreementType>('HOTEL');
+  const partnerType: PartnerAgreementType = 'HOTEL';
   const agreement = PARTNER_AGREEMENTS[partnerType];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -58,20 +58,13 @@ export function PartnerApplicationForm({
     <form className="auth-form ui-card ui-card--padded" onSubmit={submit}>
       <div className="auth-form__row">
         <Input label="Business name" maxLength={120} name="businessName" required />
-        <label className="ui-field">
+        <div className="ui-field">
           <span className="ui-field__label">Supplier channel</span>
-          <select
-            className="ui-input"
-            name="partnerType"
-            onChange={(event) => setPartnerType(event.target.value as PartnerAgreementType)}
-            required
-            value={partnerType}
-          >
-            <option value="HOTEL">Hotel owner or property manager</option>
-            <option value="CAR">Car owner or fleet operator</option>
-            <option value="BUS">Bus operator</option>
-          </select>
-        </label>
+          <input name="partnerType" type="hidden" value="HOTEL" />
+          <div className="ui-input" aria-readonly="true">
+            Hotel owner or property manager
+          </div>
+        </div>
       </div>
       <div className="auth-form__row">
         <Input
@@ -120,24 +113,17 @@ export function PartnerApplicationForm({
       </div>
       <div className="auth-form__row">
         <Input
-          label={`${partnerType === 'HOTEL' ? 'Public liability / business' : 'Vehicle'} insurance policy number${partnerType === 'HOTEL' ? ' (if applicable)' : ''}`}
+          label="Public liability / business insurance policy number (if applicable)"
           maxLength={80}
           name="insurancePolicyNumber"
-          required={partnerType !== 'HOTEL'}
         />
         <Input
-          label={`Insurance provider${partnerType === 'HOTEL' ? ' (if applicable)' : ''}`}
+          label="Insurance provider (if applicable)"
           maxLength={120}
           name="insuranceProvider"
-          required={partnerType !== 'HOTEL'}
         />
       </div>
-      <Input
-        label="Insurance expiry (if applicable)"
-        name="insuranceExpiresOn"
-        required={partnerType !== 'HOTEL'}
-        type="date"
-      />
+      <Input label="Insurance expiry (if applicable)" name="insuranceExpiresOn" type="date" />
       <div className="auth-form__row">
         <Input label="Phone number" maxLength={30} name="contactPhone" required type="tel" />
         <Input label="Operating city" maxLength={100} name="city" required />
@@ -179,7 +165,7 @@ export function PartnerApplicationForm({
           maxLength={600}
           minLength={20}
           name="inventorySummary"
-          placeholder="Example: 28-room hotel in Jaipur, or 12 self-drive cars operating from Delhi."
+          placeholder="Example: 28-room hotel in Mandi with restaurant, parking, and mountain-view rooms."
           required
         />
       </label>
@@ -219,8 +205,8 @@ export function PartnerApplicationForm({
       <label className="supplier-form__checkbox">
         <input name="ackOperatingRecords" required type="checkbox" />
         <span>
-          I will keep all applicable licences, permits, registrations, insurance, tax, safety,
-          vehicle, driver and operating records valid and produce them promptly when required by
+          I will keep all applicable hotel licences, permits, registrations, insurance, tax, safety,
+          fire, food-service, and operating records valid and produce them promptly when required by
           Mandyal Travels or a competent authority.
         </span>
       </label>
@@ -248,8 +234,8 @@ export function PartnerApplicationForm({
       <label className="supplier-form__checkbox">
         <input name="ackServiceResponsibility" required type="checkbox" />
         <span>
-          I accept responsibility for safely and lawfully delivering the accommodation or transport
-          service and for acts and omissions within the supplier&apos;s control.
+          I accept responsibility for safely and lawfully delivering the accommodation service and
+          for acts and omissions within the supplier&apos;s control.
         </span>
       </label>
       {error ? (

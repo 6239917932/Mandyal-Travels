@@ -4,7 +4,6 @@ import test from 'node:test';
 
 const publicNavigationPages = [
   'hotels',
-  'cars',
   'trip-planner',
   'destinations',
   'offers',
@@ -41,14 +40,16 @@ test('retired public business and partner pages preserve permanent workspace red
   assert.match(partners, /permanentRedirect\('\/login#partner'\)/);
 });
 
-test('future flight and bus pages inherit the shared hero through the launch-status component', async () => {
-  const [component, flights, buses] = await Promise.all([
+test('future car, flight, and bus pages inherit the shared hero through the launch-status component', async () => {
+  const [component, cars, flights, buses] = await Promise.all([
     readFile(new URL('../components/common/MarketplaceComingSoon.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/cars/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/flights/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/buses/page.tsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(component, /<PublicPageHero/);
+  assert.match(cars, /MarketplaceComingSoon/);
   assert.match(flights, /MarketplaceComingSoon/);
   assert.match(buses, /MarketplaceComingSoon/);
 });

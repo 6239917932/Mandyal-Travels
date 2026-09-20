@@ -25,10 +25,10 @@ export const siteConfig = {
   ] satisfies NavigationItem[],
   footerNavigation: [
     { href: '/hotels', label: 'Hotels' },
-    { href: '/cars', label: 'Cars' },
+    { href: '/cars', label: 'Cars — coming soon' },
     { href: '/flights', label: 'Flights — coming soon' },
     { href: '/buses', label: 'Buses — coming soon' },
-    { href: '/login#partner', label: 'List your hotel or car' },
+    { href: '/login#partner', label: 'List your hotel' },
     { href: '/manage-booking', label: 'Manage booking' },
   ] satisfies NavigationItem[],
   officeLocations: [

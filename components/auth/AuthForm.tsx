@@ -256,7 +256,7 @@ export function AuthForm({
           {isRegister
             ? 'Already have an account?'
             : loginAudience === 'partner'
-              ? 'New hotel or car partner?'
+              ? 'New hotel partner?'
               : loginAudience === 'corporate'
                 ? 'Setting up company travel?'
                 : 'New to Mandyal Travels?'}{' '}
