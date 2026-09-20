@@ -95,11 +95,13 @@ one-shot Railway services instead of sharing the web process:
 | Safe maintenance      | `deploy/railway.maintenance-worker.json`  | Hourly at minute 17 | `PUBLIC_APP_ORIGIN`, `AUTOPILOT_WORKER_SECRET`    |
 | Search maintenance    | `deploy/railway.search-worker.json`       | Daily at 02:43      | `PUBLIC_APP_ORIGIN`, `AUTOPILOT_WORKER_SECRET`    |
 
-Create each service from the same repository and select its matching config-file path in Railway.
-Reference the existing secrets as shared variables; never copy their values into source control or a
-browser message. Keep restart policy set to `NEVER`, because each command is intentionally one-shot
-and Railway Cron starts the next scheduled execution. After deployment, verify one successful run of
-each job in `/admin/automation` before treating the corresponding launch gate as ready. Alert on any
+Create each service from the same repository. If Railway exposes a config-file-path control, select
+the matching reviewed file. If that control is unavailable, apply the file's start command, UTC cron
+schedule, and restart policy manually and record the service ID as deployment evidence. Reference the
+existing secrets as shared variables; never copy their values into source control or a browser
+message. Keep restart policy set to `NEVER`, because each command is intentionally one-shot and
+Railway Cron starts the next scheduled execution. After deployment, verify one successful run of each
+job in `/admin/automation` before treating the corresponding launch gate as ready. Alert on any
 non-zero exit, repeated HTTP 409 lease conflict, or terminal failure.
 
 Do not attach payment, Hotelbeds, payout, maps, KYC, media, or messaging-provider credentials to

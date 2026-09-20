@@ -1,4 +1,4 @@
-# Railway production status — updated 13 September 2026
+# Railway production status — updated 21 September 2026
 
 ## Verified platform state
 
@@ -19,10 +19,10 @@
 
 ## Quality evidence
 
-- 775 domain and security tests pass.
-- All 108 SQLite migrations and the 137-model PostgreSQL parity contract pass.
-- The production build completes with 265 application routes.
-- Static verification confirms 543 internal links resolve to registered application routes.
+- 830 domain and security tests pass.
+- All 115 SQLite migrations and the 150-model PostgreSQL parity contract pass.
+- The production build completes with 279 application routes.
+- Static verification confirms 567 internal links resolve to registered application routes.
 - Twelve focused mobile-readiness, mobile-workspace, registry, and provider-gate tests pass.
 - The additive PMS registry contains 51 unique workspaces: 47 live, 3 controlled foundations, and
   1 clearly labelled planned workspace. Existing modules remain available; unfinished or
@@ -34,6 +34,21 @@
 - Restaurant POS, kitchen tickets, QR ordering, captain/mobile service, split billing, expense and
   payroll registers, provisional P&L, and reviewed Tally XML export are live governed workflows.
 - Next.js 16.3.4 was merged only after the refreshed branch passed the complete CI matrix.
+
+## Production scheduler activation — 21 September 2026
+
+- Railway service `Notification Worker` is ready on a five-minute UTC schedule. Its first eligible
+  production run completed successfully.
+- Railway service `Maintenance Worker` is ready on an hourly schedule at minute 17 UTC.
+- Railway service `Search Projection Worker` is ready on a daily schedule at 02:43 UTC.
+- Each worker runs the reviewed one-shot command with restart policy disabled and references the
+  existing production origin and worker secret; secret values are not duplicated in source control.
+- The three services were built from merged pull request #258. The full local release check passed
+  after activation: formatting, lint, TypeScript, API contract, route map, 830 tests, migration and
+  PostgreSQL parity checks, deployment contract, launch register, and the production build.
+- Maintenance and search remain pending operational run evidence at their next scheduled windows;
+  readiness means their reviewed deployment is available, not that external commercial gates have
+  been approved.
 
 ## Live hotel and car acceptance — 13 September 2026
 
