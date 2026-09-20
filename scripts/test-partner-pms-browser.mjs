@@ -76,27 +76,36 @@ try {
         type: node.type,
       })),
       forms: main.querySelectorAll('form').length,
-      headings: [...main.querySelectorAll('h1,h2,h3')].map((node) => node.textContent?.trim() ?? ''),
+      headings: [...main.querySelectorAll('h1,h2,h3')].map(
+        (node) => node.textContent?.trim() ?? '',
+      ),
       links: [...main.querySelectorAll('a[href]')].map((node) => ({
         href: node.getAttribute('href'),
         text: node.textContent?.trim() ?? '',
       })),
     }));
-    assert.equal(record.links.some((link) => link.href === '#'), false, `${route}: placeholder link`);
+    assert.equal(
+      record.links.some((link) => link.href === '#'),
+      false,
+      `${route}: placeholder link`,
+    );
     results.pages.push({ pass: true, route, ...record });
     console.log(
       `PAGE ${route}: OK (${record.buttons.length} buttons, ${record.links.length} links, ${record.forms} forms)`,
     );
   }
-  const sidebarLinks = await page.locator('#workspace-navigation a[href]').evaluateAll((links) =>
-    links.map((link) => link.getAttribute('href')),
-  );
+  const sidebarLinks = await page
+    .locator('#workspace-navigation a[href]')
+    .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
   const duplicates = sidebarLinks.filter((href, index) => sidebarLinks.indexOf(href) !== index);
   assert.deepEqual(duplicates, [], `Duplicate PMS sidebar destinations: ${duplicates.join(', ')}`);
   assert.equal(results.errors.length, 0, JSON.stringify(results.errors));
   results.completedAt = new Date().toISOString();
   results.summary = { failed: 0, passed: results.pages.length, total: routes.length };
-  fs.writeFileSync('.gh-task-cache/partner-pms-browser-audit.json', JSON.stringify(results, null, 2));
+  fs.writeFileSync(
+    '.gh-task-cache/partner-pms-browser-audit.json',
+    JSON.stringify(results, null, 2),
+  );
   console.log(`Partner PMS browser audit passed: ${routes.length}/${routes.length} pages.`);
 } finally {
   await browser.close();
