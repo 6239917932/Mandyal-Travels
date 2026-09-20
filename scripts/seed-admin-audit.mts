@@ -31,10 +31,12 @@ const db = new PrismaClient({
 });
 const adminToken = randomBytes(32).toString('base64url');
 const customerToken = randomBytes(32).toString('base64url');
+const partnerToken = randomBytes(32).toString('base64url');
 try {
   for (const [id, role, token] of [
     ['audit-admin', 'PLATFORM_ADMIN', adminToken],
     ['audit-customer', 'CUSTOMER', customerToken],
+    ['audit-partner', 'PARTNER', partnerToken],
   ]) {
     await db.user.create({
       data: {
@@ -64,6 +66,14 @@ try {
   });
   await db.supplyPartner.create({
     data: { id: 'audit-car', name: 'Isolated Audit Cars', type: 'CAR' },
+  });
+  await db.supplyPartnerMember.create({
+    data: {
+      id: 'audit-hotel-member',
+      partnerId: 'audit-hotel',
+      userId: 'audit-partner',
+      role: 'ADMIN',
+    },
   });
   await db.partnerProperty.create({
     data: {
@@ -237,6 +247,7 @@ try {
     JSON.stringify({
       adminToken,
       customerToken,
+      partnerToken,
       databasePath,
       createdAt: new Date().toISOString(),
     }),
