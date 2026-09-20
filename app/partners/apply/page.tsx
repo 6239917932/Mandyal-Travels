@@ -83,10 +83,10 @@ export default async function PartnerApplicationPage() {
     <section className="auth-page partner-application">
       <div className="auth-page__intro">
         <p className="hotel-page__eyebrow">Verified supplier network</p>
-        <h1>Apply to sell travel inventory.</h1>
+        <h1>Apply to list and manage your hotel.</h1>
         <p>
-          Tell us about your hotel or car fleet. Access is activated only after a platform
-          administrator reviews the business.
+          Tell us about your property. Access is activated only after a platform administrator
+          reviews the business and hotel documentation.
         </p>
         <Card>
           <p className="hotel-page__eyebrow">Supplier software plan</p>

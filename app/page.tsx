@@ -7,13 +7,13 @@ import { siteConfig } from '@/config/site';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
 const description =
-  'Official website of Mandyal Travels, operated by Mandyal Travels Services Private Limited, for hotel discovery, car rentals, trip planning and partner management in Himachal Pradesh, India.';
+  'Official website of Mandyal Travels for verified hotel discovery, booking, trip planning and hotel property management in Himachal Pradesh, India.';
 
 export const metadata = createPublicMetadata({
   absoluteTitle: true,
   description,
   path: '/',
-  title: 'Mandyal Travels | Himachal Hotels, Cars and Trip Planning',
+  title: 'Mandyal Travels | Himachal Hotels and Trip Planning',
 });
 
 const trustPoints = [
@@ -70,11 +70,11 @@ export default function Home() {
       <section aria-labelledby="home-search-title" className="home-search-hero">
         <div className="home-container home-search-hero__content">
           <div className="home-search-hero__copy">
-            <p>Hotels, cars and thoughtful trip planning</p>
-            <h1 id="home-search-title">One place to plan the whole journey.</h1>
+            <p>Hotels and thoughtful trip planning</p>
+            <h1 id="home-search-title">A better place to find your stay.</h1>
             <span>
-              Discover owner-managed stays and cars, build your itinerary, and get human support
-              from first search to safe return.
+              Discover owner-managed stays, compare rooms and policies, and get human support from
+              first search through checkout.
             </span>
           </div>
 
@@ -105,8 +105,8 @@ export default function Home() {
           <div className="home-intro__details">
             <p>
               Mandyal Travels brings the grounded hospitality of our Himalayan home to a modern,
-              connected platform for booking stays and cars—and for local owners to manage their
-              inventory and reach more customers.
+              connected platform for booking stays—and for local hotel owners to manage their
+              inventory and reach more guests.
             </p>
 
             <div className="home-intro__actions">
@@ -133,12 +133,12 @@ export default function Home() {
             <div>
               <p className="home-section__eyebrow">Now onboarding in Himachal Pradesh</p>
               <h2 className="home-section__title" id="supplier-launch-title">
-                Put your hotel or car business online.
+                Put your hotel business online.
               </h2>
             </div>
             <p className="home-section__description">
-              Start with property and fleet management today. Customer discovery and bookings can
-              grow as verified local inventory joins the platform.
+              Manage your property from one secure workspace. Customer discovery and bookings can
+              grow as verified hotel inventory joins the platform.
             </p>
           </div>
 
@@ -149,17 +149,6 @@ export default function Home() {
               <h3>List and manage your hotel</h3>
               <p>
                 Control properties, rooms, rates, availability, reservations, and stay operations.
-              </p>
-              <span className="travel-option__arrow" aria-hidden="true">
-                <ArrowIcon />
-              </span>
-            </Link>
-            <Link className="travel-option" href="/login#partner">
-              <span className="travel-option__number">02</span>
-              <span className="travel-option__status">Car fleet</span>
-              <h3>List and manage your cars</h3>
-              <p>
-                Control vehicles, rates, availability, maintenance, compliance, and reservations.
               </p>
               <span className="travel-option__arrow" aria-hidden="true">
                 <ArrowIcon />
@@ -261,7 +250,7 @@ export default function Home() {
                 Search hotels
               </Link>
               <Link className="home-link-button home-link-button--outline" href="/login#partner">
-                List your hotel or car
+                List your hotel
               </Link>
             </div>
           </div>

@@ -137,7 +137,7 @@ test('homepage presents one consistent official company identity to crawlers', (
   );
 
   assert.match(homepageSource, /Official website of Mandyal Travels/);
-  assert.match(homepageSource, /One place to plan the whole journey\./);
+  assert.match(homepageSource, /A better place to find your stay\./);
   assert.match(structuredDataSource, /'@type': 'WebPage'/);
   assert.match(structuredDataSource, /mainEntity: \{ '@id': organizationId \}/);
   assert.match(structuredDataSource, /propertyID: 'CIN'/);

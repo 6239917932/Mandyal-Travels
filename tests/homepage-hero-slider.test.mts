@@ -30,7 +30,7 @@ test('homepage moves every supplied Bir Billing photograph into the travel galle
   assert.match(gallery, /Show next Bir Billing photograph/);
 });
 
-test('homepage hero provides a focused hotel-and-car-first booking widget', async () => {
+test('homepage hero provides a focused hotel-first booking widget', async () => {
   const [page, widget, styles, visualSystem] = await Promise.all([
     readFile(new URL('../app/page.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../components/home/HomeBookingWidget.tsx', import.meta.url), 'utf8'),
@@ -42,10 +42,10 @@ test('homepage hero provides a focused hotel-and-car-first booking widget', asyn
   assert.doesNotMatch(page, /mandyal-travel-hero-v2\.png/);
   assert.match(page, /<HomeBookingWidget \/>/);
   assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /One place to plan the whole journey\./);
+  assert.match(page, /A better place to find your stay\./);
   assert.match(
     page,
-    /Discover owner-managed stays and cars, build your itinerary, and get human support\s+from first search to safe return/,
+    /Discover owner-managed stays, compare rooms and policies, and get human support from\s+first search through checkout/,
   );
   assert.match(page, /className="home-smart-planner" href="\/trip-planner"/);
   assert.match(page, /Plan with Mandyal/);

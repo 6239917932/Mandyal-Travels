@@ -74,11 +74,11 @@ const structuredData = {
       '@type': 'WebPage',
       about: { '@id': organizationId },
       description:
-        'Official website of Mandyal Travels, operated by Mandyal Travels Services Private Limited, for hotel discovery, car rentals, trip planning and partner management in Himachal Pradesh, India.',
+        'Official website of Mandyal Travels, operated by Mandyal Travels Services Private Limited, for hotel discovery, booking, trip planning and hotel property management in Himachal Pradesh, India.',
       inLanguage: 'en-IN',
       isPartOf: { '@id': websiteId },
       mainEntity: { '@id': organizationId },
-      name: 'Mandyal Travels | Himachal Hotels, Cars and Trip Planning',
+      name: 'Mandyal Travels | Himachal Hotels and Trip Planning',
       primaryImageOfPage: { '@id': primaryImageId },
       url: `${PUBLIC_SITE_ORIGIN}/`,
     },

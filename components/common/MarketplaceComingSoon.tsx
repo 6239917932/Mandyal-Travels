@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { PublicPageHero } from '@/components/layout/PublicPageHero';
 import { Card } from '@/components/ui/Card';
 
-export function MarketplaceComingSoon({ product }: { product: 'Buses' | 'Flights' }) {
+export function MarketplaceComingSoon({ product }: { product: 'Buses' | 'Cars' | 'Flights' }) {
   const lowerProduct = product.toLowerCase();
 
   return (
@@ -29,13 +29,13 @@ export function MarketplaceComingSoon({ product }: { product: 'Buses' | 'Flights
           <p className="hotel-page__eyebrow">Honest launch status</p>
           <h2>We will not present demonstration inventory as live availability.</h2>
           <p>
-            Mandyal Travels is launching hotel property management and car fleet management first.
-            Your existing account and booking records remain available while this marketplace is
-            prepared.
+            Mandyal Travels is launching verified hotel discovery, booking, and property management
+            first. Your existing account and booking records remain available while this marketplace
+            is prepared.
           </p>
           <div className="home-hero__actions">
             <Link className="ui-button ui-button--primary" href="/login#partner">
-              List a hotel or car
+              List your hotel
             </Link>
             <Link className="ui-button ui-button--secondary" href="/manage-booking">
               Manage an existing booking

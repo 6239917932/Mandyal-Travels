@@ -13,7 +13,6 @@ test('public booking forms prevent past dates and link end dates to start dates'
 
   assert.match(home, /min=\{today\}/);
   assert.match(home, /min=\{offsetLocalCalendarDate\(hotelCheckIn, 1\)\}/);
-  assert.match(home, /min=\{offsetLocalCalendarDate\(carPickup, 1\)\}/);
   assert.match(hotels, /min=\{today\}/);
   assert.match(hotels, /min=\{offsetLocalCalendarDate\(checkInDate, 1\)\}/);
   assert.match(cars, /min=\{today\}/);

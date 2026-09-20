@@ -56,7 +56,7 @@ export function ContactInquiryForm() {
       <div className="contact-inquiry__heading">
         <p className="home-section__eyebrow">Send us a message</p>
         <h2>Tell us how we can help.</h2>
-        <p>Hotel and car owners can also use this form to request partner onboarding.</p>
+        <p>Hotel owners can also use this form to request partner onboarding.</p>
       </div>
 
       <div className="contact-inquiry__grid">
@@ -77,7 +77,7 @@ export function ContactInquiryForm() {
           <select defaultValue="GENERAL" name="category" required>
             <option value="GENERAL">General question</option>
             <option value="HOTEL_OWNER">List or manage a hotel</option>
-            <option value="CAR_OWNER">List or manage cars</option>
+            <option value="CAR_OWNER">Cars — future launch updates</option>
             <option value="BOOKING_HELP">Existing booking help</option>
           </select>
         </label>

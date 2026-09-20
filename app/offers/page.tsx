@@ -9,7 +9,7 @@ import styles from './page.module.css';
 
 export const metadata = createPublicMetadata({
   description:
-    'Review current governed hotel and car offers from Mandyal Travels, subject to final booking eligibility and availability.',
+    'Review current governed hotel offers from Mandyal Travels, subject to final booking eligibility and availability.',
   path: '/offers',
   title: 'Travel Offers and Deals',
 });

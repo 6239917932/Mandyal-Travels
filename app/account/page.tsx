@@ -15,7 +15,6 @@ const RECENT_ITEM_LIMIT = 20;
 
 const customerQuickActions = [
   { description: 'Find a stay for your next journey.', href: '/hotels', label: 'Book a hotel' },
-  { description: 'Find self-drive and chauffeur options.', href: '/cars', label: 'Find a car' },
   {
     description: 'Open an existing booking with its reference.',
     href: '/manage-booking',
@@ -223,8 +222,8 @@ export default async function AccountPage() {
             ))}
           </div>
           <p className="customer-dashboard__availability" role="status">
-            Hotels and cars are available first. Flights and buses are coming soon while live
-            supplier connections are completed.
+            Hotel booking is launching first. Cars, flights, and buses are coming soon while their
+            supplier, operational, and compliance controls are completed.
           </p>
         </section>
       ) : null}

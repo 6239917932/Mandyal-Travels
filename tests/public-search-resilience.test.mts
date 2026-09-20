@@ -37,7 +37,7 @@ test('public pages and smoke checks never expose database implementation details
   ]);
 
   assert.doesNotMatch(carsPage, /cause\.message|error\.message/);
-  assert.match(carsPage, /Car search is temporarily unavailable/);
+  assert.match(carsPage, /MarketplaceComingSoon product="Cars"/);
   assert.match(hotelsPage, /Hotel search is temporarily unavailable/);
   assert.match(smoke, /does not exist in the current database/);
 });

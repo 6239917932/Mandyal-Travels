@@ -41,12 +41,6 @@ export default function manifest(): MetadataRoute.Manifest {
         url: '/hotels',
       },
       {
-        description: 'Search self-drive and chauffeur car options.',
-        name: 'Find a car',
-        short_name: 'Cars',
-        url: '/cars',
-      },
-      {
         description: 'Create an editable, explainable journey plan.',
         name: 'Plan a trip',
         short_name: 'Trip planner',

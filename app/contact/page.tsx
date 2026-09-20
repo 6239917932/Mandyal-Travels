@@ -6,7 +6,7 @@ import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 
 export const metadata = createPublicMetadata({
   description:
-    'Contact Mandyal Travels in Himachal Pradesh for travel support, company information and future hotel or car partner onboarding.',
+    'Contact Mandyal Travels in Himachal Pradesh for hotel booking support, company information and hotel partner onboarding.',
   path: '/contact',
   title: 'Contact Us',
 });
