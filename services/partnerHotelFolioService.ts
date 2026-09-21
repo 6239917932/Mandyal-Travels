@@ -467,6 +467,15 @@ export async function postHotelFolioEntry(input: {
         properties.slice(0, MAX_PROPERTIES).map((property) => [property.hotelSlug, property]),
       );
       const booking = await transaction.booking.findFirst({
+        include: {
+          folioEntries: {
+            include: { reversalOf: { select: { entryType: true } } },
+            orderBy: { createdAt: 'asc' },
+            take: MAX_FOLIO_ENTRIES + 1,
+          },
+          payment: { select: { amount: true, status: true } },
+          refunds: { select: { amount: true, status: true } },
+        },
         where: {
           confirmationCode,
           hotelSlug: { in: [...propertyBySlug.keys()] },
@@ -480,6 +489,28 @@ export async function postHotelFolioEntry(input: {
           'BOOKING_NOT_FOUND',
           'The active stay was not found for this partner.',
         );
+      }
+      if (booking.folioEntries.length > MAX_FOLIO_ENTRIES) {
+        throw new PartnerHotelFolioError(
+          'FOLIO_LIMIT_REACHED',
+          'The folio is too large to update safely from this workspace.',
+        );
+      }
+      if (posting.entryType === 'PAYMENT') {
+        const totals = calculateHotelFolioBalance({
+          bookingTotalAmount: booking.totalAmount,
+          entries: balanceEntries(booking.folioEntries),
+          onlinePayment: booking.payment,
+          onlineRefunds: booking.refunds,
+        });
+        if (totals.balance <= 0 || posting.amount > totals.balance) {
+          throw new PartnerHotelFolioError(
+            'PAYMENT_EXCEEDS_BALANCE',
+            totals.balance <= 0
+              ? 'This folio has no outstanding balance to collect.'
+              : `Payment cannot exceed the outstanding INR ${totals.balance} balance.`,
+          );
+        }
       }
       const shift =
         posting.entryType === 'PAYMENT'
@@ -656,10 +687,12 @@ export async function assertHotelFolioSettledForCheckout(
     onlinePayment: booking.payment,
     onlineRefunds: booking.refunds,
   });
-  if (totals.balance > 0) {
+  if (totals.balance !== 0) {
     throw new PartnerHotelFolioError(
-      'OUTSTANDING_FOLIO_BALANCE',
-      `Collect or settle the remaining INR ${totals.balance} before checkout.`,
+      totals.balance > 0 ? 'OUTSTANDING_FOLIO_BALANCE' : 'UNRESOLVED_FOLIO_CREDIT',
+      totals.balance > 0
+        ? `Collect or settle the remaining INR ${totals.balance} before checkout.`
+        : `Resolve the guest credit of INR ${Math.abs(totals.balance)} before checkout.`,
     );
   }
 }

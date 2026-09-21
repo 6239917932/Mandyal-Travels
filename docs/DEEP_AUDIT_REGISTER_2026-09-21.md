@@ -143,5 +143,19 @@ tax advice and do not replace approval by the named professional owner.
 - **Regression protection:** added a source-order test proving the conditional update and conflict
   check occur before checkout room-state changes and audit-log creation.
 
+### DA-006 — Overpaid folios could be treated as checkout-ready
+
+- **Severity:** High
+- **Evidence:** individual cashier payments were not bounded by the current outstanding balance,
+  while checkout rejected only positive balances. A negative balance therefore represented an
+  unresolved guest credit but passed the settlement check.
+- **Risk:** a stay could be checked out while money remained due back to the guest, obscuring the
+  refund or correction obligation.
+- **Resolution:** payment posting now calculates the current bounded folio balance and rejects zero
+  balance or overpayment attempts. Checkout now requires an exact zero balance and reports a
+  distinct unresolved-credit error for negative balances.
+- **Residual control:** intentional advances, deposits, refunds, and goodwill credits must use a
+  separately governed workflow rather than an accidental cashier overpayment.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
