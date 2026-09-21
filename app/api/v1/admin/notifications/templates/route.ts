@@ -1,7 +1,9 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   if (!(await getPlatformAdmin()))
     return Response.json(
       { error: { code: 'ADMIN_UNAUTHORIZED', message: 'Administrator access is required.' } },

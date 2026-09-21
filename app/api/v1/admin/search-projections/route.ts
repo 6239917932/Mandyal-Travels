@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getPlatformAdmin } from '@/lib/adminAuth';
+import { isSameOriginMutation } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { normalizeAdminSearchProjectionRebuild } from '@/services/adminSearchProjectionRules';
 import {
@@ -15,6 +16,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator)
     return NextResponse.json({ error: 'Administrator access required.' }, { status: 403 });

@@ -169,5 +169,18 @@ tax advice and do not replace approval by the named professional owner.
 - **Regression protection:** route-source coverage verifies that the origin guard exists and executes
   before administrator authentication on both endpoints.
 
+### DA-008 — Administrator mutation origin protection was incomplete
+
+- **Severity:** Critical
+- **Evidence:** recursive route inspection found 22 additional administrator endpoints that changed
+  configuration, privacy cases, refunds, payouts, promotions, content, support, notifications, risk,
+  integrations, search projections, partner access, or user access without a same-origin guard.
+- **Risk:** an authenticated platform administrator could be induced by a hostile site to submit a
+  state-changing request with significant operational, privacy, or financial effects.
+- **Resolution:** every identified administrator mutation now rejects cross-origin browser requests
+  before authentication, request parsing, or persistence.
+- **Regression protection:** a recursive test now fails whenever any current or future administrator
+  `POST`, `PATCH`, `PUT`, or `DELETE` route omits `isSameOriginMutation(request)`.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.

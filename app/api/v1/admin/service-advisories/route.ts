@@ -1,9 +1,11 @@
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { normalizeServiceAdvisoryCreate } from '@/services/serviceAdvisoryPolicy';
 import { createServiceAdvisory } from '@/services/serviceAdvisoryService';
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator) {
     return Response.json({ error: 'Platform administrator access is required.' }, { status: 403 });
