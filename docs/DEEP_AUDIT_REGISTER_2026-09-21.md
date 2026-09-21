@@ -229,5 +229,18 @@ tax advice and do not replace approval by the named professional owner.
 - **Regression protection:** source-order coverage verifies both controls execute before request-body
   processing and requires a `Retry-After` response.
 
+### DA-013 — Customer-critical routes logged raw caught errors
+
+- **Severity:** High
+- **Evidence:** authentication, password reset, public contact, hotel booking, cancellation, and
+  account-export catch paths passed complete error objects to `console.error`.
+- **Risk:** database or provider errors can contain personal data, request values, credentials,
+  provider references, or internal stack details that must not enter production logs.
+- **Resolution:** these customer-critical routes now emit fixed-name structured operational events
+  and never serialize the caught error object, message, or stack.
+- **Regression protection:** observability coverage injects a deliberately sensitive error and
+  verifies that the emitted record contains only the governed event name and safe operational
+  metadata.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
