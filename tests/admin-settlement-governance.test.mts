@@ -98,6 +98,9 @@ test('settlement references are masked and transition history is append-only', (
   assert.match(schema, /version\s+Int\s+@default\(1\)/);
   assert.match(service, /partnerSettlementEvent\.create/);
   assert.match(service, /where: \{ id, status: settlement\.status, version: expectedVersion \}/);
+  assert.match(service, /hasPrismaErrorCode\(error, 'P2002'\)/);
+  assert.match(service, /hasPrismaErrorCode\(error, 'P2034'\)/);
+  assert.match(service, /SETTLEMENT_CONFLICT/);
 });
 
 test('settlement mutations reject cross-origin browser requests before authentication and writes', () => {

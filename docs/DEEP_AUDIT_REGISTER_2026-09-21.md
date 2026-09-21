@@ -194,5 +194,17 @@ tax advice and do not replace approval by the named professional owner.
 - **Regression protection:** recursive coverage fails whenever a current or future business or agent
   mutation route omits `isSameOriginMutation(request)`.
 
+### DA-010 — Concurrent settlement creation returned an internal error
+
+- **Severity:** Medium
+- **Evidence:** immutable settlement-line uniqueness safely prevented duplicate booking settlement,
+  but a simultaneous calculation surfaced the database conflict as a generic server failure.
+- **Risk:** finance operators could not distinguish a safe concurrent change from a system fault and
+  might retry without reviewing the newly created settlement.
+- **Resolution:** unique-write and serializable transaction conflicts now fail closed with the
+  governed `SETTLEMENT_CONFLICT` response instructing the operator to refresh and recalculate.
+- **Residual control:** the existing unique booking and source constraints remain the authoritative
+  duplicate-payment barrier.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
