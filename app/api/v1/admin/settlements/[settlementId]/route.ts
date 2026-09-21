@@ -1,5 +1,5 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
   PartnerSettlementError,
   partnerSettlementService,
@@ -8,6 +8,11 @@ import { normalizeSettlementTransition } from '@/services/adminSettlementWorkben
 
 type Context = { params: Promise<{ settlementId: string }> };
 export async function PATCH(request: Request, context: Context): Promise<Response> {
+  if (!isSameOriginMutation(request))
+    return Response.json(
+      { error: { code: 'INVALID_ORIGIN', message: 'This request origin is not allowed.' } },
+      { status: 403 },
+    );
   const admin = await getPlatformAdmin();
   if (!admin)
     return Response.json(

@@ -157,5 +157,17 @@ tax advice and do not replace approval by the named professional owner.
 - **Residual control:** intentional advances, deposits, refunds, and goodwill credits must use a
   separately governed workflow rather than an accidental cashier overpayment.
 
+### DA-007 — Settlement mutations lacked same-origin enforcement
+
+- **Severity:** High
+- **Evidence:** the administrator settlement create and transition routes required an authenticated
+  administrator but did not reject cross-origin browser mutation requests.
+- **Risk:** an authenticated administrator could be exposed to a cross-site request that attempts to
+  create, approve, or mark a supplier settlement as paid.
+- **Resolution:** both settlement mutation routes now fail with `INVALID_ORIGIN` before
+  authentication, body parsing, or any financial write when the request is not same-origin.
+- **Regression protection:** route-source coverage verifies that the origin guard exists and executes
+  before administrator authentication on both endpoints.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.

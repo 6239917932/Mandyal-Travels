@@ -99,3 +99,17 @@ test('settlement references are masked and transition history is append-only', (
   assert.match(service, /partnerSettlementEvent\.create/);
   assert.match(service, /where: \{ id, status: settlement\.status, version: expectedVersion \}/);
 });
+
+test('settlement mutations reject cross-origin browser requests before authentication and writes', () => {
+  for (const routePath of [
+    'app/api/v1/admin/settlements/route.ts',
+    'app/api/v1/admin/settlements/[settlementId]/route.ts',
+  ]) {
+    const route = readFileSync(routePath, 'utf8');
+    assert.match(route, /isSameOriginMutation\(request\)/, routePath);
+    assert.ok(
+      route.indexOf('isSameOriginMutation(request)') < route.indexOf('getPlatformAdmin()'),
+      routePath,
+    );
+  }
+});
