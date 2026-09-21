@@ -182,5 +182,17 @@ tax advice and do not replace approval by the named professional owner.
 - **Regression protection:** a recursive test now fails whenever any current or future administrator
   `POST`, `PATCH`, `PUT`, or `DELETE` route omits `isSameOriginMutation(request)`.
 
+### DA-009 — Business and agent mutations lacked systematic origin enforcement
+
+- **Severity:** High
+- **Evidence:** 14 authenticated business and travel-agent mutation routes did not consistently
+  enforce same-origin browser requests.
+- **Risk:** a hostile site could attempt organization, invitation, member, policy, support, customer,
+  or travel-request actions using an authenticated user's browser session.
+- **Resolution:** every business and agent mutation route now rejects cross-origin requests before
+  authentication, body parsing, or persistence.
+- **Regression protection:** recursive coverage fails whenever a current or future business or agent
+  mutation route omits `isSameOriginMutation(request)`.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.

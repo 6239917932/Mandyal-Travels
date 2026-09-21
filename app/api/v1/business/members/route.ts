@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
+import { isSameOriginMutation } from '@/lib/api/request';
 
-export async function POST() {
+export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getBusinessAdminMembership();
   if (!access) {
     return NextResponse.json(

@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
+import { isSameOriginMutation } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 
 type InvitationRouteContext = { params: Promise<{ invitationId: string }> };
 
-export async function DELETE(_request: Request, { params }: InvitationRouteContext) {
+export async function DELETE(request: Request, { params }: InvitationRouteContext) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getBusinessAdminMembership();
   if (!access) {
     return NextResponse.json(

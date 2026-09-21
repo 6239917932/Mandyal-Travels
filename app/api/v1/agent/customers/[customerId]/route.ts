@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAgencyAdminAccess } from '@/lib/agentAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { parseAgencyCustomerInput } from '@/services/agencyCustomerService';
@@ -11,6 +11,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ customerId: string }> },
 ) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getAgencyAdminAccess();
   if (!access) {
     return NextResponse.json(
