@@ -117,5 +117,18 @@ tax advice and do not replace approval by the named professional owner.
   the authoritative place where available methods appear.
 - **Verification:** footer regression and complete release checks are required before deployment.
 
+### DA-004 — Legacy partner mutations relied only on the global origin boundary
+
+- **Severity:** Medium
+- **Evidence:** seventeen hotel, inventory, media, review, amendment, bus, and flight partner
+  mutation routes were protected by the global API proxy but did not repeat the same-origin check
+  in their route handler. Newer PMS routes already used both layers.
+- **Resolution:** added a fail-closed route-level origin check before authentication or request-body
+  processing in every affected handler. No authorization, provider, or launch gate was weakened.
+- **Regression protection:** added a recursive source test that fails whenever any current or future
+  partner POST, PATCH, PUT, or DELETE route omits `isSameOriginMutation(request)`.
+- **Residual risk:** browser origin validation is defense in depth, not a substitute for partner,
+  role, property, booking, and record ownership checks; those remain separate audit requirements.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
