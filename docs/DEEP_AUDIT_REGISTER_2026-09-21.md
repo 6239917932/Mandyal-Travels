@@ -218,5 +218,16 @@ tax advice and do not replace approval by the named professional owner.
 - **Residual control:** production smoke monitoring and manual assistive-technology review remain
   separate launch responsibilities.
 
+### DA-012 — Hotel amendment creation lacked abuse controls
+
+- **Severity:** High
+- **Evidence:** the customer hotel-amendment endpoint authenticated booking access but accepted
+  cross-origin requests and did not bound repeated submissions.
+- **Risk:** a hostile site or abusive client could generate duplicate operational review workload.
+- **Resolution:** amendment creation now rejects cross-origin requests and applies a booking-scoped,
+  IP-aware ten-request hourly limit before authentication, body parsing, or persistence.
+- **Regression protection:** source-order coverage verifies both controls execute before request-body
+  processing and requires a `Retry-After` response.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
