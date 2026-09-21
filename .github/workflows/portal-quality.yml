@@ -73,6 +73,12 @@ jobs:
           PLAYWRIGHT_MODULE: ${{ github.workspace }}/.gh-task-cache/browser-tools/node_modules/playwright/index.mjs
         run: node scripts/test-partner-pms-browser.mjs
 
+      - name: Verify every customer account route
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .gh-task-cache/browsers
+          PLAYWRIGHT_MODULE: ${{ github.workspace }}/.gh-task-cache/browser-tools/node_modules/playwright/index.mjs
+        run: node scripts/test-customer-browser.mjs
+
       - name: Retain administrator audit evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,6 +90,7 @@ jobs:
             .gh-task-cache/admin-request-desktop.png
             .gh-task-cache/admin-request-mobile.png
             .gh-task-cache/partner-pms-browser-audit.json
+            .gh-task-cache/customer-browser-audit.json
             admin-audit-runtime.log
 
       - name: Show runtime log after failure

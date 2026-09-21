@@ -206,5 +206,17 @@ tax advice and do not replace approval by the named professional owner.
 - **Residual control:** the existing unique booking and source constraints remain the authoritative
   duplicate-payment barrier.
 
+### DA-011 — Customer workspace lacked full browser-journey coverage
+
+- **Severity:** Medium
+- **Evidence:** administrator and partner PMS browser audits existed, but the authenticated customer
+  workspace did not have equivalent route, accessibility, link, and responsive-layout coverage.
+- **Risk:** account-page regressions could pass static checks while producing broken controls,
+  inaccessible forms, invalid links, client errors, or mobile overflow for customers.
+- **Resolution:** CI now audits all 15 seeded customer account routes on desktop and mobile, blocks
+  external requests, checks headings, controls, forms and internal links, and retains JSON evidence.
+- **Residual control:** production smoke monitoring and manual assistive-technology review remain
+  separate launch responsibilities.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
