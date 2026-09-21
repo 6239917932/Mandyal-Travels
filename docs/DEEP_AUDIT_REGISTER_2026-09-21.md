@@ -68,17 +68,54 @@ and production evidence are recorded here or in a linked dated report.
 
 ## Findings ledger
 
-### DA-001 — Sensitive account mutations lacked an explicit same-origin guard
+### DA-001 — Sensitive account mutations lacked route-level same-origin defense in depth
 
-- **Severity:** High
+- **Severity:** Medium
 - **Affected operations:** profile update, notification/marketing consent update, privacy-request
   creation, and revocation of other sessions.
 - **Evidence:** the four authenticated route handlers parsed or mutated account state without first
-  calling the shared `isSameOriginMutation` control.
+  calling the shared `isSameOriginMutation` control. The global API proxy already rejects untrusted
+  cookie-authenticated mutations, so the production boundary was protected before this repair.
 - **Resolution:** added a fail-closed 403 origin check before authentication-dependent state reads or
   writes and added a source-level regression test covering all four routes.
-- **Residual risk:** session-cookie controls remain defense in depth; browser and production-route
-  verification must still pass before release.
+- **Verification:** the complete local release gate passed: 832 domain tests, 567 static internal
+  links, 115 migrations, PostgreSQL parity for 150 models, 20 launch gates, and a 279-page build.
+  GitHub audit, CodeQL, PostgreSQL, container, and verification jobs passed in PR 262.
+- **Deployment:** merged to `main` as `2c6f21deb4081527ecd2d057f1abe6716a12c0e8`.
+- **Residual risk:** keep the global proxy control and route guards together; authenticated browser
+  smoke verification remains part of the production-deployment check.
+
+## Current official-source compliance snapshot
+
+Retrieved 21 September 2026. These sources inform the launch gates; they do not constitute legal or
+tax advice and do not replace approval by the named professional owner.
+
+| Area                                 | Primary source                                                                                                                                                                                                                                                                                                                       | Current product posture                                                                                                                                                   | Required owner before commercial activation                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Consumer and marketplace disclosures | [Department of Consumer Affairs — Consumer Protection](https://consumeraffairs.nic.in/hi/acts-and-rules/consumer-protection) and [CCPA marketplace seller-information advisory](https://consumeraffairs.nic.in/sites/default/files/file-uploads/latestnews/Advisory%20CCPA.pdf)                                                      | Supplier identity, platform role, pricing, support, cancellation, and grievance disclosures are modeled; public policies remain visibly draft                             | Indian e-commerce/consumer counsel                          |
+| Personal data                        | [MeitY — Digital Personal Data Protection Rules, 2025](https://www.meity.gov.in/documents/act-and-policies/digital-personal-dataprotection-rules-2025gDOxUjMtQWa?pageTitle=Digital-Personal-Data-ProtectionRules-2025) and [Gazette rules PDF](https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf) | Versioned consent, withdrawal, access/correction/erasure requests, retention governance, and audit evidence exist; final notices and phased-rule mapping remain gated     | Indian privacy counsel and appointed grievance/data contact |
+| Cyber incident readiness             | [CERT-In directions under section 70B](https://cert-in.org.in/Directions70B.jsp)                                                                                                                                                                                                                                                     | Security event records, operational monitoring, recovery runbooks, and restricted access exist; organizational reporting contacts and incident exercises require sign-off | Security/operations owner and Indian cyber counsel          |
+| GST rates and hotel tax treatment    | [CBIC GST rates](https://cbic-gst.gov.in/hindi/gst-goods-services-rates.html), [IGST place-of-supply material](https://cbic-gst.gov.in/hindi/IGST-bill-e.html), [invoice rules](https://cbic-gst.gov.in/gst-invoice-rules.html), and [sectoral FAQs](https://cbic-gst.gov.in/hindi/sectoral-faq.html)                                | Operational folios and tax snapshots are present; statutory GST invoices, TCS/TDS treatment, and supplier settlement tax outputs remain fail-closed                       | Chartered accountant/GST adviser                            |
+
+### DA-002 — Hotel-first launch retained transport language
+
+- **Severity:** Medium
+- **Evidence:** the live footer described a “Hotel and car partner workspace,” and a homepage trust
+  point promised that stays and transport could be kept together even though car, flight, and bus
+  tabs correctly say “Coming soon.”
+- **Resolution:** changed the footer to “Hotel partner workspace” and limited the trust point to hotel
+  searches, bookings, stay details, and support.
+- **Verification:** public-copy regression and complete release checks are required before deployment.
+
+### DA-003 — Footer displayed unverified payment-brand acceptance
+
+- **Severity:** Medium
+- **Evidence:** the live footer displayed Visa, Mastercard, American Express, RuPay, UPI, and PayPal
+  marks independently of the active provider and checkout configuration.
+- **Risk:** a brand mark can reasonably be read as a promise that the method is currently accepted.
+- **Resolution:** replaced brand marks with a neutral provider-confirmed message; the checkout remains
+  the authoritative place where available methods appear.
+- **Verification:** footer regression and complete release checks are required before deployment.
 
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
