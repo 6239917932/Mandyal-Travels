@@ -19,8 +19,17 @@ test('footer presents company, partner, mailing-list, payment, and security info
   assert.match(footer, /FooterNewsletterForm/);
   assert.match(footer, /PaymentMarks/);
   assert.match(footer, /SecureWebsiteMark/);
-  for (const payment of ['Visa', 'Mastercard', 'American Express', 'RuPay', 'UPI', 'PayPal']) {
-    assert.match(payments, new RegExp(payment));
+  assert.match(payments, /Provider-confirmed payment options/);
+  assert.match(payments, /Options shown at checkout/);
+  for (const unverifiedBrand of [
+    'Visa',
+    'Mastercard',
+    'American Express',
+    'RuPay',
+    'UPI',
+    'PayPal',
+  ]) {
+    assert.doesNotMatch(payments, new RegExp(`aria-label="${unverifiedBrand}"`));
   }
   assert.match(newsletter, /\/api\/v1\/newsletter-subscriptions/);
 });

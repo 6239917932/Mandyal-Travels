@@ -24,9 +24,9 @@ const trustPoints = [
     title: 'Clarity before checkout',
   },
   {
-    description: 'Keep stays and transport together through one connected travel account.',
+    description: 'Keep hotel searches, bookings, stay details, and support in one travel account.',
     number: '02',
-    title: 'A joined-up journey',
+    title: 'One connected stay',
   },
   {
     description: 'Search by the place travellers actually know—from a city to a local area.',
