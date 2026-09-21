@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getCurrentSession } from '@/lib/auth/session';
 import { isPrivacyRequestType, privacyRequestDueAt } from '@/lib/privacy/governance';
 import { prisma } from '@/lib/prisma';
@@ -17,6 +17,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return NextResponse.json(
+      { error: 'This request must originate from the Mandyal Travels portal.' },
+      { status: 403 },
+    );
+  }
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
   const body = await readJsonObject(request);
