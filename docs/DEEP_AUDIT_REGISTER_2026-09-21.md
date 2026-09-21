@@ -130,5 +130,18 @@ tax advice and do not replace approval by the named professional owner.
 - **Residual risk:** browser origin validation is defense in depth, not a substitute for partner,
   role, property, booking, and record ownership checks; those remain separate audit requirements.
 
+### DA-005 — Hotel stay transitions accepted stale concurrent actions
+
+- **Severity:** High
+- **Evidence:** check-in, no-show, and checkout rules were evaluated before the serializable
+  transaction, but the final booking update matched only the booking ID. A second reception session
+  could submit an action based on the old status after another session had already changed it.
+- **Risk:** duplicate audit events and repeated checkout side effects, including housekeeping state
+  changes, could be recorded for one stay.
+- **Resolution:** the transactional update now requires the booking to remain confirmed and retain
+  its expected operational status. A stale action fails before housekeeping or audit side effects.
+- **Regression protection:** added a source-order test proving the conditional update and conflict
+  check occur before checkout room-state changes and audit-log creation.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
