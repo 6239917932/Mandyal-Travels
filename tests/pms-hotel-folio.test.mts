@@ -76,6 +76,16 @@ test('balance includes the booking charge, captured payment and append-only corr
   );
 });
 
+test('an overpayment remains an unresolved guest credit rather than a settled folio', () => {
+  assert.deepEqual(
+    calculateHotelFolioBalance({
+      bookingTotalAmount: 1000,
+      entries: [{ amount: 1200, category: 'CASH', entryType: 'PAYMENT' }],
+    }),
+    { approvedRefunds: 0, balance: -200, charges: 1000, payments: 1200 },
+  );
+});
+
 test('cashier reconciliation counts only cash payments and their reversals', () => {
   assert.equal(
     calculateExpectedCash({
@@ -126,6 +136,9 @@ test('folio and cashier mutations are scoped, same-origin, idempotent and audite
   assert.match(service, /HOTEL_FOLIO_ENTRY_REVERSED/);
   assert.doesNotMatch(service, /hotelFolioEntry\.(update|delete)/);
   assert.match(checkoutService, /assertHotelFolioSettledForCheckout/);
+  assert.match(service, /PAYMENT_EXCEEDS_BALANCE/);
+  assert.match(service, /UNRESOLVED_FOLIO_CREDIT/);
+  assert.match(service, /totals\.balance !== 0/);
   assert.match(page, /append-only audit trail/i);
   assert.match(page, /not a GST tax invoice/i);
   assert.match(bookingsPage, /\/partner\/pms\/billing\?booking=/);

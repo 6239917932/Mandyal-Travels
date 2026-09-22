@@ -17,6 +17,7 @@ import {
   normalizeEmail,
 } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
@@ -116,8 +117,8 @@ export async function POST(request: Request) {
             },
             { status: 202 },
           );
-        } catch (error) {
-          console.error('Registration email OTP could not be delivered.', error);
+        } catch {
+          reportOperationalError('auth.registration.email_otp_delivery_failed');
           return NextResponse.json(
             { error: 'A verification code could not be delivered. Please try again later.' },
             { status: 503 },
@@ -226,7 +227,7 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-    console.error('Account registration failed.', error);
+    reportOperationalError('auth.registration.failed');
     return NextResponse.json(
       { error: 'Your account could not be created. Please try again.' },
       { status: 500 },
@@ -250,8 +251,8 @@ export async function POST(request: Request) {
         },
         { status: 202 },
       );
-    } catch (error) {
-      console.error('Registration email OTP could not be delivered.', error);
+    } catch {
+      reportOperationalError('auth.registration.email_otp_delivery_failed');
       return NextResponse.json(
         {
           error:

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isValidName } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
@@ -11,6 +11,13 @@ import {
 
 export async function PATCH(request: Request) {
   try {
+    if (!isSameOriginMutation(request)) {
+      return NextResponse.json(
+        { error: 'This request must originate from the Mandyal Travels portal.' },
+        { status: 403 },
+      );
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Sign in to update your profile.' }, { status: 401 });

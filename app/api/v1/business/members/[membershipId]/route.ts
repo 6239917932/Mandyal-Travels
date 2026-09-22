@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getBusinessAdminMembership } from '@/lib/businessAuth';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
@@ -9,6 +9,8 @@ import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/busi
 type MemberRouteContext = { params: Promise<{ membershipId: string }> };
 
 export async function PATCH(request: Request, { params }: MemberRouteContext) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getBusinessAdminMembership();
   if (!access) {
     return NextResponse.json(
@@ -120,7 +122,9 @@ export async function PATCH(request: Request, { params }: MemberRouteContext) {
   return NextResponse.json({ data: { id: updatedMember.id, role: updatedMember.role } });
 }
 
-export async function DELETE(_request: Request, { params }: MemberRouteContext) {
+export async function DELETE(request: Request, { params }: MemberRouteContext) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getBusinessAdminMembership();
   if (!access) {
     return NextResponse.json(

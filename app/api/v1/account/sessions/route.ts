@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { isSameOriginMutation } from '@/lib/api/request';
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import {
@@ -7,8 +8,15 @@ import {
   createAccountSecurityEventData,
 } from '@/services/accountSecurityService';
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    if (!isSameOriginMutation(request)) {
+      return NextResponse.json(
+        { error: 'This request must originate from the Mandyal Travels portal.' },
+        { status: 403 },
+      );
+    }
+
     const currentSession = await getCurrentSession();
     if (!currentSession) {
       return NextResponse.json({ error: 'Sign in to manage active sessions.' }, { status: 401 });

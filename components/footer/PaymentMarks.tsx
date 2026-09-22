@@ -1,30 +1,7 @@
 export function PaymentMarks() {
   return (
-    <div
-      className="site-footer__payment-marks"
-      aria-label="Payment methods supported by connected providers"
-    >
-      <span className="payment-mark payment-mark--visa" aria-label="Visa">
-        VISA
-      </span>
-      <span className="payment-mark payment-mark--mastercard" aria-label="Mastercard">
-        <i aria-hidden="true" />
-        <b>mastercard</b>
-      </span>
-      <span className="payment-mark payment-mark--amex" aria-label="American Express">
-        AMERICAN
-        <br />
-        EXPRESS
-      </span>
-      <span className="payment-mark payment-mark--rupay" aria-label="RuPay">
-        RuPay
-      </span>
-      <span className="payment-mark payment-mark--upi" aria-label="UPI">
-        UPI
-      </span>
-      <span className="payment-mark payment-mark--paypal" aria-label="PayPal">
-        PayPal
-      </span>
+    <div className="site-footer__payment-marks" aria-label="Provider-confirmed payment options">
+      <span className="payment-mark">Options shown at checkout</span>
     </div>
   );
 }

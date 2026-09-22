@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { normalizeProviderCode } from '@/lib/flight/supplierOperations';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
@@ -21,6 +21,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Use the Mandyal Travels partner portal.' }, { status: 403 });
   const access = await getPartnerAccess(request);
   if (!canManageFlightConnections(access))
     return NextResponse.json(

@@ -1,11 +1,13 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { normalizeReviewDecision } from '@/services/adminReviewModerationService';
 
 type Context = { params: Promise<{ reviewId: string }> };
 
 export async function PATCH(request: Request, context: Context): Promise<Response> {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator)
     return Response.json(

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
@@ -13,6 +13,13 @@ const PREFERENCE_KEYS = ['bookingEmail', 'marketingEmail', 'smsAlerts', 'whatsap
 
 export async function PATCH(request: Request) {
   try {
+    if (!isSameOriginMutation(request)) {
+      return NextResponse.json(
+        { error: 'This request must originate from the Mandyal Travels portal.' },
+        { status: 403 },
+      );
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(

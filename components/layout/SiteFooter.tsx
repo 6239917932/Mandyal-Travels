@@ -29,7 +29,7 @@ export function SiteFooter() {
             <Link href="/about">About us</Link>
             <Link href="/contact">Contact us and office locations</Link>
             <Link href="/login#business">Business travel workspace</Link>
-            <Link href="/login#partner">Hotel and car partner workspace</Link>
+            <Link href="/login#partner">Hotel partner workspace</Link>
           </nav>
         </div>
 

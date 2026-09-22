@@ -37,6 +37,7 @@ try {
     ['audit-admin', 'PLATFORM_ADMIN', adminToken],
     ['audit-customer', 'CUSTOMER', customerToken],
     ['audit-partner', 'PARTNER', partnerToken],
+    ['audit-access-user', 'CUSTOMER', randomBytes(32).toString('base64url')],
   ]) {
     await db.user.create({
       data: {

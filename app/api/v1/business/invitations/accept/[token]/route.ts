@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { isSameOriginMutation } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
@@ -8,7 +9,9 @@ import { hashBusinessInvitationToken } from '@/services/businessInvitationServic
 
 type AcceptInvitationRouteContext = { params: Promise<{ token: string }> };
 
-export async function POST(_request: Request, { params }: AcceptInvitationRouteContext) {
+export async function POST(request: Request, { params }: AcceptInvitationRouteContext) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json(

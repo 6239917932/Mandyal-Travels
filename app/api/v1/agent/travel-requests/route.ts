@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAgencyAdminAccess } from '@/lib/agentAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
@@ -13,6 +13,8 @@ import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/busi
 import { evaluateBusinessTravelRequest } from '@/services/businessTravelRequestService';
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const access = await getAgencyAdminAccess();
   if (!access) {
     return NextResponse.json(
