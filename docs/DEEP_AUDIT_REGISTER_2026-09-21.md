@@ -242,5 +242,22 @@ tax advice and do not replace approval by the named professional owner.
   verifies that the emitted record contains only the governed event name and safe operational
   metadata.
 
+### DA-014 — Live search-worker command drifted from the reviewed deployment file
+
+- **Severity:** High
+- **Evidence:** the committed Railway search-worker configuration correctly named
+  `worker:search-projections`, while the live Railway service used the singular, nonexistent
+  `worker:search-projection` command. Scheduled executions failed immediately with npm's missing
+  script error even though the container image deployed successfully.
+- **Resolution:** corrected the live start command, redeployed the service, and ran a controlled
+  execution that completed with `status: SUCCEEDED` without changing inventory, rates, bookings,
+  payments, refunds, settlements, or payouts.
+- **Regression protection:** Railway worker configuration tests now prove every configured command
+  maps to an existing reviewed one-shot package script. Release evidence must retain an exact
+  live-to-source command comparison and one successful manual execution whenever a worker service is
+  created or edited.
+- **Residual control:** repository checks cannot read Railway dashboard state; release owners must
+  retain the documented live comparison and terminal-run evidence as an operational control.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.
