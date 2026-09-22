@@ -80,7 +80,15 @@ async function inspect(route, target = page) {
   assert.equal(record.unnamedButtons, 0, `${route}: unnamed buttons`);
   assert.equal(record.formsWithoutSubmit, 0, `${route}: form without submit control`);
   assert.equal(
-    record.links.some((href) => href === '#' || href?.startsWith('javascript:')),
+    record.links.some((href) => {
+      const normalizedHref = href?.trim().toLowerCase();
+      return (
+        normalizedHref === '#' ||
+        normalizedHref?.startsWith('javascript:') ||
+        normalizedHref?.startsWith('data:') ||
+        normalizedHref?.startsWith('vbscript:')
+      );
+    }),
     false,
   );
   assert.doesNotMatch(
