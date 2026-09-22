@@ -12,19 +12,6 @@ const option = (value: string, label = value): HotelAmenityOption => ({ label, v
 
 export const propertyAmenityGroups = [
   {
-    name: 'Amenities for families with kids',
-    options: [
-      option('Free on-site parking'),
-      option('Swimming pool'),
-      option(
-        'Indoor games',
-        'Indoor games (board games, carrom, darts, pool table, puzzles, table tennis)',
-      ),
-      option('Halal restaurant'),
-      option('Steam and sauna'),
-    ],
-  },
-  {
     name: 'Basic facilities',
     options: [
       option('Free on-site parking'),

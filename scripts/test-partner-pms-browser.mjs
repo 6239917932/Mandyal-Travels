@@ -223,10 +223,23 @@ try {
     });
     assert.equal(response.status(), 200, `${route}: mobile HTTP ${response.status()}`);
     await mobilePage.locator('h1').first().waitFor({ state: 'visible', timeout: 10_000 });
-    const layout = await mobilePage.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
+    await mobilePage.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    let layout;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        layout = await mobilePage.evaluate(() => ({
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+        }));
+        break;
+      } catch (error) {
+        if (!String(error).includes('Execution context was destroyed') || attempt === 2)
+          throw error;
+        await mobilePage.waitForLoadState('domcontentloaded', { timeout: 10_000 });
+        await mobilePage.locator('h1').first().waitFor({ state: 'visible', timeout: 10_000 });
+      }
+    }
+    assert.ok(layout, `${route}: mobile layout could not be measured`);
     assert.ok(
       layout.scrollWidth <= layout.clientWidth + 2,
       `${route}: mobile page overflows viewport (${layout.scrollWidth}px > ${layout.clientWidth}px)`,

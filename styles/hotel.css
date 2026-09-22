@@ -2170,8 +2170,10 @@
 
 .booking-document-page {
   width: min(calc(100% - 2rem), 52rem);
+  min-width: 0;
   margin: 0 auto;
   padding: var(--space-8) 0;
+  overflow-wrap: anywhere;
 }
 
 .booking-document-actions {
@@ -2183,6 +2185,7 @@
 }
 
 .booking-document {
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-white);
@@ -2294,10 +2297,19 @@
 
 .booking-document__charges > div {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
   gap: var(--space-4);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-3);
+}
+
+.booking-document__header > *,
+.booking-document__reference > *,
+.booking-document__charges > div > *,
+.booking-document__footer > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .booking-document__charges-total {
