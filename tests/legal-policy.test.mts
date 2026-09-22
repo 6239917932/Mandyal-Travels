@@ -10,12 +10,13 @@ test('the legal center exposes every governed policy kind', () => {
   );
 });
 
-test('policy versions are unique and remain explicitly unapproved drafts', () => {
+test('policy versions are unique and are effective management-approved notices', () => {
   const versions = POLICY_DOCUMENTS.map((document) => document.version);
   assert.equal(new Set(versions).size, versions.length);
 
   for (const document of POLICY_DOCUMENTS) {
-    assert.equal(document.status, 'DRAFT');
+    assert.equal(document.status, 'APPROVED');
+    assert.match(document.version, /-effective-2026-09-22$/);
     assert.ok(document.title.trim());
     assert.ok(document.summary.trim());
     assert.match(document.lastUpdated, /^\d{4}-\d{2}-\d{2}$/);
@@ -60,7 +61,7 @@ test('commercial partner activation remains contract and approval gated', () => 
   const text = standards.sections.flatMap((section) => section.paragraphs).join(' ');
   assert.match(text, /must not become publicly bookable merely by creating an account/);
   assert.match(text, /versioned partner agreement/);
-  assert.match(text, /qualified Indian counsel/);
+  assert.match(text, /approved and versioned agreement/);
 });
 
 test('refund and safety policies preserve platform duties and escalation', () => {
@@ -77,4 +78,15 @@ test('refund and safety policies preserve platform duties and escalation', () =>
   assert.match(safetyText, /contact the local emergency service or police first/);
   assert.match(safetyText, /forty-eight hours/);
   assert.match(safetyText, /Motor Vehicle Aggregator Guidelines, 2025/);
+});
+
+test('effective notices publish the appointed grievance officer without a personal address', () => {
+  const policyText = POLICY_DOCUMENTS.flatMap((document) =>
+    document.sections.flatMap((section) => section.paragraphs),
+  ).join(' ');
+
+  assert.match(policyText, /Jasveer Singh, Director and Grievance Officer/);
+  assert.match(policyText, /support@mandyaltravels\.com/);
+  assert.match(policyText, /\+91 80693 77940/);
+  assert.doesNotMatch(policyText, /C\/O Kewal Singh/);
 });

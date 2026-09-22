@@ -55,6 +55,15 @@ export const siteConfig = {
     href: '+918069377940',
   },
   supportEmail: 'support@mandyaltravels.com',
+  grievanceOfficer: {
+    name: 'Jasveer Singh',
+    designation: 'Director and Grievance Officer',
+    email: 'support@mandyaltravels.com',
+    phone: {
+      display: '+91 80693 77940',
+      href: '+918069377940',
+    },
+  },
   socialLinks: {
     facebook: 'https://www.facebook.com/profile.php?id=61594331641440',
   },
