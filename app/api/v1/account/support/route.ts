@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { getCurrentUser } from '@/lib/auth/session';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   createCustomerSupportCase,
   CustomerSupportRequestError,
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
     if (error instanceof CustomerSupportRequestError) {
       return errorResponse(error.code, error.message, 400);
     }
-    console.error('Customer support case creation failed.', error);
+    reportOperationalError('account.support.creation.failed');
     return errorResponse(
       'SUPPORT_CASE_CREATE_FAILED',
       'The support case could not be created.',

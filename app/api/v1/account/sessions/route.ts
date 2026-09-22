@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { isSameOriginMutation } from '@/lib/api/request';
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -40,8 +41,8 @@ export async function DELETE(request: Request) {
     });
 
     return NextResponse.json({ data: { revokedSessions: result.count } });
-  } catch (error) {
-    console.error('Session revocation failed.', error);
+  } catch {
+    reportOperationalError('account.sessions.revocation.failed');
     return NextResponse.json(
       { error: 'Other sessions could not be signed out. Please try again.' },
       { status: 503 },

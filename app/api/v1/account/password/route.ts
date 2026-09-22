@@ -11,6 +11,7 @@ import {
 import { getCurrentUser, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { isAcceptableNewPassword, isValidPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -100,8 +101,8 @@ export async function PATCH(request: Request) {
     const response = NextResponse.json({ data: { passwordChanged: true } });
     response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');
     return response;
-  } catch (error) {
-    console.error('Password update failed.', error);
+  } catch {
+    reportOperationalError('account.password.update.failed');
     return NextResponse.json(
       { error: 'The password could not be updated. Please try again.' },
       { status: 503 },

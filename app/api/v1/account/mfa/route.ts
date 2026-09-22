@@ -13,6 +13,7 @@ import {
 } from '@/lib/auth/mfa';
 import { getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { hashRecoveryCodes, verifyUserSecondFactor } from '@/services/mfaService';
 
@@ -95,8 +96,8 @@ export async function POST(request: Request) {
       update: { secretCiphertext: encryptTotpSecret(secret), enabledAt: null },
     });
     return NextResponse.json({ data: { setupKey: secret } });
-  } catch (error) {
-    console.error('MFA enrollment failed.', error);
+  } catch {
+    reportOperationalError('account.mfa.enrollment.failed');
     return NextResponse.json({ error: 'MFA enrollment is not configured.' }, { status: 503 });
   }
 }

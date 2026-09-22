@@ -259,5 +259,18 @@ tax advice and do not replace approval by the named professional owner.
 - **Residual control:** repository checks cannot read Railway dashboard state; release owners must
   retain the documented live comparison and terminal-run evidence as an operational control.
 
+### DA-015 — Customer account APIs logged raw caught errors
+
+- **Severity:** High
+- **Evidence:** customer trip, saved-traveller, support, session, profile, payment, password,
+  notification, MFA, document, and sign-out handlers passed complete caught exception objects to
+  `console.error`.
+- **Risk:** database and provider exceptions can contain personal data, request values, credentials,
+  internal identifiers, or stack details that must not enter production logs.
+- **Resolution:** all affected customer-account handlers now emit fixed-name structured operational
+  events through the existing redacting logger without serializing the caught exception.
+- **Regression protection:** recursive coverage scans every customer-account API route plus sign-out
+  and fails if a caught error is passed directly to `console.error` or `console.warn`.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.

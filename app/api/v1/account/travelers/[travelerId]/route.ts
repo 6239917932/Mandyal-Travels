@@ -4,6 +4,7 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { hasSavedTravelerCsrf, normalizeSavedTravelerInput } from '@/services/savedTravelerService';
 
 const select = {
@@ -69,8 +70,8 @@ export async function PATCH(request: Request, { params }: Context) {
     if (!traveler)
       return NextResponse.json({ error: 'The saved traveler was not found.' }, { status: 404 });
     return NextResponse.json({ data: traveler });
-  } catch (error) {
-    console.error('Saved traveler update failed.', error);
+  } catch {
+    reportOperationalError('account.traveler.update.failed');
     return NextResponse.json(
       { error: 'The traveler could not be updated. Please try again.' },
       { status: 503 },
