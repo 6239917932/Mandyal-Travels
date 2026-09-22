@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
 import { normalizePromotionProducts } from '@/services/promotionService';
@@ -11,6 +11,8 @@ function integer(value: unknown, minimum: number, maximum: number) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator) {
     return NextResponse.json(

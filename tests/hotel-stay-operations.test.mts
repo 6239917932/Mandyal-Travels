@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -87,4 +88,24 @@ test('front desk sees only ready, active and unoccupied rooms', () => {
     availablePhysicalRooms(rooms, new Set(['104'])).map((room) => room.roomNumber),
     ['101'],
   );
+});
+
+test('stay mutations reject a stale status before writing checkout side effects', async () => {
+  const service = await readFile(
+    new URL('../services/partnerOperationsService.ts', import.meta.url),
+    'utf8',
+  );
+  const change = service.indexOf('const changed = await transaction.booking.updateMany');
+  const conflict = service.indexOf("'STAY_VERSION_CONFLICT'", change);
+  const dirtyRooms = service.indexOf('transaction.partnerPhysicalRoom.updateMany', change);
+  const audit = service.indexOf('action: `HOTEL_STAY_${nextStatus}`', change);
+
+  assert.ok(change >= 0);
+  assert.match(
+    service.slice(change, conflict),
+    /operationalStatus: booking\.operationalStatus[\s\S]*status: 'confirmed'/,
+  );
+  assert.ok(conflict > change);
+  assert.ok(dirtyRooms > conflict);
+  assert.ok(audit > conflict);
 });

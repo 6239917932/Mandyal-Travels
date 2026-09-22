@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { createMediaUploadIntent } from '@/services/mediaStorageService';
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return NextResponse.json({ error: 'Use the Mandyal Travels partner portal.' }, { status: 403 });
   const access = await getPartnerAccess(request);
   if (!access?.partnerId)
     return NextResponse.json({ error: 'Partner access required.' }, { status: 401 });

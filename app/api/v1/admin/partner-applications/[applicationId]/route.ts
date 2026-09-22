@@ -1,5 +1,5 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
   PartnerOperationsError,
   partnerOperationsService,
@@ -13,6 +13,8 @@ const failure = (code: string, message: string, status: number) =>
   Response.json({ error: { code, message } } satisfies ApiErrorResponse, { status });
 
 export async function PATCH(request: Request, { params }: Context) {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const admin = await getPlatformAdmin();
   if (!admin) return failure('ADMIN_REQUIRED', 'Platform administrator access is required.', 403);
   const body = await readJsonObject(request);

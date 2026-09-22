@@ -340,7 +340,7 @@ export const partnerOperationsService = {
             );
           }
         }
-        const updated = await transaction.booking.update({
+        const changed = await transaction.booking.updateMany({
           data: {
             assignedRoomNumbersJson:
               nextStatus === 'CHECKED_IN'
@@ -348,8 +348,18 @@ export const partnerOperationsService = {
                 : booking.assignedRoomNumbersJson,
             operationalStatus: nextStatus,
           },
-          where: { id: booking.id },
+          where: {
+            id: booking.id,
+            operationalStatus: booking.operationalStatus,
+            status: 'confirmed',
+          },
         });
+        if (changed.count !== 1) {
+          throw new PartnerOperationsError(
+            'STAY_VERSION_CONFLICT',
+            'This stay changed in another session. Refresh it before continuing.',
+          );
+        }
         if (nextStatus === 'CHECKED_OUT' && booking.assignedRoomNumbersJson !== '[]') {
           await transaction.partnerPhysicalRoom.updateMany({
             data: { housekeepingStatus: 'DIRTY' },
@@ -374,7 +384,7 @@ export const partnerOperationsService = {
             summary: `${confirmationCode} was marked ${nextStatus.toLowerCase().replaceAll('_', ' ')}.`,
           },
         });
-        return updated;
+        return transaction.booking.findUniqueOrThrow({ where: { id: booking.id } });
       },
       { isolationLevel: 'Serializable' },
     );

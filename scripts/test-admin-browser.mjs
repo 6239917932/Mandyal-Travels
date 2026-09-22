@@ -438,19 +438,23 @@ try {
     await page.getByRole('heading', { name: 'Isolated Audit Destination', exact: true }).waitFor();
   });
   await action('Account suspend and restore controls work on a synthetic customer', async () => {
-    await navigate('/admin/users/audit-customer');
+    await navigate('/admin/users/audit-access-user');
     await page.getByLabel('Operational reason').fill('Isolated account suspension test only');
-    await page.locator('input[name="confirmation"]').fill('SUSPEND audit-customer@example.invalid');
+    await page
+      .locator('input[name="confirmation"]')
+      .fill('SUSPEND audit-access-user@example.invalid');
     await expectMutation(
       () => page.getByRole('button', { name: 'Suspend account', exact: true }).click(),
-      '/api/v1/admin/users/audit-customer/access',
+      '/api/v1/admin/users/audit-access-user/access',
     );
     await page.getByRole('button', { name: 'Restore account', exact: true }).waitFor();
     await page.getByLabel('Operational reason').fill('Restore isolated local account for testing');
-    await page.locator('input[name="confirmation"]').fill('RESTORE audit-customer@example.invalid');
+    await page
+      .locator('input[name="confirmation"]')
+      .fill('RESTORE audit-access-user@example.invalid');
     await expectMutation(
       () => page.getByRole('button', { name: 'Restore account', exact: true }).click(),
-      '/api/v1/admin/users/audit-customer/access',
+      '/api/v1/admin/users/audit-access-user/access',
     );
   });
   await action('Service advisory creation persists as a draft', async () => {

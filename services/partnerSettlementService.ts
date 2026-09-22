@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { prorateCaptureAllocations } from '@/lib/payments/accounting';
 import { hasUnresolvedRefund } from '@/services/adminSettlementWorkbenchService';
 
@@ -140,39 +141,49 @@ export const partnerSettlementService = {
       (total, line) => total + line.taxWithheldAmount,
       0,
     );
-    return prisma.$transaction(async (transaction) => {
-      const settlement = await transaction.partnerSettlement.create({
-        data: {
-          bookingCount: settlementLines.length,
-          calculationJson: JSON.stringify({
-            allocationSource: 'CAPTURE_JOURNAL',
-            currency,
-            settlementDelayDays: partner.settlementDelayDays,
-          }),
-          commissionAmount,
-          grossAmount,
-          lines: { create: settlementLines },
-          netAmount,
-          partnerId,
-          periodEnd,
-          periodStart,
-          taxWithheldAmount,
-        },
-        include: { lines: true },
+    try {
+      return await prisma.$transaction(async (transaction) => {
+        const settlement = await transaction.partnerSettlement.create({
+          data: {
+            bookingCount: settlementLines.length,
+            calculationJson: JSON.stringify({
+              allocationSource: 'CAPTURE_JOURNAL',
+              currency,
+              settlementDelayDays: partner.settlementDelayDays,
+            }),
+            commissionAmount,
+            grossAmount,
+            lines: { create: settlementLines },
+            netAmount,
+            partnerId,
+            periodEnd,
+            periodStart,
+            taxWithheldAmount,
+          },
+          include: { lines: true },
+        });
+        await transaction.partnerSettlementEvent.create({
+          data: {
+            action: 'CREATED',
+            actorUserId,
+            fromStatus: 'NONE',
+            note: 'Draft settlement calculated from eligible reconciled captures.',
+            settlementId: settlement.id,
+            toStatus: 'DRAFT',
+            version: settlement.version,
+          },
+        });
+        return settlement;
       });
-      await transaction.partnerSettlementEvent.create({
-        data: {
-          action: 'CREATED',
-          actorUserId,
-          fromStatus: 'NONE',
-          note: 'Draft settlement calculated from eligible reconciled captures.',
-          settlementId: settlement.id,
-          toStatus: 'DRAFT',
-          version: settlement.version,
-        },
-      });
-      return settlement;
-    });
+    } catch (error) {
+      if (hasPrismaErrorCode(error, 'P2002') || hasPrismaErrorCode(error, 'P2034')) {
+        throw new PartnerSettlementError(
+          'SETTLEMENT_CONFLICT',
+          'Eligible transactions changed during calculation. Refresh and calculate the settlement again.',
+        );
+      }
+      throw error;
+    }
   },
 
   async transition(

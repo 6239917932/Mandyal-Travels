@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { normalizeBusRoute } from '@/lib/bus/operatorRules';
 import { getPartnerAccess, recordPartnerAudit } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
@@ -18,6 +18,8 @@ export async function GET(request: Request) {
   return Response.json({ data });
 }
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request))
+    return failure('FORBIDDEN_ORIGIN', 'Use the Mandyal Travels partner portal.', 403);
   const access = await getPartnerAccess(request);
   if (!access?.partnerId || access.partnerType !== 'BUS')
     return failure('BUS_PARTNER_REQUIRED', 'An active bus operator account is required.', 403);

@@ -117,5 +117,130 @@ tax advice and do not replace approval by the named professional owner.
   the authoritative place where available methods appear.
 - **Verification:** footer regression and complete release checks are required before deployment.
 
+### DA-004 — Legacy partner mutations relied only on the global origin boundary
+
+- **Severity:** Medium
+- **Evidence:** seventeen hotel, inventory, media, review, amendment, bus, and flight partner
+  mutation routes were protected by the global API proxy but did not repeat the same-origin check
+  in their route handler. Newer PMS routes already used both layers.
+- **Resolution:** added a fail-closed route-level origin check before authentication or request-body
+  processing in every affected handler. No authorization, provider, or launch gate was weakened.
+- **Regression protection:** added a recursive source test that fails whenever any current or future
+  partner POST, PATCH, PUT, or DELETE route omits `isSameOriginMutation(request)`.
+- **Residual risk:** browser origin validation is defense in depth, not a substitute for partner,
+  role, property, booking, and record ownership checks; those remain separate audit requirements.
+
+### DA-005 — Hotel stay transitions accepted stale concurrent actions
+
+- **Severity:** High
+- **Evidence:** check-in, no-show, and checkout rules were evaluated before the serializable
+  transaction, but the final booking update matched only the booking ID. A second reception session
+  could submit an action based on the old status after another session had already changed it.
+- **Risk:** duplicate audit events and repeated checkout side effects, including housekeeping state
+  changes, could be recorded for one stay.
+- **Resolution:** the transactional update now requires the booking to remain confirmed and retain
+  its expected operational status. A stale action fails before housekeeping or audit side effects.
+- **Regression protection:** added a source-order test proving the conditional update and conflict
+  check occur before checkout room-state changes and audit-log creation.
+
+### DA-006 — Overpaid folios could be treated as checkout-ready
+
+- **Severity:** High
+- **Evidence:** individual cashier payments were not bounded by the current outstanding balance,
+  while checkout rejected only positive balances. A negative balance therefore represented an
+  unresolved guest credit but passed the settlement check.
+- **Risk:** a stay could be checked out while money remained due back to the guest, obscuring the
+  refund or correction obligation.
+- **Resolution:** payment posting now calculates the current bounded folio balance and rejects zero
+  balance or overpayment attempts. Checkout now requires an exact zero balance and reports a
+  distinct unresolved-credit error for negative balances.
+- **Residual control:** intentional advances, deposits, refunds, and goodwill credits must use a
+  separately governed workflow rather than an accidental cashier overpayment.
+
+### DA-007 — Settlement mutations lacked same-origin enforcement
+
+- **Severity:** High
+- **Evidence:** the administrator settlement create and transition routes required an authenticated
+  administrator but did not reject cross-origin browser mutation requests.
+- **Risk:** an authenticated administrator could be exposed to a cross-site request that attempts to
+  create, approve, or mark a supplier settlement as paid.
+- **Resolution:** both settlement mutation routes now fail with `INVALID_ORIGIN` before
+  authentication, body parsing, or any financial write when the request is not same-origin.
+- **Regression protection:** route-source coverage verifies that the origin guard exists and executes
+  before administrator authentication on both endpoints.
+
+### DA-008 — Administrator mutation origin protection was incomplete
+
+- **Severity:** Critical
+- **Evidence:** recursive route inspection found 22 additional administrator endpoints that changed
+  configuration, privacy cases, refunds, payouts, promotions, content, support, notifications, risk,
+  integrations, search projections, partner access, or user access without a same-origin guard.
+- **Risk:** an authenticated platform administrator could be induced by a hostile site to submit a
+  state-changing request with significant operational, privacy, or financial effects.
+- **Resolution:** every identified administrator mutation now rejects cross-origin browser requests
+  before authentication, request parsing, or persistence.
+- **Regression protection:** a recursive test now fails whenever any current or future administrator
+  `POST`, `PATCH`, `PUT`, or `DELETE` route omits `isSameOriginMutation(request)`.
+
+### DA-009 — Business and agent mutations lacked systematic origin enforcement
+
+- **Severity:** High
+- **Evidence:** 14 authenticated business and travel-agent mutation routes did not consistently
+  enforce same-origin browser requests.
+- **Risk:** a hostile site could attempt organization, invitation, member, policy, support, customer,
+  or travel-request actions using an authenticated user's browser session.
+- **Resolution:** every business and agent mutation route now rejects cross-origin requests before
+  authentication, body parsing, or persistence.
+- **Regression protection:** recursive coverage fails whenever a current or future business or agent
+  mutation route omits `isSameOriginMutation(request)`.
+
+### DA-010 — Concurrent settlement creation returned an internal error
+
+- **Severity:** Medium
+- **Evidence:** immutable settlement-line uniqueness safely prevented duplicate booking settlement,
+  but a simultaneous calculation surfaced the database conflict as a generic server failure.
+- **Risk:** finance operators could not distinguish a safe concurrent change from a system fault and
+  might retry without reviewing the newly created settlement.
+- **Resolution:** unique-write and serializable transaction conflicts now fail closed with the
+  governed `SETTLEMENT_CONFLICT` response instructing the operator to refresh and recalculate.
+- **Residual control:** the existing unique booking and source constraints remain the authoritative
+  duplicate-payment barrier.
+
+### DA-011 — Customer workspace lacked full browser-journey coverage
+
+- **Severity:** Medium
+- **Evidence:** administrator and partner PMS browser audits existed, but the authenticated customer
+  workspace did not have equivalent route, accessibility, link, and responsive-layout coverage.
+- **Risk:** account-page regressions could pass static checks while producing broken controls,
+  inaccessible forms, invalid links, client errors, or mobile overflow for customers.
+- **Resolution:** CI now audits all 15 seeded customer account routes on desktop and mobile, blocks
+  external requests, checks headings, controls, forms and internal links, and retains JSON evidence.
+- **Residual control:** production smoke monitoring and manual assistive-technology review remain
+  separate launch responsibilities.
+
+### DA-012 — Hotel amendment creation lacked abuse controls
+
+- **Severity:** High
+- **Evidence:** the customer hotel-amendment endpoint authenticated booking access but accepted
+  cross-origin requests and did not bound repeated submissions.
+- **Risk:** a hostile site or abusive client could generate duplicate operational review workload.
+- **Resolution:** amendment creation now rejects cross-origin requests and applies a booking-scoped,
+  IP-aware ten-request hourly limit before authentication, body parsing, or persistence.
+- **Regression protection:** source-order coverage verifies both controls execute before request-body
+  processing and requires a `Retry-After` response.
+
+### DA-013 — Customer-critical routes logged raw caught errors
+
+- **Severity:** High
+- **Evidence:** authentication, password reset, public contact, hotel booking, cancellation, and
+  account-export catch paths passed complete error objects to `console.error`.
+- **Risk:** database or provider errors can contain personal data, request values, credentials,
+  provider references, or internal stack details that must not enter production logs.
+- **Resolution:** these customer-critical routes now emit fixed-name structured operational events
+  and never serialize the caught error object, message, or stack.
+- **Regression protection:** observability coverage injects a deliberately sensitive error and
+  verifies that the emitted record contains only the governed event name and safe operational
+  metadata.
+
 Additional findings will be appended with identifiers, severity, evidence, owner, resolution,
 tests, deployment reference, and any remaining external dependency.

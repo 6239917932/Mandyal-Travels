@@ -18,6 +18,7 @@ import {
 import { AccountAccessDeniedError, createSession } from '@/lib/auth/session';
 import { isValidEmail, isValidPassword, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { isEmailOtpRequired, issueEmailOtp, verifyEmailOtp } from '@/services/emailOtpService';
 import { verifyUserSecondFactor } from '@/services/mfaService';
@@ -105,8 +106,8 @@ export async function POST(request: Request) {
             },
             { status: 401 },
           );
-        } catch (error) {
-          console.error('Sign-in email OTP could not be delivered.', error);
+        } catch {
+          reportOperationalError('auth.login.email_otp_delivery_failed');
           return NextResponse.json(
             { error: 'A verification code could not be delivered. Please try again later.' },
             { status: 503 },
@@ -172,7 +173,7 @@ export async function POST(request: Request) {
     if (error instanceof AccountAccessDeniedError) {
       return NextResponse.json({ error: 'The email or password is incorrect.' }, { status: 401 });
     }
-    console.error('Sign-in failed.', error);
+    reportOperationalError('auth.login.failed');
     return NextResponse.json(
       { error: 'Sign-in is temporarily unavailable. Please try again.' },
       { status: 503 },
