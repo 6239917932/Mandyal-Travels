@@ -876,9 +876,212 @@
 }
 
 .home-travel,
+.home-discovery,
+.home-destinations,
 .home-origin,
 .home-trust {
   padding: clamp(4.5rem, 9vw, 7.5rem) 0;
+}
+
+.home-discovery {
+  border-bottom: 1px solid #d8e5ef;
+  background: #f7fafc;
+}
+
+.home-discovery__heading-action {
+  display: grid;
+  gap: 1rem;
+  align-self: end;
+}
+
+.home-text-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-brand-800);
+  font-size: 0.88rem;
+  font-weight: 820;
+}
+
+.home-text-link svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 160ms ease;
+}
+
+.home-text-link:hover svg,
+.home-text-link:focus-visible svg {
+  transform: translateX(0.2rem);
+}
+
+.home-stay-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.home-stay-card {
+  overflow: hidden;
+  border: 1px solid #d8e5ef;
+  border-radius: 1.2rem;
+  background: #fff;
+  box-shadow: 0 14px 34px rgb(16 35 61 / 7%);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.home-stay-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 44px rgb(16 35 61 / 13%);
+}
+
+.home-stay-card__image {
+  display: flex;
+  min-height: 15rem;
+  align-items: flex-start;
+  background-position: center;
+  background-size: cover;
+  padding: 1rem;
+}
+
+.home-stay-card__image span {
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 999px;
+  background: rgb(3 27 49 / 78%);
+  padding: 0.35rem 0.6rem;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 820;
+  backdrop-filter: blur(10px);
+}
+
+.home-stay-card__content {
+  padding: 1.25rem;
+}
+
+.home-stay-card__content > p {
+  margin: 0;
+  color: #597187;
+  font-size: 0.72rem;
+  font-weight: 780;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-stay-card__content h3 {
+  margin: 0.4rem 0 1.2rem;
+  color: var(--color-brand-950);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.home-stay-card__content > div {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid #e3ebf1;
+  padding-top: 1rem;
+}
+
+.home-stay-card__content > div > span {
+  color: #657b8f;
+  font-size: 0.72rem;
+}
+
+.home-stay-card__content > div > span strong {
+  color: var(--color-brand-950);
+  font-size: 1.05rem;
+}
+
+.home-stay-card__content a,
+.home-destination-card strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-brand-700);
+  font-size: 0.78rem;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.home-stay-card__content svg,
+.home-destination-card svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.home-destinations {
+  background: #fff;
+}
+
+.home-destination-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.home-destination-card {
+  position: relative;
+  display: flex;
+  min-height: 24rem;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background-color: var(--color-brand-900);
+  background-position: center;
+  background-size: cover;
+  padding: 1.5rem;
+  isolation: isolate;
+}
+
+.home-destination-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(2 22 40 / 18%), rgb(2 22 40 / 92%));
+  content: '';
+}
+
+.home-destination-card > span {
+  width: fit-content;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
+  padding: 0.38rem 0.65rem;
+  color: var(--color-brand-900);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-destination-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.home-destination-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0.6rem 0 1rem;
+  color: rgb(255 255 255 / 82%);
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.home-destination-card strong {
+  color: #f8b364;
+}
+
+.home-destinations__all {
+  margin: 1.5rem 0 0 auto;
 }
 
 .home-section__heading {
@@ -1885,6 +2088,19 @@
   .home-intro__grid {
     grid-template-columns: 1fr;
     gap: 1.75rem;
+  }
+
+  .home-stay-grid,
+  .home-destination-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-stay-card__image {
+    min-height: 13rem;
+  }
+
+  .home-destination-card {
+    min-height: 20rem;
   }
 
   .home-intro__title {
