@@ -7,6 +7,7 @@ import { hasValidFlightPassengerDetails } from '@/lib/flight/bookingRules';
 import { hasValidCarBookingParty } from '@/lib/car/bookingRules';
 import { hasValidBusPassengerDetails, parseBusSeats } from '@/lib/bus/bookingRules';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import {
   BusinessCheckoutError,
@@ -392,7 +393,7 @@ export async function POST(request: Request) {
     if (existingTrip) return NextResponse.json({ data: existingTrip });
   } catch (error) {
     if (error instanceof CustomerTripPersistenceError) return persistenceErrorResponse(error);
-    console.error('Trip history lookup failed.', error);
+    reportOperationalError('account.trips.lookup.failed');
     return errorResponse('TRIP_LOOKUP_FAILED', 'The booking could not be checked.', 500);
   }
 
@@ -414,8 +415,8 @@ export async function POST(request: Request) {
         { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
       );
     }
-  } catch (error) {
-    console.error('Trip creation rate-limit check failed.', error);
+  } catch {
+    reportOperationalError('account.trips.rate_limit.failed');
     return errorResponse(
       'TRIP_CREATE_CHECK_FAILED',
       'The booking could not be checked safely. Please try again.',
@@ -445,7 +446,7 @@ export async function POST(request: Request) {
       if (error instanceof BusinessCheckoutError) {
         return errorResponse(error.code, error.message, error.status);
       }
-      console.error('Business checkout validation failed.', error);
+      reportOperationalError('account.trips.business_checkout.failed');
       return errorResponse(
         'BUSINESS_CHECKOUT_FAILED',
         'The company approval could not be checked. No payment has been captured.',
@@ -501,7 +502,7 @@ export async function POST(request: Request) {
       if (error instanceof BusinessCheckoutError) {
         return errorResponse('TRIP_SELECTION_UNAVAILABLE', error.message, error.status);
       }
-      console.error('Personal checkout validation failed.', error);
+      reportOperationalError('account.trips.personal_checkout.failed');
       return errorResponse(
         'TRIP_SELECTION_CHECK_FAILED',
         'The selected itinerary could not be checked. No payment has been captured.',
@@ -538,7 +539,7 @@ export async function POST(request: Request) {
       if (error instanceof PromotionRedemptionError) {
         return errorResponse(error.code, `${error.message} No payment has been captured.`, 409);
       }
-      console.error('Transport promotion reservation validation failed.', error);
+      reportOperationalError('account.trips.promotion_validation.failed');
       return errorResponse(
         'PROMOTION_RESERVATION_FAILED',
         'The promotion reservation could not be checked. No payment has been captured.',
@@ -563,7 +564,7 @@ export async function POST(request: Request) {
         error.code === 'PAYMENT_EVIDENCE_NOT_CONFIGURED' ? 503 : 402,
       );
     }
-    console.error('Transport payment confirmation failed.', error);
+    reportOperationalError('account.trips.payment_confirmation.failed');
     return errorResponse(
       'PAYMENT_CONFIRMATION_FAILED',
       'The payment confirmation could not be checked safely.',
@@ -731,7 +732,7 @@ export async function POST(request: Request) {
     if (error instanceof BusinessCheckoutError) {
       return errorResponse(error.code, error.message, error.status);
     }
-    console.error('Trip history creation failed.', error);
+    reportOperationalError('account.trips.creation.failed');
     return errorResponse('TRIP_SAVE_FAILED', 'The booking could not be completed.', 500);
   }
 }

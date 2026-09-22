@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   CustomerPaymentHistoryLimitError,
   getCustomerPaymentActivity,
@@ -27,7 +28,7 @@ export async function GET(request: Request): Promise<Response> {
         409,
       );
     }
-    console.error('Customer payment activity lookup failed.', error);
+    reportOperationalError('account.payments.lookup.failed');
     return errorResponse(
       'PAYMENT_HISTORY_UNAVAILABLE',
       'Your hotel payment activity is temporarily unavailable.',

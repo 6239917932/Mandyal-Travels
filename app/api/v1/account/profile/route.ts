@@ -4,6 +4,7 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isValidName } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -54,8 +55,8 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ data: updated });
-  } catch (error) {
-    console.error('Account profile update failed.', error);
+  } catch {
+    reportOperationalError('account.profile.update.failed');
     return NextResponse.json(
       { error: 'The profile could not be updated. Please try again.' },
       { status: 503 },

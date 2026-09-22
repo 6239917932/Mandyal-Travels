@@ -4,6 +4,7 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { PRIVACY_CONSENT_VERSION } from '@/lib/legal/policies';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   ACCOUNT_SECURITY_ACTIONS,
   createAccountSecurityEventData,
@@ -72,8 +73,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       data: { bookingEmail, marketingEmail, smsAlerts, whatsappAlerts },
     });
-  } catch (error) {
-    console.error('Notification preference update failed.', error);
+  } catch {
+    reportOperationalError('account.notifications.update.failed');
     return NextResponse.json(
       { error: 'Notification preferences could not be saved. Please try again.' },
       { status: 503 },

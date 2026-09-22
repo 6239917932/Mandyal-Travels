@@ -4,6 +4,7 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   hasSavedTravelerCsrf,
   normalizeSavedTravelerInput,
@@ -81,8 +82,8 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     return NextResponse.json({ data: traveler }, { status: 201 });
-  } catch (error) {
-    console.error('Saved traveler creation failed.', error);
+  } catch {
+    reportOperationalError('account.traveler.creation.failed');
     return NextResponse.json(
       { error: 'The traveler could not be saved. Please try again.' },
       { status: 503 },

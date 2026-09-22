@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { deleteCurrentSession, getCurrentSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -21,8 +22,8 @@ export async function POST() {
         }),
       });
     }
-  } catch (error) {
-    console.error('Session deletion failed during sign-out.', error);
+  } catch {
+    reportOperationalError('auth.logout.failed');
   }
   const response = NextResponse.redirect(new URL('/', resolvePublicPortalOrigin()), 303);
   response.headers.set('Clear-Site-Data', '"cache", "cookies", "storage"');

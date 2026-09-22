@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth/session';
 import { boundedCustomerDocumentPage } from '@/lib/customerDocuments';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { listCustomerDocuments } from '@/services/customerDocumentService';
 
 export async function GET(request: Request): Promise<Response> {
@@ -20,8 +21,8 @@ export async function GET(request: Request): Promise<Response> {
       userId: user.id,
     });
     return Response.json({ data });
-  } catch (error) {
-    console.error('Customer document index failed.', error);
+  } catch {
+    reportOperationalError('account.documents.lookup.failed');
     return Response.json(
       {
         error: {
