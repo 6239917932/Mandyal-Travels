@@ -20,7 +20,9 @@ test('footer presents company, partner, mailing-list, payment, and security info
   assert.match(footer, /PaymentMarks/);
   assert.match(footer, /SecureWebsiteMark/);
   assert.match(payments, /Provider-confirmed payment options/);
-  assert.match(payments, /Options shown at checkout/);
+  assert.match(payments, /Secure checkout/);
+  assert.match(payments, /Available payment options are confirmed before you pay/);
+  assert.doesNotMatch(payments, /Options shown at checkout/);
   for (const unverifiedBrand of [
     'Visa',
     'Mastercard',
