@@ -82,7 +82,7 @@ export function SiteFooter() {
             <PaymentMarks />
           </div>
           <small>
-            Available methods appear at checkout and depend on the active payment provider. Never
+            Payment methods depend on the active provider and are shown before confirmation. Never
             share card details or one-time codes with support staff.
           </small>
         </div>

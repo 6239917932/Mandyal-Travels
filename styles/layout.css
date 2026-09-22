@@ -323,6 +323,40 @@
   gap: var(--space-2);
 }
 
+.payment-status {
+  display: inline-flex;
+  max-width: 23rem;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgb(114 201 188 / 32%);
+  border-radius: 0.75rem;
+  background: rgb(114 201 188 / 9%);
+  padding: 0.65rem 0.8rem;
+}
+
+.payment-status > svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  flex: 0 0 auto;
+  fill: #72c9bc;
+}
+
+.payment-status > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.payment-status strong {
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.payment-status small {
+  color: #aac2dc;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 .payment-mark {
   display: inline-flex;
   min-height: 2.25rem;
