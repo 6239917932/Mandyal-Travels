@@ -21,3 +21,8 @@ test('administrator access workflow cannot revoke the customer browser fixture s
     /navigate\('\/admin\/users\/audit-customer'\)[\s\S]{0,800}Suspend account/,
   );
 });
+
+test('customer audit inspects the complete rendered document without depending on shell markup', () => {
+  assert.match(script, /locator\('body'\)\.evaluate/);
+  assert.doesNotMatch(script, /locator\('#workspace-main'\)\.evaluate/);
+});

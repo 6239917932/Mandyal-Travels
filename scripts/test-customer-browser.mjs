@@ -53,8 +53,8 @@ async function inspect(route, target = page) {
   assert.equal(response.status(), 200, `${route}: HTTP ${response.status()}`);
   assert.equal(new URL(target.url()).pathname, route, `${route}: unexpected redirect`);
   await target.locator('h1').first().waitFor({ state: 'visible', timeout: 10_000 });
-  const record = await target.locator('#workspace-main').evaluate((main) => ({
-    controlsWithoutLabels: [...main.querySelectorAll('input,select,textarea')].filter(
+  const record = await target.locator('body').evaluate((root) => ({
+    controlsWithoutLabels: [...root.querySelectorAll('input,select,textarea')].filter(
       (node) =>
         !(node instanceof HTMLInputElement && node.type === 'hidden') &&
         !node.labels?.length &&
@@ -62,7 +62,7 @@ async function inspect(route, target = page) {
         !node.getAttribute('aria-labelledby') &&
         !node.getAttribute('title'),
     ).length,
-    unnamedButtons: [...main.querySelectorAll('button')].filter(
+    unnamedButtons: [...root.querySelectorAll('button')].filter(
       (node) =>
         !(
           node.textContent?.trim() ||
@@ -70,8 +70,8 @@ async function inspect(route, target = page) {
           node.getAttribute('title')
         ),
     ).length,
-    links: [...main.querySelectorAll('a[href]')].map((node) => node.getAttribute('href')),
-    formsWithoutSubmit: [...main.querySelectorAll('form')].filter(
+    links: [...root.querySelectorAll('a[href]')].map((node) => node.getAttribute('href')),
+    formsWithoutSubmit: [...root.querySelectorAll('form')].filter(
       (form) =>
         !form.querySelector('button[type="submit"],input[type="submit"],button:not([type])'),
     ).length,
