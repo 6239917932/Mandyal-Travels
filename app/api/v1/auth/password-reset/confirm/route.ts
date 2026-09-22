@@ -10,6 +10,7 @@ import {
 } from '@/lib/auth/rateLimit';
 import { isAcceptableNewPassword } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   ACCOUNT_SECURITY_ACTIONS,
@@ -107,12 +108,12 @@ export async function POST(request: Request): Promise<Response> {
         { status: 400 },
       );
     }
-    await clearRateLimit('PASSWORD_RESET_CONFIRM', rateLimitIdentifier).catch((error: unknown) => {
-      console.error('Password reset rate limit cleanup failed.', error);
+    await clearRateLimit('PASSWORD_RESET_CONFIRM', rateLimitIdentifier).catch(() => {
+      reportOperationalError('auth.password_reset.rate_limit_cleanup_failed');
     });
     return Response.json({ data: { passwordChanged: true } });
-  } catch (error) {
-    console.error('Password reset failed.', error);
+  } catch {
+    reportOperationalError('auth.password_reset.failed');
     return Response.json(
       { error: 'The password could not be reset. Please request a new link.' },
       { status: 503 },

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { normalizePrivacyResolutionNote, privacyRequestTransition } from '@/lib/privacy/governance';
 import { prisma } from '@/lib/prisma';
@@ -8,6 +8,8 @@ import { prisma } from '@/lib/prisma';
 type RouteContext = { params: Promise<{ requestId: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator) {
     return NextResponse.json(

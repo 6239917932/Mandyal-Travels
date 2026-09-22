@@ -9,21 +9,29 @@ export type PhysicalRoomCandidate = {
 };
 
 export function evaluateStayTiming(input: {
+  calendarDate?: string;
   checkInDate: string;
   checkOutDate: string;
-  localDate: string;
+  operationalDate: string;
   nextStatus: HotelStayStatus;
 }): StayRuleViolation | undefined {
   if (
     (input.nextStatus === 'CHECKED_IN' || input.nextStatus === 'NO_SHOW') &&
-    input.localDate < input.checkInDate
+    input.operationalDate < input.checkInDate
   ) {
+    const action = input.nextStatus.toLowerCase().replaceAll('_', ' ');
+    const isOperationalDateBehind =
+      input.calendarDate !== undefined &&
+      input.calendarDate >= input.checkInDate &&
+      input.operationalDate < input.calendarDate;
     return {
-      code: 'ARRIVAL_NOT_DUE',
-      message: `This stay cannot be marked ${input.nextStatus.toLowerCase().replaceAll('_', ' ')} before ${input.checkInDate} in the property's timezone.`,
+      code: isOperationalDateBehind ? 'OPERATIONAL_DATE_BEHIND' : 'ARRIVAL_NOT_DUE',
+      message: isOperationalDateBehind
+        ? `The property's operational date is ${input.operationalDate}. Complete night audit to advance it before marking this stay ${action} for ${input.checkInDate}.`
+        : `This stay cannot be marked ${action} before ${input.checkInDate} in the property's timezone.`,
     };
   }
-  if (input.nextStatus === 'CHECKED_IN' && input.localDate >= input.checkOutDate) {
+  if (input.nextStatus === 'CHECKED_IN' && input.operationalDate >= input.checkOutDate) {
     return {
       code: 'STAY_DATE_PASSED',
       message: 'The scheduled stay has already ended and cannot be checked in.',

@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
+import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService, HotelBookingRuleError } from '@/services/hotelBookingService';
 import type { ApiErrorResponse } from '@/types/commerce';
@@ -18,7 +19,27 @@ export async function POST(
   request: NextRequest,
   context: AmendmentRouteContext,
 ): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return errorResponse('INVALID_ORIGIN', 'This request origin is not allowed.', 403);
+  }
   const { confirmationCode } = await context.params;
+  const rateLimit = await consumeRateLimit({
+    action: 'HOTEL_AMENDMENT_CREATE',
+    identifier: getRequestRateLimitIdentifier(request, confirmationCode),
+    limit: 10,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return Response.json(
+      {
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many amendment requests. Please wait before trying again.',
+        },
+      } satisfies ApiErrorResponse,
+      { headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) }, status: 429 },
+    );
+  }
   const accessToken =
     request.cookies.get(getBookingAccessCookieName(confirmationCode))?.value ??
     request.cookies.get(legacyBookingAccessCookieName)?.value;

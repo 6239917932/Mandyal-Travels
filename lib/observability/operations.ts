@@ -109,6 +109,14 @@ export function emitOperationalEvent(input: OperationalEventInput): void {
   else console.info(serialized);
 }
 
+/**
+ * Report a server failure without serializing the caught error. Database and provider errors can
+ * contain credentials, personal data, request values, or internal implementation details.
+ */
+export function reportOperationalError(event: string): void {
+  emitOperationalEvent({ event, result: 'failure', severity: 'error' });
+}
+
 export const defaultAlertPolicy: AlertPolicy = {
   maximumBackupAgeHours: 25,
   maximumDeadLetterCount: 0,

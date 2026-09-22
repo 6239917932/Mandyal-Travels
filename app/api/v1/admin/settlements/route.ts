@@ -1,11 +1,16 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import {
   PartnerSettlementError,
   partnerSettlementService,
 } from '@/services/partnerSettlementService';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request))
+    return Response.json(
+      { error: { code: 'INVALID_ORIGIN', message: 'This request origin is not allowed.' } },
+      { status: 403 },
+    );
   const admin = await getPlatformAdmin();
   if (!admin)
     return Response.json(

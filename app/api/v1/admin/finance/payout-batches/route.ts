@@ -1,8 +1,10 @@
 import { getPlatformAdmin } from '@/lib/adminAuth';
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { PartnerPayoutError, partnerPayoutService } from '@/services/partnerPayoutService';
 
 export async function POST(request: Request): Promise<Response> {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   if (!(await getPlatformAdmin()))
     return Response.json({ error: { code: 'ADMIN_UNAUTHORIZED' } }, { status: 401 });
   const body = await readJsonObject(request);

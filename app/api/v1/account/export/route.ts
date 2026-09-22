@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   customerConsentPolicyEvidence,
   customerConsentPurpose,
@@ -315,8 +316,8 @@ export async function GET() {
         'Content-Type': 'application/json; charset=utf-8',
       },
     });
-  } catch (error) {
-    console.error('Account data export failed.', error);
+  } catch {
+    reportOperationalError('account.data_export.failed');
     return NextResponse.json(
       { error: 'Your account data could not be prepared. Please try again.' },
       { headers: { 'Cache-Control': 'no-store' }, status: 500 },

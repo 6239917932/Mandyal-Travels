@@ -10,6 +10,7 @@ import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { isValidEmail, isValidName, normalizeEmail } from '@/lib/auth/validation';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import {
   BusinessCheckoutError,
   validateBusinessCheckout,
@@ -102,8 +103,8 @@ export async function POST(request: Request): Promise<Response> {
       where: { idempotencyKey },
     });
     existingBusinessRequestId = existingContext?.businessTravelRequestId;
-  } catch (error) {
-    console.error('Hotel booking retry lookup failed.', error);
+  } catch {
+    reportOperationalError('hotels.booking.retry_lookup_failed');
     return errorResponse('BOOKING_LOOKUP_FAILED', 'The booking retry could not be checked.', 500);
   }
   if (
@@ -156,7 +157,7 @@ export async function POST(request: Request): Promise<Response> {
         if (error instanceof BusinessCheckoutError) {
           return errorResponse(error.code, error.message, error.status);
         }
-        console.error('Hotel business checkout validation failed.', error);
+        reportOperationalError('hotels.booking.business_checkout_validation_failed');
         return errorResponse(
           'BUSINESS_CHECKOUT_FAILED',
           'The company approval could not be checked. No payment has been captured.',

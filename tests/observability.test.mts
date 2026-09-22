@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   createOperationalEvent,
   evaluateOperationalAlerts,
+  reportOperationalError,
 } from '../lib/observability/operations.ts';
 
 test('structured operational events are bounded and omit unsafe identifiers', () => {
@@ -42,4 +43,23 @@ test('alert policy identifies production readiness failures', () => {
     alerts.map((alert) => alert.key),
     ['availabilityPercent', 'deadLetterCount', 'backupAgeHours'],
   );
+});
+
+test('server failure reporting never serializes a caught error', () => {
+  const originalConsoleError = console.error;
+  const output: unknown[][] = [];
+  console.error = (...values: unknown[]) => output.push(values);
+
+  try {
+    const sensitiveError = new Error('password=private-value customer@example.com');
+    reportOperationalError('auth.login.failed');
+
+    assert.equal(output.length, 1);
+    const serialized = JSON.stringify(output);
+    assert.match(serialized, /auth\.login\.failed/);
+    assert.doesNotMatch(serialized, new RegExp(sensitiveError.message));
+    assert.doesNotMatch(serialized, /private-value|customer@example\.com|stack/);
+  } finally {
+    console.error = originalConsoleError;
+  }
 });

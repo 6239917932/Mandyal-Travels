@@ -4,6 +4,7 @@ import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
 import { readJsonObject } from '@/lib/api/request';
 import { consumeRateLimit, getRequestRateLimitIdentifier } from '@/lib/auth/rateLimit';
 import { prisma } from '@/lib/prisma';
+import { reportOperationalError } from '@/lib/observability/operations';
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import {
   normalizePublicContactInquiry,
@@ -61,8 +62,8 @@ export async function POST(request: Request) {
       select: { reference: true },
     });
     return NextResponse.json({ data: inquiry }, { status: 201 });
-  } catch (error) {
-    console.error('Public contact inquiry creation failed.', error);
+  } catch {
+    reportOperationalError('contact.inquiry.creation_failed');
     return errorResponse(
       'CONTACT_INQUIRY_CREATE_FAILED',
       'Your message could not be recorded. Please call or email us.',

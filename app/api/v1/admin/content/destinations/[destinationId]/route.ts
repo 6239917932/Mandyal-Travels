@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 
-import { readJsonObject } from '@/lib/api/request';
+import { isSameOriginMutation, readJsonObject } from '@/lib/api/request';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
 import {
@@ -16,6 +16,8 @@ function isUniqueConflict(error: unknown) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  if (!isSameOriginMutation(request))
+    return Response.json({ error: 'Invalid origin.' }, { status: 403 });
   const administrator = await getPlatformAdmin();
   if (!administrator) {
     return Response.json({ error: 'Platform administrator access is required.' }, { status: 403 });

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService } from '@/services/hotelBookingService';
+import { reportOperationalError } from '@/lib/observability/operations';
 import type { ApiErrorResponse } from '@/types/commerce';
 
 interface BookingRouteContext {
@@ -54,8 +55,8 @@ export async function GET(request: NextRequest, context: BookingRouteContext): P
     }
 
     return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) {
-    console.error('Managed hotel booking lookup failed.', error);
+  } catch {
+    reportOperationalError('hotels.booking.lookup_failed');
     return Response.json(
       {
         error: {
@@ -110,8 +111,8 @@ export async function DELETE(
     }
 
     return Response.json({ data: booking }, { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) {
-    console.error('Managed hotel booking cancellation failed.', error);
+  } catch {
+    reportOperationalError('hotels.booking.cancellation_failed');
     return Response.json(
       {
         error: {
