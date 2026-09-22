@@ -1,3 +1,5 @@
+import { siteConfig } from '../../config/site.ts';
+
 export const POLICY_KINDS = [
   'privacy',
   'terms',
@@ -26,10 +28,9 @@ export interface PolicyDocument {
   sections: readonly PolicySection[];
 }
 
-export const PRIVACY_CONSENT_VERSION = 'privacy-v3.0-pending-legal-approval';
+export const PRIVACY_CONSENT_VERSION = 'privacy-v3.0-effective-2026-09-22';
 
-const commonContact =
-  'Contact Mandyal Travels Services Private Limited at support@mandyaltravels.com or +91 80693 77940. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.';
+const commonContact = `Contact ${siteConfig.grievanceOfficer.name}, ${siteConfig.grievanceOfficer.designation}, at ${siteConfig.grievanceOfficer.email} or ${siteConfig.grievanceOfficer.phone.display}. Include the booking reference, the supplier name, a description of the issue, and any supporting records. Do not send passwords, one-time codes, or full payment-card details.`;
 
 const policyDocuments: Record<PolicyKind, PolicyDocument> = {
   privacy: {
@@ -38,8 +39,8 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     summary:
       'How Mandyal Travels collects, uses, protects, and shares personal information across customer and partner services.',
     version: PRIVACY_CONSENT_VERSION,
-    status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Who this notice covers',
@@ -104,9 +105,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Terms of use and booking',
     summary:
       'The rules for accounts, referrals, platform-facilitated bookings, payments, and use of Mandyal Travels.',
-    version: 'terms-v2.1-pending-legal-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-09-13',
+    version: 'terms-v2.1-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Agreement and eligibility',
@@ -172,7 +173,7 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Complaints, governing law, and changes',
         paragraphs: [
           commonContact,
-          'These terms are governed by the laws of India. Nothing restricts a consumer from approaching a consumer commission, regulator, court, or other forum available under applicable law. The website operator is Mandyal Travels Services Private Limited; its registered-office and contact details are published in the Legal Centre and Contact page. A named grievance officer and any proposed contractual venue must be completed before final approval.',
+          'These terms are governed by the laws of India. Nothing restricts a consumer from approaching a consumer commission, regulator, court, or other forum available under applicable law. The website operator is Mandyal Travels Services Private Limited; its registered-office, grievance contact, and support details are published in the Legal Centre and Contact page.',
           'Material changes apply prospectively and should be versioned and communicated. Confirmed bookings remain governed by the terms accepted at confirmation unless a lawful change is agreed or required.',
         ],
       },
@@ -183,9 +184,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Marketplace and supplier responsibility policy',
     summary:
       'Who provides each service, what Mandyal Travels verifies, and where supplier responsibility begins and ends.',
-    version: 'marketplace-suppliers-v1.0-pending-legal-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    version: 'marketplace-suppliers-v1.0-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Purpose',
@@ -233,9 +234,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Cancellation and refund policy',
     summary:
       'How supplier terms, cancellations, refund decisions, payment returns, and disputes are handled.',
-    version: 'cancellation-refunds-v2.0-pending-commercial-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    version: 'cancellation-refunds-v2.0-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Terms shown before booking',
@@ -292,9 +293,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Safety, incidents, and grievance policy',
     summary:
       'What customers should do in an emergency and how safety, service, and platform complaints are escalated.',
-    version: 'safety-grievances-v1.0-pending-legal-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    version: 'safety-grievances-v1.0-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Emergency first',
@@ -319,7 +320,7 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
         heading: 'Complaint ownership and escalation',
         paragraphs: [
           'A service complaint will be shared with the named supplier for response while Mandyal Travels tracks the marketplace or facilitated-booking aspects. A platform, privacy, payment, misleading-content, or grievance-handling complaint remains owned by Mandyal Travels within its role.',
-          'The commercial service must acknowledge consumer complaints within forty-eight hours and redress them within one month where the Consumer Protection (E-Commerce) Rules, 2020 apply. The final launch page must prominently name the Mandyal Travels grievance officer and display each seller’s grievance details.',
+          'Mandyal Travels will acknowledge consumer complaints within forty-eight hours and seek to redress them within one month where the Consumer Protection (E-Commerce) Rules, 2020 apply. The Legal Centre and Contact page publish the Mandyal Travels grievance contact, and every enabled seller must provide its grievance details before becoming publicly bookable.',
         ],
       },
       {
@@ -341,15 +342,15 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Hotel and vehicle partner standards',
     summary:
       'Minimum onboarding, listing, safety, service, data, and refund duties for independent partners.',
-    version: 'partner-standards-v1.1-pending-legal-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-09-13',
+    version: 'partner-standards-v1.1-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'No public listing before approval and agreement',
         paragraphs: [
           'A hotel, property, vehicle, fleet, or driver must not become publicly bookable merely by creating an account or submitting a form. Mandyal Travels must complete the applicable review and both parties must accept a versioned partner agreement before a listing is activated.',
-          'These public standards are not the partner contract. The signed agreement must allocate service, payment, tax, refund, insurance, data, audit, indemnity, suspension, complaint, and termination responsibilities and must be reviewed by qualified Indian counsel.',
+          'These public standards are not the partner contract. The signed agreement must allocate service, payment, tax, refund, insurance, data, audit, indemnity, suspension, complaint, and termination responsibilities. Mandyal Travels may obtain professional review when needed, but partner activation always requires an approved and versioned agreement.',
         ],
       },
       {
@@ -419,9 +420,9 @@ const policyDocuments: Record<PolicyKind, PolicyDocument> = {
     title: 'Cookie and storage notice',
     summary:
       'How browser storage supports authentication, security, preferences, and measured product improvement.',
-    version: 'cookies-v1.1-pending-legal-approval',
-    status: 'DRAFT',
-    lastUpdated: '2026-08-31',
+    version: 'cookies-v1.1-effective-2026-09-22',
+    status: 'APPROVED',
+    lastUpdated: '2026-09-22',
     sections: [
       {
         heading: 'Essential storage',

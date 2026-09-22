@@ -25,9 +25,9 @@ export default function LegalPage() {
           {siteConfig.registeredOffice.lines.join(', ')}.
         </p>
         <div className="legal-draft-notice" role="note">
-          These operational drafts are published for transparency and implementation review. They
-          are not final contracts and must be approved by qualified Indian counsel before commercial
-          bookings or partner listings are enabled.
+          These versioned operating notices apply to the hotel-first platform from their stated
+          effective dates. Cars, buses, flights, wallet services, and other services marked coming
+          soon are not commercially available under these notices.
         </div>
       </section>
 
@@ -40,7 +40,7 @@ export default function LegalPage() {
               <span className="legal-card-number">{String(index + 1).padStart(2, '0')}</span>
               <div className="legal-card-heading">
                 <h3>{policy.title}</h3>
-                <span className="legal-status">Operational draft</span>
+                <span className="legal-status">Effective notice</span>
               </div>
               <p>{policy.summary}</p>
               <p className="legal-version">

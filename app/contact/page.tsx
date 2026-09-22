@@ -117,6 +117,32 @@ export default function ContactPage() {
 
           <div className="contact-guidance">
             <div>
+              <p className="home-section__eyebrow">Complaints and grievance support</p>
+              <h2>{siteConfig.grievanceOfficer.name}</h2>
+              <p>{siteConfig.grievanceOfficer.designation}</p>
+            </div>
+            <div>
+              <p>
+                Email:{' '}
+                <a href={`mailto:${siteConfig.grievanceOfficer.email}`}>
+                  {siteConfig.grievanceOfficer.email}
+                </a>
+              </p>
+              <p>
+                Telephone:{' '}
+                <a href={`tel:${siteConfig.grievanceOfficer.phone.href}`}>
+                  {siteConfig.grievanceOfficer.phone.display}
+                </a>
+              </p>
+              <p>
+                We acknowledge applicable e-commerce complaints within forty-eight hours and seek to
+                resolve them within one month of receipt.
+              </p>
+            </div>
+          </div>
+
+          <div className="contact-guidance">
+            <div>
               <p className="home-section__eyebrow">Already booked?</p>
               <h2>Get to the right help faster.</h2>
               <p>

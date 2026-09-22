@@ -43,7 +43,7 @@ export default async function LegalPolicyPage({ params }: LegalPolicyPageProps) 
         <h1>{document.title}</h1>
         <p>{document.summary}</p>
         <div className="legal-document-meta">
-          <span className="legal-status">Operational draft</span>
+          <span className="legal-status">Effective notice</span>
           <span>Version {document.version}</span>
           <span>Updated {document.lastUpdated}</span>
         </div>
@@ -51,9 +51,9 @@ export default async function LegalPolicyPage({ params }: LegalPolicyPageProps) 
 
       <section className="legal-document-body">
         <div className="legal-draft-notice" role="note">
-          This is an operational draft for transparency and implementation review. It is not a final
-          contract or legal advice and must be approved by qualified Indian counsel before
-          commercial bookings or partner listings are enabled.
+          This versioned notice applies to the hotel-first platform from its stated effective date.
+          Services identified as coming soon remain unavailable until their separate operational,
+          commercial, and regulatory requirements are completed.
         </div>
         {document.sections.map((section) => (
           <section className="legal-policy-section" key={section.heading}>
