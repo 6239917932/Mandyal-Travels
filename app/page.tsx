@@ -5,7 +5,9 @@ import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
 import { HomeTravelGallery } from '@/components/home/HomeTravelGallery';
 import { OrganizationStructuredData } from '@/components/seo/OrganizationStructuredData';
 import { siteConfig } from '@/config/site';
+import { prisma } from '@/lib/prisma';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
+import { hotelService } from '@/services/hotelService';
 
 const description =
   'Official website of Mandyal Travels for verified hotel discovery, booking, trip planning and hotel property management in Himachal Pradesh, India.';
@@ -32,6 +34,24 @@ const trustPoints = [
     description: 'Search by the place travellers actually know—from a city to a local area.',
     number: '03',
     title: 'Locality-aware discovery',
+  },
+] as const;
+
+const editorialJourneys = [
+  {
+    href: '/hotels?destination=Bir%20Billing',
+    imageUrl: '/home/hero/bir-billing-02.jpg',
+    name: 'Bir Billing',
+    state: 'Himachal Pradesh',
+    summary: 'Look for a stay near mountain views, village cafés, and the paragliding landscape.',
+  },
+  {
+    href: '/trip-planner',
+    imageUrl: '/home/hero/bir-billing-11.jpg',
+    name: 'A slower mountain weekend',
+    state: 'Trip inspiration',
+    summary:
+      'Build a simple stay-first itinerary, then shape the days around the place you choose.',
   },
 ] as const;
 
@@ -64,7 +84,45 @@ function MountainLine() {
   );
 }
 
-export default function Home() {
+function formatPrice(amount: number) {
+  return new Intl.NumberFormat('en-IN', {
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    style: 'currency',
+  }).format(amount);
+}
+
+export default async function Home() {
+  const [hotelResult, destinationResult] = await Promise.allSettled([
+    hotelService.getHotels(),
+    prisma.destinationContent.findMany({
+      orderBy: [{ publishedAt: 'desc' }, { name: 'asc' }],
+      select: { heroImageUrl: true, name: true, slug: true, state: true, summary: true },
+      take: 4,
+      where: { status: 'PUBLISHED' },
+    }),
+  ]);
+  const featuredHotels =
+    hotelResult.status === 'fulfilled'
+      ? hotelResult.value
+          .filter(
+            (hotel) => hotel.images[0] && hotel.rooms.some((room) => room.ratePlans.length > 0),
+          )
+          .slice(0, 3)
+      : [];
+  const featuredDestinations =
+    destinationResult.status === 'fulfilled' ? destinationResult.value : [];
+  const destinationCards =
+    featuredDestinations.length > 0
+      ? featuredDestinations.map((destination) => ({
+          href: `/destinations/${destination.slug}`,
+          imageUrl: destination.heroImageUrl,
+          name: destination.name,
+          state: destination.state,
+          summary: destination.summary,
+        }))
+      : editorialJourneys;
+
   return (
     <div className="home-page">
       <OrganizationStructuredData />
@@ -131,6 +189,115 @@ export default function Home() {
               <li>Local understanding</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      {featuredHotels.length > 0 ? (
+        <section aria-labelledby="featured-stays-title" className="home-discovery">
+          <div className="home-container">
+            <div className="home-section__heading home-section__heading--row">
+              <div>
+                <p className="home-section__eyebrow">Verified places to stay</p>
+                <h2 className="home-section__title" id="featured-stays-title">
+                  Hotels ready to welcome you.
+                </h2>
+              </div>
+              <div className="home-discovery__heading-action">
+                <p className="home-section__description">
+                  Explore published properties with live room choices and rates managed through the
+                  Mandyal hotel platform.
+                </p>
+                <Link className="home-text-link" href="/hotels">
+                  View all available stays <ArrowIcon />
+                </Link>
+              </div>
+            </div>
+
+            <div className="home-stay-grid">
+              {featuredHotels.map((hotel) => {
+                const roomRates = hotel.rooms.flatMap((room) =>
+                  room.ratePlans.map((ratePlan) => ratePlan.nightlyRate.amount),
+                );
+                const startingRate = Math.min(...roomRates);
+                const location = hotel.location.address.locality ?? hotel.location.address.city;
+                const image = hotel.images.find((item) => item.isPrimary) ?? hotel.images[0];
+
+                return (
+                  <article className="home-stay-card" key={hotel.id}>
+                    <Link
+                      aria-label={`Search rooms at ${hotel.name}`}
+                      className="home-stay-card__image"
+                      href={`/hotels?destination=${encodeURIComponent(hotel.name)}`}
+                      style={{ backgroundImage: `url(${JSON.stringify(image.url)})` }}
+                    >
+                      <span>{hotel.starRating}-star hotel</span>
+                    </Link>
+                    <div className="home-stay-card__content">
+                      <p>{location}</p>
+                      <h3>{hotel.name}</h3>
+                      <div>
+                        <span>
+                          From <strong>{formatPrice(startingRate)}</strong> per night
+                        </span>
+                        <Link href={`/hotels?destination=${encodeURIComponent(hotel.name)}`}>
+                          Check rooms <ArrowIcon />
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="featured-destinations-title" className="home-destinations">
+        <div className="home-container">
+          <div className="home-section__heading home-section__heading--row">
+            <div>
+              <p className="home-section__eyebrow">
+                {featuredDestinations.length > 0
+                  ? 'Reviewed destination guides'
+                  : 'Mountain travel inspiration'}
+              </p>
+              <h2 className="home-section__title" id="featured-destinations-title">
+                Find the right place before the right room.
+              </h2>
+            </div>
+            <p className="home-section__description">
+              {featuredDestinations.length > 0
+                ? 'Practical, human-reviewed local context to help you choose where to stay and what to know before you travel.'
+                : 'Start with a place and a pace that feel right. Live room availability and final prices are always confirmed in hotel search.'}
+            </p>
+          </div>
+
+          <div className="home-destination-grid">
+            {destinationCards.map((destination) => (
+              <Link
+                className="home-destination-card"
+                href={destination.href}
+                key={destination.name}
+                style={{ backgroundImage: `url(${JSON.stringify(destination.imageUrl)})` }}
+              >
+                <span>{destination.state}</span>
+                <div>
+                  <h3>{destination.name}</h3>
+                  <p>{destination.summary}</p>
+                  <strong>
+                    {featuredDestinations.length > 0 ? 'Explore guide' : 'Start planning'}{' '}
+                    <ArrowIcon />
+                  </strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {featuredDestinations.length > 0 ? (
+            <Link className="home-text-link home-destinations__all" href="/destinations">
+              Browse every published guide <ArrowIcon />
+            </Link>
+          ) : null}
         </div>
       </section>
 
