@@ -22,7 +22,7 @@ export const PLATFORM_FEATURES = [
   {
     defaultEnabled: false,
     description:
-      'Controls paid or coupon-waived supplier enrollment. Enable only after PayU return reconciliation, approved agreement evidence, and phone OTP delivery are complete.',
+      'Controls paid or coupon-waived supplier enrollment. Enable only after Razorpay reconciliation, approved agreement evidence, and phone OTP delivery are complete.',
     key: 'PAID_PARTNER_ONBOARDING',
     label: 'Paid partner onboarding',
   },
@@ -43,7 +43,7 @@ export const PLATFORM_FEATURES = [
   {
     defaultEnabled: false,
     description:
-      'Controls creation of PayU hosted live-payment checkout intents. Enable only after PayU callback, webhook, reconciliation, refund, GST, and payout readiness are approved.',
+      'Controls creation of Razorpay live-payment checkout intents. Enable only after Razorpay Checkout, webhook, reconciliation, refund, GST, and Route readiness are approved.',
     key: 'LIVE_MARKETPLACE_PAYMENTS',
     label: 'Live marketplace payments',
   },

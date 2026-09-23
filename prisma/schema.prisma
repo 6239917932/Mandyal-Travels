@@ -1403,6 +1403,7 @@ model PaymentCheckoutIntent {
   idempotencyKey      String               @unique
   provider            String
   providerRef         String               @unique
+  capturedProviderRef String?              @unique
   amount              Int
   currency            String
   status              String               @default("CREATED")

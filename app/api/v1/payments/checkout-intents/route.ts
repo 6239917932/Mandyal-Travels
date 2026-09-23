@@ -137,12 +137,42 @@ export async function POST(request: Request) {
       throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
     }
     const origin = resolvePublicPortalOrigin();
+    let transfer: { account: string; amount: number } | undefined;
+    if (process.env.RAZORPAY_ROUTE_ENABLED === 'true') {
+      const property = await prisma.partnerProperty.findUnique({
+        select: {
+          partner: {
+            select: {
+              commissionBasisPoints: true,
+              payoutAccounts: {
+                orderBy: { updatedAt: 'desc' },
+                select: { providerBeneficiaryRef: true },
+                take: 1,
+                where: { isDefault: true, provider: 'razorpay', status: 'VERIFIED' },
+              },
+            },
+          },
+        },
+        where: { hotelSlug: quote.hotelSlug },
+      });
+      const account = property?.partner.payoutAccounts[0]?.providerBeneficiaryRef;
+      const commissionBps = property?.partner.commissionBasisPoints;
+      if (!account || !/^acc_[A-Za-z0-9]{8,80}$/.test(account) || commissionBps === undefined) {
+        throw new Error('RAZORPAY_ROUTE_DESTINATION_NOT_APPROVED');
+      }
+      const partnerAmount = Math.floor((amount * (10_000 - commissionBps)) / 10_000);
+      if (partnerAmount < 1 || partnerAmount > amount) {
+        throw new Error('RAZORPAY_ROUTE_SPLIT_INVALID');
+      }
+      transfer = { account, amount: partnerAmount };
+    }
     const intent = await createHostedPaymentIntent({
       amount,
       currency: quote.currency,
       idempotencyKey,
       reference: quote.id,
       returnUrl: `${origin}/hotels/${encodeURIComponent(quote.hotelSlug)}/booking/payment?paymentReturn=1`,
+      transfer,
     });
     const created = await prisma.$transaction(async (transaction) => {
       const createdIntent = await transaction.paymentCheckoutIntent.create({

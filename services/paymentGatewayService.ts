@@ -12,15 +12,18 @@ import {
 import {
   parsePayuVerifiedTransaction,
   payuCommandHash,
-  payuTransactionId,
   type PayuVerifiedTransaction,
 } from '@/lib/payments/payu';
+import {
+  isRazorpayOrderId,
+  isRazorpayPaymentId,
+  isRazorpayRefundId,
+  rupeesToPaise,
+} from '@/lib/payments/razorpay';
 import {
   assertPaymentProviderCapability,
   selectedPaymentProvider,
 } from '@/lib/payments/providerSelection';
-
-let cachedPayuToken: { expiresAt: number; value: string } | undefined;
 
 function paymentProviderConfiguration(endpoint: string | undefined) {
   const allowedHosts = parseAllowedProviderHosts(process.env.PAYMENT_PROVIDER_ALLOWED_HOSTS);
@@ -30,7 +33,7 @@ function paymentProviderConfiguration(endpoint: string | undefined) {
   return { allowedHosts, endpoint };
 }
 
-function requiredPayuValue(name: string): string {
+function requiredLegacyPayuValue(name: string): string {
   const value = process.env[name]?.trim();
   if (!value || /replace|example|change-me/i.test(value)) {
     throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
@@ -38,115 +41,102 @@ function requiredPayuValue(name: string): string {
   return value;
 }
 
-function payuEndpoint(name: string): string {
-  return paymentProviderConfiguration(requiredPayuValue(name)).endpoint;
+function requiredRazorpayValue(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value || /replace|example|change-me/i.test(value)) {
+    throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  }
+  return value;
 }
 
-async function payuAccessToken(): Promise<string> {
-  if (cachedPayuToken && cachedPayuToken.expiresAt > Date.now() + 60_000) {
-    return cachedPayuToken.value;
-  }
-  const response = await fetch(payuEndpoint('PAYU_OAUTH_ENDPOINT'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: requiredPayuValue('PAYU_CLIENT_ID'),
-      client_secret: requiredPayuValue('PAYU_CLIENT_SECRET'),
-      grant_type: 'client_credentials',
-      scope: 'create_payment_links',
-    }),
+function razorpayHeaders() {
+  return {
+    Authorization: `Basic ${Buffer.from(`${requiredRazorpayValue('RAZORPAY_KEY_ID')}:${requiredRazorpayValue('RAZORPAY_KEY_SECRET')}`).toString('base64')}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+async function razorpayRequest(path: string, init?: RequestInit) {
+  const response = await fetch(`https://api.razorpay.com/v1${path}`, {
+    ...init,
+    headers: { ...razorpayHeaders(), ...(init?.headers ?? {}) },
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error('PAYMENT_PROVIDER_UNAVAILABLE');
-  const payload = (await response.json()) as { access_token?: unknown; expires_in?: unknown };
-  if (typeof payload.access_token !== 'string' || payload.access_token.length < 20) {
-    throw new Error('PAYMENT_PROVIDER_INVALID_RESPONSE');
-  }
-  const expiresIn = Number(payload.expires_in);
-  cachedPayuToken = {
-    value: payload.access_token,
-    expiresAt:
-      Date.now() + (Number.isFinite(expiresIn) && expiresIn > 60 ? expiresIn : 300) * 1_000,
-  };
-  return cachedPayuToken.value;
+  return response.json() as Promise<Record<string, unknown>>;
 }
 
-async function createPayuPaymentLink(input: {
+async function createRazorpayOrder(input: {
   amount: number;
-  callbackPath?: string;
   currency: string;
   description?: string;
   idempotencyKey: string;
   reference: string;
   returnUrl: string;
+  transfer?: { account: string; amount: number };
 }) {
+  if (process.env.RAZORPAY_INTEGRATION_ENABLED !== 'true') {
+    throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
+  }
+  if (
+    input.transfer &&
+    (process.env.RAZORPAY_ROUTE_ENABLED !== 'true' ||
+      !process.env.RAZORPAY_ROUTE_APPROVAL_REFERENCE?.trim())
+  ) {
+    throw new Error('RAZORPAY_ROUTE_NOT_APPROVED');
+  }
   if (!Number.isSafeInteger(input.amount) || input.amount < 1 || input.currency !== 'INR') {
     throw new Error('PAYMENT_PROVIDER_UNSUPPORTED_AMOUNT');
   }
-  const providerRef = payuTransactionId(input.idempotencyKey);
-  const returnOrigin = new URL(input.returnUrl).origin;
-  const callback = new URL(input.callbackPath ?? '/api/v1/payments/payu/return', returnOrigin);
-  callback.searchParams.set('txnid', providerRef);
-  const token = await payuAccessToken();
-  const { allowedHosts, endpoint } = paymentProviderConfiguration(
-    requiredPayuValue('PAYU_PAYMENT_LINK_ENDPOINT'),
-  );
-  const response = await fetch(endpoint, {
+  const amount = rupeesToPaise(input.amount);
+  const transfers = input.transfer
+    ? [
+        {
+          account: input.transfer.account,
+          amount: rupeesToPaise(input.transfer.amount),
+          currency: 'INR',
+          on_hold: true,
+        },
+      ]
+    : undefined;
+  const payload = await razorpayRequest('/orders', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      merchantId: requiredPayuValue('PAYU_MERCHANT_ID'),
-      mid: requiredPayuValue('PAYU_MERCHANT_ID'),
-    },
     body: JSON.stringify({
-      currency: input.currency,
-      description:
-        input.description?.trim().slice(0, 120) ??
-        `Mandyal Travels hotel booking ${input.reference.slice(0, 80)}`,
-      failureURL: `${callback.toString()}&outcome=failed`,
-      invoiceNumber: providerRef,
-      isAmountFilledByCustomer: false,
-      isPartialPaymentAllowed: false,
-      maxPaymentsAllowed: 1,
-      source: 'API',
-      subAmount: input.amount,
-      successURL: `${callback.toString()}&outcome=success`,
-      transactionId: providerRef,
-      udf: { udf1: input.reference.slice(0, 100) },
-      viaEmail: false,
-      viaSms: false,
-      viaWhatsapp: false,
+      amount,
+      currency: 'INR',
+      partial_payment: false,
+      receipt: input.idempotencyKey.slice(0, 40),
+      notes: { reference: input.reference.slice(0, 100) },
+      ...(transfers ? { transfers } : {}),
     }),
-    signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) throw new Error('PAYMENT_PROVIDER_UNAVAILABLE');
-  const payload = (await response.json()) as {
-    result?: { invoiceNumber?: unknown; paymentLink?: unknown };
-    status?: unknown;
-  };
-  if (
-    Number(payload.status) !== 0 ||
-    payload.result?.invoiceNumber !== providerRef ||
-    typeof payload.result.paymentLink !== 'string' ||
-    !isSafeHostedCheckoutUrl(payload.result.paymentLink, allowedHosts)
-  ) {
+  if (!isRazorpayOrderId(payload.id) || payload.amount !== amount || payload.currency !== 'INR') {
     throw new Error('PAYMENT_PROVIDER_INVALID_RESPONSE');
   }
+  const origin = new URL(input.returnUrl).origin;
   return {
-    providerRef,
-    checkoutUrl: payload.result.paymentLink,
+    providerRef: payload.id,
+    checkoutUrl: `${origin}/payments/razorpay/${encodeURIComponent(payload.id)}`,
     expiresAt: paymentIntentExpiry(),
   };
 }
 
+export async function fetchRazorpayPayment(paymentId: string) {
+  if (!isRazorpayPaymentId(paymentId)) throw new Error('PAYMENT_PROVIDER_INVALID_REFERENCE');
+  return razorpayRequest(`/payments/${encodeURIComponent(paymentId)}`);
+}
+
+// Historical PayU intents retain a read-only reconciliation path. New checkout cannot select PayU.
 export async function verifyPayuTransaction(
   transactionId: string,
 ): Promise<PayuVerifiedTransaction> {
-  const key = requiredPayuValue('PAYU_MERCHANT_KEY');
-  const salt = requiredPayuValue('PAYU_MERCHANT_SALT');
+  const key = requiredLegacyPayuValue('PAYU_MERCHANT_KEY');
+  const salt = requiredLegacyPayuValue('PAYU_MERCHANT_SALT');
   const command = 'verify_payment';
-  const response = await fetch(payuEndpoint('PAYU_COMMAND_ENDPOINT'), {
+  const endpoint = paymentProviderConfiguration(
+    requiredLegacyPayuValue('PAYU_COMMAND_ENDPOINT'),
+  ).endpoint;
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -171,12 +161,11 @@ export async function createHostedPaymentIntent(input: {
   idempotencyKey: string;
   reference: string;
   returnUrl: string;
+  transfer?: { account: string; amount: number };
 }) {
   const provider = selectedPaymentProvider(process.env.PAYMENT_PROVIDER_ID);
   assertPaymentProviderCapability(provider, 'hostedCheckout');
-  if (provider === 'payu') {
-    return createPayuPaymentLink(input);
-  }
+  if (provider === 'razorpay') return createRazorpayOrder(input);
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
   if (!apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
   const { allowedHosts, endpoint } = paymentProviderConfiguration(
@@ -222,6 +211,28 @@ export async function dispatchProviderRefund(input: {
 }) {
   const provider = selectedPaymentProvider(process.env.PAYMENT_PROVIDER_ID);
   assertPaymentProviderCapability(provider, 'refunds');
+  if (provider === 'razorpay') {
+    if (input.currency !== 'INR' || !isRazorpayPaymentId(input.providerPaymentRef)) {
+      throw new Error('PAYMENT_PROVIDER_INVALID_REFERENCE');
+    }
+    const payload = await razorpayRequest(
+      `/payments/${encodeURIComponent(input.providerPaymentRef)}/refund`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: rupeesToPaise(input.amount),
+          notes: {
+            reason: input.reason.slice(0, 200),
+            request: input.idempotencyKey.slice(0, 100),
+          },
+        }),
+      },
+    );
+    if (!isRazorpayRefundId(payload.id) || payload.status !== 'processed') {
+      throw new Error('PAYMENT_PROVIDER_INVALID_RESPONSE');
+    }
+    return { providerRefundRef: payload.id, status: String(payload.status).toUpperCase() };
+  }
   const apiKey = process.env.PAYMENT_GATEWAY_API_KEY;
   if (!apiKey) throw new Error('PAYMENT_PROVIDER_NOT_CONFIGURED');
   const { endpoint } = paymentProviderConfiguration(process.env.PAYMENT_GATEWAY_REFUND_ENDPOINT);

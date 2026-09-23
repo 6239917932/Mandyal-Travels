@@ -86,7 +86,7 @@ export async function confirmPaymentForBooking(input: {
     checkoutIntentId: intent.id,
     environment: liveMode ? 'LIVE' : 'SANDBOX',
     provider: intent.provider,
-    providerRef: intent.providerRef,
+    providerRef: intent.capturedProviderRef ?? intent.providerRef,
     reconciliationStatus: 'MATCHED',
   };
 }

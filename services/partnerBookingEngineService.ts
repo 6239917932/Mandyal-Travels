@@ -11,20 +11,15 @@ function present(value: string | null | undefined) {
 }
 
 function hasConfiguredPaymentProvider(environment: NodeJS.ProcessEnv = process.env) {
-  const required = [
-    'PAYMENT_PROVIDER_ALLOWED_HOSTS',
-    'PAYU_CLIENT_ID',
-    'PAYU_CLIENT_SECRET',
-    'PAYU_MERCHANT_ID',
-    'PAYU_MERCHANT_KEY',
-    'PAYU_MERCHANT_SALT',
-    'PAYU_OAUTH_ENDPOINT',
-    'PAYU_PAYMENT_LINK_ENDPOINT',
-  ];
-  return required.every((name) => {
-    const value = environment[name]?.trim() ?? '';
-    return value.length > 0 && !/change-me|changeme|example|replace-with|your-/i.test(value);
-  });
+  const required = ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'];
+  return (
+    environment.PAYMENT_PROVIDER_ID === 'razorpay' &&
+    environment.RAZORPAY_INTEGRATION_ENABLED === 'true' &&
+    required.every((name) => {
+      const value = environment[name]?.trim() ?? '';
+      return value.length > 0 && !/change-me|changeme|example|replace-with|your-/i.test(value);
+    })
+  );
 }
 
 export async function getPartnerBookingEngineReadiness(partnerId: string) {
