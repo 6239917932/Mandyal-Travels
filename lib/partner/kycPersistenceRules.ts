@@ -5,6 +5,10 @@ import {
   type PartnerKycDocumentType,
   type PartnerKycPartnerType,
 } from './kycDocumentRules.ts';
+import {
+  isAllowedProviderEndpoint,
+  parseAllowedProviderHosts,
+} from '../integrations/providerEndpoint.ts';
 
 export type PersistedPartnerKycSummary = {
   complete: boolean;
@@ -55,14 +59,24 @@ export function summarizePersistedPartnerKyc(input: {
 }
 
 export function partnerKycStorageReadiness(environment: {
+  allowedHosts?: string;
+  callbackSecret?: string;
   signingApiKey?: string;
   signingEndpoint?: string;
-}): { code: 'KYC_STORAGE_NOT_CONFIGURED'; ready: false } {
-  // The object store/scanner contract is intentionally not activated in this batch. Even if
-  // partial environment values exist, evidence uploads must remain closed until the complete
-  // private signing and verified scan callback adapter is implemented and reviewed.
-  void environment;
-  return { code: 'KYC_STORAGE_NOT_CONFIGURED', ready: false };
+}):
+  | { code: 'KYC_STORAGE_NOT_CONFIGURED'; ready: false }
+  | { code: 'KYC_STORAGE_READY'; ready: true } {
+  const allowedHosts = parseAllowedProviderHosts(environment.allowedHosts);
+  const ready =
+    typeof environment.callbackSecret === 'string' &&
+    environment.callbackSecret.trim().length >= 32 &&
+    typeof environment.signingApiKey === 'string' &&
+    environment.signingApiKey.trim().length >= 16 &&
+    typeof environment.signingEndpoint === 'string' &&
+    isAllowedProviderEndpoint(environment.signingEndpoint, allowedHosts);
+  return ready
+    ? { code: 'KYC_STORAGE_READY', ready: true }
+    : { code: 'KYC_STORAGE_NOT_CONFIGURED', ready: false };
 }
 
 export function publicPartnerKycProjection(document: {

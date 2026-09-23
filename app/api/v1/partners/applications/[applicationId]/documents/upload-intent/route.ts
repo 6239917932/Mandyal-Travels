@@ -5,9 +5,8 @@ import {
   normalizePartnerKycMetadata,
   validatePartnerKycDocumentDates,
 } from '@/lib/partner/kycDocumentRules';
-import { partnerKycStorageReadiness } from '@/lib/partner/kycPersistenceRules';
 import {
-  getApplicantKycChecklist,
+  createApplicantKycUploadIntent,
   PartnerKycGovernanceError,
 } from '@/services/partnerKycGovernanceService';
 
@@ -46,26 +45,34 @@ export async function POST(request: Request, { params }: Context) {
   }
   try {
     const { applicationId } = await params;
-    await getApplicantKycChecklist(applicationId, user.id);
+    const intent = await createApplicantKycUploadIntent({
+      actorUserId: user.id,
+      applicationId,
+      documentType: body.documentType,
+      expiresOn: dates.value.expiresOn,
+      issuedOn: dates.value.issuedOn,
+      metadata: metadata.value,
+    });
+    return Response.json({ data: intent }, { status: 201 });
   } catch (error) {
     const status = error instanceof PartnerKycGovernanceError ? error.status : 500;
+    const code =
+      error instanceof PartnerKycGovernanceError
+        ? error.code
+        : error instanceof Error && /^KYC_[A-Z_]+$/.test(error.message)
+          ? error.message
+          : 'KYC_UPLOAD_UNAVAILABLE';
     return Response.json(
-      { error: status === 404 ? 'Application not found.' : 'KYC access could not be verified.' },
-      { status },
+      {
+        error: {
+          code,
+          message:
+            status === 404
+              ? 'Application not found.'
+              : 'Private evidence storage or malware scanning is unavailable. No document was stored.',
+        },
+      },
+      { status: status === 500 ? 503 : status },
     );
   }
-  const readiness = partnerKycStorageReadiness({
-    signingApiKey: process.env.KYC_DOCUMENT_SIGNING_API_KEY,
-    signingEndpoint: process.env.KYC_DOCUMENT_SIGNING_ENDPOINT,
-  });
-  return Response.json(
-    {
-      error: {
-        code: readiness.code,
-        message:
-          'Private evidence storage and malware scanning are not activated. No document was stored.',
-      },
-    },
-    { status: 503 },
-  );
 }

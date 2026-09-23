@@ -110,6 +110,7 @@ const GATES: readonly GateDefinition[] = [
         'KYC_DOCUMENT_SIGNING_ENDPOINT',
         'KYC_DOCUMENT_SIGNING_API_KEY',
         'KYC_DOCUMENT_PROVIDER_ALLOWED_HOSTS',
+        'KYC_DOCUMENT_SCAN_CALLBACK_SECRET',
       ),
     id: 'kyc-storage',
     owner: 'ENGINEERING',

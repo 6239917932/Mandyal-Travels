@@ -69,5 +69,11 @@ supplier agreement.
 - PayU confirms marketplace/split-settlement and recurring-mandate configuration.
 - SMS provider/DLT registration and OTP template are active.
 - Private object storage, malware scanning, access logging, retention, and deletion controls are active for KYC evidence.
+- Configure `KYC_DOCUMENT_SIGNING_ENDPOINT`, `KYC_DOCUMENT_SIGNING_API_KEY`,
+  `KYC_DOCUMENT_PROVIDER_ALLOWED_HOSTS`, and a separate
+  `KYC_DOCUMENT_SCAN_CALLBACK_SECRET`. The signer must issue only HTTPS, allow-listed, private PUT
+  intents lasting no more than ten minutes. Verification remains blocked until the matching upload
+  version receives an authenticated clean scan result whose object key, byte size, and SHA-256 all
+  match the server-created intent. Do not use the public property-media bucket for KYC evidence.
 - Car and bus onboarding remain unavailable. Before any future transport launch, complete the
   applicable State licensing, permit, insurance, driver, vehicle, safety, and aggregator review.

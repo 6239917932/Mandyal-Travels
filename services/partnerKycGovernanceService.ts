@@ -2,15 +2,20 @@ import 'server-only';
 
 import { prisma } from '@/lib/prisma';
 import {
+  buildPartnerKycObjectKey,
   evaluatePartnerKycTransition,
   isPartnerKycDocumentStatus,
   type PartnerKycDocumentStatus,
+  type PartnerKycDocumentMetadata,
+  type PartnerKycDocumentType,
 } from '@/lib/partner/kycDocumentRules';
 import {
   publicPartnerKycProjection,
   partnerKycStorageReadiness,
   summarizePersistedPartnerKyc,
 } from '@/lib/partner/kycPersistenceRules';
+import { kycStorageEnvironment, requestPartnerKycUploadIntent } from './partnerKycStorageService';
+import { randomUUID } from 'node:crypto';
 
 export class PartnerKycGovernanceError extends Error {
   constructor(
@@ -139,7 +144,10 @@ export async function transitionPartnerKycDocument(input: {
   reviewNote?: string | null;
   targetStatus: PartnerKycDocumentStatus;
 }) {
-  if (input.targetStatus === 'VERIFIED' && !partnerKycStorageReadiness({}).ready) {
+  if (
+    input.targetStatus === 'VERIFIED' &&
+    !partnerKycStorageReadiness(kycStorageEnvironment()).ready
+  ) {
     throw new PartnerKycGovernanceError(
       'KYC_STORAGE_NOT_CONFIGURED',
       'Identity verification is unavailable until private evidence storage, malware scanning and audited document access are activated. You can still request changes or reject invalid evidence.',
@@ -147,10 +155,17 @@ export async function transitionPartnerKycDocument(input: {
   }
   return prisma.$transaction(async (transaction) => {
     const current = await transaction.partnerKycDocument.findUnique({
+      include: { versions: currentVersionInclude },
       where: { id: input.documentId },
     });
     if (!current) {
       throw new PartnerKycGovernanceError('KYC_DOCUMENT_NOT_FOUND', 'Document not found.', 404);
+    }
+    if (input.targetStatus === 'VERIFIED' && current.versions[0]?.storageStatus !== 'SCAN_PASSED') {
+      throw new PartnerKycGovernanceError(
+        'KYC_SCAN_REQUIRED',
+        'The latest document version must pass the configured malware and integrity scan before verification.',
+      );
     }
     const transition = evaluatePartnerKycTransition({
       currentVersion: current.lockVersion,
@@ -195,6 +210,195 @@ export async function transitionPartnerKycDocument(input: {
       },
     });
     return transaction.partnerKycDocument.findUniqueOrThrow({ where: { id: current.id } });
+  });
+}
+
+export async function recordPartnerKycScanResult(input: {
+  byteSize: number;
+  objectKey: string;
+  sha256: string;
+  status: 'CLEAN' | 'REJECTED';
+  versionId: string;
+}) {
+  return prisma.$transaction(async (transaction) => {
+    const version = await transaction.partnerKycDocumentVersion.findUnique({
+      include: { document: true },
+      where: { id: input.versionId },
+    });
+    if (!version)
+      throw new PartnerKycGovernanceError(
+        'KYC_VERSION_NOT_FOUND',
+        'Upload version not found.',
+        404,
+      );
+    if (
+      version.objectKey !== input.objectKey ||
+      version.sha256 !== input.sha256 ||
+      version.byteSize !== input.byteSize
+    ) {
+      throw new PartnerKycGovernanceError(
+        'KYC_SCAN_MISMATCH',
+        'Scan result did not match the upload intent.',
+        409,
+      );
+    }
+    const storageStatus = input.status === 'CLEAN' ? 'SCAN_PASSED' : 'SCAN_REJECTED';
+    if (version.storageStatus === storageStatus) return { accepted: true, storageStatus };
+    if (version.storageStatus !== 'INTENT_CREATED') {
+      throw new PartnerKycGovernanceError(
+        'KYC_SCAN_REPLAY_REJECTED',
+        'Upload result has already been finalized.',
+        409,
+      );
+    }
+    await transaction.partnerKycDocumentVersion.update({
+      data: { storageStatus, uploadedAt: new Date() },
+      where: { id: version.id },
+    });
+    await transaction.partnerKycDocumentEvent.create({
+      data: {
+        action:
+          storageStatus === 'SCAN_PASSED' ? 'KYC_UPLOAD_SCAN_PASSED' : 'KYC_UPLOAD_SCAN_REJECTED',
+        applicationId: version.document.applicationId,
+        documentId: version.documentId,
+        metadataJson: JSON.stringify({
+          versionId: version.id,
+          versionNumber: version.versionNumber,
+        }),
+        partnerId: version.document.partnerId,
+        reason:
+          storageStatus === 'SCAN_REJECTED' ? 'Provider rejected the uploaded evidence.' : null,
+      },
+    });
+    return { accepted: true, storageStatus };
+  });
+}
+
+export async function createApplicantKycUploadIntent(input: {
+  actorUserId: string;
+  applicationId: string;
+  documentType: PartnerKycDocumentType;
+  issuedOn: string | null;
+  expiresOn: string | null;
+  metadata: PartnerKycDocumentMetadata;
+  partnerId?: string;
+}) {
+  const application = await prisma.partnerApplication.findFirst({
+    where: {
+      id: input.applicationId,
+      ...(input.partnerId
+        ? { partnerId: input.partnerId, status: 'APPROVED' }
+        : { applicantUserId: input.actorUserId }),
+    },
+  });
+  if (!application)
+    throw new PartnerKycGovernanceError('APPLICATION_NOT_FOUND', 'Application not found.', 404);
+  if (application.partnerType !== 'HOTEL')
+    throw new PartnerKycGovernanceError(
+      'PARTNER_TYPE_DISABLED',
+      'Only hotel partner evidence is accepted.',
+      409,
+    );
+
+  return prisma.$transaction(async (transaction) => {
+    const document = await transaction.partnerKycDocument.upsert({
+      create: {
+        applicationId: application.id,
+        documentType: input.documentType,
+        expiresOn: input.expiresOn,
+        issuedOn: input.issuedOn,
+      },
+      update: { expiresOn: input.expiresOn, issuedOn: input.issuedOn },
+      where: {
+        applicationId_documentType: {
+          applicationId: application.id,
+          documentType: input.documentType,
+        },
+      },
+    });
+    const versionNumber = document.fileVersion + 1;
+    const extension =
+      input.metadata.contentType === 'application/pdf'
+        ? 'pdf'
+        : input.metadata.contentType === 'image/jpeg'
+          ? 'jpg'
+          : input.metadata.contentType === 'image/png'
+            ? 'png'
+            : 'webp';
+    const objectKey = buildPartnerKycObjectKey({
+      documentId: document.id,
+      extension,
+      partnerId: application.partnerId ?? application.id,
+      uploadId: randomUUID().replaceAll('-', ''),
+      version: versionNumber,
+    });
+    if (!objectKey)
+      throw new PartnerKycGovernanceError(
+        'KYC_OBJECT_KEY_INVALID',
+        'Secure upload could not be prepared.',
+        500,
+      );
+    const intent = await requestPartnerKycUploadIntent({ metadata: input.metadata, objectKey });
+    const version = await transaction.partnerKycDocumentVersion.create({
+      data: {
+        byteSize: input.metadata.byteSize,
+        contentType: input.metadata.contentType,
+        createdByUserId: input.actorUserId,
+        documentId: document.id,
+        objectKey,
+        originalFilename: input.metadata.originalFilename,
+        sha256: input.metadata.sha256,
+        uploadIntentExpiresAt: new Date(intent.expiresAt),
+        versionNumber,
+      },
+    });
+    await transaction.partnerKycDocument.update({
+      data: { fileVersion: versionNumber, lockVersion: { increment: 1 }, status: 'DRAFT' },
+      where: { id: document.id },
+    });
+    await transaction.partnerKycDocumentEvent.create({
+      data: {
+        action: 'KYC_UPLOAD_INTENT_CREATED',
+        actorUserId: input.actorUserId,
+        applicationId: application.id,
+        documentId: document.id,
+        metadataJson: JSON.stringify({ versionId: version.id, versionNumber }),
+        partnerId: application.partnerId,
+        toStatus: 'DRAFT',
+      },
+    });
+    return {
+      documentId: document.id,
+      expiresAt: intent.expiresAt,
+      headers: intent.headers,
+      method: intent.method,
+      uploadUrl: intent.uploadUrl,
+      versionId: version.id,
+    };
+  });
+}
+
+export async function createPartnerKycUploadIntent(input: {
+  actorUserId: string;
+  documentType: PartnerKycDocumentType;
+  expiresOn: string | null;
+  issuedOn: string | null;
+  metadata: PartnerKycDocumentMetadata;
+  partnerId: string;
+}) {
+  const application = await prisma.partnerApplication.findFirst({
+    orderBy: { createdAt: 'desc' },
+    where: { partnerId: input.partnerId, status: 'APPROVED' },
+  });
+  if (!application)
+    throw new PartnerKycGovernanceError(
+      'KYC_APPLICATION_NOT_FOUND',
+      'No approved onboarding record is linked to this supplier.',
+      404,
+    );
+  return createApplicantKycUploadIntent({
+    ...input,
+    applicationId: application.id,
   });
 }
 
