@@ -34,13 +34,22 @@ test('approval checklist requires verified identity and signed contract', () => 
   assert.deepEqual(missing.missing, ['PARTNER_CONTRACT']);
 });
 
-test('private evidence storage remains fail closed until the reviewed adapter exists', () => {
+test('private evidence storage remains fail closed with partial configuration', () => {
   assert.deepEqual(
     partnerKycStorageReadiness({
       signingApiKey: 'partial-secret',
       signingEndpoint: 'https://unreviewed.example.test',
     }),
     { code: 'KYC_STORAGE_NOT_CONFIGURED', ready: false },
+  );
+  assert.deepEqual(
+    partnerKycStorageReadiness({
+      allowedHosts: 'storage.example.com',
+      callbackSecret: 'callback-secret-at-least-32-characters',
+      signingApiKey: 'signing-secret-at-least-16',
+      signingEndpoint: 'https://storage.example.com/sign',
+    }),
+    { code: 'KYC_STORAGE_READY', ready: true },
   );
 });
 

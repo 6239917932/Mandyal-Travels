@@ -128,7 +128,7 @@ test('admin requests and application history have detail links and protected rev
   const governance = fs.readFileSync('services/partnerKycGovernanceService.ts', 'utf8');
   assert.match(
     governance,
-    /input.targetStatus === 'VERIFIED' && !partnerKycStorageReadiness\(\{\}\).ready/,
+    /input.targetStatus === 'VERIFIED'[\s\S]*!partnerKycStorageReadiness\(kycStorageEnvironment\(\)\).ready/,
   );
   assert.match(
     application,
