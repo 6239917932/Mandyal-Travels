@@ -5,10 +5,6 @@ import {
   type PartnerKycDocumentType,
   type PartnerKycPartnerType,
 } from './kycDocumentRules.ts';
-import {
-  isAllowedProviderEndpoint,
-  parseAllowedProviderHosts,
-} from '../integrations/providerEndpoint.ts';
 
 export type PersistedPartnerKycSummary = {
   complete: boolean;
@@ -66,14 +62,29 @@ export function partnerKycStorageReadiness(environment: {
 }):
   | { code: 'KYC_STORAGE_NOT_CONFIGURED'; ready: false }
   | { code: 'KYC_STORAGE_READY'; ready: true } {
-  const allowedHosts = parseAllowedProviderHosts(environment.allowedHosts);
+  const allowedHosts =
+    environment.allowedHosts
+      ?.split(',')
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean) ?? [];
+  let endpointAllowed = false;
+  try {
+    const endpoint = new URL(environment.signingEndpoint ?? '');
+    const hostname = endpoint.hostname.toLowerCase();
+    endpointAllowed =
+      endpoint.protocol === 'https:' &&
+      !endpoint.username &&
+      !endpoint.password &&
+      allowedHosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+  } catch {
+    endpointAllowed = false;
+  }
   const ready =
     typeof environment.callbackSecret === 'string' &&
     environment.callbackSecret.trim().length >= 32 &&
     typeof environment.signingApiKey === 'string' &&
     environment.signingApiKey.trim().length >= 16 &&
-    typeof environment.signingEndpoint === 'string' &&
-    isAllowedProviderEndpoint(environment.signingEndpoint, allowedHosts);
+    endpointAllowed;
   return ready
     ? { code: 'KYC_STORAGE_READY', ready: true }
     : { code: 'KYC_STORAGE_NOT_CONFIGURED', ready: false };
