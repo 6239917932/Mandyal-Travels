@@ -4,14 +4,16 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
-  "connect-src 'self'" + (isDevelopment ? ' ws: wss:' : ''),
+  "connect-src 'self' https://api.razorpay.com https://*.razorpay.com" +
+    (isDevelopment ? ' ws: wss:' : ''),
   "font-src 'self' data:",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  'frame-src https://www.openstreetmap.org',
+  'frame-src https://www.openstreetmap.org https://api.razorpay.com https://*.razorpay.com',
   "img-src 'self' data: https://images.unsplash.com",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline'" + (isDevelopment ? " 'unsafe-eval'" : ''),
+  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com" +
+    (isDevelopment ? " 'unsafe-eval'" : ''),
   "style-src 'self' 'unsafe-inline'",
   ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
 ].join('; ');
@@ -37,6 +39,7 @@ export const noIndexHeaderSources = [
   '/login',
   '/manage-booking/:path*',
   '/partner/:path*',
+  '/payments/:path*',
   '/partners/apply',
   '/register',
   '/reset-password',

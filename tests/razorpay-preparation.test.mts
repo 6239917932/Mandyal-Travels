@@ -10,44 +10,37 @@ import {
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('PayU remains selected while Razorpay is only prepared', () => {
-  assert.equal(selectedPaymentProvider('payu'), 'payu');
-  assert.equal(paymentProviderCapabilities('payu').hostedCheckout, true);
-  assert.doesNotThrow(() => assertPaymentProviderCapability('payu', 'hostedCheckout'));
-});
-
-test('Razorpay fails closed for every money-moving capability', () => {
+test('Razorpay is the only named active payment provider', () => {
   assert.equal(selectedPaymentProvider('razorpay'), 'razorpay');
+  assert.equal(selectedPaymentProvider('payu'), 'configured-gateway');
   assert.deepEqual(paymentProviderCapabilities('razorpay'), {
-    hostedCheckout: false,
-    refunds: false,
-    splitSettlements: false,
+    hostedCheckout: true,
+    refunds: true,
+    splitSettlements: true,
   });
-  for (const capability of ['hostedCheckout', 'refunds', 'splitSettlements'] as const) {
-    assert.throws(
-      () => assertPaymentProviderCapability('razorpay', capability),
-      /PAYMENT_PROVIDER_NOT_CONFIGURED/,
-    );
-  }
+  for (const capability of ['hostedCheckout', 'refunds', 'splitSettlements'] as const)
+    assert.doesNotThrow(() => assertPaymentProviderCapability('razorpay', capability));
 });
 
-test('Razorpay cannot fall through to the generic checkout, webhook, or refund adapters', () => {
+test('Razorpay uses dedicated checkout, webhook, refund and Route adapters', () => {
   const gateway = read('services/paymentGatewayService.ts');
   const webhook = read('app/api/v1/payments/webhooks/[provider]/route.ts');
-  const release = read('scripts/verify-release-env.mjs');
-  assert.match(gateway, /assertPaymentProviderCapability\(provider, 'hostedCheckout'\)/);
-  assert.match(gateway, /assertPaymentProviderCapability\(provider, 'refunds'\)/);
-  assert.match(webhook, /provider === 'razorpay'/);
-  assert.match(release, /PAYMENT_PROVIDER_ID === 'razorpay'/);
+  const checkout = read('app/api/v1/payments/checkout-intents/route.ts');
+  assert.match(gateway, /createRazorpayOrder/);
+  assert.match(gateway, /\/orders/);
+  assert.match(webhook, /verifyRazorpayWebhookSignature/);
+  assert.match(checkout, /RAZORPAY_ROUTE_ENABLED/);
+  assert.match(gateway, /on_hold: true/);
 });
 
-test('Razorpay secrets remain server-only placeholders and activation defaults off', () => {
+test('Razorpay secrets remain server-only and activation defaults off', () => {
   const example = read('.env.example');
-  const client = read('app/hotels/[slug]/booking/payment/page.tsx');
+  const client = read('app/payments/razorpay/[orderId]/RazorpayCheckout.tsx');
   for (const name of ['RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET']) {
     assert.match(example, new RegExp(`${name}=""`));
     assert.doesNotMatch(client, new RegExp(name));
   }
+  assert.match(example, /PAYMENT_PROVIDER_ID="razorpay"/);
   assert.match(example, /RAZORPAY_INTEGRATION_ENABLED="false"/);
   assert.match(example, /RAZORPAY_ROUTE_ENABLED="false"/);
 });

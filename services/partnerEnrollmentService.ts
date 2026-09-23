@@ -80,17 +80,16 @@ export async function createPartnerOnboardingCheckout(input: {
     couponCode: code,
   });
   const provider = quote.dueNow === 0 ? '' : (process.env.PAYMENT_PROVIDER_ID ?? '');
-  if (quote.dueNow > 0 && provider !== 'payu') {
+  if (quote.dueNow > 0 && provider !== 'razorpay') {
     throw new PartnerEnrollmentError(
       'PAYMENT_PROVIDER_NOT_READY',
-      'PayU supplier enrollment is not configured yet.',
+      'Razorpay supplier enrollment is not configured yet.',
     );
   }
   const hosted =
     quote.dueNow > 0
       ? await createHostedPaymentIntent({
           amount: quote.dueNow / 100,
-          callbackPath: '/api/v1/partners/onboarding/payu/return',
           currency: quote.currency,
           description: 'Mandyal Travels supplier software onboarding',
           idempotencyKey: input.idempotencyKey,

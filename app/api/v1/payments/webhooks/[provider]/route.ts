@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { readTextBody } from '@/lib/api/request';
 import { paymentPayloadHash, verifyPaymentWebhook } from '@/lib/payments/gateway';
 import { verifyPayuResponseHash } from '@/lib/payments/payu';
+import {
+  isRazorpayOrderId,
+  isRazorpayPaymentId,
+  verifyRazorpayWebhookSignature,
+} from '@/lib/payments/razorpay';
 import { prisma } from '@/lib/prisma';
 import { hasPrismaErrorCode } from '@/lib/prismaErrors';
 import { reconcilePayuCheckout } from '@/services/payuPaymentReconciliationService';
@@ -31,12 +36,86 @@ export async function POST(request: Request, context: Context) {
   const { provider } = await context.params;
   if (!PROVIDER_PATTERN.test(provider))
     return NextResponse.json({ error: { code: 'WEBHOOK_PROVIDER_INVALID' } }, { status: 400 });
-  if (provider === 'razorpay') {
-    return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
-  }
   const payload = await readTextBody(request);
   if (payload === null)
     return NextResponse.json({ error: { code: 'WEBHOOK_PAYLOAD_TOO_LARGE' } }, { status: 413 });
+  if (provider === 'razorpay') {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET?.trim() ?? '';
+    const signature = request.headers.get('x-razorpay-signature') ?? '';
+    if (!secret || secret.length < 16)
+      return NextResponse.json({ error: { code: 'WEBHOOK_NOT_CONFIGURED' } }, { status: 503 });
+    if (!verifyRazorpayWebhookSignature({ payload, signature, secret }))
+      return NextResponse.json({ error: { code: 'WEBHOOK_SIGNATURE_INVALID' } }, { status: 401 });
+    let event: {
+      event?: unknown;
+      payload?: { payment?: { entity?: Record<string, unknown> } };
+    };
+    try {
+      event = JSON.parse(payload) as typeof event;
+    } catch {
+      return NextResponse.json({ error: { code: 'WEBHOOK_PAYLOAD_INVALID' } }, { status: 400 });
+    }
+    const eventId = request.headers.get('x-razorpay-event-id') ?? '';
+    const eventType = typeof event.event === 'string' ? event.event : '';
+    const payment = event.payload?.payment?.entity;
+    const orderId = payment?.order_id;
+    const paymentId = payment?.id;
+    if (
+      !payment ||
+      !/^[A-Za-z0-9_-]{8,200}$/.test(eventId) ||
+      !['payment.captured', 'payment.failed'].includes(eventType) ||
+      !isRazorpayOrderId(orderId) ||
+      !isRazorpayPaymentId(paymentId)
+    ) {
+      return NextResponse.json({ data: { accepted: true, ignored: true } }, { status: 202 });
+    }
+    const verifiedPayment = payment;
+    try {
+      await prisma.$transaction(async (transaction) => {
+        const existing = await transaction.paymentProviderEvent.findUnique({
+          where: { provider_providerEventId: { provider, providerEventId: eventId } },
+        });
+        if (existing) return;
+        const intent = await transaction.paymentCheckoutIntent.findUnique({
+          where: { providerRef: orderId },
+        });
+        const captured = eventType === 'payment.captured';
+        const amountMatches =
+          typeof verifiedPayment.amount === 'number' &&
+          verifiedPayment.amount === (intent?.amount ?? 0) * 100 &&
+          verifiedPayment.currency === intent?.currency;
+        const accepted =
+          Boolean(intent) && intent?.provider === 'razorpay' && (!captured || amountMatches);
+        await transaction.paymentProviderEvent.create({
+          data: {
+            errorMessage: accepted
+              ? ''
+              : 'Razorpay order, amount, currency, or provider did not match.',
+            eventType,
+            payloadHash: paymentPayloadHash(payload),
+            processedAt: new Date(),
+            provider,
+            providerEventId: eventId,
+            providerRef: orderId,
+            status: accepted ? 'PROCESSED' : 'REJECTED',
+          },
+        });
+        if (accepted && captured) {
+          await transaction.paymentCheckoutIntent.updateMany({
+            data: {
+              capturedAt: new Date(),
+              capturedProviderRef: paymentId,
+              status: 'CAPTURED',
+            },
+            where: { id: intent?.id, status: 'CREATED' },
+          });
+        }
+      });
+    } catch (error) {
+      if (!hasPrismaErrorCode(error, 'P2002')) throw error;
+    }
+    return NextResponse.json({ data: { accepted: true } });
+  }
   if (provider === 'payu') {
     const contentType = request.headers.get('content-type') ?? '';
     if (!contentType.toLowerCase().startsWith('application/x-www-form-urlencoded')) {

@@ -140,17 +140,17 @@ const GATES: readonly GateDefinition[] = [
     evaluate: (evidence) =>
       configured(
         evidence,
-        'PAYU_CLIENT_ID',
-        'PAYU_CLIENT_SECRET',
-        'PAYU_MERCHANT_KEY',
-        'PAYU_MERCHANT_SALT',
+        'RAZORPAY_KEY_ID',
+        'RAZORPAY_KEY_SECRET',
+        'RAZORPAY_WEBHOOK_SECRET',
+        'RAZORPAY_ROUTE_APPROVAL_REFERENCE',
       ),
-    id: 'payu-collection',
+    id: 'razorpay-collection',
     owner: 'FINANCE',
     runbook: 'docs/PAYMENT_GATEWAY.md',
     summary:
-      'Obtain live PayU approval and certify checkout, callbacks, webhooks, refunds and reconciliation.',
-    title: 'PayU live payment collection',
+      'Obtain Razorpay and Route approval, then certify checkout, webhooks, refunds, transfers, reversals and reconciliation.',
+    title: 'Razorpay live collection and Route',
   },
   {
     category: 'COMMERCE',

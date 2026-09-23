@@ -1,4 +1,4 @@
-export const PAYMENT_PROVIDER_IDS = ['payu', 'razorpay'] as const;
+export const PAYMENT_PROVIDER_IDS = ['razorpay'] as const;
 
 export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number] | 'configured-gateway';
 
@@ -14,21 +14,16 @@ const CAPABILITIES: Readonly<Record<PaymentProviderId, PaymentProviderCapabiliti
     refunds: true,
     splitSettlements: false,
   },
-  payu: {
+  razorpay: {
     hostedCheckout: true,
     refunds: true,
-    splitSettlements: false,
-  },
-  razorpay: {
-    hostedCheckout: false,
-    refunds: false,
-    splitSettlements: false,
+    splitSettlements: true,
   },
 };
 
 export function selectedPaymentProvider(value: string | undefined): PaymentProviderId {
   const normalized = value?.trim().toLowerCase();
-  if (normalized === 'payu' || normalized === 'razorpay') return normalized;
+  if (normalized === 'razorpay') return normalized;
   return 'configured-gateway';
 }
 

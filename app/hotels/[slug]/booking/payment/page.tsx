@@ -205,18 +205,18 @@ export default function PaymentPage() {
             return;
           }
           if (result?.data?.status === 'FAILED') {
-            setPaymentError('PayU did not complete the payment. No booking was created.');
+            setPaymentError('Razorpay did not complete the payment. No booking was created.');
             setIsProcessing(false);
             return;
           }
         } catch {
-          // A short PayU callback delay is retried below; booking confirmation remains blocked.
+          // A short Razorpay webhook delay is retried below; booking confirmation remains blocked.
         }
         await new Promise((resolve) => window.setTimeout(resolve, 1_500));
       }
       if (!cancelled) {
         setPaymentError(
-          'PayU is still confirming this payment. Do not pay again; check your booking shortly.',
+          'Razorpay is still confirming this payment. Do not pay again; check your booking shortly.',
         );
         setIsProcessing(false);
       }

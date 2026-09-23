@@ -98,30 +98,26 @@ try {
 } catch {
   failures.push('PUBLIC_APP_ORIGIN must contain a valid absolute HTTPS origin.');
 }
-if (process.env.PAYMENT_PROVIDER_ID === 'payu') {
-  for (const name of [
-    'PAYU_CLIENT_ID',
-    'PAYU_CLIENT_SECRET',
-    'PAYU_MERCHANT_ID',
-    'PAYU_MERCHANT_KEY',
-    'PAYU_MERCHANT_SALT',
-    'PAYU_OAUTH_ENDPOINT',
-    'PAYU_PAYMENT_LINK_ENDPOINT',
-    'PAYU_COMMAND_ENDPOINT',
-  ]) {
+if (process.env.PAYMENT_PROVIDER_ID === 'razorpay') {
+  for (const name of ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET']) {
     const value = process.env[name] ?? '';
-    if (!value.trim()) failures.push(`${name} is required for PayU live collection.`);
+    if (!value.trim()) failures.push(`${name} is required for Razorpay live collection.`);
     if (/replace|example|change-me/i.test(value))
       failures.push(`${name} still contains a placeholder value.`);
   }
-  if ((process.env.PAYU_CLIENT_SECRET ?? '').length < 16)
-    failures.push('PAYU_CLIENT_SECRET must contain at least 16 characters.');
-  if ((process.env.PAYU_MERCHANT_SALT ?? '').length < 8)
-    failures.push('PAYU_MERCHANT_SALT must contain at least 8 characters.');
-} else if (process.env.PAYMENT_PROVIDER_ID === 'razorpay') {
-  failures.push(
-    'Razorpay remains disabled until Route approval and the dedicated checkout, webhook, refund, transfer, reversal, and reconciliation adapters pass certification.',
-  );
+  if (!/^rzp_live_[A-Za-z0-9]{8,}$/.test(process.env.RAZORPAY_KEY_ID ?? ''))
+    failures.push('RAZORPAY_KEY_ID must be a Razorpay live key id.');
+  if ((process.env.RAZORPAY_KEY_SECRET ?? '').length < 16)
+    failures.push('RAZORPAY_KEY_SECRET must contain at least 16 characters.');
+  if ((process.env.RAZORPAY_WEBHOOK_SECRET ?? '').length < 16)
+    failures.push('RAZORPAY_WEBHOOK_SECRET must contain at least 16 characters.');
+  if (process.env.RAZORPAY_INTEGRATION_ENABLED !== 'true')
+    failures.push('RAZORPAY_INTEGRATION_ENABLED must be true after certification.');
+  if (
+    process.env.RAZORPAY_ROUTE_ENABLED === 'true' &&
+    !(process.env.RAZORPAY_ROUTE_APPROVAL_REFERENCE ?? '').trim()
+  )
+    failures.push('RAZORPAY_ROUTE_APPROVAL_REFERENCE is required when Razorpay Route is enabled.');
 } else {
   for (const name of [
     'PAYMENT_GATEWAY_ENDPOINT',
@@ -166,9 +162,6 @@ for (const name of ['INTEGRATION_OUTBOX_ENDPOINT', 'INTEGRATION_OUTBOX_ALLOWED_H
 for (const [endpointName, hostsName] of [
   ['PAYMENT_GATEWAY_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
   ['PAYMENT_GATEWAY_REFUND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
-  ['PAYU_OAUTH_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
-  ['PAYU_PAYMENT_LINK_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
-  ['PAYU_COMMAND_ENDPOINT', 'PAYMENT_PROVIDER_ALLOWED_HOSTS'],
   ['PAYOUT_PROVIDER_ENDPOINT', 'PAYOUT_PROVIDER_ALLOWED_HOSTS'],
   ['MEDIA_SIGNING_ENDPOINT', 'MEDIA_PROVIDER_ALLOWED_HOSTS'],
   ['EMAIL_PROVIDER_ENDPOINT', 'EMAIL_PROVIDER_ALLOWED_HOSTS'],
