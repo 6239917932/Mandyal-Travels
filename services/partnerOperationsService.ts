@@ -31,7 +31,6 @@ import {
 } from '@/lib/partner/listingRiskRules';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import {
-  PARTNER_AGREEMENT_VERSION,
   PARTNER_AGREEMENTS,
   type PartnerApplicationAcknowledgement,
 } from '@/lib/partner/partnerAgreementPolicy';
@@ -536,7 +535,8 @@ export const partnerOperationsService = {
           PARTNER_AGREEMENTS[input.partnerType as 'HOTEL' | 'CAR' | 'BUS'].documentPath,
         agreementContentHash:
           PARTNER_AGREEMENTS[input.partnerType as 'HOTEL' | 'CAR' | 'BUS'].contentSha256,
-        agreementVersion: PARTNER_AGREEMENT_VERSION,
+        agreementVersion: PARTNER_AGREEMENTS[input.partnerType as 'HOTEL' | 'CAR' | 'BUS'].version,
+        signedAgreementStatus: 'ELECTRONIC_ACCEPTED',
       },
     });
   },
@@ -550,7 +550,7 @@ export const partnerOperationsService = {
     if (note.length < 5) {
       throw new PartnerOperationsError(
         'SIGNED_AGREEMENT_NOTE_REQUIRED',
-        'Record where and when the complete signed agreement was reviewed.',
+        'Record where and when the additional signed or stamped agreement was reviewed.',
       );
     }
     const application = await prisma.partnerApplication.findUnique({
@@ -655,12 +655,12 @@ export const partnerOperationsService = {
         !application.agreementVersion ||
         !application.agreementContentHash ||
         application.agreementEmailStatus !== 'SENT' ||
-        application.signedAgreementStatus !== 'RECEIVED' ||
-        !application.signedAgreementReceivedAt
+        !['ELECTRONIC_ACCEPTED', 'RECEIVED'].includes(application.signedAgreementStatus) ||
+        !application.agreementAcceptedAt
       ) {
         throw new PartnerOperationsError(
           'SIGNED_AGREEMENT_REQUIRED',
-          'Confirm delivery and review the complete signed partner agreement before approval.',
+          'Confirm delivery and the attributable agreement acceptance before approval.',
         );
       }
       if (

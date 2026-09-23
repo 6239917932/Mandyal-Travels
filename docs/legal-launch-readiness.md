@@ -27,7 +27,9 @@ below are complete.
 
 ## Partner agreement and onboarding
 
-- Obtain Indian counsel approval for separate hotel and vehicle partner agreements.
+- Record management approval for the final hotel partner agreement and preserve the immutable
+  version, hash, effective date, and decision record. Obtain specialist advice when a specific
+  instrument, jurisdiction, regulator, dispute, or material change makes it necessary.
 - Require versioned electronic acceptance before activation and preserve the accepted version,
   timestamp, signer authority, and audit evidence.
 - Complete KYC, ownership/authority, tax, bank, licence, permit, insurance, safety, and expiry
@@ -63,12 +65,13 @@ below are complete.
 - Keep optional analytics and advertising cookies disabled until the provider, purpose, retention,
   recipient, and consent controls are approved and disclosed.
 
-## Legal review record
+## Management review record
 
-- Have qualified Indian counsel review the public policies, customer booking flow, partner
-  agreements, State transport position, tax and payment flow, insurance, and jurisdiction wording.
-- Replace every `pending-legal-approval` or `pending-commercial-approval` version only after signed
-  approval, then preserve the approved text and effective date.
+- Record an authorised management review of public policies, the customer booking flow, hotel
+  partner agreement, tax and payment flow, insurance, and jurisdiction wording. This internal
+  review must not be represented as lawyer certification.
+- Replace every `pending-legal-approval` or `pending-commercial-approval` version only after the
+  corresponding authorised decision, then preserve the approved text, effective date, and evidence.
 
 ## Primary regulatory sources used for the operational draft
 

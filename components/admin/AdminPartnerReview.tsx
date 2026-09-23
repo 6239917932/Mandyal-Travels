@@ -85,7 +85,7 @@ export function AdminPartnerReview({
           onClick={() => review('RECORD_SIGNED_AGREEMENT')}
           type="button"
         >
-          Record complete signed agreement received
+          Record additional signed or stamped copy received
         </button>
       ) : (
         <small>Complete signed agreement recorded.</small>
@@ -100,7 +100,9 @@ export function AdminPartnerReview({
       </button>
       {!approvalAllowed ? (
         <small>
-          Approval is locked until identity evidence and the complete signed agreement are verified.
+          Approval is locked until identity evidence and the attributable agreement acceptance are
+          verified. Record an additional signed or stamped copy here only when the review identifies
+          that formality.
         </small>
       ) : null}
       <button

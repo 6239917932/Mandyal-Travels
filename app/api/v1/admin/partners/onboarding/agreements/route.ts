@@ -104,9 +104,9 @@ export async function PATCH(request: Request) {
   const expectedVersion = Number(body?.expectedVersion);
   const reason = typeof body?.reason === 'string' ? body.reason.trim() : '';
   const confirmation = typeof body?.confirmation === 'string' ? body.confirmation.trim() : '';
-  const legalApprovalReference =
-    typeof body?.legalApprovalReference === 'string'
-      ? body.legalApprovalReference.trim().replace(/\s+/g, ' ')
+  const approvalReference =
+    typeof body?.approvalReference === 'string'
+      ? body.approvalReference.trim().replace(/\s+/g, ' ')
       : '';
   if (
     !id ||
@@ -115,12 +115,11 @@ export async function PATCH(request: Request) {
     expectedVersion < 1 ||
     reason.length < 10 ||
     reason.length > 500 ||
-    (action === 'APPROVE' &&
-      (legalApprovalReference.length < 10 || legalApprovalReference.length > 200))
+    (action === 'APPROVE' && (approvalReference.length < 10 || approvalReference.length > 200))
   ) {
     return failure(
       'INVALID_AGREEMENT_UPDATE',
-      'Choose a valid action and version, provide a bounded reason, and record counsel approval before activation.',
+      'Choose a valid action and version, provide a bounded reason, and record the management approval reference before activation.',
       400,
     );
   }
@@ -185,7 +184,7 @@ export async function PATCH(request: Request) {
               actorUserId: admin.id,
               agreementVersionId: previous.id,
               fromStatus: previous.status,
-              legalApprovalReference,
+              legalApprovalReference: approvalReference,
               reason: `Superseded by approved agreement ${current.version}. ${reason}`.slice(
                 0,
                 500,
@@ -201,7 +200,7 @@ export async function PATCH(request: Request) {
             actorUserId: admin.id,
             agreementVersionId: id,
             fromStatus: current.status,
-            legalApprovalReference,
+            legalApprovalReference: approvalReference,
             reason,
             toStatus: 'APPROVED',
             version: expectedVersion + 1,

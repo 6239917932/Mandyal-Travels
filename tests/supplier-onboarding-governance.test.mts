@@ -399,9 +399,9 @@ test('supplier agreement drafts are immutable, server-hashed and never self-appr
   assert.match(route, /createHash\('sha256'\)/);
   assert.match(route, /status: 'DRAFT'/);
   assert.match(route, /CREATED_DRAFT/);
-  assert.match(route, /legalApprovalReference/);
+  assert.match(route, /approvalReference/);
   assert.match(manager, /Create immutable draft/);
-  assert.match(manager, /Counsel approval reference/);
+  assert.match(manager, /Management approval reference/);
   assert.match(schema, /model PartnerAgreementVersionEvent/);
   assert.match(schema, /model PartnerAgreementRelease/);
   assert.match(schema, /content\s+String/);
