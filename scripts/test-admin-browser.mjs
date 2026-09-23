@@ -304,7 +304,10 @@ try {
       await expectMutation(
         () =>
           page
-            .getByRole('button', { name: 'Record complete signed agreement received', exact: true })
+            .getByRole('button', {
+              name: 'Record additional signed or stamped copy received',
+              exact: true,
+            })
             .click(),
         '/api/v1/admin/partner-applications/audit-application-pending',
       );

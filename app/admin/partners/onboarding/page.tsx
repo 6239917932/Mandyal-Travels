@@ -223,7 +223,7 @@ export default async function AdminPartnerOnboardingPage() {
               <p>{event.reason}</p>
               <small>
                 {event.legalApprovalReference
-                  ? `Counsel record: ${event.legalApprovalReference} · `
+                  ? `Approval record: ${event.legalApprovalReference} · `
                   : ''}
                 Version {event.version} · {event.actor.firstName} {event.actor.lastName} ·{' '}
                 {date(event.createdAt)}

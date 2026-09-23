@@ -4,7 +4,8 @@ The administrator enrollment workbench at `/admin/partners/onboarding` can creat
 bounded launch waivers, activate or pause them with version-safe audited reasons, and inspect a
 privacy-minimized enrollment ledger. This control surface does not remove any launch gate below.
 
-Status: implementation and legal review checklist. This is not legal advice or a signed supplier agreement.
+Status: implementation and management compliance checklist. This is not legal advice or a signed
+supplier agreement.
 
 ## Commercial configuration
 
@@ -22,7 +23,9 @@ Status: implementation and legal review checklist. This is not legal advice or a
 
 1. PayU payment or an approved waiver must be reconciled server-side before commercial completion.
 2. The supplier must accept the exact approved agreement version. Store its version and hash, acceptance time, account, IP/user-agent hashes, and independent phone-OTP verification reference.
-3. Do not describe ordinary OTP clickwrap as a statutory digital signature. The agreement requires Indian counsel approval before activation.
+3. Do not describe ordinary OTP clickwrap as a statutory digital signature. Management must approve
+   the exact immutable agreement release before activation; any instrument-specific execution or
+   stamp formality remains a separate gate.
 4. KYC evidence, tax review, supplier approval, and listing approval remain independent gates. Payment never auto-approves a supplier or listing.
 5. Hotels and vehicles remain non-public until a platform administrator approves them. Open high-risk signals block approval; a human makes the final decision.
 6. Admin removal is a recoverable archive with a reason and audit trail. Existing bookings, payment, complaint, tax, and settlement records are preserved.
@@ -35,7 +38,7 @@ Status: implementation and legal review checklist. This is not legal advice or a
 - Full-waiver coupons are created by a platform administrator, bounded by a start/end time and optional usage cap, and cannot be consumed repeatedly by the same supplier account.
 - Agreement acceptance stores the exact approved content hash and hashed request evidence. It requires a current provider-backed phone-verification record and a captured or waived enrollment order.
 - Agreement text is stored as an immutable, server-hashed draft. Releasing it requires an exact
-  confirmation, the current governance version, a decision reason, and a counsel-approval reference.
+  confirmation, the current governance version, a decision reason, and a management approval reference.
   Releasing a new version atomically supersedes the previous release, and only the single current
   release can be accepted.
 - Supplier application submission and administrator approval independently re-check the completed enrollment when `PAID_PARTNER_ONBOARDING` is enabled.
@@ -56,11 +59,15 @@ Status: implementation and legal review checklist. This is not legal advice or a
 - Vehicle aggregation requires Central and State-specific licensing review under the Motor Vehicle Aggregator Guidelines, 2025: https://morth.nic.in/sites/default/files/circulars_document/MV-Aggregators-Guidelines-2025%20-%20English%20and%20Hindi.pdf
 - GST/TCS and notified e-commerce supplies require a qualified tax review: https://cbic-gst.gov.in/hindi/sectoral-faq.html
 
-## Required external approvals before opening enrollment
+## Required operational approvals before opening enrollment
 
-- Indian technology/e-commerce counsel approves the final supplier agreement, privacy notice, cancellation/refund allocation, dispute process, and clickwrap/OTP evidence.
+- Management records approval of the final hotel supplier agreement, privacy notice,
+  cancellation/refund allocation, dispute process, and clickwrap/OTP evidence. Obtain specialist
+  advice where an applicable instrument, jurisdiction, regulator, dispute, or material change makes
+  it necessary; do not represent the management review as a lawyer certification.
 - Chartered accountant/GST adviser approves invoicing, GST/TCS/TDS treatment, fee tax treatment, and settlement statements.
 - PayU confirms marketplace/split-settlement and recurring-mandate configuration.
 - SMS provider/DLT registration and OTP template are active.
 - Private object storage, malware scanning, access logging, retention, and deletion controls are active for KYC evidence.
-- For cars, counsel confirms each target State’s aggregator, permit, insurance, driver, and vehicle requirements before `CAR_MARKETPLACE` is enabled.
+- Car and bus onboarding remain unavailable. Before any future transport launch, complete the
+  applicable State licensing, permit, insurance, driver, vehicle, safety, and aggregator review.

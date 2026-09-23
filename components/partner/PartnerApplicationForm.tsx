@@ -176,8 +176,9 @@ export function PartnerApplicationForm({
       <div className="ui-card ui-card--padded">
         <strong>{agreement.title}</strong>
         <p>
-          Review version {PARTNER_AGREEMENT_VERSION} before submitting. A copy will also be emailed
-          to you for signature and return.
+          Review version {PARTNER_AGREEMENT_VERSION} before submitting. A locked copy will also be
+          emailed to you for your records and any additional execution step identified during
+          review.
         </p>
         <a href={agreement.documentPath} rel="noreferrer" target="_blank">
           Download and review the agreement
@@ -217,8 +218,9 @@ export function PartnerApplicationForm({
       <label className="supplier-form__checkbox">
         <input name="ackSignedReturn" required type="checkbox" />
         <span>
-          I will sign or e-sign the complete agreement, stamp it if available, and return it from
-          the registered business email.
+          I intend to accept this exact version electronically. If an applicable execution or
+          stamping requirement is identified, I will also return the requested complete signed or
+          stamped copy from the registered business email.
         </span>
       </label>
       <label className="supplier-form__checkbox">

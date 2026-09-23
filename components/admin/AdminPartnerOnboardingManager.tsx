@@ -228,7 +228,7 @@ export function AdminAgreementLifecycle({
           confirmation: formData.get('confirmation'),
           expectedVersion: governanceVersion,
           id: agreementId,
-          legalApprovalReference: formData.get('legalApprovalReference'),
+          approvalReference: formData.get('approvalReference'),
           reason: formData.get('reason'),
         }),
         headers: { 'Content-Type': 'application/json' },
@@ -249,8 +249,8 @@ export function AdminAgreementLifecycle({
     <form action={update} className="admin-finance-actions__form">
       {action === 'APPROVE' ? (
         <label>
-          Counsel approval reference
-          <input maxLength={200} minLength={10} name="legalApprovalReference" required />
+          Management approval reference
+          <input maxLength={200} minLength={10} name="approvalReference" required />
         </label>
       ) : null}
       <label>

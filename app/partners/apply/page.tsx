@@ -101,8 +101,8 @@ export default async function PartnerApplicationPage() {
           </p>
           <small>
             Recurring billing starts only after a separate mandate and consent. Payment enrollment
-            remains disabled until PayU reconciliation, phone OTP, and the final counsel-approved
-            agreement are active.
+            remains disabled until PayU reconciliation, phone OTP, and the management-approved
+            agreement release are active.
           </small>
         </Card>
       </div>
@@ -120,7 +120,7 @@ export default async function PartnerApplicationPage() {
           </p>
           <small>
             Mandyal Travels will enable this step only after the OTP provider and final
-            counsel-approved agreement are configured. Payment alone never activates a supplier.
+            management-approved agreement are configured. Payment alone never activates a supplier.
           </small>
         </Card>
       ) : application?.status === 'PENDING' ? (
@@ -141,9 +141,9 @@ export default async function PartnerApplicationPage() {
           </p>
           {application.agreementDocumentPath ? (
             <p>
-              <a href={application.agreementDocumentPath}>Download your issued agreement</a>, sign
-              or e-sign every required signature field, stamp it if available, and reply to the
-              agreement email with the complete copy.
+              <a href={application.agreementDocumentPath}>Download your issued agreement</a> and
+              keep it for your records. If the reviewer identifies an applicable signature or
+              stamping formality, return the requested complete copy through the agreement email.
             </p>
           ) : null}
           {application.agreementEmailStatus === 'FAILED' ? (

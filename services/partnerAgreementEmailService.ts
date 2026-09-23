@@ -44,9 +44,9 @@ Thank you for applying to join the Mandyal Travels supplier network.
 
 Download your ${agreement.title}, version ${application.agreementVersion}: ${documentUrl}
 
-Please review every page, complete the partner and signatory details, sign or e-sign it, affix your business stamp if available, and reply to this email with the complete signed copy. Include application reference ${reference}.
+Please retain this locked copy for your records. Your explicit application acknowledgements record acceptance of this exact version. If Mandyal Travels identifies an applicable execution or stamping requirement during review, reply to this email with the requested complete signed or stamped copy. Include application reference ${reference}.
 
-Your application remains pending until Mandyal Travels verifies the authorised representative's identity and records the complete signed agreement. Mandyal Travels may request licences, permits, insurance, tax, safety, vehicle, driver, or other operating records before activation or during an audit or risk review.
+Your application remains pending until Mandyal Travels verifies the authorised representative's identity and records approval. Mandyal Travels may request licences, permits, insurance, tax, safety, or other operating records before activation or during an audit or risk review.
 
 Regards,
 Mandyal Travels Support`;
@@ -59,7 +59,7 @@ Mandyal Travels Support`;
   try {
     await sendTransactionalEmail({
       dedupeKey: `partner-agreement:${application.id}:${application.agreementVersion}`,
-      html: `<p>Dear ${safeName},</p><p>Thank you for applying to join the Mandyal Travels supplier network.</p><p><a href="${safeUrl}">Download your ${safeTitle}</a> (version ${safeVersion}).</p><p>Please review every page, complete the partner and signatory details, sign or e-sign it, affix your business stamp if available, and reply to this email with the complete signed copy. Include application reference <strong>${safeReference}</strong>.</p><p>Your application remains pending until Mandyal Travels verifies the authorised representative's identity and records the complete signed agreement. Mandyal Travels may request licences, permits, insurance, tax, safety, vehicle, driver, or other operating records before activation or during an audit or risk review.</p><p>Regards,<br>Mandyal Travels Support</p>`,
+      html: `<p>Dear ${safeName},</p><p>Thank you for applying to join the Mandyal Travels supplier network.</p><p><a href="${safeUrl}">Download your ${safeTitle}</a> (version ${safeVersion}).</p><p>Please retain this locked copy for your records. Your explicit application acknowledgements record acceptance of this exact version. If Mandyal Travels identifies an applicable execution or stamping requirement during review, reply to this email with the requested complete signed or stamped copy. Include application reference <strong>${safeReference}</strong>.</p><p>Your application remains pending until Mandyal Travels verifies the authorised representative's identity and records approval. Mandyal Travels may request licences, permits, insurance, tax, safety, or other operating records before activation or during an audit or risk review.</p><p>Regards,<br>Mandyal Travels Support</p>`,
       subject: `Action required: sign your Mandyal Travels ${agreement.title}`,
       text,
       to: application.contactEmail,

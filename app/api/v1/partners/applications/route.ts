@@ -86,8 +86,12 @@ export async function POST(request: Request) {
     return failure('INVALID_APPLICATION', 'Complete every onboarding field.', 400);
   if (body.kycConsent !== 'on')
     return failure('KYC_CONSENT_REQUIRED', 'Supplier due-diligence consent is required.', 400);
-  if (!isPartnerAgreementType(body.partnerType))
-    return failure('INVALID_PARTNER_TYPE', 'Choose hotel, car, or bus supplier onboarding.', 400);
+  if (!isPartnerAgreementType(body.partnerType) || body.partnerType !== 'HOTEL')
+    return failure(
+      'PARTNER_TYPE_UNAVAILABLE',
+      'Hotel partner onboarding is available. Car and bus partner onboarding are coming soon.',
+      400,
+    );
   const acknowledgements = readPartnerApplicationAcknowledgements(body);
   if (!acknowledgements)
     return failure(
